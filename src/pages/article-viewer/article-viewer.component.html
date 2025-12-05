@@ -1,0 +1,85 @@
+<style>
+  .motor-content h1, .motor-content h2, .motor-content h3 {
+    color: #22d3ee; /* cyan-400 */
+    border-bottom: 1px solid #4b5563; /* gray-600 */
+    padding-bottom: 0.5rem;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .motor-content p {
+    margin-bottom: 1rem;
+    line-height: 1.75;
+  }
+  .motor-content ul, .motor-content ol {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+    list-style-position: outside;
+  }
+  .motor-content li {
+    margin-bottom: 0.5rem;
+  }
+  .motor-content a {
+    color: #67e8f9; /* cyan-300 */
+    text-decoration: underline;
+  }
+  .motor-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+  }
+  .motor-content th, .motor-content td {
+    border: 1px solid #4b5563; /* gray-600 */
+    padding: 0.75rem;
+    text-align: left;
+  }
+  .motor-content th {
+    background-color: #1f2937; /* gray-800 */
+  }
+  .motor-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #4b5563;
+  }
+  .motor-content .note, .motor-content .caution {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-left-width: 4px;
+    border-radius: 0.25rem;
+  }
+  .motor-content .note {
+    background-color: #1e3a8a; /* blue-900 */
+    border-color: #3b82f6; /* blue-500 */
+    color: #bfdbfe; /* blue-200 */
+  }
+  .motor-content .caution {
+    background-color: #b91c1c; /* red-700 */
+    border-color: #ef4444; /* red-500 */
+    color: #fecaca; /* red-200 */
+  }
+</style>
+
+<div class="min-h-screen bg-gray-900 text-gray-300 p-4 sm:p-6 lg:p-8">
+  <div class="max-w-4xl mx-auto">
+    <a [routerLink]="['/vehicle', contentSource(), vehicleId()]" class="text-cyan-400 hover:text-cyan-300 mb-6 inline-block">&larr; Back to Dashboard</a>
+    
+    <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6 sm:p-8 lg:p-10">
+      @if (articleContent(); as content) {
+        <div class="motor-content" [innerHTML]="content"></div>
+      } @else {
+        <!-- Loading Skeleton -->
+        <div class="space-y-6 animate-pulse">
+          <div class="h-8 bg-gray-700 rounded w-3/4"></div>
+          <div class="h-4 bg-gray-700 rounded w-full"></div>
+          <div class="h-4 bg-gray-700 rounded w-5/6"></div>
+          <div class="h-4 bg-gray-700 rounded w-full"></div>
+          <div class="h-8 bg-gray-700 rounded w-1/2 mt-8"></div>
+          <div class="h-4 bg-gray-700 rounded w-full"></div>
+          <div class="h-4 bg-gray-700 rounded w-full"></div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
