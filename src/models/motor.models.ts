@@ -22,7 +22,7 @@ export interface Make {
 export interface Model {
   model: string;
   id: string;
-  engines: Engine[];
+  engines?: Engine[];
 }
 
 export interface Engine {
@@ -58,4 +58,21 @@ export interface FilterTab {
 export interface ArticlesData {
   articleDetails: Article[];
   filterTabs: FilterTab[];
+}
+
+export interface ArticleContentData {
+  html: string;
+}
+
+export interface PersistedVehicle {
+    vehicleId: string;
+    contentSource: string;
+    name: string;
+}
+
+export interface AISearchSummary {
+    likelyCauses: {
+        cause: string;
+        articles: { title: string; id: string; }[];
+    }[];
 }

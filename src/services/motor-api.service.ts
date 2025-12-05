@@ -1,12 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { ApiResponse, ArticlesData, Make, ModelsData, VinDecodeData } from '../models/motor.models';
+import { ApiResponse, ArticlesData, Make, ModelsData, VinDecodeData, ArticleContentData } from '../models/motor.models';
 
 @Injectable({ providedIn: 'root' })
 export class MotorApiService {
   private http = inject(HttpClient);
-  private baseUrl = 'https://autolib.web.app/api/motor-proxy';
+  public readonly baseUrl = 'https://autolib.web.app/api/motor-proxy';
 
   decodeVin(vin: string): Observable<ApiResponse<VinDecodeData>> {
     return this.http.get<ApiResponse<VinDecodeData>>(`${this.baseUrl}/api/vin/${vin}`);
@@ -38,10 +38,23 @@ export class MotorApiService {
 
   getArticleContent(contentSource: string, vehicleId: string, articleId: string): Observable<string> {
     const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/article/${articleId}`;
-    return this.http.get(url, { responseType: 'text' });
+    return this.http.get<ApiResponse<ArticleContentData>>(url).pipe(
+        map(response => response.body.html)
+    );
+  }
+
+  getArticleTitle(contentSource: string, vehicleId: string, articleId: string): Observable<ApiResponse<string>> {
+    const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/article/${articleId}/title`;
+    return this.http.get<ApiResponse<string>>(url);
   }
 
   getGraphicUrl(graphicPath: string): string {
-    return `${this.baseUrl}/${graphicPath}`;
+    // Check if path is already absolute
+    if (graphicPath.startsWith('http')) {
+        return graphicPath;
+    }
+    // Handle root-relative paths from API
+    const path = graphicPath.startsWith('/') ? graphicPath.substring(1) : graphicPath;
+    return `${this.baseUrl}/${path}`;
   }
 }

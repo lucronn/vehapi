@@ -12,79 +12,115 @@
   </header>
 
   <div class="w-full max-w-2xl mt-8">
-    <div class="bg-gray-900/50 backdrop-blur-sm p-6 rounded-2xl border border-gray-700 shadow-2xl shadow-cyan-500/10">
-      
-      <!-- Selection Pills -->
-      <div class="flex items-center gap-2 mb-4 h-8">
-        @if (selectedYear(); as year) {
-          <span class="flex items-center gap-2 bg-cyan-800/50 text-cyan-300 px-3 py-1 rounded-full text-sm">
-            {{ year }}
-            <button (mousedown)="removeSelection($event, 'Year')" class="text-cyan-400 hover:text-white">&times;</button>
-          </span>
-        }
-        @if (selectedMake(); as make) {
-          <span class="flex items-center gap-2 bg-cyan-800/50 text-cyan-300 px-3 py-1 rounded-full text-sm">
-            {{ make.makeName }}
-            <button (mousedown)="removeSelection($event, 'Make')" class="text-cyan-400 hover:text-white">&times;</button>
-          </span>
-        }
-         @if (selectedVehicle(); as vehicle) {
-          <span class="bg-cyan-700/50 text-cyan-200 px-3 py-1 rounded-full text-sm truncate">
-            {{ vehicle.displayName }}
-          </span>
-        }
+    @if (persistedVehicle(); as vehicle) {
+      <div class="bg-gray-900/50 backdrop-blur-sm p-6 rounded-2xl border border-gray-700 shadow-2xl shadow-cyan-500/10 text-center">
+        <h2 class="text-2xl font-bold text-white mb-2">Welcome Back!</h2>
+        <p class="text-gray-400 mb-6">Continue with your previously selected vehicle:</p>
+        <div class="bg-gray-800 p-4 rounded-lg mb-6">
+            <p class="font-semibold text-lg text-cyan-300">{{ vehicle.name }}</p>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <button (click)="continueToVehicle()" class="px-6 py-3 bg-cyan-500 text-black font-bold rounded-lg hover:bg-cyan-400 transition-all duration-300">
+                Continue
+            </button>
+            <button (click)="startNewSearch()" class="px-6 py-3 bg-gray-600 text-white font-bold rounded-lg hover:bg-gray-500 transition-all duration-300">
+                Start New Search
+            </button>
+        </div>
       </div>
-
-      <!-- Omnibox Search -->
-      <div class="relative">
+    } @else {
+      <div class="bg-gray-900/50 backdrop-blur-sm p-6 rounded-2xl border border-gray-700 shadow-2xl shadow-cyan-500/10">
         
-        <!-- Suggestions Drop-up -->
-        @if (showSuggestions() && !isVin() && !selectedVehicle()) {
-          <div class="absolute z-30 w-full bottom-full mb-2 bg-gray-800 border border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-            @for (suggestion of suggestions(); track suggestion.display) {
-              <div (mousedown)="selectSuggestion($event, suggestion)" class="px-4 py-3 hover:bg-cyan-500 hover:text-black cursor-pointer transition-colors duration-150">
-                {{ suggestion.display }}
-              </div>
-            }
-            @if(suggestions().length === 0 && !isLoading()) {
-                 <div class="px-4 py-3 text-gray-500">No results found.</div>
-            }
-            @if(isLoading()) {
-                <div class="px-4 py-3 text-gray-500">Loading...</div>
-            }
-          </div>
+        <!-- Selection Pills -->
+        <div class="flex flex-wrap items-center gap-2 mb-4 min-h-[32px]">
+          @if (selectedYear(); as year) {
+            <span class="flex items-center gap-2 bg-cyan-800/50 text-cyan-300 px-3 py-1 rounded-full text-sm">
+              {{ year }}
+              <button (mousedown)="removeSelection($event, 'Year')" class="text-cyan-400 hover:text-white text-lg leading-none">&times;</button>
+            </span>
+          }
+          @if (selectedMake(); as make) {
+            <span class="flex items-center gap-2 bg-cyan-800/50 text-cyan-300 px-3 py-1 rounded-full text-sm">
+              {{ make.makeName }}
+              <button (mousedown)="removeSelection($event, 'Make')" class="text-cyan-400 hover:text-white text-lg leading-none">&times;</button>
+            </span>
+          }
+           @if (selectedVehicle(); as vehicle) {
+            <span class="flex items-center gap-2 bg-cyan-700/50 text-cyan-200 px-3 py-1 rounded-full text-sm truncate">
+              {{ vehicle.displayName }}
+              <button (mousedown)="removeSelection($event, 'Model')" class="text-cyan-400 hover:text-white text-lg leading-none">&times;</button>
+            </span>
+          }
+        </div>
+
+        <!-- Omnibox Search -->
+        <div class="relative">
+          
+          <!-- Suggestions Drop-up -->
+          @if (showSuggestions() && !isVin() && !selectedVehicle() && !unsureModeActive()) {
+            <div #suggestionsContainer class="absolute z-30 w-full bottom-full mb-2 bg-gray-800 border border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+              @for (suggestion of suggestions(); track suggestion.display) {
+                <div (mousedown)="selectSuggestion($event, suggestion)" 
+                     [class.bg-yellow-500]="suggestion.type === 'Unsure'"
+                     [class.text-black]="suggestion.type === 'Unsure'"
+                     class="px-4 py-3 hover:bg-cyan-500 hover:text-black cursor-pointer transition-colors duration-150">
+                  {{ suggestion.display }}
+                </div>
+              }
+              @if(suggestions().length === 0 && !isLoading()) { <div class="px-4 py-3 text-gray-500">No results found.</div> }
+              @if(isLoading()) { <div class="px-4 py-3 text-gray-500">Loading...</div> }
+            </div>
+          }
+
+          @if (!unsureModeActive()) {
+            <div class="flex flex-col sm:flex-row gap-3">
+              <input #searchInput type="text" [placeholder]="currentPlaceholder()" class="flex-grow bg-gray-800 border-2 border-gray-600 rounded-lg p-3 text-lg focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-300 placeholder-gray-500 disabled:opacity-50"
+                [ngModel]="searchTerm()"
+                (ngModelChange)="searchTerm.set($event)"
+                (focus)="onSearchFocus()"
+                (keydown.enter)="handleEnterKey()"
+                (keydown.space)="handleSpacebar($event)"
+                [disabled]="!!selectedVehicle()"
+                autocomplete="off" />
+              <button (click)="submitSearch()" [disabled]="isLoading() || (!isVin() && !selectedVehicle())" class="px-6 py-3 bg-cyan-500 text-black font-bold rounded-lg hover:bg-cyan-400 disabled:bg-gray-600 disabled:cursor-not-allowed transition-all duration-300">
+                @if (isLoading()) { <span>Loading...</span> } @else { <span>{{ isVin() ? 'Search' : 'Go' }}</span> }
+              </button>
+              @if (selectedVehicle() || selectedYear()) {
+                 <button (click)="clearAllSelections()" class="px-4 py-3 bg-gray-600 text-white font-bold rounded-lg hover:bg-gray-500 transition-all duration-300">Clear</button>
+              }
+            </div>
+          } @else {
+            <!-- "Unsure" AI Search UI -->
+            <div>
+                <p class="text-sm text-yellow-300 mb-2">AI Assistant: What information are you looking for across all models?</p>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <input type="text" [placeholder]="currentPlaceholder()" class="flex-grow bg-gray-800 border-2 border-yellow-500/50 rounded-lg p-3 text-lg focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300 placeholder-gray-500"
+                      [ngModel]="aiQuery()"
+                      (ngModelChange)="aiQuery.set($event)"
+                      (keydown.enter)="searchUnsure()"
+                      autocomplete="off" />
+                    <button (click)="searchUnsure()" [disabled]="isAiLoading()" class="px-6 py-3 bg-yellow-500 text-black font-bold rounded-lg hover:bg-yellow-400 disabled:bg-gray-600 transition-all">
+                      @if (isAiLoading()) { <span>Thinking...</span> } @else { <span>Ask AI</span> }
+                    </button>
+                </div>
+            </div>
+          }
+        </div>
+        
+        @if (errorMessage()) {
+          <div class="bg-red-900/50 border border-red-700 text-red-300 text-center p-3 rounded-lg mt-4">{{ errorMessage() }}</div>
         }
 
-        <div class="flex flex-col sm:flex-row gap-3">
-          <input
-            #searchInput
-            type="text"
-            [placeholder]="currentPlaceholder()"
-            class="flex-grow bg-gray-800 border-2 border-gray-600 rounded-lg p-3 text-lg focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-300 placeholder-gray-500 disabled:opacity-50"
-            [ngModel]="searchTerm()"
-            (ngModelChange)="searchTerm.set($event.toUpperCase())"
-            (focus)="onSearchFocus()"
-            [disabled]="!!selectedVehicle()"
-            autocomplete="off"
-          />
-          <button 
-            (click)="submitSearch()" 
-            [disabled]="isLoading() || (!isVin() && !selectedVehicle())" 
-            class="px-6 py-3 bg-cyan-500 text-black font-bold rounded-lg hover:bg-cyan-400 disabled:bg-gray-600 disabled:cursor-not-allowed transition-all duration-300">
-            @if (isLoading()) {
-              <span>Loading...</span>
-            } @else {
-              <span>{{ isVin() ? 'Search' : 'Go' }}</span>
-            }
-          </button>
-        </div>
+        @if (aiResponse() && !isAiLoading()) {
+            <div class="mt-6 border-t-2 border-cyan-700/50 pt-4">
+                <h3 class="text-xl font-bold text-cyan-300 mb-2">AI Comparison</h3>
+                <div class="prose prose-invert prose-sm max-w-none motor-content" [innerHTML]="aiResponse()"></div>
+            </div>
+        }
+        @if (isAiLoading()) {
+            <div class="mt-6 text-center text-gray-400">Generating comparison, please wait...</div>
+        }
       </div>
-      
-      @if (errorMessage()) {
-        <div class="bg-red-900/50 border border-red-700 text-red-300 text-center p-3 rounded-lg mt-4">
-            {{ errorMessage() }}
-        </div>
-      }
-    </div>
+    }
   </div>
 </div>

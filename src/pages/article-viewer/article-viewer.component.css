@@ -1,0 +1,78 @@
+.motor-content h1, .motor-content h2, .motor-content h3 {
+  color: #22d3ee; /* cyan-400 */
+  border-bottom: 1px solid #4b5563; /* gray-600 */
+  padding-bottom: 0.5rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+}
+.motor-content p {
+  margin-bottom: 1rem;
+  line-height: 1.75;
+}
+.motor-content ul, .motor-content ol {
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+  list-style-position: outside;
+}
+.motor-content li {
+  margin-bottom: 0.5rem;
+}
+.motor-content a {
+  color: #67e8f9; /* cyan-300 */
+  text-decoration: underline;
+}
+.motor-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+.motor-content th, .motor-content td {
+  border: 1px solid #4b5563; /* gray-600 */
+  padding: 0.75rem;
+  text-align: left;
+}
+.motor-content th {
+  background-color: #1f2937; /* gray-800 */
+}
+.motor-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid #4b5563;
+}
+.motor-content .note, .motor-content .caution, .motor-content .warning {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-left-width: 4px;
+  border-radius: 0.25rem;
+}
+.motor-content .note {
+  background-color: #1e3a8a; /* blue-900 */
+  border-color: #3b82f6; /* blue-500 */
+  color: #bfdbfe; /* blue-200 */
+}
+.motor-content .caution, .motor-content .warning {
+  background-color: #b91c1c; /* red-700 */
+  border-color: #ef4444; /* red-500 */
+  color: #fecaca; /* red-200 */
+}
+/* Prose styles for Gemini content */
+.prose table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+}
+.prose th, .prose td {
+    border: 1px solid #4b5563;
+    padding: 0.75rem;
+    text-align: left;
+}
+.prose th {
+    background-color: #1f2937;
+}
+.prose ul, .prose ol {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+}
