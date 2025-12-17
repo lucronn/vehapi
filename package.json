@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "ng serve",
     "build": "ng build",
-    "preview": "ng serve --configuration=production"
+    "preview": "ng serve --configuration=production",
+    "firebase:init": "firebase init hosting",
+    "firebase:deploy": "npm run build && firebase deploy --only hosting",
+    "firebase:serve": "npm run build && firebase serve"
   },
   "dependencies": {
     "@angular/build": "^21.0.0",
