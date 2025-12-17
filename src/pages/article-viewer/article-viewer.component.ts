@@ -4,10 +4,11 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { map, switchMap, of, forkJoin, tap } from 'rxjs';
+import { map, switchMap, of, forkJoin, tap, catchError, from } from 'rxjs';
 
 import { MotorApiService } from '../../services/motor-api.service';
 import { GeminiService } from '../../services/gemini.service';
+import { FirebaseService } from '../../services/firebase.service';
 
 @Component({
   selector: 'app-article-viewer',
@@ -34,6 +35,8 @@ export class ArticleViewerComponent {
   originalContent = signal<SafeHtml>('');
   rewrittenContent = signal<SafeHtml>('');
 
+  private firebase = inject(FirebaseService);
+
   private articleData$ = this.route.paramMap.pipe(
     switchMap(params => {
       const contentSource = params.get('contentSource');
@@ -42,24 +45,52 @@ export class ArticleViewerComponent {
 
       if (contentSource && vehicleId && articleId) {
         this.isRewriting.set(true);
-        // Fetch title and content in parallel
-        return forkJoin({
-          title: this.motorApi.getArticleTitle(contentSource, vehicleId, articleId),
-          content: this.motorApi.getArticleContent(contentSource, vehicleId, articleId)
-        }).pipe(
-          switchMap(({ title, content }) => {
-            const originalHtml = this.processAndSanitizeHtml(content);
-            this.originalContent.set(originalHtml);
-            
-            // Now, rewrite the original, unprocessed content
-            return this.geminiApi.rewriteArticle(title.body, content).pipe(
-              map(rewrittenHtml => {
-                const processedRewrittenHtml = this.processAndSanitizeHtml(rewrittenHtml);
-                this.rewrittenContent.set(processedRewrittenHtml);
-                this.isRewriting.set(false);
-                return { original: originalHtml, rewritten: processedRewrittenHtml };
-              })
-            );
+
+        // 1. Check Cache First
+        return from(this.firebase.getArticle(articleId)).pipe(
+          switchMap(storedArticle => {
+            if (storedArticle) {
+              // CACHE HIT
+              console.log('Cache Hit: Loading from Firebase');
+              const processedOriginal = this.processAndSanitizeHtml(storedArticle.originalContent);
+              const processedRewritten = this.processAndSanitizeHtml(storedArticle.enhancedContent);
+
+              this.originalContent.set(processedOriginal);
+              this.rewrittenContent.set(processedRewritten);
+              this.isRewriting.set(false);
+              return of({ original: processedOriginal, rewritten: processedRewritten });
+            } else {
+              // CACHE MISS - Fetch & Generate
+              console.log('Cache Miss: Fetching from API');
+              return forkJoin({
+                title: this.motorApi.getArticleTitle(contentSource, vehicleId, articleId).pipe(
+                  catchError(() => of({ body: articleId } as any))
+                ),
+                content: this.motorApi.getArticleContent(contentSource, vehicleId, articleId)
+              }).pipe(
+                map(({ title, content }) => {
+                  const originalHtml = this.processAndSanitizeHtml(content.body.html);
+
+                  // UPDATED LOGIC: Disable AI for now, Show Original Immediately & SAVE it
+                  this.originalContent.set(originalHtml);
+                  this.showOriginal.set(true);
+                  this.isRewriting.set(false);
+
+                  // SAVE TO FIREBASE (Build Database by Usage)
+                  this.firebase.saveArticle({
+                    id: articleId,
+                    title: title.body,
+                    originalContent: content.body.html,
+                    enhancedContent: '', // Empty if not rewritten
+                    vehicleId: vehicleId,
+                    source: contentSource,
+                    timestamp: Date.now()
+                  });
+
+                  return { original: originalHtml, rewritten: '' };
+                })
+              );
+            }
           })
         );
       }
@@ -75,9 +106,9 @@ export class ArticleViewerComponent {
 
   private processAndSanitizeHtml(html: string): SafeHtml {
     if (!html) return '';
-    const processedHtml = html.replace(/src="(\/api\/[^"]+)"/g, (match, relativePath) => {
-        const fullUrl = this.motorApi.getGraphicUrl(relativePath);
-        return `src="${fullUrl}"`;
+    const processedHtml = html.replace(/src=["'](\/?api\/[^"']+)["']/g, (match, relativePath) => {
+      const fullUrl = this.motorApi.getGraphicUrl(relativePath);
+      return `src="${fullUrl}"`;
     });
     return this.sanitizer.bypassSecurityTrustHtml(processedHtml);
   }

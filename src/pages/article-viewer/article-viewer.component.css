@@ -1,78 +1,217 @@
-.motor-content h1, .motor-content h2, .motor-content h3 {
-  color: #22d3ee; /* cyan-400 */
-  border-bottom: 1px solid #4b5563; /* gray-600 */
+.motor-content {
+  font-size: 1.125rem;
+  /* 18px */
+  color: #e5e7eb;
+}
+
+.motor-content h1,
+.motor-content h2,
+.motor-content h3 {
+  color: #22d3ee;
+  /* cyan-400 */
+  border-bottom: 2px solid #374151;
+  /* gray-700 */
   padding-bottom: 0.5rem;
-  margin-top: 1.5rem;
-  margin-bottom: 1rem;
+  margin-top: 2rem;
+  margin-bottom: 1.25rem;
+  font-weight: 600;
 }
+
 .motor-content p {
-  margin-bottom: 1rem;
-  line-height: 1.75;
+  margin-bottom: 1.25rem;
+  line-height: 1.8;
 }
-.motor-content ul, .motor-content ol {
+
+/* List Styling - Steps as distinct cards */
+.motor-content ol {
+  counter-reset: step-counter;
+  list-style: none;
+  /* Remove default numbers */
+  margin-left: 0;
+  /* Reset margin */
+  padding-left: 0;
+}
+
+.motor-content ol>li {
+  position: relative;
+  background-color: rgba(31, 41, 55, 0.5);
+  /* gray-800 with opacity */
+  border: 1px solid #374151;
+  /* gray-700 */
+  border-radius: 0.5rem;
+  padding: 1rem 1rem 1rem 3.5rem;
+  /* Left padding for number */
+  margin-bottom: 1rem;
+}
+
+/* Custom Step Number */
+.motor-content ol>li::before {
+  counter-increment: step-counter;
+  content: counter(step-counter);
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  width: 2rem;
+  height: 2rem;
+  background-color: #22d3ee;
+  /* cyan-400 */
+  color: #111827;
+  /* gray-900 */
+  font-weight: 700;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+/* Nested List Styling - Substeps */
+.motor-content ol ol {
+  counter-reset: substep-counter;
+  margin-top: 1rem;
+  margin-bottom: 0;
+}
+
+.motor-content ol ol>li {
+  background-color: rgba(17, 24, 39, 0.5);
+  /* darker gray-900 with opacity */
+  border: 1px solid #374151;
+  margin-bottom: 0.75rem;
+}
+
+/* Nested Step Badge */
+.motor-content ol ol>li::before {
+  counter-increment: substep-counter;
+  content: counter(substep-counter, lower-alpha);
+  /* a, b, c... */
+  background-color: #4b5563;
+  /* gray-600 */
+  color: #fff;
+  width: 1.75rem;
+  height: 1.75rem;
+  font-size: 0.875rem;
+}
+
+.motor-content ul {
   margin-left: 1.5rem;
-  margin-bottom: 1rem;
-  list-style-position: outside;
+  margin-bottom: 1.5rem;
+  padding-left: 1rem;
 }
+
 .motor-content li {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
 }
+
+/* Hard highlight style - removed background, just bold colored text */
+.motor-content strong {
+  color: #fbbf24;
+  /* amber-400 - distinct but easier on eyes */
+  font-weight: 700;
+  background-color: transparent;
+  padding: 0;
+}
+
 .motor-content a {
-  color: #67e8f9; /* cyan-300 */
+  color: #67e8f9;
+  /* cyan-300 */
   text-decoration: underline;
+  text-underline-offset: 4px;
 }
+
 .motor-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 2rem;
+  background-color: #1f2937;
+  /* gray-800 */
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.motor-content th,
+.motor-content td {
+  border-bottom: 1px solid #374151;
+  /* gray-700 */
+  padding: 1rem;
+  text-align: left;
+}
+
+.motor-content th {
+  background-color: #111827;
+  /* gray-900 */
+  color: #e5e7eb;
+  font-weight: 600;
+}
+
+/* Force all containers and images to be responsive */
+.motor-content div,
+.motor-content p,
+.motor-content figure,
+.motor-content img {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.motor-content img {
+  height: auto !important;
+  border-radius: 0.5rem;
+  margin: 1rem auto !important;
+  /* Override massive inline margins */
+  border: 1px solid #4b5563;
+  display: block;
+  /* Ensure centering works */
+}
+
+.motor-content .note,
+.motor-content .caution,
+.motor-content .warning {
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  border-left-width: 4px;
+  border-radius: 0.5rem;
+  /* Soften background */
+}
+
+.motor-content .note {
+  background-color: rgba(30, 58, 138, 0.4);
+  /* blue-900 softer */
+  border-color: #60a5fa;
+  /* blue-400 */
+  color: #dbeafe;
+  /* blue-100 */
+}
+
+.motor-content .caution,
+.motor-content .warning {
+  background-color: rgba(127, 29, 29, 0.4);
+  /* red-900 softer */
+  border-color: #f87171;
+  /* red-400 */
+  color: #fee2e2;
+  /* red-100 */
+}
+
+/* Prose styles for Gemini content */
+.prose table {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 1rem;
 }
-.motor-content th, .motor-content td {
-  border: 1px solid #4b5563; /* gray-600 */
+
+.prose th,
+.prose td {
+  border: 1px solid #4b5563;
   padding: 0.75rem;
   text-align: left;
 }
-.motor-content th {
-  background-color: #1f2937; /* gray-800 */
-}
-.motor-content img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 0.5rem;
-  margin-top: 1rem;
-  margin-bottom: 1rem;
-  border: 1px solid #4b5563;
-}
-.motor-content .note, .motor-content .caution, .motor-content .warning {
-  padding: 1rem;
-  margin-bottom: 1rem;
-  border-left-width: 4px;
-  border-radius: 0.25rem;
-}
-.motor-content .note {
-  background-color: #1e3a8a; /* blue-900 */
-  border-color: #3b82f6; /* blue-500 */
-  color: #bfdbfe; /* blue-200 */
-}
-.motor-content .caution, .motor-content .warning {
-  background-color: #b91c1c; /* red-700 */
-  border-color: #ef4444; /* red-500 */
-  color: #fecaca; /* red-200 */
-}
-/* Prose styles for Gemini content */
-.prose table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 1rem;
-}
-.prose th, .prose td {
-    border: 1px solid #4b5563;
-    padding: 0.75rem;
-    text-align: left;
-}
+
 .prose th {
-    background-color: #1f2937;
+  background-color: #1f2937;
 }
-.prose ul, .prose ol {
-    margin-left: 1.5rem;
-    margin-bottom: 1rem;
+
+.prose ul,
+.prose ol {
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
 }
