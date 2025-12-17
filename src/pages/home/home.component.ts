@@ -30,7 +30,7 @@ export class HomeComponent implements OnInit {
   private persistence = inject(VehiclePersistenceService);
   private router = inject(Router);
 
-  @ViewChild('searchInput') searchInputRef!: ElementRef<HTMLInputElement>;
+  @ViewChild('searchInputRef') searchInputRef!: ElementRef<HTMLInputElement>;
   @ViewChild('suggestionsContainer') suggestionsContainerRef!: ElementRef<HTMLDivElement>;
 
   // Search State
