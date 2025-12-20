@@ -21,7 +21,7 @@ import { FirebaseService } from '../../services/firebase.service';
 export class ArticleViewerComponent {
   private route = inject(ActivatedRoute);
   private motorApi = inject(MotorApiService);
-  private geminiApi = inject(GeminiService);
+  public geminiApi = inject(GeminiService); // Public for template access
   private sanitizer = inject(DomSanitizer);
 
   params = toSignal(this.route.paramMap);

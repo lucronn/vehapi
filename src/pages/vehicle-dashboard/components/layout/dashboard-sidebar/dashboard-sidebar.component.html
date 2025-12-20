@@ -1,0 +1,43 @@
+<aside class="w-64 bg-gray-800 border-r border-gray-700 flex-shrink-0 flex flex-col hidden md:flex">
+    <div class="p-6">
+        <a routerLink="/" class="text-cyan-400 hover:text-cyan-300 mb-6 inline-block text-sm">&larr; Change Vehicle</a>
+        @if (vehicleName) {
+        <h1 class="text-xl font-bold tracking-tight text-white leading-tight">{{ vehicleName }}</h1>
+        } @else {
+        <div class="h-8 bg-gray-700 rounded-md animate-pulse w-3/4"></div>
+        }
+    </div>
+
+    <nav class="flex-1 px-4 space-y-1 overflow-y-auto">
+        <button (click)="onSectionClick('overview')"
+            [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection === 'overview', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection !== 'overview'}"
+            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
+            <lucide-icon [img]="icons.House" class="w-5 h-5 mr-3"></lucide-icon> Overview
+        </button>
+        <button (click)="onSectionClick('dtcs')"
+            [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection === 'dtcs', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection !== 'dtcs'}"
+            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
+            <lucide-icon [img]="icons.TriangleAlert" class="w-5 h-5 mr-3"></lucide-icon> Diagnostic Codes
+        </button>
+        <button (click)="onSectionClick('tsbs')"
+            [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection === 'tsbs', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection !== 'tsbs'}"
+            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
+            <lucide-icon [img]="icons.FileText" class="w-5 h-5 mr-3"></lucide-icon> Service Bulletins
+        </button>
+        <button (click)="onSectionClick('diagrams')"
+            [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection === 'diagrams', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection !== 'diagrams'}"
+            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
+            <lucide-icon [img]="icons.Cable" class="w-5 h-5 mr-3"></lucide-icon> Wiring & Components
+        </button>
+        <button (click)="onSectionClick('procedures')"
+            [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection === 'procedures', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection !== 'procedures'}"
+            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
+            <lucide-icon [img]="icons.Wrench" class="w-5 h-5 mr-3"></lucide-icon> Procedures
+        </button>
+        <button (click)="onSectionClick('specs')"
+            [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection === 'specs', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection !== 'specs'}"
+            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
+            <lucide-icon [img]="icons.ClipboardList" class="w-5 h-5 mr-3"></lucide-icon> Specs & Fluids
+        </button>
+    </nav>
+</aside>

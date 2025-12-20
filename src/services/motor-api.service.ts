@@ -24,7 +24,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class MotorApiService {
   private http = inject(HttpClient);
-  public readonly baseUrl = 'https://autolib.web.app/api/motor-proxy';
+  public readonly baseUrl = 'https://us-central1-vehapi-torque.cloudfunctions.net/motorApiAuthProxy';
 
   // Cache for article searches to prevent redundant API calls
   private articleCache = new Map<string, ApiResponse<ArticlesData>>();

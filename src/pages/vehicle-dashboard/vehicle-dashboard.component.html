@@ -1,91 +1,47 @@
 <div class="flex h-screen bg-gray-900 text-gray-200 overflow-hidden">
 
-  <!-- Sidebar -->
-  <aside class="w-64 bg-gray-800 border-r border-gray-700 flex-shrink-0 flex flex-col hidden md:flex">
-    <div class="p-6">
-      <a routerLink="/" class="text-cyan-400 hover:text-cyan-300 mb-6 inline-block text-sm">&larr; Change Vehicle</a>
-      @if (vehicleName()) {
-      <h1 class="text-xl font-bold tracking-tight text-white leading-tight">{{ vehicleName() }}</h1>
-      } @else {
-      <div class="h-8 bg-gray-700 rounded-md animate-pulse w-3/4"></div>
-      }
-    </div>
+  <!-- Sidebar Navigation -->
+  <app-dashboard-sidebar [vehicleName]="vehicleName()" [activeSection]="activeSection()"
+    (sectionChange)="setSection($event)">
+  </app-dashboard-sidebar>
 
-    <nav class="flex-1 px-4 space-y-1 overflow-y-auto">
-      <button (click)="setSection('overview')"
-        [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection() === 'overview', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection() !== 'overview'}"
-        class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
-        <span class="mr-3">🏠</span> Overview
-      </button>
-      <button (click)="setSection('dtcs')"
-        [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection() === 'dtcs', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection() !== 'dtcs'}"
-        class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
-        <span class="mr-3">⚠️</span> Diagnostic Codes
-      </button>
-      <button (click)="setSection('tsbs')"
-        [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection() === 'tsbs', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection() !== 'tsbs'}"
-        class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
-        <span class="mr-3">📝</span> Service Bulletins
-      </button>
-      <button (click)="setSection('diagrams')"
-        [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection() === 'diagrams', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection() !== 'diagrams'}"
-        class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
-        <span class="mr-3">🔌</span> Wiring & Components
-      </button>
-      <button (click)="setSection('procedures')"
-        [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection() === 'procedures', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection() !== 'procedures'}"
-        class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
-        <span class="mr-3">🔧</span> Procedures
-      </button>
-      <button (click)="setSection('specs')"
-        [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection() === 'specs', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection() !== 'specs'}"
-        class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
-        <span class="mr-3">📋</span> Specs & Fluids
-      </button>
-    </nav>
-  </aside>
-
-  <!-- Mobile Header (Visible only on small screens) -->
+  <!-- Mobile Header -->
   <div
     class="md:hidden fixed top-0 w-full bg-gray-900/95 backdrop-blur z-50 border-b border-gray-700 px-4 py-3 flex items-center justify-between">
     <span class="font-bold text-white truncate max-w-[200px]">{{ vehicleName() }}</span>
     <button (click)="toggleMobileMenu()" class="text-cyan-400 p-2 hover:bg-gray-800 rounded-lg">
       <span class="sr-only">Open menu</span>
-      @if(isMobileMenuOpen()) {
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-      </svg>
+      @if (isMobileMenuOpen()) {
+      <lucide-icon [img]="icons.X" class="w-6 h-6"></lucide-icon>
       } @else {
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-      </svg>
+      <lucide-icon [img]="icons.Menu" class="w-6 h-6"></lucide-icon>
       }
     </button>
   </div>
 
   <!-- Mobile Navigation Overlay -->
-  @if(isMobileMenuOpen()) {
+  @if (isMobileMenuOpen()) {
   <div class="fixed inset-0 z-40 bg-gray-900/95 md:hidden pt-20 px-6 backdrop-blur-xl animate-fade-in">
     <nav class="space-y-4">
       <button (click)="setSection('overview')" [class.text-cyan-400]="activeSection() === 'overview'"
         class="w-full flex items-center p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-all font-bold text-lg">
-        <span class="mr-4 text-2xl">🏠</span> Overview
+        Overview
       </button>
       <button (click)="setSection('dtcs')" [class.text-cyan-400]="activeSection() === 'dtcs'"
         class="w-full flex items-center p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-all font-bold text-lg">
-        <span class="mr-4 text-2xl">⚠️</span> Diagnostic Codes
+        Diagnostic Codes
       </button>
       <button (click)="setSection('tsbs')" [class.text-cyan-400]="activeSection() === 'tsbs'"
         class="w-full flex items-center p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-all font-bold text-lg">
-        <span class="mr-4 text-2xl">📝</span> Service Bulletins
+        Service Bulletins
       </button>
       <button (click)="setSection('diagrams')" [class.text-cyan-400]="activeSection() === 'diagrams'"
         class="w-full flex items-center p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-all font-bold text-lg">
-        <span class="mr-4 text-2xl">🔌</span> Wiring & Components
+        Wiring & Components
       </button>
       <button (click)="setSection('procedures')" [class.text-cyan-400]="activeSection() === 'procedures'"
         class="w-full flex items-center p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-all font-bold text-lg">
-        <span class="mr-4 text-2xl">🔧</span> Procedures
+        Procedures
       </button>
       <hr class="border-gray-700 my-4" />
       <a routerLink="/" class="block w-full text-center p-4 text-gray-400 hover:text-white">Exit Vehicle</a>
@@ -96,296 +52,72 @@
   <!-- Main Content -->
   <main class="flex-1 overflow-y-auto bg-gray-900 p-4 sm:p-6 lg:p-8 pt-16 md:pt-8 w-full">
 
-    <!-- Top Search Bar (Global) -->
-    <div class="max-w-5xl mx-auto mb-8">
-      <div class="relative">
-        <input type="text" placeholder="Global Search (e.g., 'brake caliper', 'P0300')" (input)="onSearch($event)"
-          [value]="searchTerm()"
-          class="w-full p-4 pl-12 bg-gray-800 border border-gray-700 rounded-lg text-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all shadow-lg" />
-        <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-xl">🔍</span>
-      </div>
-    </div>
+    <!-- Global Search -->
+    <app-dashboard-search [searchTerm]="searchTerm()" (searchChange)="onSearch($event)">
+    </app-dashboard-search>
 
-    <!-- AI Search Analysis (Shows only when searching) -->
-    @if(searchTerm().length > 0) {
-    @if(isAiLoading()) {
-    <div
-      class="max-w-5xl mx-auto bg-gray-800/50 border border-cyan-700/50 rounded-xl p-4 mb-6 text-center text-cyan-300 animate-pulse">
-      AI Assistant is analyzing your search...
-    </div>
-    }
-    @if(aiSearchSummary(); as summary) {
-    <div class="max-w-5xl mx-auto bg-gray-800 border border-cyan-900 rounded-xl p-6 mb-8 shadow-lg shadow-cyan-900/10">
-      <div class="flex items-center gap-2 mb-4">
-        <span class="text-2xl">✨</span>
-        <h2 class="text-lg font-bold text-cyan-400">AI Analysis</h2>
-      </div>
-      <div class="prose prose-invert prose-sm max-w-none motor-content" [innerHTML]="summary"></div>
-    </div>
-    }
-
-    <!-- Search Results Grid -->
-    <div class="max-w-5xl mx-auto">
-      <h3 class="text-xl font-semibold text-gray-300 mb-4">Search Results</h3>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        @for (article of filteredArticles(); track article.id) {
+    <!-- Search Results -->
+    @if (searchTerm() && filteredArticles().length > 0) {
+    <div class="max-w-5xl mx-auto mb-8 bg-gray-800 border border-cyan-500 rounded-lg p-6">
+      <h3 class="text-cyan-400 font-bold mb-4">Search Results ({{ filteredArticles().length }})</h3>
+      <div class="space-y-2">
+        @for (article of filteredArticles().slice(0, 10); track article.id) {
         <a [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', article.id]"
-          class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden hover:border-cyan-500 hover:shadow-lg hover:shadow-cyan-900/20 transition-all duration-200 group flex flex-col h-full">
-          @if(article.thumbnailHref) {
-          <div class="w-full h-32 bg-gray-700 overflow-hidden relative">
-            <img [src]="getGraphicUrl(article.thumbnailHref)" alt="Thumbnail"
-              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-            <div class="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent opacity-60"></div>
-          </div>
-          }
-          <div class="p-4 flex flex-col flex-grow">
-            <span class="text-xs font-bold text-cyan-400 uppercase tracking-wider mb-1">{{ article.bucket }}</span>
-            <h4 class="font-semibold text-white group-hover:text-cyan-300 transition-colors line-clamp-2">{{
-              article.title || article.code }}</h4>
-            @if(article.description) { <p class="text-sm text-gray-400 mt-2 line-clamp-2">{{ article.description }}</p>
-            }
-          </div>
+          class="block p-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors">
+          <span class="text-white font-medium">{{ article.title }}</span>
         </a>
         }
-        @if (filteredArticles().length === 0) {
-        <div class="col-span-full text-center py-12 text-gray-500">
-          <p class="text-lg">No matches found for "{{ searchTerm() }}"</p>
-        </div>
-        }
       </div>
-    </div>
-    } @else {
-    <!-- Main Dashboard View Switcher -->
-    <div class="max-w-7xl mx-auto">
-
-      @switch (activeSection()) {
-      @case ('overview') {
-      <!-- Overview Section -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Left Col: Common Issues -->
-        <div class="lg:col-span-2 space-y-8">
-          <div class="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-6 shadow-xl">
-            <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-              <span class="text-yellow-500">⚠️</span> Common Issues
-            </h2>
-            @if(isIssuesLoading()) {
-            <div class="space-y-4 animate-pulse">
-              <div class="h-4 bg-gray-700 rounded w-3/4"></div>
-              <div class="h-4 bg-gray-700 rounded w-1/2"></div>
-              <div class="h-4 bg-gray-700 rounded w-5/6"></div>
-            </div>
-            }
-            @if(commonIssues(); as issuesList) {
-            <div class="space-y-4">
-              @for(issue of issuesList; track issue) {
-              <div
-                class="bg-gray-800 border border-gray-700 rounded-xl p-5 hover:border-cyan-500/50 transition-colors group">
-                <div class="flex items-start justify-between gap-4">
-                  <div class="flex-1">
-                    <div class="flex items-center gap-2 mb-2">
-                      @switch (issue.severity) {
-                      @case ('High') { <span
-                        class="px-2 py-0.5 rounded text-xs font-bold bg-red-900/50 text-red-400 border border-red-900">CRITICAL</span>
-                      }
-                      @case ('Medium') { <span
-                        class="px-2 py-0.5 rounded text-xs font-bold bg-yellow-900/50 text-yellow-400 border border-yellow-900">MODERATE</span>
-                      }
-                      @case ('Low') { <span
-                        class="px-2 py-0.5 rounded text-xs font-bold bg-blue-900/50 text-blue-400 border border-blue-900">LOW</span>
-                      }
-                      }
-                      <h4 class="font-bold text-lg text-white group-hover:text-cyan-300 transition-colors">{{
-                        issue.title }}</h4>
-                    </div>
-                    <p class="text-gray-300 text-sm leading-relaxed mb-3">{{ issue.description }}</p>
-
-                    <div class="flex flex-wrap gap-2 mb-4">
-                      @for(symptom of issue.symptoms; track symptom) {
-                      <span class="text-xs text-gray-400 bg-gray-900 px-2 py-1 rounded-md border border-gray-700">🔍 {{
-                        symptom }}</span>
-                      }
-                    </div>
-
-                    @if(!solutions().has(issue.title)) {
-                    <button (click)="generateSolution(issue.title)" [disabled]="isSolutionLoading().has(issue.title)"
-                      class="flex items-center gap-2 text-sm bg-gray-700 hover:bg-cyan-600 text-cyan-400 hover:text-white font-medium py-2 px-4 rounded-lg transition-all border border-gray-600">
-                      @if(isSolutionLoading().has(issue.title)) {
-                      <span
-                        class="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full"></span>
-                      <span>Analyzing...</span>
-                      } @else {
-                      <span>🛠️ How to Fix ({{ issue.fixComplexity }})</span>
-                      }
-                    </button>
-                    }
-                  </div>
-                </div>
-
-                @if(solutions().has(issue.title)) {
-                <div class="mt-4 pt-4 border-t border-gray-700 animate-fade-in relative">
-                  <div class="absolute -left-5 top-4 w-1 h-[calc(100%-1rem)] bg-cyan-500 rounded-r"></div>
-                  <h5 class="text-cyan-400 font-bold mb-3 flex items-center gap-2">
-                    <span>💡</span> Diagnostic & Repair Guide
-                  </h5>
-                  <div class="prose prose-invert prose-sm max-w-none motor-content text-gray-300"
-                    [innerHTML]="solutions().get(issue.title)!"></div>
-                </div>
-                }
-              </div>
-              }
-            </div>
-            }
-          </div>
-        </div>
-
-        <!-- Right Col: Quick Stats / Recent -->
-        <div class="space-y-6">
-          <div class="bg-gray-800 border border-gray-700 rounded-xl p-6">
-            <h3 class="text-lg font-bold text-white mb-4">Quick Access</h3>
-            <div class="grid grid-cols-2 gap-4">
-              <button (click)="setSection('dtcs')"
-                class="p-4 bg-gray-700/50 hover:bg-gray-700 rounded-lg text-center transition-colors">
-                <span class="text-2xl block mb-1">⚠️</span>
-                <span class="text-sm font-medium text-gray-300">DTCs</span>
-              </button>
-              <button (click)="setSection('tsbs')"
-                class="p-4 bg-gray-700/50 hover:bg-gray-700 rounded-lg text-center transition-colors">
-                <span class="text-2xl block mb-1">📝</span>
-                <span class="text-sm font-medium text-gray-300">TSBs</span>
-              </button>
-              <button (click)="setSection('diagrams')"
-                class="p-4 bg-gray-700/50 hover:bg-gray-700 rounded-lg text-center transition-colors">
-                <span class="text-2xl block mb-1">🔌</span>
-                <span class="text-sm font-medium text-gray-300">Wiring</span>
-              </button>
-              <button (click)="setSection('procedures')"
-                class="p-4 bg-gray-700/50 hover:bg-gray-700 rounded-lg text-center transition-colors">
-                <span class="text-2xl block mb-1">🔧</span>
-                <span class="text-sm font-medium text-gray-300">Repair</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      }
-
-      @case ('dtcs') {
-      <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-xl overflow-hidden">
-        <div class="p-6 border-b border-gray-700 flex justify-between items-center bg-gray-800/80 backdrop-blur">
-          <h2 class="text-2xl font-bold text-white">Diagnostic Trouble Codes</h2>
-          <span class="text-sm text-gray-400">{{ dtcs().length }} results</span>
-        </div>
-
-        @if(isLoadingData()) {
-        <div class="p-8 space-y-4 animate-pulse">
-          @for(i of [1,2,3,4,5]; track i) { <div class="h-16 bg-gray-700/50 rounded-lg"></div> }
-        </div>
-        } @else {
-        <div class="divide-y divide-gray-700">
-          @for(dtc of dtcs(); track dtc.id) {
-          <a [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', dtc.id]"
-            class="block p-4 hover:bg-gray-700/50 transition-colors group">
-            <div class="flex items-center justify-between">
-              <div>
-                <span class="font-mono text-xl font-bold text-cyan-400 group-hover:text-cyan-300">{{ dtc.code }}</span>
-                <p class="text-gray-300 mt-1">{{ dtc.description }}</p>
-              </div>
-              <span class="text-gray-500 group-hover:text-cyan-400">&rarr;</span>
-            </div>
-          </a>
-          }
-        </div>
-        }
-      </div>
-      }
-
-      @case ('tsbs') {
-      <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-xl overflow-hidden">
-        <div class="p-6 border-b border-gray-700 flex justify-between items-center">
-          <h2 class="text-2xl font-bold text-white">Technical Service Bulletins</h2>
-          <span class="text-sm text-gray-400">{{ tsbs().length }} documents</span>
-        </div>
-        @if(isLoadingData()) {
-        <div class="p-8 space-y-4 animate-pulse">
-          @for(i of [1,2,3,4,5]; track i) { <div class="h-16 bg-gray-700/50 rounded-lg"></div> }
-        </div>
-        } @else {
-        <div class="divide-y divide-gray-700">
-          @for(tsb of tsbs(); track tsb.id) {
-          <a [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', tsb.id]"
-            class="block p-6 hover:bg-gray-700/50 transition-colors">
-            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-              <div>
-                <div class="flex items-center gap-3 mb-2">
-                  <span
-                    class="px-2 py-1 bg-cyan-900/30 text-cyan-400 text-xs font-bold rounded border border-cyan-900">TSB
-                    {{ tsb.bulletinNumber }}</span>
-                  <span class="text-sm text-gray-500">{{ tsb.releaseDate }}</span>
-                </div>
-                <h3 class="font-semibold text-lg text-white">{{ tsb.title }}</h3>
-              </div>
-              <span class="text-cyan-500 text-sm whitespace-nowrap pt-1">View Bulletin &rarr;</span>
-            </div>
-          </a>
-          }
-        </div>
-        }
-      </div>
-      }
-
-      @case ('diagrams') {
-      <div class="space-y-6">
-        <div class="flex justify-between items-center">
-          <h2 class="text-2xl font-bold text-white">Wiring & Component Diagrams</h2>
-          @if(isLoadingData()) { <span class="text-cyan-400 animate-pulse">Loading diagrams...</span> }
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          @for(diagram of diagrams(); track diagram.id) {
-          <a [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', diagram.id]"
-            class="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden hover:border-cyan-500 transition-all duration-200 group flex flex-col">
-            <div class="w-full h-48 bg-gray-700 relative overflow-hidden">
-              <img [src]="getGraphicUrl(diagram.thumbnailHref)" alt="Diagram"
-                class="w-full h-full object-cover group-hover:opacity-80 transition-opacity" loading="lazy">
-            </div>
-            <div class="p-4 flex flex-col flex-grow">
-              <span class="text-xs font-bold text-cyan-500 uppercase tracking-wider mb-1">{{ diagram.bucket }}</span>
-              <h4 class="font-medium text-white group-hover:text-cyan-300 transition-colors">{{ diagram.title }}</h4>
-              @if(diagram.subtitle) { <p class="text-sm text-gray-500 mt-1">{{ diagram.subtitle }}</p> }
-            </div>
-          </a>
-          }
-        </div>
-      </div>
-      }
-
-      @case ('procedures') {
-      <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-xl overflow-hidden">
-        <div class="p-6 border-b border-gray-700">
-          <h2 class="text-2xl font-bold text-white">Repair Procedures</h2>
-        </div>
-        @if(isLoadingData()) {
-        <div class="p-8 space-y-4 animate-pulse">
-          @for(i of [1,2,3,4,5]; track i) { <div class="h-12 bg-gray-700/50 rounded-lg"></div> }
-        </div>
-        } @else {
-        <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          @for(proc of procedures(); track proc.id) {
-          <a [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', proc.id]"
-            class="flex items-center p-4 bg-gray-700/30 hover:bg-gray-700 border border-gray-700 hover:border-cyan-500 rounded-lg transition-all group">
-            <span class="text-2xl mr-4 group-hover:scale-110 transition-transform">🔧</span>
-            <div>
-              <h4 class="font-semibold text-white group-hover:text-cyan-300 transition-colors">{{ proc.title }}</h4>
-              @if(proc.subtitle) { <p class="text-sm text-gray-400">{{ proc.subtitle }}</p> }
-            </div>
-          </a>
-          }
-        </div>
-        }
-      </div>
-      }
-      }
     </div>
     }
+
+    <!-- Section Content -->
+    <div class="max-w-6xl mx-auto">
+      @switch (activeSection()) {
+      @case ('overview') {
+      <div class="space-y-8">
+        <h2 class="text-3xl font-bold text-white mb-6">Common Issues & Quick Access</h2>
+        <app-common-issues-section [vehicleName]="vehicleName()" [contentSource]="contentSource()"
+          [vehicleId]="vehicleId()">
+        </app-common-issues-section>
+      </div>
+      }
+      @case ('dtcs') {
+      <div class="space-y-6">
+        <h2 class="text-3xl font-bold text-white mb-6">Diagnostic Trouble Codes</h2>
+        <app-dtc-section [contentSource]="contentSource()" [vehicleId]="vehicleId()">
+        </app-dtc-section>
+      </div>
+      }
+      @case ('tsbs') {
+      <div class="space-y-6">
+        <h2 class="text-3xl font-bold text-white mb-6">Technical Service Bulletins</h2>
+        <app-tsb-section [contentSource]="contentSource()" [vehicleId]="vehicleId()">
+        </app-tsb-section>
+      </div>
+      }
+      @case ('diagrams') {
+      <div class="space-y-6">
+        <h2 class="text-3xl font-bold text-white mb-6">Wiring Diagrams & Component Locations</h2>
+        <app-diagrams-section [contentSource]="contentSource()" [vehicleId]="vehicleId()">
+        </app-diagrams-section>
+      </div>
+      }
+      @case ('procedures') {
+      <div class="space-y-6">
+        <h2 class="text-3xl font-bold text-white mb-6">Repair Procedures</h2>
+        <app-procedures-section [contentSource]="contentSource()" [vehicleId]="vehicleId()">
+        </app-procedures-section>
+      </div>
+      }
+      @case ('specs') {
+      <div class="space-y-6">
+        <h2 class="text-3xl font-bold text-white mb-6">Specifications & Fluid Capacities</h2>
+        <app-specs-fluids-section [contentSource]="contentSource()" [vehicleId]="vehicleId()">
+        </app-specs-fluids-section>
+      </div>
+      }
+      }
+    </div>
   </main>
 </div>

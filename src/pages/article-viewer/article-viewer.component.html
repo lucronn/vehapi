@@ -5,7 +5,7 @@
         class="text-cyan-400 hover:text-cyan-300 inline-block">&larr; Back to Dashboard</a>
 
       <!-- AI Toggle -->
-      <div class="flex items-center space-x-2">
+      <div class="flex items-center space-x-2" *ngIf="geminiApi.aiEnabled()">
         <div class="flex flex-col items-end mr-2" *ngIf="isRewriting()">
           <span class="text-xs text-cyan-400 animate-pulse">Enhancing...</span>
         </div>
@@ -25,12 +25,14 @@
     </div>
 
     <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6 sm:p-8 lg:p-10">
-      @if (articleData() || !isRewriting()) {
+      @if (articleData()) {
       <div class="motor-content" [innerHTML]="displayContent()"></div>
       } @else {
       <!-- Loading Skeleton -->
       <div class="space-y-4 animate-pulse">
-        <div class="text-center text-cyan-300 mb-4">Gemini is rewriting this article to be easier to read...</div>
+        <div class="text-center text-cyan-300 mb-4">
+          {{ isRewriting() ? 'Gemini is rewriting this article to be easier to read...' : 'Loading article...' }}
+        </div>
         <div class="h-8 bg-gray-700 rounded w-3/4"></div>
         <div class="h-4 bg-gray-700 rounded w-full"></div>
         <div class="h-4 bg-gray-700 rounded w-5/6"></div>

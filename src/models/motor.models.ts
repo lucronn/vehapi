@@ -188,6 +188,8 @@ export interface Spec {
   id: string;
   bucket: string;
   title: string;
+  value?: string;
+  description?: string;
 }
 
 export interface Part {

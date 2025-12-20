@@ -1,6 +1,6 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal, WritableSignal } from '@angular/core';
 import { GoogleGenAI, Modality } from '@google/genai';
-import { from, map, Observable } from 'rxjs';
+import { from, map, Observable, of } from 'rxjs';
 import { Article, Model, SearchIntent } from '../models/motor.models';
 import { environment } from '../environments/environment';
 
@@ -14,9 +14,23 @@ export class GeminiService {
       console.warn("API_KEY not configured. Gemini features will be disabled.");
     }
     this.ai = new GoogleGenAI({ apiKey });
+
+    // Restore state from local storage
+    const savedState = localStorage.getItem('ai_enabled');
+    if (savedState !== null) {
+      this.aiEnabled.set(savedState === 'true');
+    }
+  }
+
+  aiEnabled: WritableSignal<boolean> = signal(true);
+
+  toggleAi() {
+    this.aiEnabled.update(v => !v);
+    localStorage.setItem('ai_enabled', String(this.aiEnabled()));
   }
 
   rewriteArticle(title: string, content: string): Observable<string> {
+    if (!this.aiEnabled()) return of(content); // Return original if disabled
     const prompt = this.getRewritePrompt(title, content);
 
     const response$ = from(this.ai.models.generateContent({
@@ -28,6 +42,7 @@ export class GeminiService {
   }
 
   rewriteArticleStream(title: string, content: string): Observable<string> {
+    if (!this.aiEnabled()) return of(content);
     const prompt = this.getRewritePrompt(title, content);
 
     return new Observable<string>(observer => {
@@ -113,6 +128,7 @@ export class GeminiService {
   }
 
   analyzeSearchTerm(searchTerm: string, articles: Article[], topArticleContent: string = ''): Observable<string> {
+    if (!this.aiEnabled()) return of('');
     const articleTitles = articles.map(a => `- ${a.title || a.code}`).join('\n');
     const prompt = `A user is searching for "${searchTerm}" for their vehicle. 
     
@@ -139,6 +155,7 @@ export class GeminiService {
   }
 
   findCommonIssues(vehicleName: string): Observable<import('../models/motor.models').CommonIssue[]> {
+    if (!this.aiEnabled()) return of([]);
     const prompt = `Identify the top 3-5 most common reported mechanical problems for a ${vehicleName}.
     
     Output strictly as a JSON array of objects with this schema:
@@ -175,6 +192,7 @@ export class GeminiService {
   }
 
   generateSolution(issue: string, vehicleName: string, context: string = ''): Observable<string> {
+    if (!this.aiEnabled()) return of('<p>AI generation is disabled.</p>');
     let prompt = `Generate a step-by-step guide for a beginner DIYer to diagnose and potentially fix the following issue on a ${vehicleName}: "${issue}". Provide a list of common tools that might be needed. Format the response as simple HTML.`;
 
     if (context) {
@@ -208,6 +226,7 @@ export class GeminiService {
   }
 
   analyzeSearchIntent(query: string, availableModels: string): Observable<SearchIntent> {
+    if (!this.aiEnabled()) return of({ optimizedTerm: query, type: 'article_search', category: 'other' });
     const prompt = `You are a helpful automotive assistant. unique models available: ${availableModels}.
     Analyze the user's search query: "${query}"
 

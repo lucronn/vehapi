@@ -20,6 +20,10 @@ export class FirebaseService {
     private app: FirebaseApp;
     private db: Firestore;
 
+    // Global circuit breaker: if we hit a timeout once, assume offline for the session
+    // to avoid penalizing every subsequent request with a 2s delay.
+    private static isOffline = false;
+
     constructor() {
         // Initialize Firebase if not already initialized
         if (getApps().length === 0) {
@@ -89,6 +93,31 @@ export class FirebaseService {
         return this.saveDataList(contentSource, vehicleId, 'procedures', procedures);
     }
 
+    // --- Diagram Caching ---
+    async getWiringDiagramList(contentSource: string, vehicleId: string): Promise<import('../models/motor.models').WiringDiagram[] | null> {
+        return this.getDataList(contentSource, vehicleId, 'wiring_diagrams');
+    }
+
+    async saveWiringDiagramList(contentSource: string, vehicleId: string, diagrams: import('../models/motor.models').WiringDiagram[]): Promise<void> {
+        return this.saveDataList(contentSource, vehicleId, 'wiring_diagrams', diagrams);
+    }
+
+    async getComponentLocationList(contentSource: string, vehicleId: string): Promise<import('../models/motor.models').ComponentLocation[] | null> {
+        return this.getDataList(contentSource, vehicleId, 'component_locations');
+    }
+
+    async saveComponentLocationList(contentSource: string, vehicleId: string, components: import('../models/motor.models').ComponentLocation[]): Promise<void> {
+        return this.saveDataList(contentSource, vehicleId, 'component_locations', components);
+    }
+
+    async getAllDiagramList(contentSource: string, vehicleId: string): Promise<any[] | null> {
+        return this.getDataList(contentSource, vehicleId, 'all_diagrams');
+    }
+
+    async saveAllDiagramList(contentSource: string, vehicleId: string, diagrams: any[]): Promise<void> {
+        return this.saveDataList(contentSource, vehicleId, 'all_diagrams', diagrams);
+    }
+
     // --- Full Sync Data Types ---
     async getFluidList(contentSource: string, vehicleId: string): Promise<import('../models/motor.models').Fluid[] | null> {
         return this.getDataList(contentSource, vehicleId, 'fluids');
@@ -116,17 +145,36 @@ export class FirebaseService {
 
     // --- Generic Helpers ---
     private async getDataList<T>(contentSource: string, vehicleId: string, collectionName: string): Promise<T | null> {
+        // Fast fail if we already know we're offline
+        if (FirebaseService.isOffline) {
+            console.log(`[Firebase] Skipping cache check for ${collectionName} (Circuit Breaker Open)`);
+            return null;
+        }
+
         try {
             const docId = `${contentSource}_${vehicleId}`;
             const docRef = doc(this.db, 'vehicles', docId, collectionName, 'list');
-            const docSnap = await getDoc(docRef);
+
+            // Timeout after 2 seconds to prevent hanging on offline/slow connections
+            const timeout = new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error('Firebase operation timed out')), 2000)
+            );
+
+            const docSnap = await Promise.race([getDoc(docRef), timeout]);
 
             if (docSnap.exists()) {
                 return docSnap.data()['data'] as T;
             }
             return null;
         } catch (error) {
-            console.warn(`Error fetching ${collectionName} from Firebase:`, error);
+            // Only warn for non-timeout/offline errors to reduce noise
+            if (error instanceof Error && (error.message.includes('timed out') || error.message.includes('offline'))) {
+                console.log(`[Firebase] Skipping cache for ${collectionName} (Offline/Timeout)`);
+                // Trip the circuit breaker
+                FirebaseService.isOffline = true;
+            } else {
+                console.warn(`Error fetching ${collectionName} from Firebase:`, error);
+            }
             return null;
         }
     }

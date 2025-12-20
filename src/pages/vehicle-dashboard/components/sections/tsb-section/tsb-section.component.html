@@ -1,0 +1,39 @@
+<div class="space-y-4">
+    @if (isLoading()) {
+    <app-loading-skeleton type="card" [count]="4"></app-loading-skeleton>
+    }
+    @else if (tsbs().length === 0) {
+    <app-empty-state message="No service bulletins found"
+        submessage="No manufacturer bulletins are available for this vehicle" icon="info">
+    </app-empty-state>
+    }
+    @else {
+    @for (tsb of tsbs(); track trackById($index, tsb)) {
+    <a [routerLink]="['/vehicle', contentSource, vehicleId, 'article', tsb.id]"
+        class="block bg-gray-800/50 border border-gray-700 hover:border-cyan-500 rounded-lg p-5 transition-all hover:shadow-lg hover:shadow-cyan-500/10 group">
+        <div class="flex items-start gap-4">
+            <div class="flex-shrink-0 mt-1">
+                <lucide-icon [img]="icons.FileText"
+                    class="w-6 h-6 text-blue-500 group-hover:text-blue-400 transition-colors">
+                </lucide-icon>
+            </div>
+            <div class="flex-1 min-w-0">
+                <h3 class="font-bold text-white group-hover:text-cyan-400 transition-colors mb-2 line-clamp-2">
+                    {{ tsb.title || 'Service Bulletin' }}
+                </h3>
+                @if (tsb.bulletinNumber) {
+                <p class="text-sm font-mono text-gray-400 mb-1">
+                    Bulletin: {{ tsb.bulletinNumber }}
+                </p>
+                }
+                @if (tsb.description) {
+                <p class="text-gray-400 text-sm leading-relaxed line-clamp-2">
+                    {{ tsb.description }}
+                </p>
+                }
+            </div>
+        </div>
+    </a>
+    }
+    }
+</div>

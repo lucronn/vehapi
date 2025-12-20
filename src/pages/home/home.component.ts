@@ -3,13 +3,14 @@ import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { forkJoin, map, of, switchMap, Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { forkJoin, map, of, switchMap, Subject, debounceTime, distinctUntilChanged, firstValueFrom } from 'rxjs';
 
 import { MotorApiService } from '../../services/motor-api.service';
 import { GeminiService } from '../../services/gemini.service';
 import { VehiclePersistenceService } from '../../services/vehicle-persistence.service';
 import { LogoComponent } from '../../components/logo/logo.component';
 import { Make, Model, Engine, PersistedVehicle, Article, ComparisonResult } from '../../models/motor.models';
+import { LucideAngularModule, Search, Sparkles, Lightbulb, X, ArrowRight, ArrowUpRight } from 'lucide-angular';
 
 type Suggestion =
   | { type: 'Year'; value: number; display: string }
@@ -22,9 +23,10 @@ type Suggestion =
   selector: 'app-home',
   templateUrl: './home.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, LogoComponent, RouterModule],
+  imports: [CommonModule, FormsModule, LogoComponent, RouterModule, LucideAngularModule],
 })
 export class HomeComponent implements OnInit {
+  readonly icons = { Search, Sparkles, Lightbulb, X, ArrowRight, ArrowUpRight };
   private motorApi = inject(MotorApiService);
   private geminiApi = inject(GeminiService);
   private persistence = inject(VehiclePersistenceService);
@@ -161,6 +163,108 @@ export class HomeComponent implements OnInit {
   onSearchInput(value: string): void {
     this.searchInput.set(value);
     this.searchSubject.next(value);
+
+    // Smart Input Handling: If input starts with Year + Space (e.g. "2011 Ford"), try to auto-parse
+    if (this.searchStep() === 'Year' && /^\d{4}\s+/.test(value)) {
+      this.processFullVehicleString(value);
+    }
+  }
+
+  private async processFullVehicleString(fullString: string) {
+    const parts = fullString.split(' ').filter(p => p.trim());
+    if (parts.length < 1) return;
+
+    const yearStr = parts[0];
+    const year = parseInt(yearStr);
+    const currentYear = new Date().getFullYear();
+
+    // Relaxed validation: Just check if it looks like a valid year range (e.g. 1900 - Next Year)
+    if (isNaN(year) || year < 1900 || year > currentYear + 2) return;
+
+    // 1. Set Year
+    this.selectedYear.set(year);
+    this.isLoading.set(true);
+
+    try {
+      // 2. Fetch Makes
+      const makesRes = await firstValueFrom(this.motorApi.getMakes(year));
+      const makes = makesRes.body;
+      this.makes.set(makes);
+
+      // Check if we have more text to match
+      const remainingAfterYear = fullString.substring(yearStr.length).trim();
+      if (!remainingAfterYear) {
+        this.searchInput.set('');
+        this.searchSubject.next(''); // Clear subject to prevent race condition
+        this.showSuggestions.set(true); // Show all makes
+        return;
+      }
+
+      // 3. Match Make
+      // Sort makes by length desc to ensure "Aston Martin" matches before "Aston" if overlapping
+      const sortedMakes = [...makes].sort((a, b) => b.makeName.length - a.makeName.length);
+      const matchedMake = sortedMakes.find(m => remainingAfterYear.toLowerCase().startsWith(m.makeName.toLowerCase()));
+
+      if (matchedMake) {
+        this.selectedMake.set(matchedMake);
+
+        // 4. Fetch Models
+        const modelsRes = await firstValueFrom(this.motorApi.getModels(year, matchedMake.makeName));
+        const models = modelsRes.body.models;
+        this.models.set(models);
+
+        if (modelsRes.body.contentSource) {
+          this.currentContentSource.set(modelsRes.body.contentSource);
+        }
+
+        const remainingAfterMake = remainingAfterYear.substring(matchedMake.makeName.length).trim();
+        if (!remainingAfterMake) {
+          this.searchInput.set('');
+          this.searchSubject.next('');
+          this.showSuggestions.set(true); // Show all models
+          return;
+        }
+
+        // 5. Match Model
+        const sortedModels = [...models].sort((a, b) => b.model.length - a.model.length);
+        const matchedModel = sortedModels.find(m => remainingAfterMake.toLowerCase().startsWith(m.model.toLowerCase()));
+
+        if (matchedModel) {
+          this.selectedModel.set(matchedModel);
+
+          // Check engines
+          if (matchedModel.engines && matchedModel.engines.length > 0) {
+            this.engines.set(matchedModel.engines);
+            this.searchInput.set(''); // Clear input to show engines
+            this.searchSubject.next('');
+            this.showSuggestions.set(true);
+          } else {
+            // Done - Select Vehicle
+            this.selectedVehicle.set({ vehicleId: matchedModel.id, displayName: matchedModel.model });
+            this.searchInput.set('');
+            this.searchSubject.next('');
+            this.showSuggestions.set(false);
+          }
+        } else {
+          // Make selected, passed string is likely a partial search term for model
+          this.searchInput.set(remainingAfterMake);
+          this.searchTerm.set(remainingAfterMake); // Trigger filter
+          this.showSuggestions.set(true);
+        }
+
+      } else {
+        // Year selected, passed string is likely a search term for Make
+        this.searchInput.set(remainingAfterYear);
+        this.searchTerm.set(remainingAfterYear);
+        this.showSuggestions.set(true);
+      }
+
+    } catch (e) {
+      console.error('Smart vehicle parsing failed', e);
+      // Fallback: Just stay at whatever step we reached
+    } finally {
+      this.isLoading.set(false);
+    }
   }
 
   onSearchFocus(): void {

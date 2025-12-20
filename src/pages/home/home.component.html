@@ -40,14 +40,16 @@
         <span class="flex items-center gap-2 bg-cyan-800/50 text-cyan-300 px-3 py-1 rounded-full text-sm max-w-full">
           <span class="truncate">{{ year }}</span>
           <button (mousedown)="removeSelection($event, 'Year')"
-            class="text-cyan-400 hover:text-white text-lg leading-none flex-shrink-0">&times;</button>
+            class="text-cyan-400 hover:text-white flex items-center justify-center rounded-full p-1"><lucide-icon
+              [img]="icons.X" class="w-3 h-3"></lucide-icon></button>
         </span>
         }
         @if (selectedMake(); as make) {
         <span class="flex items-center gap-2 bg-cyan-800/50 text-cyan-300 px-3 py-1 rounded-full text-sm max-w-full">
           <span class="truncate">{{ make.makeName }}</span>
           <button (mousedown)="removeSelection($event, 'Make')"
-            class="text-cyan-400 hover:text-white text-lg leading-none flex-shrink-0">&times;</button>
+            class="text-cyan-400 hover:text-white flex items-center justify-center rounded-full p-1"><lucide-icon
+              [img]="icons.X" class="w-3 h-3"></lucide-icon></button>
         </span>
         }
         @if (selectedModel(); as model) {
@@ -55,7 +57,8 @@
         <span class="flex items-center gap-2 bg-cyan-800/50 text-cyan-300 px-3 py-1 rounded-full text-sm max-w-full">
           <span class="truncate">{{ model.model }}</span>
           <button (mousedown)="removeSelection($event, 'Model')"
-            class="text-cyan-400 hover:text-white text-lg leading-none flex-shrink-0">&times;</button>
+            class="text-cyan-400 hover:text-white flex items-center justify-center rounded-full p-1"><lucide-icon
+              [img]="icons.X" class="w-3 h-3"></lucide-icon></button>
         </span>
         }
         }
@@ -64,7 +67,8 @@
           <span class="truncate">{{ vehicle.displayName }}</span>
           <!-- Passing 'Engine' allows us to just clear the vehicle but keep the model, effectively "going back" -->
           <button (mousedown)="removeSelection($event, 'Engine')"
-            class="text-cyan-400 hover:text-white text-lg leading-none flex-shrink-0">&times;</button>
+            class="text-cyan-400 hover:text-white flex items-center justify-center rounded-full p-1"><lucide-icon
+              [img]="icons.X" class="w-3 h-3"></lucide-icon></button>
         </span>
         }
       </div>
@@ -92,10 +96,12 @@
         @if (!unsureModeActive()) {
         <div class="flex flex-col sm:flex-row gap-3">
           <input #searchInputRef type="text" [placeholder]="currentPlaceholder()"
-            class="flex-grow bg-gray-800 border-2 border-gray-600 rounded-lg p-3 text-lg focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-300 placeholder-gray-500 disabled:opacity-50"
+            class="flex-grow bg-gray-800 border-2 border-gray-600 rounded-lg p-3 pl-12 text-lg focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-300 placeholder-gray-500 disabled:opacity-50"
             [ngModel]="searchInput()" (ngModelChange)="onSearchInput($event)" (focus)="onSearchFocus()"
             (keydown.enter)="handleEnterKey()" (keydown.space)="handleSpacebar($event)" [disabled]="!!selectedVehicle()"
             autocomplete="off" />
+          <lucide-icon [img]="icons.Search"
+            class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-6 h-6 pointer-events-none"></lucide-icon>
           <button (click)="submitSearch()" [disabled]="isLoading() || (!isVin() && !selectedVehicle())"
             class="px-6 py-3 bg-cyan-500 text-black font-bold rounded-lg hover:bg-cyan-400 disabled:bg-gray-600 disabled:cursor-not-allowed transition-all duration-300">
             @if (isLoading()) { <span>Loading...</span> } @else { <span>{{ isVin() ? 'Search' : 'Go' }}</span> }
@@ -108,7 +114,9 @@
         } @else {
         <!-- "Unsure" AI Search UI -->
         <div>
-          <p class="text-sm text-yellow-300 mb-2">AI Assistant: What information are you looking for across all models?
+          <p class="text-sm text-yellow-300 mb-2 flex items-center gap-2">
+            <lucide-icon [img]="icons.Sparkles" class="w-4 h-4"></lucide-icon> AI Assistant: What information are you
+            looking for across all models?
           </p>
           <div class="flex flex-col sm:flex-row gap-3">
             <input type="text" [placeholder]="currentPlaceholder()"
@@ -153,11 +161,7 @@
                   <a [routerLink]="['/vehicle', currentContentSource(), result.vehicleId, 'article', result.foundArticle.id]"
                     class="text-cyan-400 hover:text-cyan-300 hover:underline font-medium flex items-center gap-2">
                     {{ result.foundArticle.title }}
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                      stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
+                    <lucide-icon [img]="icons.ArrowUpRight" class="w-4 h-4"></lucide-icon>
                   </a>
                   } @else {
                   <span class="text-gray-500 italic">Not found</span>

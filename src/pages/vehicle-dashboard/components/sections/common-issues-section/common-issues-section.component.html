@@ -1,0 +1,71 @@
+<div class="space-y-6">
+    @if (isLoading()) {
+    <app-loading-skeleton type="card" [count]="3"></app-loading-skeleton>
+    }
+    @else if (commonIssues().length === 0) {
+    <app-empty-state message="No common issues identified"
+        submessage="AI analysis didn't find notable problems for this vehicle model" icon="info">
+    </app-empty-state>
+    }
+    @else {
+    @for (issue of commonIssues(); track trackByTitle($index, issue)) {
+    <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6 hover:border-gray-600 transition-all">
+        <div class="flex items-start gap-4">
+            <div class="flex-shrink-0 mt-1">
+                <lucide-icon [img]="icons.AlertCircle" [ngClass]="getSeverityColor(issue.severity)" class="w-6 h-6">
+                </lucide-icon>
+            </div>
+            <div class="flex-1">
+                <div class="flex items-start justify-between mb-3">
+                    <h3 class="text-lg font-bold text-white">{{ issue.title }}</h3>
+                    <div class="flex gap-2">
+                        <span class="text-xs px-2 py-1 rounded bg-gray-700"
+                            [ngClass]="getSeverityColor(issue.severity)">
+                            {{ issue.severity }}
+                        </span>
+                        <span class="text-xs px-2 py-1 rounded bg-gray-700 text-gray-400">
+                            {{ issue.fixComplexity }}
+                        </span>
+                    </div>
+                </div>
+
+                <p class="text-gray-300 text-sm leading-relaxed mb-3">{{ issue.description }}</p>
+
+                <div class="flex flex-wrap gap-2 mb-4">
+                    @for (symptom of issue.symptoms; track symptom) {
+                    <span
+                        class="text-xs text-gray-400 bg-gray-900 px-2 py-1 rounded-md border border-gray-700 flex items-center gap-1">
+                        <lucide-icon [img]="icons.CheckCircle2" class="w-3 h-3"></lucide-icon> {{ symptom }}
+                    </span>
+                    }
+                </div>
+
+                @if (!solutions().has(issue.title)) {
+                <button (click)="generateSolution(issue.title)" [disabled]="isSolutionLoading().has(issue.title)"
+                    class="flex items-center gap-2 text-sm bg-gray-700 hover:bg-cyan-600 text-cyan-400 hover:text-white font-medium py-2 px-4 rounded-lg transition-all border border-gray-600">
+                    @if (isSolutionLoading().has(issue.title)) {
+                    <span class="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full"></span>
+                    <span>Analyzing...</span>
+                    } @else {
+                    <span>🛠️ How to Fix ({{ issue.fixComplexity }})</span>
+                    }
+                </button>
+                }
+            </div>
+        </div>
+
+        @if (solutions().has(issue.title)) {
+        <div class="mt-4 pt-4 border-t border-gray-700 animate-fade-in relative">
+            <div class="absolute -left-5 top-4 w-1 h-[calc(100%-1rem)] bg-cyan-500 rounded-r"></div>
+            <h5 class="text-cyan-400 font-bold mb-3 flex items-center gap-2">
+                <lucide-icon [img]="icons.Lightbulb" class="w-5 h-5 text-yellow-400"></lucide-icon>
+                Diagnostic & Repair Guide
+            </h5>
+            <div class="prose prose-invert prose-sm max-w-none motor-content text-gray-300"
+                [innerHTML]="solutions().get(issue.title)!"></div>
+        </div>
+        }
+    </div>
+    }
+    }
+</div>

@@ -1,0 +1,50 @@
+<div class="space-y-6">
+    <!-- Loading State -->
+    @if (isLoading()) {
+    <app-loading-skeleton type="card" [count]="4"></app-loading-skeleton>
+    }
+
+    <!-- Empty State -->
+    @else if (specs().length === 0 && fluids().length === 0) {
+    <app-empty-state message="No specifications available" submessage="Spec data may not be available for this vehicle"
+        icon="info">
+    </app-empty-state>
+    }
+
+    <!-- Data Display -->
+    @else {
+    <!-- Key Specifications -->
+    @if (specs().length > 0) {
+    <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+        <h3 class="text-lg font-bold text-cyan-400 mb-4 flex items-center">
+            <span class="mr-2">📊</span> Key Specifications
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            @for (spec of specs(); track trackByTitle($index, spec)) {
+            <div class="flex justify-between items-center py-2 border-b border-gray-700 last:border-0">
+                <span class="text-gray-400 text-sm">{{ spec.title }}</span>
+                <span class="text-white font-medium">{{ spec.value || '-' }}</span>
+            </div>
+            }
+        </div>
+    </div>
+    }
+
+    <!-- Fluid Capacities -->
+    @if (fluids().length > 0) {
+    <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+        <h3 class="text-lg font-bold text-cyan-400 mb-4 flex items-center">
+            <span class="mr-2">🛢️</span> Fluid Capacities
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            @for (fluid of fluids(); track trackByTitle($index, fluid)) {
+            <div class="flex justify-between items-center py-2 border-b border-gray-700 last:border-0">
+                <span class="text-gray-400 text-sm">{{ fluid.title }}</span>
+                <span class="text-white font-medium">{{ fluid.value || '-' }}</span>
+            </div>
+            }
+        </div>
+    </div>
+    }
+    }
+</div>
