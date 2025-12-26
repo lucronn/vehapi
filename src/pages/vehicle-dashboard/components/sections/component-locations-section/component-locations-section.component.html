@@ -1,0 +1,41 @@
+<div class="animate-fade-in">
+    @if (isLoading()) {
+    <app-loading-skeleton class="block h-64"></app-loading-skeleton>
+    } @else {
+    @if (locations().length === 0) {
+    <app-empty-state icon="MapPin" title="No Component Locations Found"
+        message="There are no component location diagrams available for this vehicle."></app-empty-state>
+    } @else {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        @for (item of locations(); track trackById($index, item)) {
+        <a [routerLink]="['/vehicle', contentSource, vehicleId, 'article', item.id]"
+            class="group block bg-gray-800 border border-gray-700 rounded-lg overflow-hidden hover:border-cyan-500 hover:shadow-lg hover:shadow-cyan-500/10 transition-all duration-300">
+
+            <!-- Thumbnail -->
+            <div class="aspect-video bg-gray-900 relative overflow-hidden flex items-center justify-center">
+                @if (item.thumbnailHref) {
+                <img [src]="item.thumbnailHref" alt="Diagram thumbnail"
+                    class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
+                } @else {
+                <lucide-icon [img]="icons.Image"
+                    class="w-12 h-12 text-gray-700 group-hover:text-cyan-600 transition-colors"></lucide-icon>
+                }
+            </div>
+
+            <div class="p-4">
+                <div class="flex items-start justify-between gap-3">
+                    <h3 class="font-bold text-white group-hover:text-cyan-400 transition-colors line-clamp-2">
+                        {{ item.title }}
+                    </h3>
+                </div>
+                <div class="mt-2 text-sm text-gray-400 flex items-center">
+                    <lucide-icon [img]="icons.MapPin" class="w-4 h-4 mr-1"></lucide-icon>
+                    {{ item.bucket }}
+                </div>
+            </div>
+        </a>
+        }
+    </div>
+    }
+    }
+</div>

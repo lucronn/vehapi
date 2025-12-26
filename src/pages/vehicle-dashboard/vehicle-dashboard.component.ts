@@ -9,6 +9,7 @@ import { Subject, of } from 'rxjs';
 import { Article } from '../../models/motor.models';
 
 // Services
+import { VehicleDataService } from '../../services/vehicle-data.service';
 import { MotorApiService } from '../../services/motor-api.service';
 
 // Components
@@ -19,12 +20,14 @@ import { DtcSectionComponent } from './components/sections/dtc-section/dtc-secti
 import { TsbSectionComponent } from './components/sections/tsb-section/tsb-section.component';
 import { ProceduresSectionComponent } from './components/sections/procedures-section/procedures-section.component';
 import { DiagramsSectionComponent } from './components/sections/diagrams-section/diagrams-section.component';
+import { ComponentLocationsSectionComponent } from './components/sections/component-locations-section/component-locations-section.component';
+import { MaintenanceSectionComponent } from './components/sections/maintenance-section/maintenance-section.component';
 import { CommonIssuesSectionComponent } from './components/sections/common-issues-section/common-issues-section.component';
 
 // Icons
 import { LucideAngularModule, Menu, X } from 'lucide-angular';
 
-export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'procedures' | 'specs';
+export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'component-locations' | 'procedures' | 'specs' | 'maintenance';
 
 /**
  * Main vehicle dashboard orchestrator component
@@ -45,6 +48,8 @@ export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'proc
     TsbSectionComponent,
     ProceduresSectionComponent,
     DiagramsSectionComponent,
+    ComponentLocationsSectionComponent,
+    MaintenanceSectionComponent,
     CommonIssuesSectionComponent
   ],
 })
@@ -52,6 +57,7 @@ export class VehicleDashboardComponent {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private motorApi = inject(MotorApiService);
+  private vehicleData = inject(VehicleDataService);
 
   readonly icons = { Menu, X };
 
@@ -81,7 +87,23 @@ export class VehicleDashboardComponent {
     })
   );
 
+
+
   vehicleName = toSignal(this.vehicleInfo$, { initialValue: '' });
+
+  // Section Availability
+  private sections$ = this.route.paramMap.pipe(
+    switchMap(params => {
+      const cs = params.get('contentSource');
+      const vid = params.get('vehicleId');
+      const mvid = vid && vid.includes(':') ? vid.split(':')[1] : undefined;
+      if (cs && vid) {
+        return this.vehicleData.getAvailableSections(cs, vid, mvid);
+      }
+      return of(null);
+    })
+  );
+  availableSections = toSignal(this.sections$, { initialValue: null });
 
   // UI State
   activeSection = signal<DashboardSection>('overview');

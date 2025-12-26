@@ -1,0 +1,56 @@
+<div class="animate-fade-in space-y-6">
+
+    <!-- Controls -->
+    <div class="flex items-center justify-between bg-gray-800 p-4 rounded-lg border border-gray-700">
+        <div class="flex items-center text-gray-300">
+            <lucide-icon [img]="icons.Gauge" class="w-5 h-5 mr-2 text-cyan-400"></lucide-icon>
+            <span class="font-medium mr-4">Mileage Interval:</span>
+
+            <select [value]="selectedInterval()" (change)="onIntervalChange($event)"
+                class="bg-gray-900 border border-gray-600 text-white text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block p-2.5">
+                @for (interval of availableIntervals; track interval) {
+                <option [value]="interval">{{ interval | number }} miles</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    @if (isLoading()) {
+    <app-loading-skeleton class="block h-64"></app-loading-skeleton>
+    } @else {
+    @if (schedules().length === 0) {
+    <app-empty-state icon="ClipboardList" title="No Maintenance Found"
+        message="No maintenance items found for this interval."></app-empty-state>
+    } @else {
+    <div class="bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
+        <table class="w-full text-left text-sm text-gray-300">
+            <thead class="bg-gray-900 text-gray-400 uppercase text-xs">
+                <tr>
+                    <th scope="col" class="px-6 py-3">Action</th>
+                    <th scope="col" class="px-6 py-3">Description</th>
+                    <th scope="col" class="px-6 py-3">System</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (item of schedules(); track $index) {
+                <tr class="border-b border-gray-700 hover:bg-gray-750">
+                    <td class="px-6 py-4 font-medium text-white">
+                        <span
+                            class="px-2 py-1 rounded bg-cyan-900/50 text-cyan-300 border border-cyan-800 uppercase text-xs">
+                            {{ item.action }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-white">
+                        {{ item.description }}
+                    </td>
+                    <td class="px-6 py-4 text-gray-500">
+                        {{ item.frequency || 'N/A' }}
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    }
+    }
+</div>

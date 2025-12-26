@@ -14,30 +14,60 @@
             class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
             <lucide-icon [img]="icons.House" class="w-5 h-5 mr-3"></lucide-icon> Overview
         </button>
+        @if (!availableSections || availableSections.hasDtcs) {
         <button (click)="onSectionClick('dtcs')"
             [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection === 'dtcs', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection !== 'dtcs'}"
             class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
             <lucide-icon [img]="icons.TriangleAlert" class="w-5 h-5 mr-3"></lucide-icon> Diagnostic Codes
         </button>
+        }
+
+        @if (!availableSections || availableSections.hasTsbs) {
         <button (click)="onSectionClick('tsbs')"
             [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection === 'tsbs', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection !== 'tsbs'}"
             class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
             <lucide-icon [img]="icons.FileText" class="w-5 h-5 mr-3"></lucide-icon> Service Bulletins
         </button>
+        }
+
+        @if (!availableSections || availableSections.hasDiagrams) {
         <button (click)="onSectionClick('diagrams')"
             [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection === 'diagrams', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection !== 'diagrams'}"
             class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
-            <lucide-icon [img]="icons.Cable" class="w-5 h-5 mr-3"></lucide-icon> Wiring & Components
+            <lucide-icon [img]="icons.Cable" class="w-5 h-5 mr-3"></lucide-icon> Wiring Diagrams
         </button>
+        }
+
+        @if (!availableSections || availableSections.hasComponentLocations) {
+        <button (click)="onSectionClick('component-locations')"
+            [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection === 'component-locations', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection !== 'component-locations'}"
+            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
+            <lucide-icon [img]="icons.Cable" class="w-5 h-5 mr-3"></lucide-icon> Component Locations
+        </button>
+        }
+
+        @if (!availableSections || availableSections.hasProcedures) {
         <button (click)="onSectionClick('procedures')"
             [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection === 'procedures', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection !== 'procedures'}"
             class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
             <lucide-icon [img]="icons.Wrench" class="w-5 h-5 mr-3"></lucide-icon> Procedures
         </button>
+        }
+
+        @if (!availableSections || availableSections.hasSpecs) {
         <button (click)="onSectionClick('specs')"
             [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection === 'specs', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection !== 'specs'}"
             class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
             <lucide-icon [img]="icons.ClipboardList" class="w-5 h-5 mr-3"></lucide-icon> Specs & Fluids
         </button>
+        }
+
+        @if (!availableSections || availableSections.hasMaintenance) {
+        <button (click)="onSectionClick('maintenance')"
+            [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection === 'maintenance', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection !== 'maintenance'}"
+            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
+            <lucide-icon [img]="icons.ClipboardList" class="w-5 h-5 mr-3"></lucide-icon> Maintenance
+        </button>
+        }
     </nav>
 </aside>
