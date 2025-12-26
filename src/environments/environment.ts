@@ -1,6 +1,6 @@
 export const environment = {
     production: false,
-    geminiApiKey: 'AIzaSyBXW8MhKDbb6TFuuZNJJrqz8ybNULH-_Kc', // Devs should populate this locally or use a proxy
+    geminiApiKey: '', // AI Disabled
     firebaseConfig: {
         projectId: "vehapi-torque",
         appId: "1:963068558024:web:bc34a196bff6fa5ccf43fd",

@@ -1,0 +1,16 @@
+<h5 *ngIf="error$ | async as errorMessage; else html" class="no-article-error text-center mx-2 my-5">
+  <ng-container [ngSwitch]="errorMessage['status']">
+    <ng-container *ngSwitchCase="404">
+      Document pending availability from manufacturer.
+    </ng-container>
+    <ng-container *ngSwitchCase="429">
+      Usage threshold has been reached. Please contact support.
+    </ng-container>
+    <ng-container *ngSwitchDefault>
+      Unable to display the requested document.
+    </ng-container>
+  </ng-container>
+</h5>
+<ng-template #html>
+  <div [innerHTML]="html$ | async | safeHtml" mtrZoomPanSVG mtrHrefRouting mtrZoomableImages></div>
+</ng-template>

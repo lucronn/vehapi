@@ -53,64 +53,36 @@ export class MotorApiService {
     return this.http.get<ApiResponse<string>>(`${this.baseUrl}/api/source/${contentSource}/${vehicleId}/name`);
   }
 
-  getCategories(contentSource: string, vehicleId: string): Observable<ApiResponse<CategoriesResponse>> {
-    return this.http.get<ApiResponse<CategoriesResponse>>(`${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/categories`);
-  }
-
-  searchArticles(contentSource: string, vehicleId: string, searchTerm?: string): Observable<ApiResponse<ArticlesData>> {
+  searchArticles(contentSource: string, vehicleId: string, searchTerm: string = '', motorVehicleId?: string): Observable<ApiResponse<ArticlesData>> {
     // Generate a unique cache key
-    const cacheKey = `${contentSource}:${vehicleId}:${searchTerm || 'ALL'}`;
+    const cacheKey = `${contentSource}:${vehicleId}:${searchTerm.trim() || 'ALL'}:${motorVehicleId || 'NONE'}`;
 
     // Return cached data if available
     if (this.articleCache.has(cacheKey)) {
       return of(this.articleCache.get(cacheKey)!);
     }
 
-    let url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/articles/v2`;
-    if (searchTerm) {
-      url += `?searchTerm=${encodeURIComponent(searchTerm)}`;
+    const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/articles/v2`;
+    const params: any = searchTerm ? { searchTerm } : {};
+    if (motorVehicleId) {
+      params.motorVehicleId = motorVehicleId;
     }
 
-    return this.http.get<ApiResponse<ArticlesData>>(url).pipe(
+    return this.http.get<ApiResponse<ArticlesData>>(url, { params }).pipe(
       // Cache the successful response
       map(response => {
-        this.articleCache.set(cacheKey, response);
+        if (response.header.statusCode === 200) {
+          this.articleCache.set(cacheKey, response);
+        }
         return response;
       })
     );
   }
 
   // Specific Data Endpoints
-  getDtcs(contentSource: string, vehicleId: string): Observable<ApiResponse<DtcsResponse>> {
-    return this.http.get<ApiResponse<DtcsResponse>>(`${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/dtcs`);
-  }
-
-  getTsbs(contentSource: string, vehicleId: string): Observable<ApiResponse<TsbsResponse>> {
-    return this.http.get<ApiResponse<TsbsResponse>>(`${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/tsbs`);
-  }
-
-  getWiringDiagrams(contentSource: string, vehicleId: string): Observable<ApiResponse<WiringDiagramsResponse>> {
-    return this.http.get<ApiResponse<WiringDiagramsResponse>>(`${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/wiring`);
-  }
-
-  getComponentLocations(contentSource: string, vehicleId: string): Observable<ApiResponse<ComponentLocationsResponse>> {
-    return this.http.get<ApiResponse<ComponentLocationsResponse>>(`${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/components`);
-  }
-
-  getAllDiagrams(contentSource: string, vehicleId: string): Observable<ApiResponse<DiagramsResponse>> {
-    return this.http.get<ApiResponse<DiagramsResponse>>(`${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/diagrams`);
-  }
-
-  getProcedures(contentSource: string, vehicleId: string): Observable<ApiResponse<ProceduresResponse>> {
-    return this.http.get<ApiResponse<ProceduresResponse>>(`${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/procedures`);
-  }
 
   getFluids(contentSource: string, vehicleId: string): Observable<ApiResponse<FluidsResponse>> {
     return this.http.get<ApiResponse<FluidsResponse>>(`${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/fluids`);
-  }
-
-  getSpecs(contentSource: string, vehicleId: string): Observable<ApiResponse<SpecsResponse>> {
-    return this.http.get<ApiResponse<SpecsResponse>>(`${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/specs`);
   }
 
   getParts(contentSource: string, vehicleId: string, searchTerm: string = ''): Observable<ApiResponse<PartsResponse>> {
@@ -118,13 +90,30 @@ export class MotorApiService {
     return this.http.get<ApiResponse<PartsResponse>>(`${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/parts`, { params });
   }
 
-  getLaborOperations(contentSource: string, vehicleId: string): Observable<ApiResponse<LaborResponse>> {
-    return this.http.get<ApiResponse<LaborResponse>>(`${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/labor`);
+  getArticleLabor(contentSource: string, vehicleId: string, articleId: string, motorVehicleId?: string): Observable<ApiResponse<LaborResponse>> {
+    const params: any = {};
+    if (motorVehicleId) params.motorVehicleId = motorVehicleId;
+    return this.http.get<ApiResponse<LaborResponse>>(`${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/labor/${articleId}`, { params });
+  }
+
+  getMaintenanceByFrequency(contentSource: string, vehicleId: string): Observable<ApiResponse<any>> {
+    return this.http.get<ApiResponse<any>>(`${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/maintenanceSchedules/frequency`);
+  }
+
+  getMaintenanceByIntervals(contentSource: string, vehicleId: string, intervalType: 'miles' | 'months', interval: number): Observable<ApiResponse<any>> {
+    return this.http.get<ApiResponse<any>>(`${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/maintenanceSchedules/intervals`, {
+      params: { intervalType, interval }
+    });
   }
 
   getArticleContent(contentSource: string, vehicleId: string, articleId: string): Observable<ApiResponse<ArticleContentData>> {
     const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/article/${articleId}`;
     return this.http.get<ApiResponse<ArticleContentData>>(url);
+  }
+
+  getArticleXml(contentSource: string, vehicleId: string, articleId: string): Observable<ApiResponse<string>> {
+    const url = `${this.baseUrl}/api/source/${contentSource}/xml/${articleId}`;
+    return this.http.get<ApiResponse<string>>(url);
   }
 
   getArticleTitle(contentSource: string, vehicleId: string, articleId: string): Observable<ApiResponse<string>> {

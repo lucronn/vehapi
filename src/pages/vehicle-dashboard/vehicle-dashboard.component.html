@@ -85,35 +85,40 @@
       @case ('dtcs') {
       <div class="space-y-6">
         <h2 class="text-3xl font-bold text-white mb-6">Diagnostic Trouble Codes</h2>
-        <app-dtc-section [contentSource]="contentSource()" [vehicleId]="vehicleId()">
+        <app-dtc-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
+          [motorVehicleId]="motorVehicleId()">
         </app-dtc-section>
       </div>
       }
       @case ('tsbs') {
       <div class="space-y-6">
         <h2 class="text-3xl font-bold text-white mb-6">Technical Service Bulletins</h2>
-        <app-tsb-section [contentSource]="contentSource()" [vehicleId]="vehicleId()">
+        <app-tsb-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
+          [motorVehicleId]="motorVehicleId()">
         </app-tsb-section>
       </div>
       }
       @case ('diagrams') {
       <div class="space-y-6">
         <h2 class="text-3xl font-bold text-white mb-6">Wiring Diagrams & Component Locations</h2>
-        <app-diagrams-section [contentSource]="contentSource()" [vehicleId]="vehicleId()">
+        <app-diagrams-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
+          [motorVehicleId]="motorVehicleId()">
         </app-diagrams-section>
       </div>
       }
       @case ('procedures') {
       <div class="space-y-6">
         <h2 class="text-3xl font-bold text-white mb-6">Repair Procedures</h2>
-        <app-procedures-section [contentSource]="contentSource()" [vehicleId]="vehicleId()">
+        <app-procedures-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
+          [motorVehicleId]="motorVehicleId()">
         </app-procedures-section>
       </div>
       }
       @case ('specs') {
       <div class="space-y-6">
         <h2 class="text-3xl font-bold text-white mb-6">Specifications & Fluid Capacities</h2>
-        <app-specs-fluids-section [contentSource]="contentSource()" [vehicleId]="vehicleId()">
+        <app-specs-fluids-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
+          [motorVehicleId]="motorVehicleId()">
         </app-specs-fluids-section>
       </div>
       }

@@ -59,6 +59,13 @@ export class VehicleDashboardComponent {
   params = toSignal(this.route.paramMap);
   contentSource = computed(() => this.params()?.get('contentSource') ?? '');
   vehicleId = computed(() => this.params()?.get('vehicleId') ?? '');
+  motorVehicleId = computed(() => {
+    const vid = this.vehicleId();
+    if (vid && vid.includes(':')) {
+      return vid.split(':')[1];
+    }
+    return undefined;
+  });
 
   // Vehicle info
   private vehicleInfo$ = this.route.paramMap.pipe(

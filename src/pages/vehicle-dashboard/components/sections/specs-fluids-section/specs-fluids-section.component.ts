@@ -19,6 +19,7 @@ import { EmptyStateComponent } from '../../../../../components/empty-state/empty
 export class SpecsFluidsSectionComponent implements OnInit {
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
+    @Input() motorVehicleId?: string;
 
     private vehicleData = inject(VehicleDataService);
 
@@ -45,7 +46,7 @@ export class SpecsFluidsSectionComponent implements OnInit {
             }
         }, 10000);
 
-        this.vehicleData.loadSpecs(this.contentSource, this.vehicleId).subscribe({
+        this.vehicleData.loadSpecs(this.contentSource, this.vehicleId, this.motorVehicleId).subscribe({
             next: (results) => {
                 this.fluids.set(results.fluids || []);
                 this.specs.set(results.specs || []);

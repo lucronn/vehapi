@@ -1,0 +1,2947 @@
+openapi: 3.0.3
+info:
+  title: YourCar Motor API Proxy
+  description: |
+    Authenticated proxy service for Motor.com automotive repair data.
+    
+    ## Overview
+    This API provides access to comprehensive automotive repair information including:
+    - Vehicle identification (VIN decode, Year/Make/Model)
+    - Diagnostic Trouble Codes (DTCs)
+    - Technical Service Bulletins (TSBs)
+    - Wiring Diagrams
+    - Component Locations
+    - Repair Procedures
+    - Parts with OEM pricing
+    - Specifications & Fluids
+    - Maintenance Schedules
+    
+    ## Authentication
+    **No authentication required from clients.** The proxy handles all authentication 
+    automatically using server-side cookie-based auth to Motor.com.
+    
+    ## Base URL
+    Production: `https://autolib.web.app/api/motor-proxy`
+    
+    ## Response Format
+    Most endpoints return responses in this structure:
+    ```json
+    {
+      "header": {
+        "status": "OK",
+        "statusCode": 200,
+        "date": "Sat, 29 Nov 2025 12:00:00 GMT"
+      },
+      "body": { /* actual data */ }
+    }
+    ```
+  version: 2.0.0
+  contact:
+    name: API Support
+  license:
+    name: MIT
+
+servers:
+  - url: https://autolib.web.app/api/motor-proxy
+    description: Production server
+  - url: https://autolib.web.app/api/motor-proxy
+    description: Local development
+
+tags:
+  - name: Health
+    description: Service health and status
+  - name: VIN
+    description: Vehicle Identification Number lookup
+  - name: Vehicle Selection
+    description: Year/Make/Model/Engine selection
+  - name: Vehicle Info
+    description: Vehicle details and metadata
+  - name: Articles
+    description: Repair articles and content
+  - name: Diagnostics
+    description: DTCs and diagnostic information
+  - name: Service Bulletins
+    description: Technical Service Bulletins (TSBs)
+  - name: Diagrams
+    description: Wiring diagrams and component locations
+  - name: Procedures
+    description: Repair procedures and specifications
+  - name: Parts
+    description: OEM parts and pricing
+  - name: Maintenance
+    description: Maintenance schedules
+  - name: Graphics
+    description: Images and diagrams
+  - name: Debug
+    description: Debug and credential endpoints
+  - name: Bookmarks
+    description: Article bookmarks
+  - name: UI
+    description: UI resources and configuration
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: Check proxy status and authentication session
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: ok
+                authenticated: true
+                sessionId: "31018b43-ed6b-42f4-b7c3-8628cfede94c"
+                expiresAt: "2025-11-29T16:11:51.000Z"
+                timestamp: "2025-11-29T06:22:12.447Z"
+
+  /connector-url:
+    get:
+      tags: [Debug]
+      summary: Get connector URL
+      description: Debug endpoint to get EBSCO connector URL and signature
+      operationId: getConnectorUrl
+      responses:
+        '200':
+          description: Connector info
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /credentials:
+    get:
+      tags: [Debug]
+      summary: Get current credentials
+      description: |
+        Returns the current authentication credentials (for debugging).
+        Shows the token information extracted from the Motor.com session.
+      operationId: getCredentials
+      responses:
+        '200':
+          description: Current credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CredentialsResponse'
+              example:
+                publicKey: "S5dFutoiQg"
+                apiTokenKey: "CHyZO"
+                apiTokenValue: "PLOZ9XKYGUUO6MwhxucuqYry8"
+                expiration: "2025-11-29T03:50:13Z"
+                userName: "TruSpeedTrialEBSCO"
+                subscriptions: ["TruSpeed"]
+                tokenAuthHeader: "Token S5dFutoiQg:PLOZ9XKYGUUO6MwhxucuqYry8"
+
+  /api/vin/{vin}:
+    get:
+      tags: [VIN]
+      summary: Decode VIN
+      description: |
+        Decode a Vehicle Identification Number to get vehicle details.
+        Returns the vehicleId and contentSource needed for all other API calls.
+      operationId: decodeVin
+      parameters:
+        - name: vin
+          in: path
+          required: true
+          description: 17-character Vehicle Identification Number
+          schema:
+            type: string
+            minLength: 17
+            maxLength: 17
+            example: "3MZBPBCM3MM319871"
+      responses:
+        '200':
+          description: VIN decoded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VinDecodeResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                  date: "Sat, 29 Nov 2025 12:00:00 GMT"
+                  messages: []
+                body:
+                  vehicleId: "188569:13820"
+                  contentSource: "MOTOR"
+                  motorVehicleId: "188569"
+                  vehicleIdChoices: "188569:13820,195995:13820"
+        '400':
+          description: Invalid VIN format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                header:
+                  status: "Bad Request"
+                  statusCode: 400
+                  messages:
+                    - code: "400.0000001"
+                      shortDescription: "Invalid VIN"
+                      longDescription: "VIN must be exactly 17 characters"
+                      type: "Error"
+        '404':
+          description: VIN not found in database
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                header:
+                  status: "Not Found"
+                  statusCode: 404
+                  messages:
+                    - code: "404.0000001"
+                      shortDescription: "Vehicle Not Found"
+                      longDescription: "No vehicle found for the provided VIN"
+                      type: "Error"
+
+  /api/vin-decode/{vin}:
+    get:
+      tags: [VIN]
+      summary: Decode VIN (Alias)
+      description: Alias for VIN decode endpoint
+      operationId: decodeVinAlias
+      parameters:
+        - name: vin
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: VIN decoded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VinDecodeResponse'
+
+  /api/years:
+    get:
+      tags: [Vehicle Selection]
+      summary: Get available years
+      description: Returns all available vehicle model years
+      operationId: getYears
+      responses:
+        '200':
+          description: List of years
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YearsResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body: [2026, 2025, 2024, 2023, 2022, 2021, 2020]
+
+  /api/year/{year}/makes:
+    get:
+      tags: [Vehicle Selection]
+      summary: Get makes for a year
+      description: Returns all vehicle makes available for a specific year
+      operationId: getMakes
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 2021
+      responses:
+        '200':
+          description: List of makes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MakesResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  - makeId: 30
+                    makeName: "BMW"
+                  - makeId: 31
+                    makeName: "Toyota"
+                  - makeId: 40
+                    makeName: "Mazda"
+                  - makeId: 45
+                    makeName: "Honda"
+                  - makeId: 50
+                    makeName: "Ford"
+
+  /api/year/{year}/make/{make}/models:
+    get:
+      tags: [Vehicle Selection]
+      summary: Get models for a make
+      description: Returns all models with engine options for a specific year and make
+      operationId: getModels
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 2021
+        - name: make
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "Mazda"
+      responses:
+        '200':
+          description: List of models with engines
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  contentSource: "MOTOR"
+                  models:
+                    - model: "3 Base"
+                      id: "188569"
+                      engines:
+                        - id: "188569:13820"
+                          name: "2.5L L4 (PY-VPS) GAS Electronic"
+                    - model: "CX-5 Touring"
+                      id: "188845"
+                      engines:
+                        - id: "188845:13821"
+                          name: "2.5L L4 (PY-VPS) GAS Electronic"
+                        - id: "188845:14205"
+                          name: "2.5L L4 (PY-VPS) Turbocharged GAS Electronic"
+
+  /api/source/{contentSource}/{vehicleId}/name:
+    get:
+      tags: [Vehicle Info]
+      summary: Get vehicle name
+      description: Returns the display name for a vehicle
+      operationId: getVehicleName
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleId'
+      responses:
+        '200':
+          description: Vehicle name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleNameResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body: "2021 Mazda 3 2.5L L4 GAS"
+
+  /api/source/{contentSource}/{vehicleId}/motorvehicles:
+    get:
+      tags: [Vehicle Info]
+      summary: Get motor vehicle details
+      description: Returns engine and submodel information
+      operationId: getMotorVehicles
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleId'
+      responses:
+        '200':
+          description: Motor vehicle details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MotorVehiclesResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  - id: "188569"
+                    motorVehicleId: "188569"
+                    year: 2021
+                    make: "Mazda"
+                    model: "3"
+                    submodel: "Base"
+                    engines:
+                      - id: "13820"
+                        name: "2.5L L4 (PY-VPS) GAS Electronic"
+                        displacement: "2.5L"
+                        cylinders: 4
+                        fuelType: "GAS"
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/articles/v2:
+    get:
+      tags: [Articles]
+      summary: Search articles
+      description: |
+        Search for articles matching a vehicle and optional search term.
+        Returns all content types including procedures, diagrams, specs, DTCs, TSBs.
+        
+        **Bucket Types:**
+        - `Diagnostic Trouble Codes` - DTCs
+        - `Technical Service Bulletins` - TSBs
+        - `Wiring Diagrams` - Electrical diagrams
+        - `Component Location Diagrams` - Part locations
+        - `Specifications` - Torque specs, capacities
+        - `Interior Panel Replacement Procedures` - Procedures
+        - `Starter & Alternator Replacement Procedures` - Procedures
+      operationId: searchArticles
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: searchTerm
+          in: query
+          description: Search term to filter articles
+          schema:
+            type: string
+            example: "brake"
+        - name: motorVehicleId
+          in: query
+          description: Motor vehicle ID for engine-specific filtering
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Article search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticlesResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                  date: "Sat, 29 Nov 2025 12:00:00 GMT"
+                body:
+                  articleDetails:
+                    - id: "DTC:301467705"
+                      title: ""
+                      code: "B0001:11"
+                      description: "Driver Frontal Stage 1 Deployment Control: Circuit Short to Ground"
+                      bucket: "Diagnostic Trouble Codes"
+                      sort: 0
+                    - id: "TSB:468775993"
+                      title: "WATER FOUND IN TRUNK AFTER HEAVY RAIN OR CAR WASH"
+                      bulletinNumber: "09-034/25"
+                      releaseDate: "Aug 20, 2025"
+                      bucket: "Technical Service Bulletins"
+                      sort: 0
+                    - id: "WIR:536228788"
+                      title: "ABS"
+                      subtitle: ""
+                      bucket: "Wiring Diagrams"
+                      thumbnailHref: "api/source/MOTOR/graphic/12121061?w=240&h=220"
+                      sort: 0
+                    - id: "P:538499065"
+                      title: "Alternator R&R"
+                      subtitle: "With Variable Engine Displacement"
+                      bucket: "Starter & Alternator Replacement Procedures"
+                      parentBucket: "Procedures"
+                      sort: 0
+                  filterTabs:
+                    - name: "All"
+                      count: 3426
+                      type: "All"
+                    - name: "Procedures"
+                      count: 186
+                      type: "Procedures"
+                    - name: "Diagrams"
+                      count: 634
+                      type: "Diagrams"
+                    - name: "Service Bulletins"
+                      count: 89
+                      type: "TSBs"
+                    - name: "Diagnostic Codes"
+                      count: 2145
+                      type: "DTCs"
+                    - name: "Specs"
+                      count: 45
+                      type: "Specifications"
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/categories:
+    get:
+      tags: [Articles]
+      summary: Get content categories
+      description: Returns a summary of all content categories and counts
+      operationId: getCategories
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+      responses:
+        '200':
+          description: Category summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoriesResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  categories:
+                    - name: "All"
+                      count: 3426
+                    - name: "Procedures"
+                      count: 186
+                    - name: "Diagrams"
+                      count: 634
+                    - name: "Service Bulletins"
+                      count: 89
+                    - name: "Diagnostic Codes"
+                      count: 2145
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/dtcs:
+    get:
+      tags: [Diagnostics]
+      summary: Get Diagnostic Trouble Codes
+      description: Returns all DTCs available for the vehicle
+      operationId: getDtcs
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: motorVehicleId
+          in: query
+          description: Motor vehicle ID for engine-specific filtering
+          schema:
+            type: string
+        - name: includeOther
+          in: query
+          description: Include "Other Diagnostics" category in addition to standard DTCs
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: List of DTCs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DtcsResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  total: 2145
+                  dtcs:
+                    - id: "DTC:301467705"
+                      code: "B0001:11"
+                      description: "Driver Frontal Stage 1 Deployment Control: Circuit Short to Ground"
+                      bucket: "Diagnostic Trouble Codes"
+                    - id: "DTC:301040196"
+                      code: "B0001:12"
+                      description: "Driver Frontal Stage 1 Deployment Control: Circuit Short to Battery"
+                      bucket: "Diagnostic Trouble Codes"
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/dtc/{articleId}:
+    get:
+      tags: [Diagnostics]
+      summary: Get DTC details
+      description: |
+        Returns detailed diagnostic information for a specific DTC including:
+        - Fault conditions
+        - Possible causes
+        - Diagnostic procedures
+        - Related components
+      operationId: getDtcDetails
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: articleId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "DTC:301467705"
+      responses:
+        '200':
+          description: DTC details (HTML content)
+          content:
+            text/html:
+              schema:
+                type: string
+              example: |
+                <article class="dtc-detail">
+                  <h1>B0001:11 - Driver Frontal Stage 1 Deployment Control</h1>
+                  <section class="fault-condition">
+                    <h2>Fault Condition</h2>
+                    <p>Circuit Short to Ground detected in the driver airbag deployment circuit.</p>
+                  </section>
+                  <section class="possible-causes">
+                    <h2>Possible Causes</h2>
+                    <ul>
+                      <li>Damaged wiring harness</li>
+                      <li>Faulty clock spring</li>
+                      <li>Defective airbag module</li>
+                    </ul>
+                  </section>
+                </article>
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/tsbs:
+    get:
+      tags: [Service Bulletins]
+      summary: Get Technical Service Bulletins
+      description: Returns all TSBs for the vehicle
+      operationId: getTsbs
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: motorVehicleId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of TSBs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TsbsResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  total: 89
+                  tsbs:
+                    - id: "TSB:468775993"
+                      bulletinNumber: "09-034/25"
+                      title: "WATER FOUND IN TRUNK AFTER HEAVY RAIN OR CAR WASH"
+                      releaseDate: "Aug 20, 2025"
+                    - id: "TSB:463746565"
+                      bulletinNumber: "09-012/25"
+                      title: "SUNVISOR(S) DO NOT STAY IN FULLY RETRACTED POSITION"
+                      releaseDate: "Aug 1, 2025"
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/tsb/{articleId}:
+    get:
+      tags: [Service Bulletins]
+      summary: Get TSB details
+      description: |
+        Returns full Technical Service Bulletin content including:
+        - Problem description
+        - Affected vehicles
+        - Repair procedure
+        - Parts required
+        - Labor allowance
+      operationId: getTsbDetails
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: articleId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "TSB:468775993"
+      responses:
+        '200':
+          description: TSB details (HTML content)
+          content:
+            text/html:
+              schema:
+                type: string
+              example: |
+                <article class="tsb-detail">
+                  <header>
+                    <h1>TSB 09-034/25</h1>
+                    <p class="title">WATER FOUND IN TRUNK AFTER HEAVY RAIN OR CAR WASH</p>
+                    <p class="date">Released: August 20, 2025</p>
+                  </header>
+                  <section class="affected-vehicles">
+                    <h2>Affected Vehicles</h2>
+                    <p>2019-2021 Mazda 3 (All models)</p>
+                  </section>
+                  <section class="problem">
+                    <h2>Problem Description</h2>
+                    <p>Customer may report water accumulation in the trunk area...</p>
+                  </section>
+                  <section class="repair">
+                    <h2>Repair Procedure</h2>
+                    <ol>
+                      <li>Inspect trunk lid weatherstrip...</li>
+                      <li>Replace weatherstrip if damaged...</li>
+                    </ol>
+                  </section>
+                </article>
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/wiring:
+    get:
+      tags: [Diagrams]
+      summary: Get wiring diagrams
+      description: Returns all wiring diagrams for the vehicle
+      operationId: getWiringDiagrams
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: motorVehicleId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of wiring diagrams
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WiringDiagramsResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  total: 56
+                  allDiagramsTotal: 634
+                  wiringDiagrams:
+                    - id: "WIR:536228788"
+                      bucket: "Wiring Diagrams"
+                      title: "ABS"
+                      thumbnailHref: "api/source/MOTOR/graphic/12121061?w=240&h=220"
+                    - id: "WIR:537147988"
+                      bucket: "Wiring Diagrams"
+                      title: "Adaptive Front Lighting System"
+                      subtitle: "WITH AUTOMATIC HEADLAMP LEVELING"
+                      thumbnailHref: "api/source/MOTOR/graphic/12121108?w=240&h=220"
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/components:
+    get:
+      tags: [Diagrams]
+      summary: Get component locations
+      description: Returns all component location diagrams for the vehicle
+      operationId: getComponentLocations
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: motorVehicleId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of component locations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComponentsResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  total: 578
+                  componentLocations:
+                    - id: "CMPLOC:527860909"
+                      bucket: "Component Location Diagrams"
+                      title: "A Pillar Trim Panel"
+                      thumbnailHref: "api/source/MOTOR/graphic/10505554?w=240&h=220"
+                    - id: "CMPLOC:527836125"
+                      bucket: "Component Location Diagrams"
+                      title: "ABS Control Module"
+                      thumbnailHref: "api/source/MOTOR/graphic/10505523?w=240&h=220"
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/diagrams:
+    get:
+      tags: [Diagrams]
+      summary: Get all diagrams
+      description: Returns all diagrams (wiring + component locations) for the vehicle
+      operationId: getAllDiagrams
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: motorVehicleId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of all diagrams
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiagramsResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  total: 634
+                  diagrams:
+                    - id: "CMPLOC:527860909"
+                      bucket: "Component Location Diagrams"
+                      title: "A Pillar Trim Panel"
+                      thumbnailHref: "api/source/MOTOR/graphic/10505554?w=240&h=220"
+                    - id: "WIR:536228788"
+                      bucket: "Wiring Diagrams"
+                      title: "ABS"
+                      thumbnailHref: "api/source/MOTOR/graphic/12121061?w=240&h=220"
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/procedures:
+    get:
+      tags: [Procedures]
+      summary: Get repair procedures
+      description: Returns all repair procedures for the vehicle
+      operationId: getProcedures
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: motorVehicleId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of procedures
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProceduresResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  total: 186
+                  procedures:
+                    - id: "P:546844136"
+                      bucket: "Interior Panel Replacement Procedures"
+                      title: "A Pillar Trim Panel R&R"
+                      parentBucket: "Procedures"
+                    - id: "P:538499065"
+                      bucket: "Starter & Alternator Replacement Procedures"
+                      title: "Alternator R&R"
+                      subtitle: "With Variable Engine Displacement"
+                      parentBucket: "Procedures"
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/specs:
+    get:
+      tags: [Procedures]
+      summary: Get specifications
+      description: Returns all specifications for the vehicle
+      operationId: getSpecs
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: motorVehicleId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of specifications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpecsResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  total: 45
+                  specs:
+                    - id: "SPEC:12345"
+                      bucket: "Specifications"
+                      title: "Torque Specifications"
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/fluids:
+    get:
+      tags: [Procedures]
+      summary: Get fluid specifications
+      description: Returns fluid types, capacities, and specifications for the vehicle
+      operationId: getFluids
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: motorVehicleId
+          in: query
+          description: Motor vehicle ID for engine-specific fluids
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of fluid specifications
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  header:
+                    $ref: '#/components/schemas/ResponseHeader'
+                  body:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      fluids:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            bucket:
+                              type: string
+                            title:
+                              type: string
+                            subtitle:
+                              type: string
+                            fluidType:
+                              type: string
+                            capacity:
+                              type: string
+                            specification:
+                              type: string
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  total: 12
+                  fluids:
+                    - id: "FLUID:567"
+                      bucket: "Fluids"
+                      title: "Engine Oil"
+                      capacity: "5.7 quarts"
+                      specification: "0W-20"
+                    - id: "FLUID:568"
+                      bucket: "Fluids"
+                      title: "Coolant"
+                      capacity: "1.7 gallons"
+                      specification: "FL22"
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/part-vectors:
+    get:
+      tags: [Graphics]
+      summary: Get Part Vector Illustrations (X-Ray Mode)
+      description: Returns interactive SVG schematics for vehicle parts
+      operationId: getPartVectors
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: GroupID
+          in: query
+          description: Component group ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: SVG content and part metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  groupId:
+                    type: string
+                  svgContent:
+                    type: string
+                    description: Raw SVG XML string
+                  parts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        number:
+                          type: string
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/maintenance-timeline/miles/{mileage}:
+    get:
+      tags: [Maintenance]
+      summary: Get Maintenance Timeline (Predictive Core)
+      description: Returns predicted maintenance items based on mileage
+      operationId: getMaintenanceTimeline
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: mileage
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of predicted maintenance items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    FrequencyDescription:
+                      type: string
+                    Probability:
+                      type: string
+                      enum: [Routine, Medium, High, Critical]
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/wiring/related-to/dtc/{dtcId}:
+    get:
+      tags: [Diagrams]
+      summary: Get Related Wiring (Linked Intelligence)
+      description: Returns wiring diagrams related to a specific DTC
+      operationId: getRelatedWiring
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: dtcId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Related wiring diagram info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dtcId:
+                    type: integer
+                  title:
+                    type: string
+                  url:
+                    type: string
+                  thumbnail:
+                    type: string
+                  confidence:
+                    type: number
+              example:
+                dtcId: 301467705
+                title: "ABS"
+                url: "https://autolib.web.app/api/motor-proxy/api/source/MOTOR/graphic/12121061"
+                thumbnail: "https://autolib.web.app/api/motor-proxy/api/source/MOTOR/graphic/12121061?w=240&h=220"
+                confidence: 0.8
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/labor:
+    get:
+      tags: [Procedures]
+      summary: Get labor operations
+      description: Returns all labor operations with time estimates (326+ items)
+      operationId: getLaborOperations
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+      responses:
+        '200':
+          description: Labor operations list
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  total: 326
+                  laborOperations:
+                    - id: "L:237238453"
+                      title: "ABS Hydraulic Control Unit R&R"
+                      bucket: "Labor"
+                    - id: "L:237255442"
+                      title: "ABS System Diagnosis & Testing"
+                      bucket: "Labor"
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/brake-service:
+    get:
+      tags: [Procedures]
+      summary: Get brake service procedures
+      description: Returns brake-related repair procedures
+      operationId: getBrakeService
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+      responses:
+        '200':
+          description: Brake procedures
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  total: 15
+                  procedures:
+                    - id: "P:542299472"
+                      title: "ABS Hydraulic Control Unit R&R"
+                      bucket: "Brake Service"
+                    - id: "P:539389618"
+                      title: "Brake Hydraulic System Bleed"
+                      bucket: "Brake Service"
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/ac-heater:
+    get:
+      tags: [Procedures]
+      summary: Get A/C & Heater procedures
+      description: Returns HVAC-related repair procedures
+      operationId: getAcHeater
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+      responses:
+        '200':
+          description: A/C & Heater procedures
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  total: 31
+                  procedures:
+                    - id: "P:538123456"
+                      title: "A/C Compressor R&R"
+                      bucket: "A/C & Heater Systems"
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/tpms:
+    get:
+      tags: [Procedures]
+      summary: Get TPMS procedures
+      description: Returns Tire Pressure Monitoring System procedures
+      operationId: getTpms
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+      responses:
+        '200':
+          description: TPMS procedures
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  total: 2
+                  procedures:
+                    - id: "P:563910815"
+                      title: "Tire Pressure Monitor Sensor Relearn"
+                      bucket: "Tire Pressure Monitoring System Procedures"
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/relearn:
+    get:
+      tags: [Procedures]
+      summary: Get computer relearn procedures
+      description: Returns ECU/module relearn procedures
+      operationId: getRelearn
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+      responses:
+        '200':
+          description: Relearn procedures
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  total: 5
+                  procedures:
+                    - id: "P:563796123"
+                      title: "Headlamp Control Module Relearn"
+                      bucket: "Computer Relearn Procedures"
+                    - id: "P:563787118"
+                      title: "Stability Control System Module Relearn"
+                      bucket: "Computer Relearn Procedures"
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/lamp-reset:
+    get:
+      tags: [Procedures]
+      summary: Get maintenance lamp reset procedures
+      description: Returns oil change/service light reset procedures
+      operationId: getLampReset
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+      responses:
+        '200':
+          description: Lamp reset procedures
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  total: 1
+                  procedures:
+                    - id: "P:538123789"
+                      title: "Maintenance Lamp Reset"
+                      bucket: "Maintenance Lamp Reset Procedure"
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/battery:
+    get:
+      tags: [Procedures]
+      summary: Get battery replacement procedures
+      description: Returns battery replacement and reset procedures
+      operationId: getBattery
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+      responses:
+        '200':
+          description: Battery procedures
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  total: 3
+                  procedures:
+                    - id: "P:538456789"
+                      title: "Battery R&R"
+                      bucket: "Battery Replacement Procedures"
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/steering-suspension:
+    get:
+      tags: [Procedures]
+      summary: Get steering & suspension procedures
+      description: Returns steering and suspension repair procedures
+      operationId: getSteeringSuspension
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+      responses:
+        '200':
+          description: Steering & suspension procedures
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  total: 12
+                  procedures:
+                    - id: "P:538789123"
+                      title: "Control Arm R&R"
+                      bucket: "Steering & Suspension Replacement Procedures"
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/airbag:
+    get:
+      tags: [Procedures]
+      summary: Get airbag service procedures
+      description: Returns SRS/airbag service procedures
+      operationId: getAirbag
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+      responses:
+        '200':
+          description: Airbag procedures
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  total: 8
+                  procedures:
+                    - id: "P:538321654"
+                      title: "Driver Airbag Module R&R"
+                      bucket: "Air Bag Service"
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/labor-times:
+    get:
+      tags: [Procedures]
+      summary: Get labor times
+      description: Returns labor time information for procedures
+      operationId: getLaborTimes
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: motorVehicleId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Labor time information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LaborTimesResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  total: 186
+                  note: "Labor times are associated with individual procedures. Use /labor/{articleId} to get labor time for a specific article."
+                  laborOperations:
+                    - id: "P:546844136"
+                      title: "A Pillar Trim Panel R&R"
+                      bucket: "Interior Panel Replacement Procedures"
+                    - id: "P:538499065"
+                      title: "Alternator R&R"
+                      bucket: "Starter & Alternator Replacement Procedures"
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/labor-times-direct:
+    get:
+      tags: [Procedures]
+      summary: Get labor times (Direct)
+      description: Direct access to estimated work times from Motor API
+      operationId: getLaborTimesDirect
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+      responses:
+        '200':
+          description: Labor times
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/labor/{articleId}:
+    get:
+      tags: [Procedures]
+      summary: Get labor details for article
+      description: Returns detailed labor information for a specific article
+      operationId: getArticleLabor
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: articleId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "P:538499065"
+        - name: motorVehicleId
+          in: query
+          description: Motor vehicle ID for engine-specific labor times
+          schema:
+            type: string
+        - name: prettyPrint
+          in: query
+          description: Format output
+          schema:
+            type: boolean
+        - name: searchTerm
+          in: query
+          description: Search term context
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Labor details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LaborDetailResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  mainOperation:
+                    id: "L:538499065"
+                    description: "Alternator R&R"
+                    laborTime: 1.2
+                    laborTimeUnit: "hours"
+                  relatedOperations:
+                    - id: "L:538499066"
+                      description: "Drive Belt Removal (included)"
+                      laborTime: 0.0
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/parts:
+    get:
+      tags: [Parts]
+      summary: Get parts
+      description: Returns OEM parts with pricing for the vehicle
+      operationId: getParts
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: motorVehicleId
+          in: query
+          description: Motor vehicle ID for engine-specific filtering
+          schema:
+            type: string
+        - name: searchTerm
+          in: query
+          description: Search term to filter parts
+          schema:
+            type: string
+            example: "brake"
+      responses:
+        '200':
+          description: Parts list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartsResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                  date: "Sat, 29 Nov 2025 12:00:00 GMT"
+                body:
+                  - partNumber: "BBM4-34-700"
+                    description: "Brake Pad Set - Front"
+                    manufacturer: "Mazda"
+                    listPrice: 89.95
+                    dealerPrice: 67.46
+                    category: "Brakes"
+                  - partNumber: "BBM4-34-28Z"
+                    description: "Brake Rotor - Front"
+                    manufacturer: "Mazda"
+                    listPrice: 142.00
+                    dealerPrice: 106.50
+                    category: "Brakes"
+                  - partNumber: "PE01-14-302"
+                    description: "Oil Filter"
+                    manufacturer: "Mazda"
+                    listPrice: 12.95
+                    dealerPrice: 9.71
+                    category: "Engine"
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/article/{articleId}:
+    get:
+      tags: [Articles]
+      summary: Get article content
+      description: |
+        Returns the full HTML content of an article including:
+        - Step-by-step procedures
+        - Diagrams and images (as embedded references)
+        - Specifications and torque values
+        - Notes and cautions
+      operationId: getArticleContent
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: articleId
+          in: path
+          required: true
+          description: Article identifier (from articles/v2 response)
+          schema:
+            type: string
+            example: "P:538499065"
+        - name: motorVehicleId
+          in: query
+          description: Motor vehicle ID for engine-specific content
+          schema:
+            type: string
+        - name: prettyPrint
+          in: query
+          description: Format HTML output
+          schema:
+            type: boolean
+        - name: bucketName
+          in: query
+          description: Content bucket name
+          schema:
+            type: string
+        - name: articleSubtype
+          in: query
+          description: Article subtype filter
+          schema:
+            type: string
+        - name: searchTerm
+          in: query
+          description: Search term context
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Article HTML content
+          content:
+            text/html:
+              schema:
+                type: string
+              example: |
+                <article class="motor-article">
+                  <h1>Alternator R&R</h1>
+                  <section class="procedure">
+                    <h2>Removal</h2>
+                    <ol>
+                      <li>Disconnect the negative battery cable.</li>
+                      <li>Remove the drive belt. See Drive Belt R&R.</li>
+                      <li>Disconnect the alternator electrical connectors.</li>
+                    </ol>
+                  </section>
+                  <section class="specifications">
+                    <h2>Torque Specifications</h2>
+                    <table>
+                      <tr><td>Alternator mounting bolts</td><td>18 Nm (13 ft-lbs)</td></tr>
+                    </table>
+                  </section>
+                </article>
+        '404':
+          description: Article not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/article/{articleId}/bookmark:
+    post:
+      tags: [Articles]
+      summary: Save article bookmark
+      description: Saves a bookmark for an article
+      operationId: saveBookmark
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: articleId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "P:538499065"
+      responses:
+        '200':
+          description: Bookmark saved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bookmarkId:
+                    type: integer
+                    description: Saved bookmark ID
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  bookmarkId: 12345
+
+  /api/bookmark/{bookmarkId}:
+    get:
+      tags: [Articles]
+      summary: Get saved bookmark
+      description: Retrieves a saved bookmark by ID
+      operationId: getBookmark
+      parameters:
+        - name: bookmarkId
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 12345
+      responses:
+        '200':
+          description: Bookmark article content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleDetailResponse'
+
+  /api/asset/{handleId}:
+    get:
+      tags: [Graphics]
+      summary: Get asset by handle ID
+      description: Returns an asset (image/document) by its handle ID (GUID)
+      operationId: getAssetByHandle
+      parameters:
+        - name: handleId
+          in: path
+          required: true
+          description: Asset handle ID (GUID)
+          schema:
+            type: string
+            example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: Asset data (image/document)
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  /api/source/{contentSource}/vehicles:
+    post:
+      tags: [Vehicle Info]
+      summary: Get bulk vehicle information
+      description: Returns detailed information for multiple vehicles by their IDs
+      operationId: getVehicles
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                vehicleIds:
+                  type: array
+                  items:
+                    type: string
+                  example: ["188569:13820", "188845:13821"]
+      responses:
+        '200':
+          description: Vehicle information list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MotorVehiclesResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  - id: "188569"
+                    motorVehicleId: "188569"
+                    year: 2021
+                    make: "Mazda"
+                    model: "3"
+                    submodel: "Base"
+
+  /api/motor/year/{year}/make/{make}/models:
+    get:
+      tags: [Vehicle Selection]
+      summary: Get Motor models (alternative endpoint)
+      description: Alternative endpoint for getting models, returns Motor-specific format
+      operationId: getMotorModels
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 2021
+        - name: make
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "Mazda"
+      responses:
+        '200':
+          description: Motor models list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsResponse'
+
+  /api/manufacturer/{manufacturerId}/graphic/{id}:
+    get:
+      tags: [Graphics]
+      summary: Get manufacturer graphic (deprecated)
+      description: |
+        Prior route for retrieving images. Deprecated but kept for backwards compatibility
+        with saved bookmarks. Use `/api/source/{contentSource}/graphic/{id}` instead.
+      deprecated: true
+      operationId: getManufacturerGraphic
+      parameters:
+        - name: manufacturerId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: w
+          in: query
+          schema:
+            type: integer
+        - name: h
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Image data
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/article/{articleId}/title:
+    get:
+      tags: [Articles]
+      summary: Get article title
+      description: Returns just the title of an article (faster than full content)
+      operationId: getArticleTitle
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: articleId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "P:538499065"
+      responses:
+        '200':
+          description: Article title
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleTitleResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body: "Alternator R&R - With Variable Engine Displacement"
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/tsb/{articleId}:
+    get:
+      tags: [Articles]
+      summary: Get TSB content
+      description: Returns the full HTML content of a Technical Service Bulletin
+      operationId: getTsbContent
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: articleId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "TSB:459922277"
+      responses:
+        '200':
+          description: TSB HTML content
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/dtc/{articleId}:
+    get:
+      tags: [Articles]
+      summary: Get DTC content
+      description: Returns the full HTML content of a Diagnostic Trouble Code article
+      operationId: getDtcContent
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: articleId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "DTC:300198742"
+      responses:
+        '200':
+          description: DTC HTML content
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /api/source/{contentSource}/xml/{articleId}:
+    get:
+      tags: [Articles]
+      summary: Get article XML
+      description: |
+        Returns the raw XML content of an article. 
+        Useful for parsing structured data programmatically.
+      operationId: getArticleXml
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - name: articleId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "P:538499065"
+      responses:
+        '200':
+          description: Article XML content
+          content:
+            application/xml:
+              schema:
+                type: string
+              example: |
+                <?xml version="1.0" encoding="UTF-8"?>
+                <article id="P:538499065">
+                  <title>Alternator R&R</title>
+                  <procedure>
+                    <step number="1">Disconnect the negative battery cable.</step>
+                    <step number="2">Remove the drive belt.</step>
+                  </procedure>
+                  <specifications>
+                    <spec name="Mounting Bolt Torque" value="18" unit="Nm"/>
+                  </specifications>
+                </article>
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/maintenanceSchedules/frequency:
+    get:
+      tags: [Maintenance]
+      summary: Get maintenance by frequency
+      description: Returns maintenance schedules organized by frequency (e.g., every 5,000 miles)
+      operationId: getMaintenanceByFrequency
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: frequencyTypeCode
+          in: query
+          description: Filter by frequency type code
+          schema:
+            type: string
+        - name: severity
+          in: query
+          description: Filter by severity level
+          schema:
+            type: string
+            enum: [Normal, Severe]
+        - name: searchTerm
+          in: query
+          description: Search term to filter schedules
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Maintenance schedules
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  frequencies:
+                    - frequency: "Every 5,000 miles or 6 months"
+                      items:
+                        - name: "Engine Oil Change"
+                          severity: "Normal"
+                        - name: "Tire Rotation"
+                          severity: "Normal"
+                    - frequency: "Every 30,000 miles or 36 months"
+                      items:
+                        - name: "Air Filter Replacement"
+                          severity: "Normal"
+                        - name: "Brake Fluid Change"
+                          severity: "Normal"
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/maintenanceSchedules/intervals:
+    get:
+      tags: [Maintenance]
+      summary: Get maintenance by intervals
+      description: Returns maintenance schedules organized by interval type
+      operationId: getMaintenanceByIntervals
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: intervalType
+          in: query
+          description: Interval measurement type
+          schema:
+            type: string
+            enum: [miles, months]
+            example: "miles"
+        - name: interval
+          in: query
+          description: Interval value (e.g., 5000 for 5000 miles)
+          schema:
+            type: integer
+            example: 5000
+        - name: severity
+          in: query
+          description: Filter by severity level
+          schema:
+            type: string
+            enum: [Normal, Severe]
+        - name: searchTerm
+          in: query
+          description: Search term to filter schedules
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Maintenance schedules
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  intervals: [5000, 10000, 15000]
+                  applications:
+                    - applicationId: 237203377
+                      maintenanceSchedules:
+                        - maintenanceScheduleId: 1674
+                          frequencyCode: "I"
+                          frequencyDescription: "Indicator Light Or Interval"
+                          intervalMile: 10000
+                  items:
+                    - name: "Engine Oil Change"
+                      severity: "Normal"
+                      laborTime: 0.5
+                    - name: "Multi-Point Inspection"
+                      severity: "Normal"
+                      laborTime: 0.3
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/maintenanceSchedules/indicators:
+    get:
+      tags: [Maintenance]
+      summary: Get maintenance by indicators
+      description: Returns maintenance schedules by dashboard indicators (warning lights)
+      operationId: getMaintenanceByIndicators
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - $ref: '#/components/parameters/vehicleIdPath'
+        - name: severity
+          in: query
+          description: Filter by severity level
+          schema:
+            type: string
+            enum: [Normal, Severe]
+        - name: searchTerm
+          in: query
+          description: Search term to filter schedules
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Maintenance indicators
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceIndicatorsResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  indicators:
+                    - name: "Oil Change Required"
+                      icon: "oil-can"
+                      items:
+                        - name: "Engine Oil Change"
+                          description: "Replace engine oil and filter"
+                    - name: "Tire Pressure Low"
+                      icon: "tire"
+                      items:
+                        - name: "Check Tire Pressure"
+                          description: "Inflate tires to recommended PSI"
+
+  /api/source/{contentSource}/graphic/{graphicId}:
+    get:
+      tags: [Graphics]
+      summary: Get graphic
+      description: |
+        Returns a diagram or image. Supports resizing via query parameters.
+        Common formats: JPEG for photos, PNG for diagrams, SVG for vector graphics.
+      operationId: getGraphic
+      parameters:
+        - $ref: '#/components/parameters/contentSource'
+        - name: graphicId
+          in: path
+          required: true
+          description: Graphic identifier from thumbnailHref
+          schema:
+            type: string
+            example: "12121061"
+        - name: w
+          in: query
+          description: Width in pixels (optional, for resizing)
+          schema:
+            type: integer
+            example: 800
+        - name: h
+          in: query
+          description: Height in pixels (optional, for resizing)
+          schema:
+            type: integer
+            example: 600
+      responses:
+        '200':
+          description: |
+            Image data. Content-Type header indicates format:
+            - `image/jpeg` - JPEG image
+            - `image/png` - PNG image  
+            - `image/svg+xml` - SVG vector graphic
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/svg+xml:
+              schema:
+                type: string
+        '404':
+          description: Graphic not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/source/track-change/processingquarters:
+    get:
+      tags: [Articles]
+      summary: Get processing quarters
+      description: Returns available processing quarters for track change reports
+      operationId: getProcessingQuarters
+      responses:
+        '200':
+          description: List of quarters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuartersResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  - "2025-Q4"
+                  - "2025-Q3"
+                  - "2025-Q2"
+                  - "2025-Q1"
+                  - "2024-Q4"
+
+  /api/ui/favicon:
+    get:
+      tags: [UI]
+      summary: Get favicon
+      description: Returns the site favicon
+      operationId: getFavicon
+      responses:
+        '200':
+          description: Favicon image
+          content:
+            image/x-icon:
+              schema:
+                type: string
+                format: binary
+
+  /api/ui/css/bootstrap:
+    get:
+      tags: [UI]
+      summary: Get Bootstrap CSS
+      description: Returns Bootstrap CSS stylesheet
+      operationId: getBootstrapCss
+      responses:
+        '200':
+          description: CSS stylesheet
+          content:
+            text/css:
+              schema:
+                type: string
+
+  /api/ui/banner.html:
+    get:
+      tags: [UI]
+      summary: Get banner HTML
+      description: Returns the banner HTML content
+      operationId: getBannerHtml
+      responses:
+        '200':
+          description: HTML content
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /api/ui/usersettings:
+    get:
+      tags: [UI]
+      summary: Get user settings
+      description: Returns user interface settings and preferences
+      operationId: getUserSettings
+      responses:
+        '200':
+          description: User settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  theme:
+                    type: string
+                  preferences:
+                    type: object
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  theme: "light"
+                  preferences:
+                    showTooltips: true
+
+  /api/ui/feedbackconfigurations:
+    get:
+      tags: [UI]
+      summary: Get feedback configurations
+      description: Returns feedback form configuration
+      operationId: getFeedbackConfigurations
+      responses:
+        '200':
+          description: Feedback configuration
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/ui/savefeedback:
+    post:
+      tags: [UI]
+      summary: Save feedback
+      description: Submits user feedback
+      operationId: saveFeedback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                rating:
+                  type: integer
+              example:
+                message: "Great service!"
+                rating: 5
+      responses:
+        '200':
+          description: Feedback saved
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/source/track-change/deltareport:
+    get:
+      tags: [Articles]
+      summary: Get delta report
+      description: Returns content changes for a vehicle in a specific quarter
+      operationId: getDeltaReport
+      parameters:
+        - name: vehicleId
+          in: query
+          description: Vehicle identifier (optional if quarter is provided)
+          schema:
+            type: string
+            example: "188569:13820"
+        - name: quarter
+          in: query
+          description: Processing quarter in YYYY-QN format (alternative to processingQuarter)
+          schema:
+            type: string
+            example: "2025-Q4"
+        - name: processingQuarter
+          in: query
+          description: Processing quarter in YYYY-QN format (alternative to quarter)
+          schema:
+            type: string
+            example: "2025-Q4"
+      responses:
+        '200':
+          description: Delta report showing content changes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeltaReportResponse'
+              example:
+                header:
+                  status: "OK"
+                  statusCode: 200
+                body:
+                  vehicleId: "188569:13820"
+                  processingQuarter: "2025-Q4"
+                  changes:
+                    added:
+                      - id: "TSB:468775993"
+                        title: "WATER FOUND IN TRUNK AFTER HEAVY RAIN"
+                        type: "TSB"
+                    modified:
+                      - id: "P:538499065"
+                        title: "Alternator R&R"
+                        type: "Procedure"
+                    removed: []
+
+components:
+  parameters:
+    contentSource:
+      name: contentSource
+      in: path
+      required: true
+      description: |
+        Content source identifier. Common values:
+        - `MOTOR` - MOTOR database (most common)
+        - `Honda`, `Ford`, `Toyota`, etc. - OEM-specific
+      schema:
+        type: string
+        example: "MOTOR"
+    
+    vehicleId:
+      name: vehicleId
+      in: path
+      required: true
+      description: |
+        Vehicle identifier. Format: `{id}:{engineId}` or just `{id}`.
+        Swagger UI will automatically URL-encode the colon.
+      schema:
+        type: string
+        example: "188569:13820"
+    
+    vehicleIdPath:
+      name: vehicleId
+      in: path
+      required: true
+      description: |
+        Vehicle identifier. Format: `{id}:{engineId}` or just `{id}`.
+        Swagger UI will automatically URL-encode the colon.
+      schema:
+        type: string
+        example: "188569:13820"
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "ok"
+        authenticated:
+          type: boolean
+        sessionId:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        timestamp:
+          type: string
+          format: date-time
+
+    CredentialsResponse:
+      type: object
+      properties:
+        publicKey:
+          type: string
+        apiTokenKey:
+          type: string
+        apiTokenValue:
+          type: string
+        expiration:
+          type: string
+        userName:
+          type: string
+        subscriptions:
+          type: array
+          items:
+            type: string
+        tokenAuthHeader:
+          type: string
+
+    ResponseHeader:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "OK"
+        statusCode:
+          type: integer
+          example: 200
+        date:
+          type: string
+        messages:
+          type: array
+          items:
+            type: object
+
+    VinDecodeResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+        body:
+          type: object
+          properties:
+            vehicleId:
+              type: string
+              description: Vehicle identifier for use in other API calls
+              example: "188569:13722"
+            contentSource:
+              type: string
+              description: Content source (MOTOR, Honda, etc.)
+              example: "MOTOR"
+            motorVehicleId:
+              type: string
+              description: Base Motor Vehicle ID (without engine)
+              example: "188569"
+            vehicleIdChoices:
+              type: string
+              description: Comma-separated list of available vehicle choices if multiple exist
+              example: "188569:13722,195995:13722"
+
+    YearsResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+        body:
+          type: array
+          items:
+            type: integer
+
+    MakesResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+        body:
+          type: array
+          items:
+            type: object
+            properties:
+              makeId:
+                type: integer
+              makeName:
+                type: string
+
+    ModelsResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+        body:
+          type: object
+          properties:
+            contentSource:
+              type: string
+            models:
+              type: array
+              items:
+                type: object
+                properties:
+                  model:
+                    type: string
+                  id:
+                    type: string
+                  engines:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+
+    VehicleNameResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+        body:
+          type: string
+          example: "2021 Mazda 3 2.5L L4 GAS"
+
+    MotorVehiclesResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+        body:
+          type: array
+          items:
+            type: object
+
+    ArticlesResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+        body:
+          type: object
+          properties:
+            articleDetails:
+              type: array
+              items:
+                $ref: '#/components/schemas/Article'
+            filterTabs:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  count:
+                    type: integer
+
+    Article:
+      type: object
+      description: |
+        Article object. Fields vary by bucket type:
+        - DTCs have `code`, `description`
+        - TSBs have `bulletinNumber`, `releaseDate`
+        - Diagrams have `thumbnailHref`
+        - Procedures have `parentBucket`
+      properties:
+        id:
+          type: string
+          description: Unique article identifier (prefixed by type)
+          example: "P:539389617"
+        title:
+          type: string
+          description: Article title
+          example: "Brake Hydraulic System Bleed"
+        subtitle:
+          type: string
+          description: Additional context or qualifier
+          example: "Component Replacement - Front"
+        bucket:
+          type: string
+          description: Content category
+          enum:
+            - "Diagnostic Trouble Codes"
+            - "Technical Service Bulletins"
+            - "Wiring Diagrams"
+            - "Component Location Diagrams"
+            - "Specifications"
+            - "Interior Panel Replacement Procedures"
+            - "Starter & Alternator Replacement Procedures"
+            - "Brake Procedures"
+            - "Engine Procedures"
+            - "Brake Service"
+        parentBucket:
+          type: string
+          description: Parent category (for procedures)
+          example: "Procedures"
+        thumbnailHref:
+          type: string
+          description: Thumbnail image URL (for diagrams)
+          example: "api/source/MOTOR/graphic/12121061?w=240&h=220"
+        code:
+          type: string
+          description: DTC code (for DTCs only)
+          example: "B0001:11"
+        description:
+          type: string
+          description: DTC description (for DTCs only)
+        bulletinNumber:
+          type: string
+          description: TSB bulletin number (for TSBs only)
+          example: "09-034/25"
+        releaseDate:
+          type: string
+          description: TSB release date (for TSBs only)
+          example: "Aug 20, 2025"
+        sort:
+          type: integer
+          description: Sort order
+          example: 0
+
+    CategoriesResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+        body:
+          type: object
+          properties:
+            categories:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  count:
+                    type: integer
+
+    MaintenanceResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+        body:
+          type: object
+          properties:
+            intervals:
+              type: array
+              items:
+                type: integer
+              description: List of available mileage intervals
+            applications:
+              type: array
+              items:
+                $ref: '#/components/schemas/MaintenanceApplication'
+
+    MaintenanceApplication:
+      type: object
+      properties:
+        applicationId:
+          type: integer
+        maintenanceSchedules:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaintenanceSchedule'
+        category:
+          type: object
+          properties:
+            article:
+              type: string
+            id:
+              type: integer
+            product:
+              type: string
+            productType:
+              type: string
+        taxonomy:
+          type: object
+          properties:
+            action:
+              type: string
+            groupName:
+              type: string
+            systemName:
+              type: string
+            taxonomyID:
+              type: integer
+        contentSilos:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentSilo'
+        qualifiers:
+          type: array
+          items:
+            type: object
+        attributeMappings:
+          type: array
+          items:
+            type: object
+        isActive:
+          type: boolean
+
+    ContentSilo:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        sourceSilos:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+
+    MaintenanceSchedule:
+      type: object
+      properties:
+        maintenanceScheduleId:
+          type: integer
+        frequencyCode:
+          type: string
+          example: "R"
+        frequencyDescription:
+          type: string
+          example: "Replace"
+        indicator:
+          type: string
+        intervalMile:
+          type: integer
+        intervalMonth:
+          type: integer
+        intervalKilometer:
+          type: integer
+        notes:
+          type: array
+          items:
+            type: object
+            properties:
+              noteId:
+                type: integer
+              text:
+                type: string
+        severeServiceDescription:
+          type: string
+        isActive:
+          type: boolean
+
+    DtcsResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+        body:
+          type: object
+          properties:
+            total:
+              type: integer
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  code:
+                    type: string
+                  description:
+                    type: string
+                  subtitle:
+                    type: string
+                  bucket:
+                    type: string
+
+    TsbsResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+        body:
+          type: object
+          properties:
+            total:
+              type: integer
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  bulletinNumber:
+                    type: string
+                  title:
+                    type: string
+                  subtitle:
+                    type: string
+                  releaseDate:
+                    type: string
+
+    WiringDiagramsResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+        body:
+          type: object
+          properties:
+            total:
+              type: integer
+            allDiagramsTotal:
+              type: integer
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Diagram'
+
+    ComponentsResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+        body:
+          type: object
+          properties:
+            total:
+              type: integer
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Diagram'
+
+    DiagramsResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+        body:
+          type: object
+          properties:
+            total:
+              type: integer
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Diagram'
+
+    Diagram:
+      type: object
+      properties:
+        id:
+          type: string
+        bucket:
+          type: string
+        title:
+          type: string
+        subtitle:
+          type: string
+        thumbnailHref:
+          type: string
+        sort:
+          type: integer
+
+    ProceduresResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+        body:
+          type: object
+          properties:
+            total:
+              type: integer
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  bucket:
+                    type: string
+                  title:
+                    type: string
+                  subtitle:
+                    type: string
+                  parentBucket:
+                    type: string
+                  sort:
+                    type: integer
+
+    SpecsResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+        body:
+          type: object
+          properties:
+            total:
+              type: integer
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  bucket:
+                    type: string
+                  title:
+                    type: string
+                  sort:
+                    type: integer
+
+    LaborTimesResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+        body:
+          type: object
+          properties:
+            total:
+              type: integer
+            note:
+              type: string
+            laborOperations:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  title:
+                    type: string
+                  bucket:
+                    type: string
+
+    LaborDetailResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+        body:
+          type: object
+          properties:
+            mainOperation:
+              type: object
+              properties:
+                id:
+                  type: string
+                description:
+                  type: string
+                laborTime:
+                  type: number
+
+    PartsResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+        body:
+          type: array
+          items:
+            type: object
+            properties:
+              partNumber:
+                type: string
+                description: OEM part number
+                example: "BBM4-34-700"
+              description:
+                type: string
+                description: Part description
+                example: "Brake Pad Set - Front"
+              manufacturer:
+                type: string
+                description: Part manufacturer
+                example: "Mazda"
+              listPrice:
+                type: number
+                format: float
+                description: MSRP in USD
+                example: 89.95
+              dealerPrice:
+                type: number
+                format: float
+                description: Dealer cost in USD
+                example: 67.46
+              category:
+                type: string
+                description: Part category
+                example: "Brakes"
+              quantity:
+                type: integer
+                description: Quantity required
+                example: 1
+              notes:
+                type: string
+                description: Additional notes
+
+    ArticleDetailResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+        body:
+          type: object
+
+    ArticleTitleResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+        body:
+          type: string
+
+
+
+    MaintenanceIndicatorsResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+        body:
+          type: object
+          properties:
+            indicators:
+              type: array
+              items:
+                type: object
+
+    QuartersResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+        body:
+          type: array
+          items:
+            type: string
+
+    DeltaReportResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+        body:
+          type: object
+
+    ErrorResponse:
+      type: object
+      properties:
+        header:
+          type: object
+          properties:
+            status:
+              type: string
+              example: "Internal Server Error"
+            statusCode:
+              type: integer
+              example: 500
+            messages:
+              type: array
+              items:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  shortDescription:
+                    type: string
+                  longDescription:
+                    type: string
+                  type:
+                    type: string
+

@@ -18,6 +18,7 @@ export class DataSyncService {
     syncProgress = signal({ current: 0, total: 0, message: 'Ready' });
 
     async syncFullVehicle(contentSource: string, vehicleId: string, vehicleName: string): Promise<void> {
+        return; // DATABASE SYNC DISABLED - Legacy Mode
         if (this.isSyncing()) return;
 
         this.isSyncing.set(true);
@@ -31,32 +32,32 @@ export class DataSyncService {
             // 2. Fetch All Lists
             this.syncProgress.set({ current: 5, total: 100, message: 'Fetching Data Lists...' });
             const lists = await lastValueFrom(forkJoin({
-                dtcs: this.motorApi.getDtcs(contentSource, vehicleId),
-                tsbs: this.motorApi.getTsbs(contentSource, vehicleId),
-                procedures: this.motorApi.getProcedures(contentSource, vehicleId),
-                diagrams: this.motorApi.getAllDiagrams(contentSource, vehicleId),
+                // dtcs: this.motorApi.getDtcs(contentSource, vehicleId), // REMOVED API
+                // tsbs: this.motorApi.getTsbs(contentSource, vehicleId), // REMOVED API
+                // procedures: this.motorApi.getProcedures(contentSource, vehicleId), // REMOVED API
+                // diagrams: this.motorApi.getAllDiagrams(contentSource, vehicleId), // REMOVED API
                 fluids: this.motorApi.getFluids(contentSource, vehicleId),
-                specs: this.motorApi.getSpecs(contentSource, vehicleId),
+                // specs: this.motorApi.getSpecs(contentSource, vehicleId), // REMOVED API
                 parts: this.motorApi.getParts(contentSource, vehicleId, ''),
-                labor: this.motorApi.getLaborOperations(contentSource, vehicleId)
+                // labor: this.motorApi.getLaborOperations(contentSource, vehicleId) // REMOVED API
             }));
 
             // 3. Save Lists to Firebase
             await Promise.all([
-                this.firebase.saveDtcList(contentSource, vehicleId, lists.dtcs.body.data),
-                this.firebase.saveTsbList(contentSource, vehicleId, lists.tsbs.body.data),
-                this.firebase.saveProcedureList(contentSource, vehicleId, lists.procedures.body.data),
+                // this.firebase.saveDtcList(contentSource, vehicleId, lists.dtcs.body.data),
+                // this.firebase.saveTsbList(contentSource, vehicleId, lists.tsbs.body.data),
+                // this.firebase.saveProcedureList(contentSource, vehicleId, lists.procedures.body.data),
                 // Add others once FirebaseService is updated
             ]);
 
             // 4. Calculate Total Work for Content Sync
-            const allItems = [
-                ...lists.dtcs.body.data.map((i: any) => ({ ...i, type: 'dtc' })),
-                ...lists.tsbs.body.data.map((i: any) => ({ ...i, type: 'tsb' })),
+            const allItems: any[] = [
+                // ...lists.dtcs.body.data.map((i: any) => ({ ...i, type: 'dtc' })),
+                // ...lists.tsbs.body.data.map((i: any) => ({ ...i, type: 'tsb' })),
                 // ...lists.procedures.body.data.map((i: any) => ({ ...i, type: 'procedure' })), 
                 // Note: Procedures list is huge, maybe we sync content for top 50? Or all? 
                 // User said "ALL data". Let's do ALL.
-                ...lists.procedures.body.data.map((i: any) => ({ ...i, type: 'procedure' })),
+                // ...lists.procedures.body.data.map((i: any) => ({ ...i, type: 'procedure' })),
             ];
 
             const totalItems = allItems.length;
@@ -97,12 +98,16 @@ export class DataSyncService {
     }
 
     private async syncCommonIssues(cs: string, vid: string, name: string) {
+        return; // DATABASE SYNC DISABLED
+        /*
         // Check cache first
         const cached = await this.firebase.getCommonIssues(cs, vid);
         if (!cached) {
-            const issues = await lastValueFrom(this.geminiApi.findCommonIssues(name));
-            await this.firebase.saveCommonIssues(cs, vid, issues);
+            // const issues = await lastValueFrom(this.geminiApi.findCommonIssues(name)); // AI DISABLED
+            // await this.firebase.saveCommonIssues(cs, vid, issues);
+            console.log('Skipping Common Issues Sync (AI Disabled)');
         }
+        */
     }
 
     private fetchAndSaveContent(cs: string, vid: string, item: any) {

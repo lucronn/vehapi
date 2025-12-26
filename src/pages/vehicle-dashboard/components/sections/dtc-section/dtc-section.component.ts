@@ -20,6 +20,7 @@ import { LucideAngularModule, TriangleAlert } from 'lucide-angular';
 export class DtcSectionComponent implements OnInit {
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
+    @Input() motorVehicleId?: string;
 
     private vehicleData = inject(VehicleDataService);
 
@@ -38,6 +39,7 @@ export class DtcSectionComponent implements OnInit {
             'dtcs',
             this.contentSource,
             this.vehicleId,
+            this.motorVehicleId,
             this.isLoading,
             (data) => this.dtcs.set(data)
         );

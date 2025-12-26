@@ -44,53 +44,23 @@ export class ArticleViewerComponent {
       const articleId = params.get('articleId');
 
       if (contentSource && vehicleId && articleId) {
-        this.isRewriting.set(true);
+        this.isRewriting.set(false); // AI DISABLED (was true)
 
-        // 1. Check Cache First
-        return from(this.firebase.getArticle(articleId)).pipe(
-          switchMap(storedArticle => {
-            if (storedArticle) {
-              // CACHE HIT
-              console.log('Cache Hit: Loading from Firebase');
-              const processedOriginal = this.processAndSanitizeHtml(storedArticle.originalContent);
-              const processedRewritten = this.processAndSanitizeHtml(storedArticle.enhancedContent);
+        // DIRECT API CALL (Legacy Mode - No Firebase Cache)
+        return forkJoin({
+          title: this.motorApi.getArticleTitle(contentSource, vehicleId, articleId).pipe(
+            catchError(() => of({ body: articleId } as any))
+          ),
+          content: this.motorApi.getArticleContent(contentSource, vehicleId, articleId)
+        }).pipe(
+          map(({ title, content }) => {
+            const originalHtml = this.processAndSanitizeHtml(content.body.html);
 
-              this.originalContent.set(processedOriginal);
-              this.rewrittenContent.set(processedRewritten);
-              this.isRewriting.set(false);
-              return of({ original: processedOriginal, rewritten: processedRewritten });
-            } else {
-              // CACHE MISS - Fetch & Generate
-              console.log('Cache Miss: Fetching from API');
-              return forkJoin({
-                title: this.motorApi.getArticleTitle(contentSource, vehicleId, articleId).pipe(
-                  catchError(() => of({ body: articleId } as any))
-                ),
-                content: this.motorApi.getArticleContent(contentSource, vehicleId, articleId)
-              }).pipe(
-                map(({ title, content }) => {
-                  const originalHtml = this.processAndSanitizeHtml(content.body.html);
+            this.originalContent.set(originalHtml);
+            this.showOriginal.set(true);
+            this.isRewriting.set(false);
 
-                  // UPDATED LOGIC: Disable AI for now, Show Original Immediately & SAVE it
-                  this.originalContent.set(originalHtml);
-                  this.showOriginal.set(true);
-                  this.isRewriting.set(false);
-
-                  // SAVE TO FIREBASE (Build Database by Usage)
-                  this.firebase.saveArticle({
-                    id: articleId,
-                    title: title.body,
-                    originalContent: content.body.html,
-                    enhancedContent: '', // Empty if not rewritten
-                    vehicleId: vehicleId,
-                    source: contentSource,
-                    timestamp: Date.now()
-                  });
-
-                  return { original: originalHtml, rewritten: '' };
-                })
-              );
-            }
+            return { original: originalHtml, rewritten: '' };
           })
         );
       }

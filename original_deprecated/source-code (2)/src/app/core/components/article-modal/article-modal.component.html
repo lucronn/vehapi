@@ -1,0 +1,64 @@
+<div class="modal-backdrop fade show" (click)="close()"></div>
+<div tabindex="-1" aria-modal="true" class="modal modal-fullscreen fade show d-block">
+  <div role="document" class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <span *ngIf="assetsFacade.showLicenseMessageForToyota$ | async" 
+                class="copyright-article-modal">
+              {{assetsFacade.toyotaLicenseMessage}}
+          </span>
+          <nav class="w-100" aria-label="breadcrumb" *ngIf="breadcrumbTrailTitles$ | async as breadcrumbTrailTitles">
+            <ol class="breadcrumb bg-white m-0 p-2 pr-2" *ngIf="breadcrumbTrailTitles.length">
+              <li class="breadcrumb-item" *ngFor="let title of breadcrumbTrailTitles | slice: 0:-1; let index = index">
+                <a [routerLink]="[]" [queryParams]="getDestinationQueryParameters(index)" queryParamsHandling="merge" [innerHtml]="title"></a>
+              </li>
+              <li class="breadcrumb-item active" aria-current="page">
+                <span class="pr-1">Current:</span>
+                <strong [innerHtml]="breadcrumbTrailTitles[breadcrumbTrailTitles.length - 1]"></strong>
+              </li>
+            </ol>
+          </nav>
+        </div>
+
+        <mtr-article-toolbox iframeSelector="#articleModalBody iframe" [class.mt--6px]="assetsFacade.showLicenseMessageForToyota$ | async"></mtr-article-toolbox>
+
+        <button id="articleModalX" type="button" class="close" (click)="close()">&times;</button>
+      </div>
+      <div class="modal-body p-0" id="articleModalBody">
+        <div class="d-flex flex-column justify-content-center h-100 w-100" *ngIf="assetsFacade.leafLoading$ | async; else articleDisplay">
+          <mtr-horizontal-circles-loader class="align-self-center"></mtr-horizontal-circles-loader>
+        </div>
+        <ng-template #articleDisplay>
+          <mtr-dynamic-article-html
+            *ngIf="((assetsFacade.leafHtml$ | async) && !(assetsFacade.leafHtmlIsFullPage$ | async)) || (assetsFacade.leafError$ | async)"
+            class="h-100 py-1 mx-4 article-{{ vehicleSelectionFacade.contentSource$ | async }}"
+            [html$]="assetsFacade.leafHtml$"
+            [error$]="assetsFacade.leafError$"
+          ></mtr-dynamic-article-html>
+          <mtr-dynamic-article-html-iframe
+            *ngIf="assetsFacade.leafHtmlIsFullPage$ | async"
+            class="h-100 ml-4"
+            [html$]="assetsFacade.leafHtml$"
+          ></mtr-dynamic-article-html-iframe>
+          <ngx-extended-pdf-viewer
+            *ngIf="assetsFacade.leafbase64Pdf$ | async"
+            [base64Src]="(assetsFacade.leafbase64Pdf$ | async)!"
+            [useBrowserLocale]="true"
+            [showDownloadButton]="false"
+            [showOpenFileButton]="false"
+            [showPropertiesButton]="false"
+            [showRotateButton]="false"
+            [showSecondaryToolbarButton]="false"
+            [textLayer]="true"
+            [showPrintButton]="!detectMobile()"
+            [showDownloadButton]="detectMobile()"
+          ></ngx-extended-pdf-viewer>
+        </ng-template>
+      </div>
+      <div class="modal-footer">
+        <button id="articleModalClose" class="btn btn-secondary" (click)="close()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -10,15 +10,22 @@ export class GeminiService {
 
   constructor() {
     const apiKey = environment.geminiApiKey;
-    if (!apiKey || apiKey === 'REPLACE_WITH_REAL_API_KEY_IN_CI_OR_BUILD') {
-      console.warn("API_KEY not configured. Gemini features will be disabled.");
-    }
-    this.ai = new GoogleGenAI({ apiKey });
+    const isConfigured = apiKey && apiKey !== 'REPLACE_WITH_REAL_API_KEY_IN_CI_OR_BUILD';
 
-    // Restore state from local storage
-    const savedState = localStorage.getItem('ai_enabled');
-    if (savedState !== null) {
-      this.aiEnabled.set(savedState === 'true');
+    if (!isConfigured) {
+      console.warn("API_KEY not configured. Gemini features will be disabled.");
+      this.aiEnabled.set(false);
+    }
+
+    // Initialize with dummy key if missing to prevent crash, but features are guarded by aiEnabled checks
+    this.ai = new GoogleGenAI({ apiKey: apiKey || 'DISABLED' });
+
+    if (isConfigured) {
+      // Restore state from local storage only if configured
+      const savedState = localStorage.getItem('ai_enabled');
+      if (savedState !== null) {
+        this.aiEnabled.set(savedState === 'true');
+      }
     }
   }
 

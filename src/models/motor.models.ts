@@ -53,6 +53,7 @@ export interface FilterTab {
   name: string;
   count: number;
   type: string;
+  buckets?: FilterTab[]; // Support nested buckets
 }
 
 export interface ArticlesData {
@@ -225,4 +226,16 @@ export interface PartsResponse {
 export interface LaborResponse {
   total: number;
   data: LaborOperation[];
+}
+
+export interface MaintenanceSchedule {
+  id: string;
+  description: string;
+  interval?: number;
+  frequency?: string;
+  action: string;
+}
+
+export interface MaintenanceResponse {
+  data: MaintenanceSchedule[];
 }

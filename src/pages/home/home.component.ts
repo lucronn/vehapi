@@ -439,7 +439,8 @@ export class HomeComponent implements OnInit {
     const vehiclesToCompare = Array.from(distinctModels.values());
     const modelNames = vehiclesToCompare.map(v => v.name).join(', ');
 
-    // 2. Analyze Intent
+    // 2. Analyze Intent (AI DISABLED)
+    /*
     this.geminiApi.analyzeSearchIntent(query, modelNames).pipe(
       switchMap(intent => {
         console.log('Search Intent:', intent);
@@ -473,6 +474,10 @@ export class HomeComponent implements OnInit {
         this.isAiLoading.set(false);
       }
     });
+    */
+    console.warn('AI Search Intent is disabled.');
+    this.isAiLoading.set(false);
+    this.errorMessage.set('AI Search is disabled.');
   }
 
   private searchByVin(): void {

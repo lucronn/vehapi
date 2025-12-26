@@ -20,6 +20,7 @@ import { LucideAngularModule, Wrench } from 'lucide-angular';
 export class ProceduresSectionComponent implements OnInit {
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
+    @Input() motorVehicleId?: string;
 
     private vehicleData = inject(VehicleDataService);
 
@@ -38,6 +39,7 @@ export class ProceduresSectionComponent implements OnInit {
             'procedures',
             this.contentSource,
             this.vehicleId,
+            this.motorVehicleId,
             this.isLoading,
             (data) => this.procedures.set(data)
         );

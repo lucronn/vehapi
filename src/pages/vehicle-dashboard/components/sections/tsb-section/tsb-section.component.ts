@@ -20,6 +20,7 @@ import { LucideAngularModule, FileText } from 'lucide-angular';
 export class TsbSectionComponent implements OnInit {
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
+    @Input() motorVehicleId?: string;
 
     private vehicleData = inject(VehicleDataService);
 
@@ -38,6 +39,7 @@ export class TsbSectionComponent implements OnInit {
             'tsbs',
             this.contentSource,
             this.vehicleId,
+            this.motorVehicleId,
             this.isLoading,
             (data) => this.tsbs.set(data)
         );
