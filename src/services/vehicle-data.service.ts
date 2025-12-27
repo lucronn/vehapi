@@ -71,7 +71,7 @@ export class VehicleDataService {
         loadingSignal.set(true);
         console.log(`[VehicleData] Fetching from Search API (term: "${searchTerm}")...`);
 
-        this.motorApi.searchArticles(contentSource, vehicleId, searchTerm, motorVehicleId).subscribe({
+        this.motorApi.searchArticles(contentSource, vehicleId, searchTerm).subscribe({
             next: (res) => {
                 // Ensure articleDetails exists
                 const articles = res.body?.articleDetails || [];
@@ -106,7 +106,7 @@ export class VehicleDataService {
 
         const getSpecs = () => {
             console.log('[Cache DISABLED] Specs fetching from Search API...');
-            return this.motorApi.searchArticles(contentSource, vehicleId, '', motorVehicleId).pipe(
+            return this.motorApi.searchArticles(contentSource, vehicleId, '').pipe(
                 map(res => {
                     const articles = res.body?.articleDetails || [];
                     return articles
@@ -147,7 +147,7 @@ export class VehicleDataService {
         motorVehicleId?: string
     ): Observable<SectionAvailability> {
         // Use empty search to get filter headers
-        return this.motorApi.searchArticles(contentSource, vehicleId, '', motorVehicleId).pipe(
+        return this.motorApi.searchArticles(contentSource, vehicleId, '').pipe(
             map(res => {
                 const tabs = res.body?.filterTabs || [];
 
@@ -248,7 +248,7 @@ export class VehicleDataService {
         }
 
         // RE-IMPLEMENTING loadSectionData with direct calls to ensure access to headers/tabs
-        this.motorApi.searchArticles(contentSource, vehicleId, '', motorVehicleId).subscribe({
+        this.motorApi.searchArticles(contentSource, vehicleId, '').subscribe({
             next: (res) => {
                 loadingSignal.set(false);
                 const articles = res.body?.articleDetails || [];
@@ -280,7 +280,7 @@ export class VehicleDataService {
                     // FALLBACK SEARCH: If no DTCs found with empty search, try searching for "DTC"
                     if (filtered.length === 0) {
                         console.log('[VehicleData] No DTCs found with empty search. Triggering fallback search for "DTC"...');
-                        this.motorApi.searchArticles(contentSource, vehicleId, 'DTC', motorVehicleId).subscribe({
+                        this.motorApi.searchArticles(contentSource, vehicleId, 'DTC').subscribe({
                             next: (fallbackRes) => {
                                 const fallbackArticles = fallbackRes.body?.articleDetails || [];
                                 const fallbackFiltered = mapDtcs(fallbackArticles);
@@ -388,12 +388,8 @@ export class VehicleDataService {
                 next: (res) => {
                     loadingSignal.set(false);
                     // Map response to simple MaintenanceSchedule[]
-                    // The response structure needs to be checked.
-                    // Assuming body.data is valid or body is the object.
-                    // Swagger: body.intervals?
-                    // Let's assume the API Service handles the response type locally or we map it.
-                    // For now, simply update state with whatever array we find.
-                    const schedules = (res.body as any)?.items || [];
+                    // Handle potential variations in API response structure
+                    const schedules = (res.body as any)?.data || (res.body as any)?.items || [];
                     updateState(schedules);
                 },
                 error: (err) => {

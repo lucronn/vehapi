@@ -54,6 +54,12 @@
         </button>
         }
 
+        <button (click)="onSectionClick('parts')"
+            [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection === 'parts', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection !== 'parts'}"
+            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
+            <lucide-icon [img]="icons.Package" class="w-5 h-5 mr-3"></lucide-icon> Parts
+        </button>
+
         @if (!availableSections || availableSections.hasSpecs) {
         <button (click)="onSectionClick('specs')"
             [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection === 'specs', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection !== 'specs'}"

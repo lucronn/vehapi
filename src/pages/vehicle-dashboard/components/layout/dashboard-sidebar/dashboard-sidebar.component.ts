@@ -1,11 +1,11 @@
 import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { LucideAngularModule, House, TriangleAlert, FileText, Cable, Wrench, ClipboardList } from 'lucide-angular';
+import { LucideAngularModule, House, TriangleAlert, FileText, Cable, Wrench, ClipboardList, Package } from 'lucide-angular';
 
 import { SectionAvailability } from '../../../../../services/vehicle-data.service';
 
-export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'component-locations' | 'procedures' | 'specs' | 'maintenance';
+export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'component-locations' | 'procedures' | 'parts' | 'specs' | 'maintenance';
 
 /**
  * Dashboard sidebar navigation component
@@ -23,7 +23,7 @@ export class DashboardSidebarComponent {
     @Input() availableSections: SectionAvailability | null = null;
     @Output() sectionChange = new EventEmitter<DashboardSection>();
 
-    readonly icons = { House, TriangleAlert, FileText, Cable, Wrench, ClipboardList };
+    readonly icons = { House, TriangleAlert, FileText, Cable, Wrench, ClipboardList, Package };
 
     onSectionClick(section: DashboardSection) {
         this.sectionChange.emit(section);

@@ -76,20 +76,24 @@
       <!-- Omnibox Search -->
       <div class="relative">
 
-        <!-- Suggestions Drop-up -->
+        <!-- Suggestions Dropdown -->
         @if (showSuggestions() && !isVin() && !selectedVehicle() && !unsureModeActive()) {
+        <!-- Backdrop -->
+        <div class="fixed inset-0 z-40" (click)="showSuggestions.set(false)"></div>
+
         <div #suggestionsContainer
-          class="absolute z-30 w-full bottom-full mb-2 bg-gray-800 border border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+          class="absolute z-50 w-full top-full mt-2 bg-gray-900/95 backdrop-blur-xl border border-gray-700 rounded-xl shadow-2xl max-h-[60vh] overflow-y-auto ring-1 ring-white/10">
+
           @for (suggestion of suggestions(); track suggestion.display) {
           <div (mousedown)="selectSuggestion($event, suggestion)" [class.bg-yellow-500]="suggestion.type === 'Unsure'"
             [class.text-black]="suggestion.type === 'Unsure'"
-            class="px-4 py-3 hover:bg-cyan-500 hover:text-black cursor-pointer transition-colors duration-150">
+            class="px-5 py-4 hover:bg-cyan-500 hover:text-black cursor-pointer transition-colors duration-150 border-b border-gray-700/50 last:border-0 text-left text-base md:text-lg font-medium">
             {{ suggestion.display }}
           </div>
           }
-          @if(suggestions().length === 0 && !isLoading()) { <div class="px-4 py-3 text-gray-500">No results found.</div>
-          }
-          @if(isLoading()) { <div class="px-4 py-3 text-gray-500">Loading...</div> }
+          @if(suggestions().length === 0 && !isLoading()) { <div class="px-5 py-4 text-gray-500 text-center italic">No
+            results found.</div> }
+          @if(isLoading()) { <div class="px-5 py-4 text-gray-400 text-center animate-pulse">Loading...</div> }
         </div>
         }
 

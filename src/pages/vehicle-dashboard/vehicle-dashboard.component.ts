@@ -22,12 +22,13 @@ import { ProceduresSectionComponent } from './components/sections/procedures-sec
 import { DiagramsSectionComponent } from './components/sections/diagrams-section/diagrams-section.component';
 import { ComponentLocationsSectionComponent } from './components/sections/component-locations-section/component-locations-section.component';
 import { MaintenanceSectionComponent } from './components/sections/maintenance-section/maintenance-section.component';
+import { PartsSectionComponent } from './components/sections/parts-section/parts-section.component';
 import { CommonIssuesSectionComponent } from './components/sections/common-issues-section/common-issues-section.component';
 
 // Icons
 import { LucideAngularModule, Menu, X } from 'lucide-angular';
 
-export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'component-locations' | 'procedures' | 'specs' | 'maintenance';
+export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'component-locations' | 'procedures' | 'parts' | 'specs' | 'maintenance';
 
 /**
  * Main vehicle dashboard orchestrator component
@@ -50,6 +51,7 @@ export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'comp
     DiagramsSectionComponent,
     ComponentLocationsSectionComponent,
     MaintenanceSectionComponent,
+    PartsSectionComponent,
     CommonIssuesSectionComponent
   ],
 })

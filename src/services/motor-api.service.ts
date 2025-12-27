@@ -53,9 +53,9 @@ export class MotorApiService {
     return this.http.get<ApiResponse<string>>(`${this.baseUrl}/api/source/${contentSource}/${vehicleId}/name`);
   }
 
-  searchArticles(contentSource: string, vehicleId: string, searchTerm: string = '', motorVehicleId?: string): Observable<ApiResponse<ArticlesData>> {
+  searchArticles(contentSource: string, vehicleId: string, searchTerm: string = ''): Observable<ApiResponse<ArticlesData>> {
     // Generate a unique cache key
-    const cacheKey = `${contentSource}:${vehicleId}:${searchTerm.trim() || 'ALL'}:${motorVehicleId || 'NONE'}`;
+    const cacheKey = `${contentSource}:${vehicleId}:${searchTerm.trim() || 'ALL'}`;
 
     // Return cached data if available
     if (this.articleCache.has(cacheKey)) {
@@ -63,10 +63,8 @@ export class MotorApiService {
     }
 
     const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/articles/v2`;
-    const params: any = searchTerm ? { searchTerm } : {};
-    if (motorVehicleId) {
-      params.motorVehicleId = motorVehicleId;
-    }
+    // Reference implementation always sends searchTerm, even if empty
+    const params: any = { searchTerm: searchTerm };
 
     return this.http.get<ApiResponse<ArticlesData>>(url, { params }).pipe(
       // Cache the successful response
@@ -126,5 +124,26 @@ export class MotorApiService {
     if (graphicPath.startsWith('http')) return graphicPath;
     const path = graphicPath.startsWith('/') ? graphicPath.substring(1) : graphicPath;
     return `${this.baseUrl}/${path}`;
+  }
+
+  /**
+   * Process HTML content to fix relative URLs for images and links
+   */
+  processHtmlContent(html: string): string {
+    if (!html) return '';
+
+    // Replace relative src attributes (images, scripts)
+    // Matches src="/..." or src='...'
+    let processed = html.replace(/src=["'](\/[^"']+)["']/g, (match, url) => {
+      return `src="${this.baseUrl}${url}"`;
+    });
+
+    // Replace relative href attributes (links, css)
+    // Matches href="/..." or href='...'
+    processed = processed.replace(/href=["'](\/[^"']+)["']/g, (match, url) => {
+      return `href="${this.baseUrl}${url}"`;
+    });
+
+    return processed;
   }
 }

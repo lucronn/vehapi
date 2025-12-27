@@ -48,6 +48,10 @@
         class="w-full flex items-center p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-all font-bold text-lg">
         Component Locations
       </button>
+      <button (click)="setSection('parts')" [class.text-cyan-400]="activeSection() === 'parts'"
+        class="w-full flex items-center p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-all font-bold text-lg">
+        Parts
+      </button>
       <button (click)="setSection('maintenance')" [class.text-cyan-400]="activeSection() === 'maintenance'"
         class="w-full flex items-center p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-all font-bold text-lg">
         Maintenance
@@ -121,6 +125,13 @@
         <app-procedures-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
         </app-procedures-section>
+      </div>
+      }
+      @case ('parts') {
+      <div class="space-y-6">
+        <h2 class="text-3xl font-bold text-white mb-6">Parts</h2>
+        <app-parts-section [contentSource]="contentSource()" [vehicleId]="vehicleId()">
+        </app-parts-section>
       </div>
       }
       @case ('specs') {

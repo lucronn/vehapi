@@ -8,27 +8,36 @@
     </app-empty-state>
     }
     @else {
-    @for (procedure of procedures(); track trackById($index, procedure)) {
-    <a [routerLink]="['/vehicle', contentSource, vehicleId, 'article', procedure.id]"
-        class="block bg-gray-800/50 border border-gray-700 hover:border-cyan-500 rounded-lg p-4 transition-all hover:shadow-lg hover:shadow-cyan-500/10 group">
-        <div class="flex items-start gap-3">
-            <div class="flex-shrink-0 mt-1">
-                <lucide-icon [img]="icons.Wrench"
-                    class="w-5 h-5 text-green-500 group-hover:text-green-400 transition-colors">
-                </lucide-icon>
-            </div>
-            <div class="flex-1 min-w-0">
-                <h3 class="font-semibold text-white group-hover:text-cyan-400 transition-colors line-clamp-2">
-                    {{ procedure.title || procedure.name || 'Repair Procedure' }}
-                </h3>
-                @if (procedure.category) {
-                <span class="inline-block mt-1 text-xs px-2 py-0.5 bg-gray-700 rounded text-gray-400">
-                    {{ procedure.category }}
-                </span>
-                }
-            </div>
+
+    @for (group of groupedProcedures(); track group.name) {
+    <div class="mb-6 last:mb-0">
+        <h3 class="text-cyan-400 font-bold mb-3 uppercase text-sm tracking-wider border-b border-gray-700 pb-2">
+            {{ group.name }}
+        </h3>
+        <div class="space-y-3">
+            @for (procedure of group.items; track trackById($index, procedure)) {
+            <a [routerLink]="['/vehicle', contentSource, vehicleId, 'article', procedure.id]"
+                class="block bg-gray-800/50 border border-gray-700 hover:border-cyan-500 rounded-lg p-3 transition-all hover:shadow-lg hover:shadow-cyan-500/10 group">
+                <div class="flex items-center gap-3">
+                    <div class="flex-shrink-0">
+                        <lucide-icon [img]="icons.Wrench"
+                            class="w-4 h-4 text-gray-500 group-hover:text-cyan-400 transition-colors">
+                        </lucide-icon>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-medium text-white group-hover:text-cyan-400 transition-colors line-clamp-1">
+                            {{ procedure.title || procedure.name || 'Repair Procedure' }}
+                        </h4>
+                        @if (procedure.subtitle) {
+                        <p class="text-xs text-gray-500 line-clamp-1 mt-0.5">{{ procedure.subtitle }}</p>
+                        }
+                    </div>
+                </div>
+            </a>
+            }
         </div>
-    </a>
+    </div>
     }
+
     }
 </div>

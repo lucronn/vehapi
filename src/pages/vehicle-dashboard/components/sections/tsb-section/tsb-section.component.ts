@@ -67,8 +67,9 @@ export class TsbSectionComponent implements OnInit {
 
         this.motorApi.getArticleContent(this.contentSource, this.vehicleId, tsb.id).subscribe({
             next: (res) => {
-                const html = res.body?.html || '<p>No content available.</p>';
-                this.tsbContent.set(this.sanitizer.bypassSecurityTrustHtml(html));
+                const rawHtml = res.body?.html || '<p>No content available.</p>';
+                const processedHtml = this.motorApi.processHtmlContent(rawHtml);
+                this.tsbContent.set(this.sanitizer.bypassSecurityTrustHtml(processedHtml));
                 this.isLoadingContent.set(false);
             },
             error: (err) => {

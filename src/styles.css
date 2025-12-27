@@ -51,4 +51,23 @@
     .motor-content li {
         @apply pl-1;
     }
+
+    /* Overflow Handling */
+    .motor-content img {
+        @apply max-w-full h-auto rounded-lg border border-gray-700 my-4;
+    }
+
+    .motor-content table {
+        @apply block w-full overflow-x-auto border-collapse text-sm my-4;
+    }
+
+    .motor-content th,
+    .motor-content td {
+        @apply border border-gray-700 p-2 min-w-[120px]; /* Min width ensures validation of scroll */
+    }
+
+    .motor-content pre,
+    .motor-content code {
+        @apply whitespace-pre-wrap break-all;
+    }
 }

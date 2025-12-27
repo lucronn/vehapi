@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, OnInit, signal, inject, ChangeDetectionStrategy, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { VehicleDataService } from '../../../../../services/vehicle-data.service';
@@ -25,6 +25,28 @@ export class ProceduresSectionComponent implements OnInit {
     private vehicleData = inject(VehicleDataService);
 
     procedures = signal<Procedure[]>([]);
+
+    // Grouped procedures logic
+    groupedProcedures = computed(() => {
+        const all = this.procedures();
+        const groups: { [key: string]: Procedure[] } = {};
+
+        all.forEach(p => {
+            // Use bucket as category, fallback to 'General'
+            const category = p.bucket || 'General';
+            if (!groups[category]) {
+                groups[category] = [];
+            }
+            groups[category].push(p);
+        });
+
+        // Sort categories alphabetically match sites.motor.com style or just basic sort
+        return Object.keys(groups).sort().map(category => ({
+            name: category,
+            items: groups[category]
+        }));
+    });
+
     isLoading = signal(false);
     readonly icons = { Wrench };
 
