@@ -8,15 +8,15 @@ import { LucideAngularModule, Search } from 'lucide-angular';
 @Component({
     selector: 'app-dashboard-search',
     template: `
-    <div class="max-w-5xl mx-auto mb-8">
-      <div class="relative">
+    <div class="app-container mb-6 sm:mb-8">
+      <div class="relative app-surface-muted p-3">
         <input type="text" 
           placeholder="Global Search (e.g., 'brake caliper', 'P0300')" 
           (input)="onSearchChange($event)"
           [value]="searchTerm"
-          class="w-full p-4 pl-14 bg-gray-800 border border-gray-700 rounded-lg text-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all shadow-lg" />
+          class="app-input pl-12 text-base sm:text-lg" />
         <lucide-icon [img]="icons.Search" 
-          class="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500">
+          class="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400">
         </lucide-icon>
       </div>
     </div>

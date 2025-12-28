@@ -2,13 +2,141 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+    :root {
+        color-scheme: dark;
+    }
+
+    html,
+    body {
+        height: 100%;
+    }
+
+    body {
+        @apply bg-slate-950 text-slate-100 antialiased;
+    }
+
+    /* Ambient gradient + subtle grid background */
+    body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        background:
+            radial-gradient(1200px 800px at 10% 10%, rgba(34, 211, 238, 0.12), transparent 60%),
+            radial-gradient(900px 700px at 90% 20%, rgba(168, 85, 247, 0.10), transparent 60%),
+            radial-gradient(1000px 700px at 50% 100%, rgba(59, 130, 246, 0.08), transparent 60%);
+    }
+
+    body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        opacity: 0.18;
+        background-image:
+            linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        background-size: 72px 72px;
+        mask-image: radial-gradient(circle at 50% 22%, black 0%, transparent 70%);
+    }
+}
+
 @layer utilities {
     .text-balance {
         text-wrap: balance;
     }
+
+    .animate-fade-in {
+        animation: appFadeIn 180ms ease-out both;
+    }
+
+    .animate-slide-up {
+        animation: appSlideUp 220ms ease-out both;
+    }
+
+    @keyframes appFadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes appSlideUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 }
 
 @layer components {
+    /* App “design system” primitives */
+    .app-container {
+        @apply mx-auto w-full max-w-6xl;
+    }
+
+    .app-surface {
+        @apply bg-slate-900/50 backdrop-blur border border-slate-700/70 rounded-2xl shadow-lg shadow-black/30;
+    }
+
+    .app-surface-muted {
+        @apply bg-slate-900/30 backdrop-blur border border-slate-800/60 rounded-2xl;
+    }
+
+    .app-card {
+        @apply app-surface p-6 sm:p-7;
+    }
+
+    .app-card-tight {
+        @apply app-surface p-4 sm:p-5;
+    }
+
+    .app-title {
+        @apply text-2xl sm:text-3xl font-bold tracking-tight text-white;
+    }
+
+    .app-subtitle {
+        @apply text-slate-300;
+    }
+
+    .app-pill {
+        @apply inline-flex items-center gap-2 rounded-full border border-slate-700/70 bg-slate-900/40 px-3 py-1 text-sm text-slate-200;
+    }
+
+    .app-input {
+        @apply w-full bg-slate-900/40 border border-slate-700/70 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-500 shadow-sm;
+        @apply focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-400/50;
+        @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    }
+
+    .app-btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 font-semibold transition-colors;
+        @apply focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:ring-offset-2 focus:ring-offset-slate-950;
+        @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    }
+
+    .app-btn-primary {
+        @apply app-btn bg-cyan-500 text-slate-950 hover:bg-cyan-400;
+    }
+
+    .app-btn-secondary {
+        @apply app-btn bg-slate-800 text-white hover:bg-slate-700 border border-slate-700/70;
+    }
+
+    .app-btn-ghost {
+        @apply app-btn bg-transparent text-slate-200 hover:bg-slate-800/60 border border-slate-800/60;
+    }
 
     /* Generated Content Styles */
     .note {

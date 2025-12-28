@@ -1,77 +1,106 @@
-<aside class="w-64 bg-gray-800 border-r border-gray-700 flex-shrink-0 flex flex-col hidden md:flex">
+<aside
+    class="w-72 bg-slate-950/35 backdrop-blur-xl border-r border-slate-800/60 flex-shrink-0 flex flex-col hidden md:flex">
     <div class="p-6">
-        <a routerLink="/" class="text-cyan-400 hover:text-cyan-300 mb-6 inline-block text-sm">&larr; Change Vehicle</a>
+        <a routerLink="/"
+            class="text-cyan-300 hover:text-cyan-200 mb-6 inline-flex items-center gap-2 text-sm font-medium">
+            <span aria-hidden="true">←</span> Change Vehicle
+        </a>
+
         @if (vehicleName) {
-        <h1 class="text-xl font-bold tracking-tight text-white leading-tight">{{ vehicleName }}</h1>
+        <div class="space-y-1">
+            <div class="text-xs tracking-wider text-slate-400">TORQUE</div>
+            <h1 class="text-xl font-bold tracking-tight text-white leading-tight">{{ vehicleName }}</h1>
+        </div>
         } @else {
-        <div class="h-8 bg-gray-700 rounded-md animate-pulse w-3/4"></div>
+        <div class="space-y-2">
+            <div class="h-3 w-12 bg-slate-800/80 rounded-md animate-pulse"></div>
+            <div class="h-8 bg-slate-800/80 rounded-md animate-pulse w-3/4"></div>
+        </div>
         }
     </div>
 
     <nav class="flex-1 px-4 space-y-1 overflow-y-auto">
         <button (click)="onSectionClick('overview')"
-            [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection === 'overview', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection !== 'overview'}"
-            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
+            [ngClass]="activeSection === 'overview'
+                ? 'bg-cyan-500/10 text-cyan-200 border-cyan-400'
+                : 'text-slate-300 hover:bg-slate-900/60 hover:text-white border-transparent'"
+            class="w-full flex items-center px-4 py-3 text-sm font-semibold rounded-xl border-l-4 transition-colors">
             <lucide-icon [img]="icons.House" class="w-5 h-5 mr-3"></lucide-icon> Overview
         </button>
         @if (!availableSections || availableSections.hasDtcs) {
         <button (click)="onSectionClick('dtcs')"
-            [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection === 'dtcs', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection !== 'dtcs'}"
-            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
+            [ngClass]="activeSection === 'dtcs'
+                ? 'bg-cyan-500/10 text-cyan-200 border-cyan-400'
+                : 'text-slate-300 hover:bg-slate-900/60 hover:text-white border-transparent'"
+            class="w-full flex items-center px-4 py-3 text-sm font-semibold rounded-xl border-l-4 transition-colors">
             <lucide-icon [img]="icons.TriangleAlert" class="w-5 h-5 mr-3"></lucide-icon> Diagnostic Codes
         </button>
         }
 
         @if (!availableSections || availableSections.hasTsbs) {
         <button (click)="onSectionClick('tsbs')"
-            [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection === 'tsbs', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection !== 'tsbs'}"
-            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
+            [ngClass]="activeSection === 'tsbs'
+                ? 'bg-cyan-500/10 text-cyan-200 border-cyan-400'
+                : 'text-slate-300 hover:bg-slate-900/60 hover:text-white border-transparent'"
+            class="w-full flex items-center px-4 py-3 text-sm font-semibold rounded-xl border-l-4 transition-colors">
             <lucide-icon [img]="icons.FileText" class="w-5 h-5 mr-3"></lucide-icon> Service Bulletins
         </button>
         }
 
         @if (!availableSections || availableSections.hasDiagrams) {
         <button (click)="onSectionClick('diagrams')"
-            [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection === 'diagrams', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection !== 'diagrams'}"
-            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
+            [ngClass]="activeSection === 'diagrams'
+                ? 'bg-cyan-500/10 text-cyan-200 border-cyan-400'
+                : 'text-slate-300 hover:bg-slate-900/60 hover:text-white border-transparent'"
+            class="w-full flex items-center px-4 py-3 text-sm font-semibold rounded-xl border-l-4 transition-colors">
             <lucide-icon [img]="icons.Cable" class="w-5 h-5 mr-3"></lucide-icon> Wiring Diagrams
         </button>
         }
 
         @if (!availableSections || availableSections.hasComponentLocations) {
         <button (click)="onSectionClick('component-locations')"
-            [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection === 'component-locations', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection !== 'component-locations'}"
-            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
+            [ngClass]="activeSection === 'component-locations'
+                ? 'bg-cyan-500/10 text-cyan-200 border-cyan-400'
+                : 'text-slate-300 hover:bg-slate-900/60 hover:text-white border-transparent'"
+            class="w-full flex items-center px-4 py-3 text-sm font-semibold rounded-xl border-l-4 transition-colors">
             <lucide-icon [img]="icons.Cable" class="w-5 h-5 mr-3"></lucide-icon> Component Locations
         </button>
         }
 
         @if (!availableSections || availableSections.hasProcedures) {
         <button (click)="onSectionClick('procedures')"
-            [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection === 'procedures', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection !== 'procedures'}"
-            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
+            [ngClass]="activeSection === 'procedures'
+                ? 'bg-cyan-500/10 text-cyan-200 border-cyan-400'
+                : 'text-slate-300 hover:bg-slate-900/60 hover:text-white border-transparent'"
+            class="w-full flex items-center px-4 py-3 text-sm font-semibold rounded-xl border-l-4 transition-colors">
             <lucide-icon [img]="icons.Wrench" class="w-5 h-5 mr-3"></lucide-icon> Procedures
         </button>
         }
 
         <button (click)="onSectionClick('parts')"
-            [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection === 'parts', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection !== 'parts'}"
-            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
+            [ngClass]="activeSection === 'parts'
+                ? 'bg-cyan-500/10 text-cyan-200 border-cyan-400'
+                : 'text-slate-300 hover:bg-slate-900/60 hover:text-white border-transparent'"
+            class="w-full flex items-center px-4 py-3 text-sm font-semibold rounded-xl border-l-4 transition-colors">
             <lucide-icon [img]="icons.Package" class="w-5 h-5 mr-3"></lucide-icon> Parts
         </button>
 
         @if (!availableSections || availableSections.hasSpecs) {
         <button (click)="onSectionClick('specs')"
-            [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection === 'specs', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection !== 'specs'}"
-            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
+            [ngClass]="activeSection === 'specs'
+                ? 'bg-cyan-500/10 text-cyan-200 border-cyan-400'
+                : 'text-slate-300 hover:bg-slate-900/60 hover:text-white border-transparent'"
+            class="w-full flex items-center px-4 py-3 text-sm font-semibold rounded-xl border-l-4 transition-colors">
             <lucide-icon [img]="icons.ClipboardList" class="w-5 h-5 mr-3"></lucide-icon> Specs & Fluids
         </button>
         }
 
         @if (!availableSections || availableSections.hasMaintenance) {
         <button (click)="onSectionClick('maintenance')"
-            [class]="{'bg-cyan-900/50 text-cyan-400 border-cyan-500': activeSection === 'maintenance', 'text-gray-400 hover:bg-gray-700 hover:text-white border-transparent': activeSection !== 'maintenance'}"
-            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
+            [ngClass]="activeSection === 'maintenance'
+                ? 'bg-cyan-500/10 text-cyan-200 border-cyan-400'
+                : 'text-slate-300 hover:bg-slate-900/60 hover:text-white border-transparent'"
+            class="w-full flex items-center px-4 py-3 text-sm font-semibold rounded-xl border-l-4 transition-colors">
             <lucide-icon [img]="icons.ClipboardList" class="w-5 h-5 mr-3"></lucide-icon> Maintenance
         </button>
         }
