@@ -7,7 +7,7 @@ import { LucideAngularModule, Sparkles, Brain } from 'lucide-angular';
 @Component({
   selector: 'app-root',
   template: `
-    <main class="min-h-screen">
+    <main class="min-h-screen bg-black">
       <router-outlet></router-outlet>
       
       <!-- TEMPORARILY DISABLED: AI Toggle (AI features disabled) -->

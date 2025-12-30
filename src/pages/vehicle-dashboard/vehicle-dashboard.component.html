@@ -1,15 +1,15 @@
-<div class="flex h-screen bg-gray-900 text-gray-200 overflow-hidden">
+<div class="min-h-screen md:h-screen bg-black text-white font-mono flex flex-col md:flex-row overflow-hidden">
 
-  <!-- Sidebar Navigation -->
+  <!-- Sidebar Navigation - Desktop Only -->
   <app-dashboard-sidebar [vehicleName]="vehicleName()" [activeSection]="activeSection()"
     (sectionChange)="setSection($event)">
   </app-dashboard-sidebar>
 
   <!-- Mobile Header -->
   <div
-    class="md:hidden fixed top-0 w-full bg-gray-900/95 backdrop-blur z-50 border-b border-gray-700 px-4 py-3 flex items-center justify-between">
-    <span class="font-bold text-white truncate max-w-[200px]">{{ vehicleName() }}</span>
-    <button (click)="toggleMobileMenu()" class="text-cyan-400 p-2 hover:bg-gray-800 rounded-lg">
+    class="md:hidden fixed top-0 w-full bg-black/95 backdrop-blur-sm z-50 border-b border-cyan-500/20 px-4 py-3 flex items-center justify-between">
+    <h1 class="text-xl font-bold text-cyan-400 tracking-wider truncate max-w-[200px]">{{ vehicleName() || 'TORQUE' }}</h1>
+    <button (click)="toggleMobileMenu()" class="text-cyan-400 p-2 hover:bg-black/50 rounded-lg transition-colors">
       <span class="sr-only">Open menu</span>
       @if (isMobileMenuOpen()) {
       <lucide-icon [img]="icons.X" class="w-6 h-6"></lucide-icon>
@@ -21,49 +21,49 @@
 
   <!-- Mobile Navigation Overlay -->
   @if (isMobileMenuOpen()) {
-  <div class="fixed inset-0 z-40 bg-gray-900/95 md:hidden pt-20 px-6 backdrop-blur-xl animate-fade-in">
-    <nav class="space-y-4">
+  <div class="fixed inset-0 z-40 bg-black/95 md:hidden pt-16 px-6 backdrop-blur-xl">
+    <nav class="space-y-2 pt-4">
       <button (click)="setSection('overview')" [class.text-cyan-400]="activeSection() === 'overview'"
-        class="w-full flex items-center p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-all font-bold text-lg">
+        class="w-full flex items-center p-4 rounded-xl bg-gray-900 border border-cyan-500/20 hover:bg-gray-800 hover:border-cyan-500/40 transition-all font-bold text-lg">
         Overview
       </button>
       <button (click)="setSection('dtcs')" [class.text-cyan-400]="activeSection() === 'dtcs'"
-        class="w-full flex items-center p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-all font-bold text-lg">
+        class="w-full flex items-center p-4 rounded-xl bg-gray-900 border border-cyan-500/20 hover:bg-gray-800 hover:border-cyan-500/40 transition-all font-bold text-lg">
         Diagnostic Codes
       </button>
       <button (click)="setSection('tsbs')" [class.text-cyan-400]="activeSection() === 'tsbs'"
-        class="w-full flex items-center p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-all font-bold text-lg">
+        class="w-full flex items-center p-4 rounded-xl bg-gray-900 border border-cyan-500/20 hover:bg-gray-800 hover:border-cyan-500/40 transition-all font-bold text-lg">
         Service Bulletins
       </button>
       <button (click)="setSection('diagrams')" [class.text-cyan-400]="activeSection() === 'diagrams'"
-        class="w-full flex items-center p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-all font-bold text-lg">
+        class="w-full flex items-center p-4 rounded-xl bg-gray-900 border border-cyan-500/20 hover:bg-gray-800 hover:border-cyan-500/40 transition-all font-bold text-lg">
         Wiring & Components
       </button>
       <button (click)="setSection('procedures')" [class.text-cyan-400]="activeSection() === 'procedures'"
-        class="w-full flex items-center p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-all font-bold text-lg">
+        class="w-full flex items-center p-4 rounded-xl bg-gray-900 border border-cyan-500/20 hover:bg-gray-800 hover:border-cyan-500/40 transition-all font-bold text-lg">
         Procedures
       </button>
       <button (click)="setSection('component-locations')"
         [class.text-cyan-400]="activeSection() === 'component-locations'"
-        class="w-full flex items-center p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-all font-bold text-lg">
+        class="w-full flex items-center p-4 rounded-xl bg-gray-900 border border-cyan-500/20 hover:bg-gray-800 hover:border-cyan-500/40 transition-all font-bold text-lg">
         Component Locations
       </button>
       <button (click)="setSection('parts')" [class.text-cyan-400]="activeSection() === 'parts'"
-        class="w-full flex items-center p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-all font-bold text-lg">
+        class="w-full flex items-center p-4 rounded-xl bg-gray-900 border border-cyan-500/20 hover:bg-gray-800 hover:border-cyan-500/40 transition-all font-bold text-lg">
         Parts
       </button>
       <button (click)="setSection('maintenance')" [class.text-cyan-400]="activeSection() === 'maintenance'"
-        class="w-full flex items-center p-4 rounded-xl bg-gray-800 hover:bg-gray-700 transition-all font-bold text-lg">
+        class="w-full flex items-center p-4 rounded-xl bg-gray-900 border border-cyan-500/20 hover:bg-gray-800 hover:border-cyan-500/40 transition-all font-bold text-lg">
         Maintenance
       </button>
-      <hr class="border-gray-700 my-4" />
-      <a routerLink="/" class="block w-full text-center p-4 text-gray-400 hover:text-white">Exit Vehicle</a>
+      <hr class="border-cyan-500/20 my-4" />
+      <a routerLink="/" class="block w-full text-center p-4 text-gray-400 hover:text-cyan-400 transition-colors">Exit Vehicle</a>
     </nav>
   </div>
   }
 
   <!-- Main Content -->
-  <main class="flex-1 overflow-y-auto bg-gray-900 p-4 sm:p-6 lg:p-8 pt-16 md:pt-8 w-full">
+  <main class="flex-1 overflow-y-auto bg-black p-4 md:p-6 lg:p-8 pt-16 md:pt-6 w-full">
 
     <!-- Global Search -->
     <app-dashboard-search [searchTerm]="searchTerm()" (searchChange)="onSearch($event)">
@@ -71,12 +71,12 @@
 
     <!-- Search Results -->
     @if (searchTerm() && filteredArticles().length > 0) {
-    <div class="max-w-5xl mx-auto mb-8 bg-gray-800 border border-cyan-500 rounded-lg p-6">
-      <h3 class="text-cyan-400 font-bold mb-4">Search Results ({{ filteredArticles().length }})</h3>
+    <div class="max-w-5xl mx-auto mb-8 bg-gray-900 border border-cyan-500/30 rounded-lg p-6">
+      <h3 class="text-cyan-400 font-bold mb-4 uppercase tracking-wider">Search Results ({{ filteredArticles().length }})</h3>
       <div class="space-y-2">
         @for (article of filteredArticles().slice(0, 10); track article.id) {
         <a [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', article.id]"
-          class="block p-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors">
+          class="block p-3 bg-black border border-cyan-500/20 hover:bg-gray-900 hover:border-cyan-500/40 rounded-lg transition-colors">
           <span class="text-white font-medium">{{ article.title }}</span>
         </a>
         }
@@ -85,11 +85,11 @@
     }
 
     <!-- Section Content -->
-    <div class="max-w-6xl mx-auto">
+    <div class="max-w-7xl mx-auto">
       @switch (activeSection()) {
       @case ('overview') {
       <div class="space-y-8">
-        <h2 class="text-3xl font-bold text-white mb-6">Common Issues & Quick Access</h2>
+        <h2 class="text-3xl font-bold text-white mb-6 uppercase tracking-wider">Common Issues & Quick Access</h2>
         <app-common-issues-section [vehicleName]="vehicleName()" [contentSource]="contentSource()"
           [vehicleId]="vehicleId()">
         </app-common-issues-section>
@@ -97,7 +97,7 @@
       }
       @case ('dtcs') {
       <div class="space-y-6">
-        <h2 class="text-3xl font-bold text-white mb-6">Diagnostic Trouble Codes</h2>
+        <h2 class="text-3xl font-bold text-white mb-6 uppercase tracking-wider">Diagnostic Trouble Codes</h2>
         <app-dtc-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
         </app-dtc-section>
@@ -105,7 +105,7 @@
       }
       @case ('tsbs') {
       <div class="space-y-6">
-        <h2 class="text-3xl font-bold text-white mb-6">Technical Service Bulletins</h2>
+        <h2 class="text-3xl font-bold text-white mb-6 uppercase tracking-wider">Technical Service Bulletins</h2>
         <app-tsb-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
         </app-tsb-section>
@@ -113,7 +113,7 @@
       }
       @case ('diagrams') {
       <div class="space-y-6">
-        <h2 class="text-3xl font-bold text-white mb-6">Wiring Diagrams & Component Locations</h2>
+        <h2 class="text-3xl font-bold text-white mb-6 uppercase tracking-wider">Wiring Diagrams & Component Locations</h2>
         <app-diagrams-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
         </app-diagrams-section>
@@ -121,7 +121,7 @@
       }
       @case ('procedures') {
       <div class="space-y-6">
-        <h2 class="text-3xl font-bold text-white mb-6">Repair Procedures</h2>
+        <h2 class="text-3xl font-bold text-white mb-6 uppercase tracking-wider">Repair Procedures</h2>
         <app-procedures-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
         </app-procedures-section>
@@ -129,14 +129,14 @@
       }
       @case ('parts') {
       <div class="space-y-6">
-        <h2 class="text-3xl font-bold text-white mb-6">Parts</h2>
+        <h2 class="text-3xl font-bold text-white mb-6 uppercase tracking-wider">Parts</h2>
         <app-parts-section [contentSource]="contentSource()" [vehicleId]="vehicleId()">
         </app-parts-section>
       </div>
       }
       @case ('specs') {
       <div class="space-y-6">
-        <h2 class="text-3xl font-bold text-white mb-6">Specifications & Fluid Capacities</h2>
+        <h2 class="text-3xl font-bold text-white mb-6 uppercase tracking-wider">Specifications & Fluid Capacities</h2>
         <app-specs-fluids-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
         </app-specs-fluids-section>
@@ -144,7 +144,7 @@
       }
       @case ('component-locations') {
       <div class="space-y-6">
-        <h2 class="text-3xl font-bold text-white mb-6">Component Locations</h2>
+        <h2 class="text-3xl font-bold text-white mb-6 uppercase tracking-wider">Component Locations</h2>
         <app-component-locations-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
         </app-component-locations-section>
@@ -152,7 +152,7 @@
       }
       @case ('maintenance') {
       <div class="space-y-6">
-        <h2 class="text-3xl font-bold text-white mb-6">Maintenance Schedules</h2>
+        <h2 class="text-3xl font-bold text-white mb-6 uppercase tracking-wider">Maintenance Schedules</h2>
         <app-maintenance-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
         </app-maintenance-section>

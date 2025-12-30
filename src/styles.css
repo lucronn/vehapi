@@ -10,6 +10,20 @@
 
 @layer components {
 
+    /* Mobile Safe Area Support */
+    .safe-area-inset-bottom {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    /* High-Tech Glow Effects */
+    .tech-glow {
+        box-shadow: 0 0 10px rgba(6, 182, 212, 0.3), 0 0 20px rgba(6, 182, 212, 0.1);
+    }
+
+    .tech-glow-green {
+        box-shadow: 0 0 10px rgba(34, 197, 94, 0.3), 0 0 20px rgba(34, 197, 94, 0.1);
+    }
+
     /* Generated Content Styles */
     .note {
         @apply bg-blue-900/30 border-l-4 border-blue-500 p-4 my-4 rounded-r-lg;

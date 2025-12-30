@@ -9,7 +9,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @for (item of locations(); track trackById($index, item)) {
         <a [routerLink]="['/vehicle', contentSource, vehicleId, 'article', item.id]"
-            class="group block bg-gray-800 border border-gray-700 rounded-lg overflow-hidden hover:border-cyan-500 hover:shadow-lg hover:shadow-cyan-500/10 transition-all duration-300">
+            class="group block bg-gray-900 border border-cyan-500/30 rounded-lg overflow-hidden hover:border-cyan-500/50 hover:shadow-lg hover:shadow-cyan-500/10 transition-all duration-300">
 
             <!-- Thumbnail -->
             <div class="aspect-video bg-gray-900 relative overflow-hidden flex items-center justify-center">
@@ -18,7 +18,7 @@
                     class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
                 } @else {
                 <lucide-icon [img]="icons.Image"
-                    class="w-12 h-12 text-gray-700 group-hover:text-cyan-600 transition-colors"></lucide-icon>
+                    class="w-12 h-12 text-gray-900 group-hover:text-cyan-400 transition-colors"></lucide-icon>
                 }
             </div>
 

@@ -14,9 +14,9 @@ import { LucideAngularModule, Search } from 'lucide-angular';
           placeholder="Global Search (e.g., 'brake caliper', 'P0300')" 
           (input)="onSearchChange($event)"
           [value]="searchTerm"
-          class="w-full p-4 pl-14 bg-gray-800 border border-gray-700 rounded-lg text-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all shadow-lg" />
+          class="w-full p-4 pl-14 bg-black border-2 border-cyan-500/50 rounded-lg text-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all font-mono text-sm" />
         <lucide-icon [img]="icons.Search" 
-          class="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500">
+          class="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-500">
         </lucide-icon>
       </div>
     </div>
