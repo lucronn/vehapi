@@ -13,6 +13,20 @@
         <a [routerLink]="['/vehicle', contentSource, vehicleId, 'article', diagram.id]"
             class="block bg-gray-900 border border-cyan-500/30 hover:border-cyan-500/50 rounded-lg p-4 transition-all hover:shadow-lg hover:shadow-cyan-500/10 group">
             <div class="flex flex-col h-full">
+                <!-- Thumbnail or Icon -->
+                <div class="mb-3">
+                    @if (diagram.thumbnailHref) {
+                    <img [src]="getThumbnailUrl(diagram.thumbnailHref)" [alt]="diagram.title || 'Diagram thumbnail'"
+                        class="w-full h-32 object-cover border border-cyan-500/30 rounded group-hover:border-cyan-500/50 transition-colors mb-2"
+                        (error)="$event.target.style.display='none'" />
+                    } @else {
+                    <div class="w-full h-32 flex items-center justify-center bg-gray-800 border border-cyan-500/30 rounded group-hover:border-cyan-500/50 transition-colors mb-2">
+                        <lucide-icon [img]="icons.Cable"
+                            class="w-8 h-8 text-purple-500 group-hover:text-purple-400 transition-colors">
+                        </lucide-icon>
+                    </div>
+                    }
+                </div>
                 <div class="flex items-start gap-3 mb-3">
                     <div class="flex-shrink-0">
                         <lucide-icon [img]="icons.Cable"

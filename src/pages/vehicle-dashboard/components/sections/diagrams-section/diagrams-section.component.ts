@@ -2,6 +2,7 @@ import { Component, Input, OnInit, signal, inject, ChangeDetectionStrategy } fro
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { VehicleDataService } from '../../../../../services/vehicle-data.service';
+import { MotorApiService } from '../../../../../services/motor-api.service';
 import { WiringDiagram, ComponentLocation } from '../../../../../models/motor.models';
 import { LoadingSkeletonComponent } from '../../../../../components/loading-skeleton/loading-skeleton.component';
 import { EmptyStateComponent } from '../../../../../components/empty-state/empty-state.component';
@@ -23,6 +24,7 @@ export class DiagramsSectionComponent implements OnInit {
     @Input() motorVehicleId?: string;
 
     private vehicleData = inject(VehicleDataService);
+    private motorApi = inject(MotorApiService);
 
     diagrams = signal<(WiringDiagram | ComponentLocation)[]>([]);
     isLoading = signal(false);
@@ -51,5 +53,10 @@ export class DiagramsSectionComponent implements OnInit {
 
     isWiringDiagram(item: WiringDiagram | ComponentLocation): item is WiringDiagram {
         return 'diagramType' in item || 'wiringSystem' in item;
+    }
+
+    getThumbnailUrl(thumbnailHref: string | undefined): string {
+        if (!thumbnailHref) return '';
+        return this.motorApi.getGraphicUrl(thumbnailHref);
     }
 }

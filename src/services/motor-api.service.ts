@@ -268,8 +268,9 @@ export class MotorApiService {
   /**
    * Process HTML content to fix relative URLs for images and links
    * Comprehensive URL processing for all image and asset paths
+   * Also processes custom elements like mtr-doc-link
    */
-  processHtmlContent(html: string): string {
+  processHtmlContent(html: string, contentSource?: string, vehicleId?: string): string {
     if (!html) return '';
 
     // Helper function to normalize and process URLs
@@ -312,13 +313,41 @@ export class MotorApiService {
       return `${this.baseUrl}/${url}`;
     };
 
+    // Process custom mtr-doc-link elements - convert to clickable links
+    // Format: <mtr-doc-link id="2161655">Link Text</mtr-doc-link>
+    // Convert to: <a href="/vehicle/{contentSource}/{vehicleId}/article/{id}">Link Text</a>
+    if (contentSource && vehicleId) {
+      html = html.replace(/<mtr-doc-link\s+id=["']([^"']+)["']>([^<]*)<\/mtr-doc-link>/gi, (match, id, text) => {
+        const linkText = text.trim() || 'View Article';
+        return `<a href="/#/vehicle/${contentSource}/${vehicleId}/article/${id}" class="text-cyan-400 hover:text-cyan-300 underline">${linkText}</a>`;
+      });
+    } else {
+      // If no context, just remove the custom tag and keep the text
+      html = html.replace(/<mtr-doc-link[^>]*>([^<]*)<\/mtr-doc-link>/gi, '$1');
+    }
+
     // Process src attributes (images, iframes, videos, etc.)
-    // Matches: src="..." or src='...' (handles both quotes)
+    // Matches: src="..." or src='...' (handles both quotes, including spaces around =)
     let processed = html.replace(/src\s*=\s*["']([^"']+)["']/gi, (match, url) => {
+      // Trim whitespace from URL
+      url = url.trim();
+      // Skip if empty
+      if (!url) return match;
+      
       const processedUrl = processUrl(url, 'src');
       // Preserve original quote style
       const quote = match.includes("'") ? "'" : '"';
       return `src=${quote}${processedUrl}${quote}`;
+    });
+
+    // Also handle img tags that might not follow standard format
+    // Handle: <img ... data-src="..." /> (lazy loading patterns)
+    processed = processed.replace(/data-src\s*=\s*["']([^"']+)["']/gi, (match, url) => {
+      url = url.trim();
+      if (!url) return match;
+      const processedUrl = processUrl(url, 'data-src');
+      const quote = match.includes("'") ? "'" : '"';
+      return `data-src=${quote}${processedUrl}${quote}`;
     });
 
     // Process href attributes (links)

@@ -54,7 +54,7 @@ export class ArticleViewerComponent {
           content: this.motorApi.getArticleContent(contentSource, vehicleId, articleId)
         }).pipe(
           map(({ title, content }) => {
-            const originalHtml = this.processAndSanitizeHtml(content.body.html);
+            const originalHtml = this.processAndSanitizeHtml(content.body.html, contentSource, vehicleId);
 
             this.originalContent.set(originalHtml);
             this.showOriginal.set(true);
@@ -74,10 +74,10 @@ export class ArticleViewerComponent {
     return this.showOriginal() ? this.originalContent() : this.rewrittenContent();
   });
 
-  private processAndSanitizeHtml(html: string): SafeHtml {
+  private processAndSanitizeHtml(html: string, contentSource?: string, vehicleId?: string): SafeHtml {
     if (!html) return '';
     // Use the comprehensive processHtmlContent from the service
-    const processedHtml = this.motorApi.processHtmlContent(html);
+    const processedHtml = this.motorApi.processHtmlContent(html, contentSource, vehicleId);
     return this.sanitizer.bypassSecurityTrustHtml(processedHtml);
   }
 }
