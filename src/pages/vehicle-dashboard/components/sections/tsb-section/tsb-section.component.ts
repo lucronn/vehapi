@@ -15,6 +15,7 @@ import { MotorApiService } from '../../../../../services/motor-api.service';
 @Component({
     selector: 'app-tsb-section',
     templateUrl: './tsb-section.component.html',
+    styleUrls: ['./tsb-section.component.css'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [CommonModule, RouterModule, LoadingSkeletonComponent, EmptyStateComponent, LucideAngularModule],
     standalone: true
@@ -83,5 +84,23 @@ export class TsbSectionComponent implements OnInit {
     closeViewer() {
         this.selectedTsb.set(null);
         this.tsbContent.set(null);
+    }
+
+    getThumbnailUrl(thumbnailHref: string | undefined): string {
+        if (!thumbnailHref) return '';
+        // If it's already a full URL, return as is
+        if (thumbnailHref.startsWith('http')) return thumbnailHref;
+        // Otherwise, prepend the base URL
+        return this.motorApi.getGraphicUrl(thumbnailHref);
+    }
+
+    formatDate(dateString: string): string {
+        if (!dateString) return '';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        } catch {
+            return dateString;
+        }
     }
 }

@@ -248,9 +248,13 @@ export class MotorApiService {
 
   getGraphicUrl(graphicPath: string): string {
     if (!graphicPath) return '';
+    // If already a full URL, return as is
     if (graphicPath.startsWith('http')) return graphicPath;
-    const path = graphicPath.startsWith('/') ? graphicPath.substring(1) : graphicPath;
-    return `${this.baseUrl}/${path}`;
+    // If it starts with /api/, use it directly
+    if (graphicPath.startsWith('/api/')) return `${this.baseUrl}${graphicPath}`;
+    // Otherwise, ensure leading slash and prepend baseUrl
+    const path = graphicPath.startsWith('/') ? graphicPath : `/${graphicPath}`;
+    return `${this.baseUrl}${path}`;
   }
 
   /**
@@ -260,14 +264,41 @@ export class MotorApiService {
     if (!html) return '';
 
     // Replace relative src attributes (images, scripts)
-    // Matches src="/..." or src='...'
-    let processed = html.replace(/src=["'](\/[^"']+)["']/g, (match, url) => {
+    // Handles various patterns:
+    // - src="/api/..." (absolute path from root)
+    // - src="api/..." (relative path)
+    // - src="/graphic/..." (graphic paths)
+    let processed = html.replace(/src=["'](\/?api\/[^"']+)["']/gi, (match, url) => {
+      // If it already starts with baseUrl, skip
+      if (url.startsWith(this.baseUrl)) return match;
+      // Ensure leading slash
+      const path = url.startsWith('/') ? url : `/${url}`;
+      return `src="${this.baseUrl}${path}"`;
+    });
+
+    // Handle graphic paths (starting with /api/source/.../graphic/...)
+    processed = processed.replace(/src=["'](\/?api\/source\/[^"']+graphic\/[^"']+)["']/gi, (match, url) => {
+      if (url.startsWith(this.baseUrl)) return match;
+      const path = url.startsWith('/') ? url : `/${url}`;
+      return `src="${this.baseUrl}${path}"`;
+    });
+
+    // Handle other relative paths starting with /
+    processed = processed.replace(/src=["'](\/[^"'"]+)["']/g, (match, url) => {
+      if (url.startsWith(this.baseUrl) || url.startsWith('http')) return match;
       return `src="${this.baseUrl}${url}"`;
     });
 
     // Replace relative href attributes (links, css)
-    // Matches href="/..." or href='...'
-    processed = processed.replace(/href=["'](\/[^"']+)["']/g, (match, url) => {
+    processed = processed.replace(/href=["'](\/?api\/[^"']+)["']/gi, (match, url) => {
+      if (url.startsWith(this.baseUrl)) return match;
+      const path = url.startsWith('/') ? url : `/${url}`;
+      return `href="${this.baseUrl}${path}"`;
+    });
+
+    // Handle other relative href paths
+    processed = processed.replace(/href=["'](\/[^"'"]+)["']/g, (match, url) => {
+      if (url.startsWith(this.baseUrl) || url.startsWith('http') || url.startsWith('#')) return match;
       return `href="${this.baseUrl}${url}"`;
     });
 

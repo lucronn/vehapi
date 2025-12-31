@@ -12,10 +12,19 @@
     <div (click)="viewTsb(tsb)"
         class="cursor-pointer block bg-gray-900 border border-cyan-500/30 hover:border-cyan-500/50 rounded-lg p-5 transition-all hover:shadow-lg hover:shadow-cyan-500/10 group">
         <div class="flex items-start gap-4">
-            <div class="flex-shrink-0 mt-1">
-                <lucide-icon [img]="icons.FileText"
-                    class="w-6 h-6 text-blue-500 group-hover:text-blue-400 transition-colors">
-                </lucide-icon>
+            <!-- Thumbnail or Icon -->
+            <div class="flex-shrink-0">
+                @if (tsb.thumbnailHref) {
+                <img [src]="getThumbnailUrl(tsb.thumbnailHref)" [alt]="tsb.title || 'TSB thumbnail'"
+                    class="w-16 h-16 object-cover border border-cyan-500/30 rounded group-hover:border-cyan-500/50 transition-colors"
+                    (error)="$event.target.style.display='none'" />
+                } @else {
+                <div class="w-16 h-16 flex items-center justify-center bg-gray-800 border border-cyan-500/30 rounded group-hover:border-cyan-500/50 transition-colors">
+                    <lucide-icon [img]="icons.FileText"
+                        class="w-8 h-8 text-cyan-500 group-hover:text-cyan-400 transition-colors">
+                    </lucide-icon>
+                </div>
+                }
             </div>
             <div class="flex-1 min-w-0">
                 <h3 class="font-bold text-white group-hover:text-cyan-400 transition-colors mb-2 line-clamp-2">
@@ -24,6 +33,11 @@
                 @if (tsb.bulletinNumber) {
                 <p class="text-sm font-mono text-gray-400 mb-1">
                     Bulletin: {{ tsb.bulletinNumber }}
+                </p>
+                }
+                @if (tsb.releaseDate) {
+                <p class="text-xs text-gray-500 mb-1">
+                    {{ formatDate(tsb.releaseDate) }}
                 </p>
                 }
                 @if (tsb.description) {
@@ -59,7 +73,7 @@
             </div>
 
             <!-- Content -->
-            <div class="flex-1 overflow-y-auto p-6 bg-white text-gray-900 prose prose-sm max-w-none">
+            <div class="flex-1 overflow-y-auto p-6 bg-white text-gray-900 prose prose-sm max-w-none motor-content">
                 @if (isLoadingContent()) {
                 <div class="flex flex-col items-center justify-center h-48 space-y-4">
                     <div class="w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>

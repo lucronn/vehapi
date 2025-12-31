@@ -161,6 +161,8 @@ export interface Tsb {
   bulletinNumber: string;
   title: string;
   releaseDate: string;
+  thumbnailHref?: string;
+  description?: string;
 }
 
 export interface TsbsResponse {
