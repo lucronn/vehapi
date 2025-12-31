@@ -315,11 +315,13 @@ export class MotorApiService {
 
     // Process custom mtr-doc-link elements - convert to clickable links
     // Format: <mtr-doc-link id="2161655">Link Text</mtr-doc-link>
-    // Convert to: <a href="/vehicle/{contentSource}/{vehicleId}/article/{id}">Link Text</a>
+    // Convert to: <a href="#/vehicle/{contentSource}/{vehicleId}/article/{id}">Link Text</a>
+    // Note: Using hash-based routing, so links start with #/
     if (contentSource && vehicleId) {
       html = html.replace(/<mtr-doc-link\s+id=["']([^"']+)["']>([^<]*)<\/mtr-doc-link>/gi, (match, id, text) => {
         const linkText = text.trim() || 'View Article';
-        return `<a href="/#/vehicle/${contentSource}/${vehicleId}/article/${id}" class="text-cyan-400 hover:text-cyan-300 underline">${linkText}</a>`;
+        // Use relative hash route (Angular uses hash location strategy)
+        return `<a href="#/vehicle/${contentSource}/${vehicleId}/article/${id}" class="text-cyan-400 hover:text-cyan-300 underline">${linkText}</a>`;
       });
     } else {
       // If no context, just remove the custom tag and keep the text
@@ -352,10 +354,27 @@ export class MotorApiService {
 
     // Process href attributes (links)
     processed = processed.replace(/href\s*=\s*["']([^"']+)["']/gi, (match, url) => {
-      // Skip anchors and javascript
-      if (url.startsWith('#') || url.startsWith('javascript:')) {
+      url = url.trim();
+      // Skip anchors, hash routes, javascript, mailto, tel
+      if (url.startsWith('#') || 
+          url.startsWith('javascript:') || 
+          url.startsWith('mailto:') || 
+          url.startsWith('tel:')) {
         return match;
       }
+      
+      // Skip if already a full URL (http/https) - these are external links
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        // But if it's pointing to our own baseUrl with a hash route, convert it
+        if (url.includes(this.baseUrl) && url.includes('#/')) {
+          const hashPart = url.substring(url.indexOf('#/'));
+          const quote = match.includes("'") ? "'" : '"';
+          return `href=${quote}${hashPart}${quote}`;
+        }
+        return match;
+      }
+      
+      // Process internal relative URLs
       const processedUrl = processUrl(url, 'href');
       const quote = match.includes("'") ? "'" : '"';
       return `href=${quote}${processedUrl}${quote}`;
