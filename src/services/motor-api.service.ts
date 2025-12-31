@@ -249,57 +249,117 @@ export class MotorApiService {
   getGraphicUrl(graphicPath: string): string {
     if (!graphicPath) return '';
     // If already a full URL, return as is
-    if (graphicPath.startsWith('http')) return graphicPath;
+    if (graphicPath.startsWith('http://') || graphicPath.startsWith('https://')) {
+      return graphicPath;
+    }
     // If it starts with /api/, use it directly
-    if (graphicPath.startsWith('/api/')) return `${this.baseUrl}${graphicPath}`;
-    // Otherwise, ensure leading slash and prepend baseUrl
-    const path = graphicPath.startsWith('/') ? graphicPath : `/${graphicPath}`;
-    return `${this.baseUrl}${path}`;
+    if (graphicPath.startsWith('/api/') || graphicPath.startsWith('api/')) {
+      const cleanPath = graphicPath.startsWith('/') ? graphicPath : `/${graphicPath}`;
+      return `${this.baseUrl}${cleanPath}`;
+    }
+    // If it's an absolute path starting with /
+    if (graphicPath.startsWith('/')) {
+      return `${this.baseUrl}${graphicPath}`;
+    }
+    // Otherwise, treat as relative and prepend baseUrl with /
+    return `${this.baseUrl}/${graphicPath}`;
   }
 
   /**
    * Process HTML content to fix relative URLs for images and links
+   * Comprehensive URL processing for all image and asset paths
    */
   processHtmlContent(html: string): string {
     if (!html) return '';
 
-    // Replace relative src attributes (images, scripts)
-    // Handles various patterns:
-    // - src="/api/..." (absolute path from root)
-    // - src="api/..." (relative path)
-    // - src="/graphic/..." (graphic paths)
-    let processed = html.replace(/src=["'](\/?api\/[^"']+)["']/gi, (match, url) => {
-      // If it already starts with baseUrl, skip
-      if (url.startsWith(this.baseUrl)) return match;
-      // Ensure leading slash
-      const path = url.startsWith('/') ? url : `/${url}`;
-      return `src="${this.baseUrl}${path}"`;
+    // Helper function to normalize and process URLs
+    const processUrl = (url: string, attrName: string = 'src'): string => {
+      // Skip if already a full URL (http/https)
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+      }
+      
+      // Skip if already processed (contains baseUrl)
+      if (url.includes(this.baseUrl)) {
+        return url;
+      }
+      
+      // Skip data URLs, anchors, and javascript
+      if (url.startsWith('data:') || url.startsWith('#') || url.startsWith('javascript:')) {
+        return url;
+      }
+
+      // Handle API paths - these should go through the proxy
+      if (url.startsWith('/api/') || url.startsWith('api/')) {
+        const cleanPath = url.startsWith('/') ? url : `/${url}`;
+        return `${this.baseUrl}${cleanPath}`;
+      }
+
+      // Handle other absolute paths starting with /
+      if (url.startsWith('/')) {
+        return `${this.baseUrl}${url}`;
+      }
+
+      // Handle relative paths (like ../graphic/... or ./image.jpg)
+      // Convert to absolute path through proxy
+      if (url.startsWith('../') || url.startsWith('./')) {
+        // Normalize relative paths - for now, treat as absolute from proxy root
+        const cleanPath = url.replace(/^\.\.?\//, '');
+        return `${this.baseUrl}/${cleanPath}`;
+      }
+
+      // Default: treat as relative path from proxy root
+      return `${this.baseUrl}/${url}`;
+    };
+
+    // Process src attributes (images, iframes, videos, etc.)
+    // Matches: src="..." or src='...' (handles both quotes)
+    let processed = html.replace(/src\s*=\s*["']([^"']+)["']/gi, (match, url) => {
+      const processedUrl = processUrl(url, 'src');
+      // Preserve original quote style
+      const quote = match.includes("'") ? "'" : '"';
+      return `src=${quote}${processedUrl}${quote}`;
     });
 
-    // Handle graphic paths (starting with /api/source/.../graphic/...)
-    processed = processed.replace(/src=["'](\/?api\/source\/[^"']+graphic\/[^"']+)["']/gi, (match, url) => {
-      if (url.startsWith(this.baseUrl)) return match;
-      const path = url.startsWith('/') ? url : `/${url}`;
-      return `src="${this.baseUrl}${path}"`;
+    // Process href attributes (links)
+    processed = processed.replace(/href\s*=\s*["']([^"']+)["']/gi, (match, url) => {
+      // Skip anchors and javascript
+      if (url.startsWith('#') || url.startsWith('javascript:')) {
+        return match;
+      }
+      const processedUrl = processUrl(url, 'href');
+      const quote = match.includes("'") ? "'" : '"';
+      return `href=${quote}${processedUrl}${quote}`;
     });
 
-    // Handle other relative paths starting with /
-    processed = processed.replace(/src=["'](\/[^"'"]+)["']/g, (match, url) => {
-      if (url.startsWith(this.baseUrl) || url.startsWith('http')) return match;
-      return `src="${this.baseUrl}${url}"`;
+    // Process background-image URLs in style attributes
+    processed = processed.replace(/background-image\s*:\s*url\(["']?([^"')]+)["']?\)/gi, (match, url) => {
+      const processedUrl = processUrl(url, 'background');
+      // Remove quotes from url() if they were there
+      const originalHadQuotes = /url\(["']/.test(match);
+      return originalHadQuotes 
+        ? `background-image: url("${processedUrl}")`
+        : `background-image: url(${processedUrl})`;
     });
 
-    // Replace relative href attributes (links, css)
-    processed = processed.replace(/href=["'](\/?api\/[^"']+)["']/gi, (match, url) => {
-      if (url.startsWith(this.baseUrl)) return match;
-      const path = url.startsWith('/') ? url : `/${url}`;
-      return `href="${this.baseUrl}${path}"`;
-    });
-
-    // Handle other relative href paths
-    processed = processed.replace(/href=["'](\/[^"'"]+)["']/g, (match, url) => {
-      if (url.startsWith(this.baseUrl) || url.startsWith('http') || url.startsWith('#')) return match;
-      return `href="${this.baseUrl}${url}"`;
+    // Process srcset attributes (responsive images)
+    processed = processed.replace(/srcset\s*=\s*["']([^"']+)["']/gi, (match, srcset) => {
+      // srcset can have multiple URLs: "image1.jpg 1x, image2.jpg 2x"
+      const processedSrcset = srcset.split(',').map(part => {
+        const trimmed = part.trim();
+        // Extract URL (before space or descriptor like "1x", "2x", "100w")
+        const urlMatch = trimmed.match(/^([^\s]+)/);
+        if (urlMatch) {
+          const url = urlMatch[1];
+          const descriptor = trimmed.substring(url.length).trim();
+          const processedUrl = processUrl(url, 'srcset');
+          return descriptor ? `${processedUrl} ${descriptor}` : processedUrl;
+        }
+        return trimmed;
+      }).join(', ');
+      
+      const quote = match.includes("'") ? "'" : '"';
+      return `srcset=${quote}${processedSrcset}${quote}`;
     });
 
     return processed;

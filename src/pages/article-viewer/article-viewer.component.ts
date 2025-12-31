@@ -76,10 +76,8 @@ export class ArticleViewerComponent {
 
   private processAndSanitizeHtml(html: string): SafeHtml {
     if (!html) return '';
-    const processedHtml = html.replace(/src=["'](\/?api\/[^"']+)["']/g, (match, relativePath) => {
-      const fullUrl = this.motorApi.getGraphicUrl(relativePath);
-      return `src="${fullUrl}"`;
-    });
+    // Use the comprehensive processHtmlContent from the service
+    const processedHtml = this.motorApi.processHtmlContent(html);
     return this.sanitizer.bypassSecurityTrustHtml(processedHtml);
   }
 }
