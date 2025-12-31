@@ -706,7 +706,8 @@ export class HomeComponent implements OnInit {
     this.motorApi.decodeVin(this.searchTerm()).subscribe({
       next: (res) => {
         this.isLoading.set(false);
-        const { contentSource, vehicleId } = res.body;
+        // OpenAPI spec returns: { vin, vehicleId, contentSource?, year?, make?, model? }
+        const { vehicleId, contentSource = 'MOTOR' } = res.body;
         this.router.navigate(['/vehicle', contentSource, vehicleId]);
       },
       error: () => { this.isLoading.set(false); this.errorMessage.set('Could not find a vehicle with that VIN.'); }

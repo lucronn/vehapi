@@ -8,10 +8,27 @@ export interface ApiResponse<T> {
   body: T;
 }
 
+// Content Source Enum
+export type ContentSource = 'MOTOR' | 'GeneralMotors' | 'Honda' | 'Stellantis' | 'Toyota' | 'Nissan' | 'Ford';
+
+// Interval Type Enum
+export type IntervalType = 'Miles' | 'Kilometers' | 'Months';
+
+// Maintenance Schedule Severity Enum
+export type MaintenanceScheduleSeverity = 'All' | 'Severe' | 'Normal';
+
+// Filter Tab Type Enum
+export type FilterTabType = 'Basic' | 'All' | 'Other';
+
+// VIN Decode Response - Updated to match OpenAPI spec
 export interface VinDecodeData {
+  vin: string;
   vehicleId: string;
-  contentSource: string;
-  motorVehicleId: string;
+  contentSource?: string;
+  year?: number;
+  make?: string;
+  model?: string;
+  motorVehicleId?: string;
 }
 
 export interface Make {
@@ -61,8 +78,46 @@ export interface ArticlesData {
   filterTabs: FilterTab[];
 }
 
+// Article Response (matches OpenAPI ArticleResponse schema)
+export interface ArticleResponse {
+  id: string;
+  title: string;
+  content: string;
+  metadata?: Record<string, any>;
+}
+
+// Article Content Data (internal use - wraps HTML)
 export interface ArticleContentData {
   html: string;
+  id?: string;
+  title?: string;
+  metadata?: Record<string, any>;
+}
+
+// Labor Response (matches OpenAPI LaborResponse schema)
+export interface LaborResponseOpenApi {
+  id: string;
+  title: string;
+  content: string;
+  metadata?: Record<string, any>;
+}
+
+// String Response Wrapper
+export interface StringResponse {
+  value: string;
+}
+
+// Maintenance Schedules Response Types
+export interface MaintenanceSchedulesByFrequencyResponse {
+  schedules: any[];
+}
+
+export interface MaintenanceSchedulesByIntervalResponse {
+  schedules: any[];
+}
+
+export interface IndicatorsWithMaintenanceSchedulesResponse {
+  indicators: any[];
 }
 
 export interface PersistedVehicle {
@@ -238,4 +293,93 @@ export interface MaintenanceSchedule {
 
 export interface MaintenanceResponse {
   data: MaintenanceSchedule[];
+}
+
+// Vehicle-related response types
+export interface ModelAndVehicleId {
+  model: string;
+  vehicleId: string;
+}
+
+export interface ModelAndVehicleIdListResponse {
+  items: ModelAndVehicleId[];
+}
+
+export interface GetVehiclesRequest {
+  vehicleIds: string[];
+}
+
+// Search Results Response
+export interface SearchResult {
+  id: string;
+  title: string;
+  articleId: string;
+}
+
+export interface SearchResultsResponse {
+  results: SearchResult[];
+  totalCount: number;
+}
+
+// Part Line Item
+export interface PartLineItem {
+  partNumber: string;
+  description: string;
+  quantity: number;
+}
+
+export interface PartLineItemListResponse {
+  items: PartLineItem[];
+}
+
+// Bookmark types
+export interface ArticleBookmarkResponse {
+  bookmarkId: number;
+  articleId: string;
+  vehicleId: string;
+}
+
+// UI Response Types
+export interface UiUserSettingsResponse {
+  settings: Record<string, any>;
+}
+
+export interface FeedbackConfiguration {
+  [key: string]: any;
+}
+
+export interface FeedbackConfigurationResponse {
+  configurations: FeedbackConfiguration[];
+}
+
+export interface Feedback {
+  message?: string;
+  type?: string;
+  metadata?: Record<string, any>;
+}
+
+// Track Change Types
+export interface StringListResponse {
+  items: string[];
+}
+
+export interface VehicleDeltaReport {
+  [key: string]: any;
+}
+
+export interface VehicleDeltaReportListResponse {
+  items: VehicleDeltaReport[];
+}
+
+// Error Logging
+export interface LogEntry {
+  message?: string;
+  level?: string;
+  timestamp?: string;
+  stackTrace?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface EmptyResponse {
+  [key: string]: any;
 }

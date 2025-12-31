@@ -98,6 +98,47 @@
               autocomplete="off" />
             <lucide-icon [img]="icons.Search"
               class="absolute left-3 top-1/2 transform -translate-y-1/2 text-cyan-500 w-4 h-4 pointer-events-none"></lucide-icon>
+            
+            <!-- Desktop Suggestions Dropdown - Positioned relative to input wrapper -->
+            @if (showSuggestions() && !isVin() && !selectedVehicle() && !unsureModeActive()) {
+            <div #desktopSuggestionsContainer
+              [class]="'absolute left-0 right-0 z-50 bg-black border border-cyan-500/30 rounded-lg shadow-2xl overflow-hidden' + (dropdownPosition() === 'above' ? ' bottom-full mb-2' : ' top-full mt-2')"
+              [style.max-height.px]="dropdownMaxHeight()">
+              <div class="overflow-y-auto" [style.max-height.px]="dropdownMaxHeight()">
+                @if (searchStep() === 'Year' && suggestions().length > 10) {
+                <!-- Grid layout for years when many options -->
+                <div class="grid grid-cols-4 gap-1 p-2">
+                  @for (suggestion of suggestions(); track suggestion.display; let i = $index) {
+                  <button (mousedown)="selectSuggestion($event, suggestion)" (click)="selectSuggestion($event, suggestion)"
+                    [class.bg-cyan-500/30]="selectedSuggestionIndex() === i"
+                    [class.border-cyan-500]="selectedSuggestionIndex() === i"
+                    class="px-3 py-2 text-center text-sm font-mono border border-cyan-500/20 rounded hover:bg-cyan-500/20 hover:border-cyan-500/50 hover:text-cyan-400 transition-colors">
+                    {{ suggestion.display }}
+                  </button>
+                  }
+                </div>
+                } @else {
+                <!-- List layout for other suggestions -->
+                @for (suggestion of suggestions(); track suggestion.display; let i = $index) {
+                <button (mousedown)="selectSuggestion($event, suggestion)" (click)="selectSuggestion($event, suggestion)"
+                  [class.bg-yellow-500]="suggestion.type === 'Unsure'"
+                  [class.text-black]="suggestion.type === 'Unsure'"
+                  [class.border-yellow-500/50]="suggestion.type === 'Unsure'"
+                  [class.bg-cyan-500/30]="selectedSuggestionIndex() === i && suggestion.type !== 'Unsure'"
+                  [class.text-cyan-400]="selectedSuggestionIndex() === i && suggestion.type !== 'Unsure'"
+                  class="w-full text-left px-4 py-3 border-b border-cyan-500/10 last:border-0 hover:bg-cyan-500/20 active:bg-cyan-500/30 transition-colors font-mono text-sm">
+                  {{ suggestion.display }}
+                </button>
+                }
+                }
+                @if(isLoading()) {
+                <div class="px-4 py-3 text-cyan-400 text-center text-sm font-mono uppercase tracking-wider">Loading...</div>
+                } @else if(suggestions().length === 0) {
+                <div class="px-4 py-3 text-gray-500 text-center text-sm font-mono">No results found</div>
+                }
+              </div>
+            </div>
+            }
           </div>
           <button (click)="submitSearch()" [disabled]="isLoading() || (!isVin() && !selectedVehicle())"
             class="bg-cyan-500 text-black font-bold px-6 py-3 hover:bg-cyan-400 active:bg-cyan-600 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors uppercase tracking-wider text-sm">
@@ -108,47 +149,6 @@
             class="bg-gray-800 border border-gray-700 text-white px-4 py-3 hover:bg-gray-700 active:bg-gray-600 transition-colors uppercase tracking-wider text-sm">
             CLR
           </button>
-          }
-          
-          <!-- Desktop Suggestions Dropdown -->
-          @if (showSuggestions() && !isVin() && !selectedVehicle() && !unsureModeActive()) {
-          <div #desktopSuggestionsContainer
-            [class]="'absolute left-0 right-0 z-50 bg-black border border-cyan-500/30 rounded-lg shadow-2xl overflow-hidden' + (dropdownPosition() === 'above' ? ' bottom-full mb-2' : ' top-full mt-2')"
-            [style.max-height.px]="dropdownMaxHeight()">
-            <div class="overflow-y-auto" [style.max-height.px]="dropdownMaxHeight()">
-              @if (searchStep() === 'Year' && suggestions().length > 10) {
-              <!-- Grid layout for years when many options -->
-              <div class="grid grid-cols-4 gap-1 p-2">
-                @for (suggestion of suggestions(); track suggestion.display; let i = $index) {
-                <button (mousedown)="selectSuggestion($event, suggestion)" (click)="selectSuggestion($event, suggestion)"
-                  [class.bg-cyan-500/30]="selectedSuggestionIndex() === i"
-                  [class.border-cyan-500]="selectedSuggestionIndex() === i"
-                  class="px-3 py-2 text-center text-sm font-mono border border-cyan-500/20 rounded hover:bg-cyan-500/20 hover:border-cyan-500/50 hover:text-cyan-400 transition-colors">
-                  {{ suggestion.display }}
-                </button>
-                }
-              </div>
-              } @else {
-              <!-- List layout for other suggestions -->
-              @for (suggestion of suggestions(); track suggestion.display; let i = $index) {
-              <button (mousedown)="selectSuggestion($event, suggestion)" (click)="selectSuggestion($event, suggestion)"
-                [class.bg-yellow-500]="suggestion.type === 'Unsure'"
-                [class.text-black]="suggestion.type === 'Unsure'"
-                [class.border-yellow-500/50]="suggestion.type === 'Unsure'"
-                [class.bg-cyan-500/30]="selectedSuggestionIndex() === i && suggestion.type !== 'Unsure'"
-                [class.text-cyan-400]="selectedSuggestionIndex() === i && suggestion.type !== 'Unsure'"
-                class="w-full text-left px-4 py-3 border-b border-cyan-500/10 last:border-0 hover:bg-cyan-500/20 active:bg-cyan-500/30 transition-colors font-mono text-sm">
-                {{ suggestion.display }}
-              </button>
-              }
-              }
-              @if(isLoading()) {
-              <div class="px-4 py-3 text-cyan-400 text-center text-sm font-mono uppercase tracking-wider">Loading...</div>
-              } @else if(suggestions().length === 0) {
-              <div class="px-4 py-3 text-gray-500 text-center text-sm font-mono">No results found</div>
-              }
-            </div>
-          </div>
           }
         </div>
         } @else {
