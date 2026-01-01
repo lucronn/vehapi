@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, map, of } from 'rxjs';
+import { HttpClient, HttpParams, HttpRequest, HttpEvent } from '@angular/common/http';
+import { Observable, map, of, tap, catchError } from 'rxjs';
 import {
   ApiResponse,
   ArticlesData,
@@ -50,29 +50,128 @@ export class MotorApiService {
   // Cache for article searches to prevent redundant API calls
   private articleCache = new Map<string, ApiResponse<ArticlesData>>();
 
+  /**
+   * Verbose logging helper for API requests
+   */
+  private logRequest(method: string, url: string, params?: any, body?: any): void {
+    const timestamp = new Date().toISOString();
+    console.group(`[API REQUEST] ${method} ${timestamp}`);
+    console.log('📍 Frontend → Proxy');
+    console.log(`   URL: ${url}`);
+    console.log(`   Method: ${method}`);
+    if (params) {
+      console.log(`   Params:`, params);
+    }
+    if (body) {
+      console.log(`   Body:`, body);
+    }
+    console.log(`   Proxy: ${this.baseUrl}`);
+    console.log(`   Target: sites.motor.com/m1`);
+    console.groupEnd();
+  }
+
+  /**
+   * Verbose logging helper for API responses
+   */
+  private logResponse(url: string, status: number, statusText: string, headers: any, bodySize?: number, duration?: number): void {
+    const timestamp = new Date().toISOString();
+    console.group(`[API RESPONSE] ${timestamp}`);
+    console.log('📍 Proxy → Frontend');
+    console.log(`   URL: ${url}`);
+    console.log(`   Status: ${status} ${statusText}`);
+    console.log(`   Headers:`, headers);
+    if (bodySize !== undefined) {
+      console.log(`   Response Size: ${bodySize} bytes`);
+    }
+    if (duration !== undefined) {
+      console.log(`   Duration: ${duration}ms`);
+    }
+    console.groupEnd();
+  }
+
+  /**
+   * Verbose logging helper for API errors
+   */
+  private logApiError(url: string, error: any, duration?: number): void {
+    const timestamp = new Date().toISOString();
+    console.group(`[API ERROR] ${timestamp}`);
+    console.error('❌ Request Failed');
+    console.log(`   URL: ${url}`);
+    console.log(`   Error:`, error);
+    if (error.status) {
+      console.log(`   Status: ${error.status} ${error.statusText}`);
+    }
+    if (error.message) {
+      console.log(`   Message: ${error.message}`);
+    }
+    if (error.error) {
+      console.log(`   Error Body:`, error.error);
+    }
+    if (duration !== undefined) {
+      console.log(`   Duration: ${duration}ms`);
+    }
+    console.log(`   Flow: Frontend → Proxy → sites.motor.com/m1`);
+    console.groupEnd();
+  }
+
+  /**
+   * Wrapper for HTTP GET requests with verbose logging
+   */
+  private getWithLogging<T>(url: string, params?: HttpParams | { [param: string]: string | number | boolean | readonly (string | number | boolean)[] }): Observable<T> {
+    const startTime = performance.now();
+    this.logRequest('GET', url, params);
+    
+    return this.http.get<T>(url, { params, observe: 'response' }).pipe(
+      tap(response => {
+        const duration = Math.round(performance.now() - startTime);
+        const bodySize = response.body ? JSON.stringify(response.body).length : 0;
+        this.logResponse(
+          url,
+          response.status,
+          response.statusText,
+          Object.fromEntries(response.headers.keys().map(key => [key, response.headers.get(key)])),
+          bodySize,
+          duration
+        );
+      }),
+      map(response => response.body as T),
+      catchError(error => {
+        const duration = Math.round(performance.now() - startTime);
+        this.logApiError(url, error, duration);
+        throw error;
+      })
+    );
+  }
+
   decodeVin(vin: string): Observable<ApiResponse<VinDecodeData>> {
     // Fixed endpoint to match OpenAPI spec: /api/vin/{vin}/vehicle
-    return this.http.get<ApiResponse<VinDecodeData>>(`${this.baseUrl}/api/vin/${vin}/vehicle`);
+    const url = `${this.baseUrl}/api/vin/${vin}/vehicle`;
+    return this.getWithLogging<ApiResponse<VinDecodeData>>(url);
   }
 
   getYears(): Observable<ApiResponse<number[]>> {
-    return this.http.get<ApiResponse<number[]>>(`${this.baseUrl}/api/years`);
+    const url = `${this.baseUrl}/api/years`;
+    return this.getWithLogging<ApiResponse<number[]>>(url);
   }
 
   getMakes(year: number): Observable<ApiResponse<Make[]>> {
-    return this.http.get<ApiResponse<Make[]>>(`${this.baseUrl}/api/year/${year}/makes`);
+    const url = `${this.baseUrl}/api/year/${year}/makes`;
+    return this.getWithLogging<ApiResponse<Make[]>>(url);
   }
 
   getModels(year: number, make: string): Observable<ApiResponse<ModelsData>> {
-    return this.http.get<ApiResponse<ModelsData>>(`${this.baseUrl}/api/year/${year}/make/${make}/models`);
+    const url = `${this.baseUrl}/api/year/${year}/make/${make}/models`;
+    return this.getWithLogging<ApiResponse<ModelsData>>(url);
   }
 
   getMotorVehicles(contentSource: string, vehicleId: string): Observable<ApiResponse<any[]>> {
-    return this.http.get<ApiResponse<any[]>>(`${this.baseUrl}/api/source/${contentSource}/${vehicleId}/motorvehicles`);
+    const url = `${this.baseUrl}/api/source/${contentSource}/${vehicleId}/motorvehicles`;
+    return this.getWithLogging<ApiResponse<any[]>>(url);
   }
 
   getVehicleName(contentSource: string, vehicleId: string): Observable<ApiResponse<string>> {
-    return this.http.get<ApiResponse<string>>(`${this.baseUrl}/api/source/${contentSource}/${vehicleId}/name`);
+    const url = `${this.baseUrl}/api/source/${contentSource}/${vehicleId}/name`;
+    return this.getWithLogging<ApiResponse<string>>(url);
   }
 
   searchArticles(contentSource: string, vehicleId: string, searchTerm: string = ''): Observable<ApiResponse<ArticlesData>> {
@@ -81,6 +180,7 @@ export class MotorApiService {
 
     // Return cached data if available
     if (this.articleCache.has(cacheKey)) {
+      console.log(`[API CACHE HIT] searchArticles: ${cacheKey}`);
       return of(this.articleCache.get(cacheKey)!);
     }
 
@@ -88,13 +188,35 @@ export class MotorApiService {
     // Reference implementation always sends searchTerm, even if empty
     const params: any = { searchTerm: searchTerm };
 
-    return this.http.get<ApiResponse<ArticlesData>>(url, { params }).pipe(
-      // Cache the successful response
+    const startTime = performance.now();
+    this.logRequest('GET', url, params);
+    
+    return this.http.get<ApiResponse<ArticlesData>>(url, { params, observe: 'response' }).pipe(
+      tap(response => {
+        const duration = Math.round(performance.now() - startTime);
+        const bodySize = response.body ? JSON.stringify(response.body).length : 0;
+        this.logResponse(
+          url,
+          response.status,
+          response.statusText,
+          Object.fromEntries(response.headers.keys().map(key => [key, response.headers.get(key)])),
+          bodySize,
+          duration
+        );
+      }),
       map(response => {
-        if (response.header.statusCode === 200) {
-          this.articleCache.set(cacheKey, response);
+        const data = response.body!;
+        // Cache the successful response
+        if (data.header.statusCode === 200) {
+          this.articleCache.set(cacheKey, data);
+          console.log(`[API CACHE SET] searchArticles: ${cacheKey}`);
         }
-        return response;
+        return data;
+      }),
+      catchError(error => {
+        const duration = Math.round(performance.now() - startTime);
+        this.logApiError(url, error, duration);
+        throw error;
       })
     );
   }
@@ -102,7 +224,8 @@ export class MotorApiService {
   // Specific Data Endpoints
 
   getFluids(contentSource: string, vehicleId: string): Observable<ApiResponse<FluidsResponse>> {
-    return this.http.get<ApiResponse<FluidsResponse>>(`${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/fluids`);
+    const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/fluids`;
+    return this.getWithLogging<ApiResponse<FluidsResponse>>(url);
   }
 
   // Backward compatible method - kept for existing code
@@ -226,7 +349,7 @@ export class MotorApiService {
 
   getArticleContent(contentSource: string, vehicleId: string, articleId: string): Observable<ApiResponse<ArticleContentData>> {
     const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/article/${articleId}`;
-    return this.http.get<ApiResponse<ArticleContentData>>(url);
+    return this.getWithLogging<ApiResponse<ArticleContentData>>(url);
   }
 
   getArticleXml(contentSource: string, articleId: string): Observable<string> {
@@ -238,11 +361,34 @@ export class MotorApiService {
   getArticleTitle(contentSource: string, vehicleId: string, articleId: string): Observable<ApiResponse<string>> {
     // OpenAPI returns StringResponse wrapper, but we extract the value for backward compatibility
     const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/article/${articleId}/title`;
-    return this.http.get<ApiResponse<StringResponse>>(url).pipe(
-      map(response => ({
-        ...response,
-        body: response.body.value
-      }))
+    const startTime = performance.now();
+    this.logRequest('GET', url);
+    
+    return this.http.get<ApiResponse<StringResponse>>(url, { observe: 'response' }).pipe(
+      tap(response => {
+        const duration = Math.round(performance.now() - startTime);
+        const bodySize = response.body ? JSON.stringify(response.body).length : 0;
+        this.logResponse(
+          url,
+          response.status,
+          response.statusText,
+          Object.fromEntries(response.headers.keys().map(key => [key, response.headers.get(key)])),
+          bodySize,
+          duration
+        );
+      }),
+      map(response => {
+        const body = response.body!;
+        return {
+          ...body,
+          body: body.body.value
+        } as ApiResponse<string>;
+      }),
+      catchError(error => {
+        const duration = Math.round(performance.now() - startTime);
+        this.logApiError(url, error, duration);
+        throw error;
+      })
     );
   }
 
