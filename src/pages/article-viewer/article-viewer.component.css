@@ -4,6 +4,209 @@
   color: #e5e7eb;
 }
 
+/* Mobile: Reduce font size and margins for maximum screen space */
+@media (max-width: 768px) {
+  .motor-content {
+    font-size: 0.9375rem;
+    /* 15px on mobile - slightly smaller */
+  }
+
+  .motor-content h1,
+  .motor-content h2,
+  .motor-content h3 {
+    margin-top: 0.75rem;
+    margin-bottom: 0.5rem;
+    padding: 0.75rem 1rem;
+    background-color: rgba(34, 211, 238, 0.1);
+    border: 1px solid rgba(34, 211, 238, 0.3);
+    border-radius: 0.5rem;
+    border-bottom: 1px solid rgba(34, 211, 238, 0.3);
+    font-weight: 700;
+    font-size: 0.9375rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #22d3ee;
+  }
+
+  .motor-content p {
+    margin-bottom: 0.625rem;
+    line-height: 1.5;
+  }
+
+  .motor-content ol>li {
+    padding: 0.5rem 0.5rem 0.5rem 2.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Mobile: Transform tables into compact card-based layout */
+  .motor-content .table-wrapper-mobile {
+    overflow-x: visible;
+    margin-bottom: 0.5rem;
+    width: 100%;
+  }
+
+  .motor-content .table-wrapper-mobile table {
+    display: block;
+    width: 100%;
+    border: none;
+    background: transparent;
+    margin: 0;
+  }
+
+  .motor-content .table-wrapper-mobile colgroup {
+    display: none;
+  }
+
+  /* Hide thead on mobile - headers are shown via data-label */
+  .motor-content .table-wrapper-mobile thead {
+    display: none;
+  }
+
+  /* Hide first tbody row if it was marked as header row */
+  .motor-content .table-wrapper-mobile tbody tr.mobile-header-row {
+    display: none;
+  }
+
+  .motor-content .table-wrapper-mobile tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .motor-content .table-wrapper-mobile tbody tr {
+    display: block;
+    width: 100%;
+    margin-bottom: 0.375rem;
+    background-color: rgba(31, 41, 55, 0.5);
+    border: 1px solid #374151;
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+    box-sizing: border-box;
+    position: relative;
+    scroll-margin-top: 4rem;
+    /* Space for sticky header when scrolling */
+  }
+
+  .motor-content .table-wrapper-mobile tbody tr:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Navigation arrows between steps */
+  .motor-content .step-nav-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 1.5rem;
+    margin: 0.25rem auto;
+    background-color: rgba(34, 211, 238, 0.2);
+    color: #22d3ee;
+    border-radius: 0.25rem;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    border: 1px solid rgba(34, 211, 238, 0.3);
+    transition: all 0.2s;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .motor-content .step-nav-arrow:active {
+    background-color: rgba(34, 211, 238, 0.4);
+    transform: scale(0.95);
+  }
+
+  /* Stack table cells vertically - compact */
+  .motor-content .table-wrapper-mobile td {
+    display: block;
+    width: 100% !important;
+    padding: 0.25rem 0;
+    text-align: left;
+    border: none;
+    border-bottom: 1px solid rgba(55, 65, 81, 0.2);
+    font-size: 0.8125rem;
+    /* 13px - more compact */
+    line-height: 1.4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    min-width: auto !important;
+    max-width: 100% !important;
+  }
+
+  /* Hide empty cells */
+  .motor-content .table-wrapper-mobile td[style*="display: none"] {
+    display: none !important;
+    padding: 0;
+    margin: 0;
+    border: none;
+  }
+
+  .motor-content .table-wrapper-mobile td:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  /* Show data-label inline with content - no line break */
+  .motor-content .table-wrapper-mobile td[data-label] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.375rem;
+  }
+
+  .motor-content .table-wrapper-mobile td[data-label]::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #22d3ee;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    line-height: 1.4;
+    flex-shrink: 0;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: baseline;
+  }
+
+  /* For STEP labels, add colon and space */
+  .motor-content .table-wrapper-mobile td[data-label="STEP"]::before {
+    content: attr(data-label) ' ';
+  }
+
+  /* Style step numbers when consolidated - make them inline */
+  .motor-content .table-wrapper-mobile td .step-number {
+    font-weight: 700;
+    color: #e5e7eb;
+    font-size: 0.875rem;
+    display: inline;
+  }
+
+  /* Ensure content flows inline with label */
+  .motor-content .table-wrapper-mobile td[data-label] > * {
+    display: inline;
+    margin: 0;
+  }
+
+  /* Hide label if cell content is effectively empty */
+  .motor-content .table-wrapper-mobile td[data-label]:empty::before {
+    display: none;
+  }
+
+  /* Ensure nested content displays properly */
+  .motor-content .table-wrapper-mobile td p,
+  .motor-content .table-wrapper-mobile td div,
+  .motor-content .table-wrapper-mobile td span {
+    display: inline;
+    margin: 0;
+  }
+
+  /* Prevent text from breaking awkwardly */
+  .motor-content .table-wrapper-mobile td {
+    hyphens: auto;
+    -webkit-hyphens: auto;
+  }
+}
+
 .motor-content h1,
 .motor-content h2,
 .motor-content h3 {
@@ -17,9 +220,17 @@
   font-weight: 600;
 }
 
+
 .motor-content p {
   margin-bottom: 1.25rem;
   line-height: 1.8;
+}
+
+@media (max-width: 768px) {
+  .motor-content p {
+    margin-bottom: 0.625rem;
+    line-height: 1.5;
+  }
 }
 
 /* List Styling - Steps as distinct cards */
@@ -127,6 +338,50 @@
   /* gray-800 */
   border-radius: 0.5rem;
   overflow: hidden;
+  /* Ensure table respects container width */
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .motor-content table {
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* Table wrapper for horizontal scroll on mobile */
+.motor-content .table-wrapper-mobile {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
+  /* Smooth scrolling on iOS */
+}
+
+@media (max-width: 768px) {
+  /* Create scrollable container for wide tables */
+  .motor-content {
+    overflow-x: visible;
+    /* Allow child elements to overflow */
+  }
+
+  /* Table wrapper styling for mobile */
+  .motor-content .table-wrapper-mobile {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    /* Smooth scrolling on iOS */
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  /* Ensure tables inside wrapper can be wider than viewport */
+  .motor-content .table-wrapper-mobile table {
+    margin-bottom: 0;
+    /* Remove bottom margin since wrapper has it */
+  }
 }
 
 .motor-content th,
@@ -173,6 +428,45 @@
   /* Soften background */
 }
 
+/* Style "Important" sections and similar as cards on mobile */
+@media (max-width: 768px) {
+  .motor-content .note,
+  .motor-content .caution,
+  .motor-content .warning {
+    padding: 0.75rem 1rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid;
+  }
+
+  /* Style "Important" sections as cards */
+  .motor-content .important-section,
+  .motor-content p:has(strong:first-child),
+  .motor-content div:has(strong:first-child) {
+    background-color: rgba(251, 191, 36, 0.1);
+    /* amber with low opacity */
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .motor-content .important-section strong:first-child,
+  .motor-content p strong:first-child,
+  .motor-content div strong:first-child {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #fbbf24;
+    /* amber-400 */
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+  }
+}
+
 .motor-content .note {
   background-color: rgba(30, 58, 138, 0.4);
   /* blue-900 softer */
@@ -214,4 +508,367 @@
 .prose ol {
   margin-left: 1.5rem;
   margin-bottom: 1rem;
+}
+
+/* Document header in mobile header */
+header .document-header {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #e5e7eb;
+  margin: 0;
+  flex: 1;
+  text-align: center;
+  padding: 0 0.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Section Cards - Grouped Content */
+.motor-content .section-card {
+  margin-bottom: 1.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid;
+  overflow: hidden;
+  background-color: rgba(17, 24, 39, 0.6);
+  transition: all 0.3s ease;
+}
+
+.motor-content .section-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.motor-content .section-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid;
+  font-weight: 600;
+}
+
+.motor-content .section-card-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.motor-content .section-card-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex: 1;
+}
+
+.motor-content .section-card-content {
+  padding: 1.25rem;
+}
+
+.motor-content .section-card-content > *:first-child {
+  margin-top: 0;
+}
+
+.motor-content .section-card-content > *:last-child {
+  margin-bottom: 0;
+}
+
+/* Headings inside cards should be styled normally since we exclude them from content */
+
+/* Ensure all content types are included in cards */
+.motor-content .section-card-content ol,
+.motor-content .section-card-content ul,
+.motor-content .section-card-content table,
+.motor-content .section-card-content p,
+.motor-content .section-card-content div {
+  margin-bottom: 1rem;
+}
+
+.motor-content .section-card-content ol:last-child,
+.motor-content .section-card-content ul:last-child,
+.motor-content .section-card-content table:last-child,
+.motor-content .section-card-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Section Card Type Styles */
+.motor-content .section-card-special-tools {
+  border-color: rgba(34, 211, 238, 0.4);
+  background-color: rgba(6, 182, 212, 0.1);
+}
+
+.motor-content .section-card-special-tools .section-card-header {
+  background-color: rgba(6, 182, 212, 0.15);
+  border-bottom-color: rgba(34, 211, 238, 0.3);
+  color: #67e8f9;
+}
+
+.motor-content .section-card-warning {
+  border-color: rgba(248, 113, 113, 0.4);
+  background-color: rgba(127, 29, 29, 0.2);
+}
+
+.motor-content .section-card-warning .section-card-header {
+  background-color: rgba(127, 29, 29, 0.25);
+  border-bottom-color: rgba(248, 113, 113, 0.3);
+  color: #fca5a5;
+}
+
+.motor-content .section-card-removal {
+  border-color: rgba(251, 146, 60, 0.4);
+  background-color: rgba(154, 52, 18, 0.15);
+}
+
+.motor-content .section-card-removal .section-card-header {
+  background-color: rgba(154, 52, 18, 0.2);
+  border-bottom-color: rgba(251, 146, 60, 0.3);
+  color: #fdba74;
+}
+
+.motor-content .section-card-installation {
+  border-color: rgba(74, 222, 128, 0.4);
+  background-color: rgba(20, 83, 45, 0.15);
+  margin-top: 3rem;
+  position: relative;
+}
+
+/* Add visual separator before installation procedure */
+.motor-content .section-card-installation::before {
+  content: '';
+  position: absolute;
+  top: -1.5rem;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(34, 211, 238, 0.3), transparent);
+}
+
+.motor-content .section-card-installation .section-card-header {
+  background-color: rgba(20, 83, 45, 0.2);
+  border-bottom-color: rgba(74, 222, 128, 0.3);
+  color: #86efac;
+}
+
+/* Extra spacing when installation follows removal */
+.motor-content .section-card-removal + .section-card-installation {
+  margin-top: 3.5rem;
+}
+
+.motor-content .section-card-removal + .section-card-installation::before {
+  top: -1.75rem;
+  height: 2px;
+  background: linear-gradient(to right, transparent, rgba(34, 211, 238, 0.5), transparent);
+}
+
+.motor-content .section-card-note {
+  border: none;
+  background-color: transparent;
+  margin-bottom: 0.5rem;
+  display: block;
+  padding: 0;
+  border-radius: 0;
+}
+
+.motor-content .section-card-note .section-card-header {
+  display: none;
+}
+
+.motor-content .section-card-note .section-card-content {
+  padding: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #d1d5db;
+  display: inline;
+}
+
+.motor-content .section-card-note .section-card-content p,
+.motor-content .section-card-note .section-card-content div {
+  margin: 0;
+  display: inline;
+}
+
+.motor-content .section-card-note .section-card-content p:not(:last-child)::after,
+.motor-content .section-card-note .section-card-content div:not(:last-child)::after {
+  content: ' ';
+}
+
+.motor-content .section-card-warning {
+  border: none;
+  background-color: transparent;
+  margin-bottom: 0.5rem;
+  display: block;
+  padding: 0;
+  border-radius: 0;
+}
+
+.motor-content .section-card-warning .section-card-header {
+  display: none;
+}
+
+.motor-content .section-card-warning .section-card-content {
+  padding: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #d1d5db;
+  display: inline;
+}
+
+.motor-content .section-card-warning .section-card-content p,
+.motor-content .section-card-warning .section-card-content div {
+  margin: 0;
+  display: inline;
+}
+
+.motor-content .section-card-warning .section-card-content p:not(:last-child)::after,
+.motor-content .section-card-warning .section-card-content div:not(:last-child)::after {
+  content: ' ';
+}
+
+/* Inline notes and warnings inside other cards - minimal styling, no borders/backgrounds */
+.motor-content .section-inline-note,
+.motor-content .section-inline-warning {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.375rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  margin: 0.25rem 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.motor-content .section-inline-note {
+  color: #67e8f9;
+}
+
+.motor-content .section-inline-warning {
+  color: #fca5a5;
+}
+
+.motor-content .section-inline-note::before,
+.motor-content .section-inline-warning::before {
+  display: none;
+}
+
+.motor-content .section-inline-note p,
+.motor-content .section-inline-warning p,
+.motor-content .section-inline-note div,
+.motor-content .section-inline-warning div {
+  margin: 0;
+  display: inline;
+  color: #d1d5db;
+}
+
+.motor-content .section-card-prerequisites {
+  border-color: rgba(168, 85, 247, 0.4);
+  background-color: rgba(88, 28, 135, 0.15);
+}
+
+.motor-content .section-card-prerequisites .section-card-header {
+  background-color: rgba(88, 28, 135, 0.2);
+  border-bottom-color: rgba(168, 85, 247, 0.3);
+  color: #c4b5fd;
+}
+
+.motor-content .section-card-torque {
+  border-color: rgba(250, 204, 21, 0.4);
+  background-color: rgba(113, 63, 18, 0.15);
+}
+
+.motor-content .section-card-torque .section-card-header {
+  background-color: rgba(113, 63, 18, 0.2);
+  border-bottom-color: rgba(250, 204, 21, 0.3);
+  color: #fde047;
+}
+
+.motor-content .section-card-important {
+  border-color: rgba(251, 191, 36, 0.4);
+  background-color: rgba(146, 64, 14, 0.15);
+}
+
+.motor-content .section-card-important .section-card-header {
+  background-color: rgba(146, 64, 14, 0.2);
+  border-bottom-color: rgba(251, 191, 36, 0.3);
+  color: #fcd34d;
+}
+
+.motor-content .section-card-general {
+  border-color: rgba(107, 114, 128, 0.4);
+  background-color: rgba(31, 41, 55, 0.3);
+}
+
+.motor-content .section-card-general .section-card-header {
+  background-color: rgba(31, 41, 55, 0.4);
+  border-bottom-color: rgba(107, 114, 128, 0.3);
+  color: #d1d5db;
+}
+
+/* Mobile adjustments for section cards */
+@media (max-width: 768px) {
+  .motor-content .section-card {
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+  }
+
+  .motor-content .section-card-header {
+    padding: 0.75rem 1rem;
+    gap: 0.5rem;
+  }
+
+  .motor-content .section-card-icon {
+    font-size: 1.25rem;
+  }
+
+  .motor-content .section-card-title {
+    font-size: 0.9375rem;
+  }
+
+  .motor-content .section-card-content {
+    padding: 1rem;
+  }
+
+  .motor-content .section-card-content h1,
+  .motor-content .section-card-content h2,
+  .motor-content .section-card-content h3 {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .motor-content .section-card-content p {
+    margin-bottom: 0.625rem;
+  }
+
+  /* Even more compact on mobile for notes and warnings */
+  .motor-content .section-card-note,
+  .motor-content .section-card-warning {
+    margin-bottom: 0.375rem;
+    gap: 0.25rem;
+  }
+
+
+  .motor-content .section-card-note .section-card-content,
+  .motor-content .section-card-warning .section-card-content {
+    font-size: 0.8125rem;
+  }
+
+  /* Mobile spacing for installation procedure */
+  .motor-content .section-card-installation {
+    margin-top: 2rem;
+  }
+
+  .motor-content .section-card-installation::before {
+    top: -1rem;
+  }
+
+  .motor-content .section-card-removal + .section-card-installation {
+    margin-top: 2.5rem;
+  }
+
+  .motor-content .section-card-removal + .section-card-installation::before {
+    top: -1.25rem;
+  }
 }

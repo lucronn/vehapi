@@ -3,21 +3,19 @@ import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { forkJoin, map, of, switchMap, Subject, debounceTime, distinctUntilChanged, firstValueFrom } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged, firstValueFrom, catchError, of } from 'rxjs';
 
 import { MotorApiService } from '../../services/motor-api.service';
-import { GeminiService } from '../../services/gemini.service';
 import { VehiclePersistenceService } from '../../services/vehicle-persistence.service';
 import { LogoComponent } from '../../components/logo/logo.component';
-import { Make, Model, Engine, PersistedVehicle, Article, ComparisonResult } from '../../models/motor.models';
-import { LucideAngularModule, Search, Sparkles, Lightbulb, X, ArrowRight, ArrowUpRight } from 'lucide-angular';
+import { Make, Model, Engine, PersistedVehicle } from '../../models/motor.models';
+import { LucideAngularModule, Search, X, ArrowRight, ArrowUpRight } from 'lucide-angular';
 
 type Suggestion =
   | { type: 'Year'; value: number; display: string }
   | { type: 'Make'; value: Make; display: string }
   | { type: 'Model'; value: Model; display: string }
-  | { type: 'Engine'; value: { vehicleId: string; displayName: string }; display: string }
-  | { type: 'Unsure'; value: 'unsure'; display: string };
+  | { type: 'Engine'; value: { vehicleId: string; displayName: string }; display: string };
 
 @Component({
   selector: 'app-home',
@@ -26,9 +24,8 @@ type Suggestion =
   imports: [CommonModule, FormsModule, LogoComponent, RouterModule, LucideAngularModule],
 })
 export class HomeComponent implements OnInit {
-  readonly icons = { Search, Sparkles, Lightbulb, X, ArrowRight, ArrowUpRight };
+  readonly icons = { Search, X, ArrowRight, ArrowUpRight };
   private motorApi = inject(MotorApiService);
-  private geminiApi = inject(GeminiService);
   private persistence = inject(VehiclePersistenceService);
   private router = inject(Router);
 
@@ -49,7 +46,19 @@ export class HomeComponent implements OnInit {
   selectedVehicle = signal<{ vehicleId: string; displayName: string } | null>(null);
 
   // Data
-  private years = toSignal(this.motorApi.getYears(), { initialValue: null });
+  private years = toSignal(
+    this.motorApi.getYears().pipe(
+      catchError((error) => {
+        console.error('Failed to load years:', error);
+        const errorMsg = error?.message || error?.toString() || 'Unknown error';
+        console.error('Error details:', { error, message: errorMsg, status: error?.status });
+        // Don't show error message immediately - let user try to use the app
+        // The suggestions will just be empty if years is null
+        return of(null as any);
+      })
+    ),
+    { initialValue: null }
+  );
   private makes = signal<Make[]>([]);
   private models = signal<Model[]>([]);
   private engines = signal<Engine[]>([]); // Available engines for selected model
@@ -62,14 +71,6 @@ export class HomeComponent implements OnInit {
   viewportHeight = signal<number>(0);
   private baseViewportHeight = signal<number>(0);
   selectedSuggestionIndex = signal<number>(-1); // For keyboard navigation
-
-  // "Unsure" AI Mode State
-  unsureModeActive = signal(false);
-  aiQuery = signal('');
-  aiResponse = signal(''); // Keep for generic messages? Or deprecate?
-  comparisonResults = signal<ComparisonResult[]>([]); // New structured results
-  isAiLoading = signal(false);
-  intentDescription = signal<string>(''); // To show user "Searching for: [Optimized Term]"
 
   ngOnInit(): void {
     this.persistedVehicle.set(this.persistence.getVehicle());
@@ -187,7 +188,6 @@ export class HomeComponent implements OnInit {
   isVin = computed(() => this.searchTerm().length > 10 && /^[A-HJ-NPR-Z0-9]{17}$/i.test(this.searchTerm()));
 
   currentPlaceholder = computed(() => {
-    if (this.unsureModeActive()) return 'e.g., "brake pad part numbers" or "oil capacity"';
     if (this.isVin()) return 'Searching by VIN...';
     switch (this.searchStep()) {
       case 'Year': return 'Enter VIN or Year...';
@@ -224,17 +224,11 @@ export class HomeComponent implements OnInit {
         filtered = modelsData.filter(m => m.model.toLowerCase().includes(term));
       }
 
-      const modelSuggestions: Suggestion[] = filtered.map(m => ({
+      return filtered.map(m => ({
         type: 'Model',
         value: m,
         display: m.model
       }));
-
-      // Add "Unsure" option if not searching
-      if (!term) {
-        modelSuggestions.unshift({ type: 'Unsure', value: 'unsure', display: 'Unsure of your exact model? Click here.' });
-      }
-      return modelSuggestions;
     }
 
     if (step === 'Engine') {
@@ -262,7 +256,7 @@ export class HomeComponent implements OnInit {
     this.searchSubject.next(value);
 
     // Show suggestions when user starts typing (if not already showing and conditions are met)
-    if (!this.showSuggestions() && !this.unsureModeActive() && !this.selectedVehicle() && !this.isVin()) {
+    if (!this.showSuggestions() && !this.selectedVehicle() && !this.isVin()) {
       this.showSuggestions.set(true);
     }
 
@@ -375,7 +369,6 @@ export class HomeComponent implements OnInit {
   }
 
   onSearchFocus(): void {
-    if (this.unsureModeActive()) return;
     if (this.selectedVehicle()) return;
     this.errorMessage.set(null);
     // Always show suggestions on focus - they will populate as data loads
@@ -437,7 +430,7 @@ export class HomeComponent implements OnInit {
   @HostListener('keydown', ['$event'])
   onKeyDown(event: KeyboardEvent): void {
     // Only handle keyboard navigation when suggestions are visible and input is focused
-    if (!this.showSuggestions() || this.unsureModeActive() || this.selectedVehicle() || this.isVin()) {
+    if (!this.showSuggestions() || this.selectedVehicle() || this.isVin()) {
       return;
     }
 
@@ -495,12 +488,6 @@ export class HomeComponent implements OnInit {
     this.searchInput.set('');
     this.searchTerm.set('');
     this.selectedSuggestionIndex.set(-1); // Reset keyboard selection
-
-    if (suggestion.type === 'Unsure') {
-      this.unsureModeActive.set(true);
-      this.showSuggestions.set(false);
-      return;
-    }
 
     switch (suggestion.type) {
       case 'Year':
@@ -581,8 +568,6 @@ export class HomeComponent implements OnInit {
     event.stopPropagation();
     this.errorMessage.set(null);
     this.selectedVehicle.set(null);
-    this.unsureModeActive.set(false);
-    this.aiResponse.set('');
 
     if (step === 'Year') {
       this.selectedYear.set(null);
@@ -620,84 +605,11 @@ export class HomeComponent implements OnInit {
     this.models.set([]);
     this.errorMessage.set(null);
     this.showSuggestions.set(false);
-    this.unsureModeActive.set(false);
-    this.aiQuery.set('');
-    this.aiResponse.set('');
   }
 
   submitSearch(): void {
     if (this.isVin()) this.searchByVin();
     else this.selectVehicle();
-  }
-
-  searchUnsure(): void {
-    const year = this.selectedYear();
-    const make = this.selectedMake();
-    const query = this.aiQuery();
-    if (!year || !make || !query) return;
-
-    this.isAiLoading.set(true);
-    this.comparisonResults.set([]);
-    this.intentDescription.set('Analyzing request...');
-    this.errorMessage.set(null);
-
-    // 1. Identify distinct models
-    const allModels = this.models();
-    const distinctModels = new Map<string, { vehicleId: string; name: string }>();
-
-    for (const model of allModels) {
-      // ... (Same distinct model logic) ...
-      if (!distinctModels.has(model.model)) {
-        if (model.engines && model.engines.length > 0) {
-          distinctModels.set(model.model, { vehicleId: model.engines[0].id, name: `${model.model} (${model.engines[0].name})` });
-        } else {
-          distinctModels.set(model.model, { vehicleId: model.id, name: model.model });
-        }
-      }
-    }
-
-    const vehiclesToCompare = Array.from(distinctModels.values());
-    const modelNames = vehiclesToCompare.map(v => v.name).join(', ');
-
-    // 2. Analyze Intent (AI DISABLED)
-    /*
-    this.geminiApi.analyzeSearchIntent(query, modelNames).pipe(
-      switchMap(intent => {
-        console.log('Search Intent:', intent);
-        this.intentDescription.set(`Searching for: "${intent.optimizedTerm}"`);
-
-        // 3. Parallel Fetch for each distinct model
-        const requests$ = vehiclesToCompare.map(v =>
-          this.motorApi.searchArticles(this.currentContentSource(), v.vehicleId, intent.optimizedTerm).pipe(
-            map(response => {
-              const topArticle = response.body.articleDetails?.[0]; // Get the most relevant one
-              return {
-                modelName: v.name,
-                vehicleId: v.vehicleId,
-                foundArticle: topArticle,
-                searchError: (!topArticle) ? 'No direct match found.' : undefined
-              } as ComparisonResult;
-            })
-          )
-        );
-        return forkJoin(requests$);
-      })
-    ).subscribe({
-      next: (results) => {
-        this.comparisonResults.set(results);
-        this.isAiLoading.set(false);
-        this.intentDescription.set(''); // Clear "Searching..." status
-      },
-      error: (err) => {
-        console.error('Intent search failed:', err);
-        this.errorMessage.set('Search failed.');
-        this.isAiLoading.set(false);
-      }
-    });
-    */
-    console.warn('AI Search Intent is disabled.');
-    this.isAiLoading.set(false);
-    this.errorMessage.set('AI Search is disabled.');
   }
 
   private searchByVin(): void {

@@ -1,0 +1,245 @@
+.procedure-stepper {
+  background-color: rgba(17, 24, 39, 0.8);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stepper-header {
+  margin-bottom: 1.5rem;
+}
+
+.stepper-title {
+  color: #22d3ee;
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 1rem 0;
+}
+
+.stepper-progress {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 0.5rem;
+  background-color: rgba(55, 65, 81, 0.5);
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22d3ee, #06b6d4);
+  transition: width 0.3s ease;
+  border-radius: 0.25rem;
+}
+
+.progress-text {
+  color: #9ca3af;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.stepper-content {
+  margin-bottom: 1.5rem;
+}
+
+.step-card {
+  background-color: rgba(31, 41, 55, 0.5);
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  position: relative;
+}
+
+.step-number {
+  position: absolute;
+  top: -1rem;
+  left: 1.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  background-color: #22d3ee;
+  color: #111827;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.125rem;
+  border: 2px solid rgba(17, 24, 39, 0.8);
+}
+
+.step-content {
+  color: #e5e7eb;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-top: 0.5rem;
+}
+
+.step-content :deep(p) {
+  margin-bottom: 0.75rem;
+}
+
+.step-content :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+.step-content :deep(strong) {
+  color: #fbbf24;
+  font-weight: 700;
+}
+
+.step-actions {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(55, 65, 81, 0.5);
+}
+
+.step-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #9ca3af;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.step-checkbox input[type="checkbox"] {
+  width: 1.125rem;
+  height: 1.125rem;
+  cursor: pointer;
+  accent-color: #22d3ee;
+}
+
+.stepper-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.nav-button {
+  padding: 0.75rem 1.5rem;
+  background-color: rgba(34, 211, 238, 0.1);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  border-radius: 0.5rem;
+  color: #22d3ee;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+}
+
+.nav-button:hover:not(:disabled) {
+  background-color: rgba(34, 211, 238, 0.2);
+  border-color: rgba(34, 211, 238, 0.5);
+}
+
+.nav-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.step-indicators {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  flex: 1;
+}
+
+.step-indicator {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  border: 2px solid rgba(34, 211, 238, 0.3);
+  background-color: rgba(31, 41, 55, 0.5);
+  color: #9ca3af;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+}
+
+.step-indicator:hover {
+  border-color: rgba(34, 211, 238, 0.5);
+  background-color: rgba(34, 211, 238, 0.1);
+}
+
+.step-indicator.active {
+  background-color: #22d3ee;
+  color: #111827;
+  border-color: #22d3ee;
+}
+
+.step-indicator.completed {
+  background-color: rgba(74, 222, 128, 0.2);
+  border-color: rgba(74, 222, 128, 0.5);
+  color: #86efac;
+}
+
+.step-indicator.completed.active {
+  background-color: #4ade80;
+  color: #111827;
+  border-color: #4ade80;
+}
+
+@media (max-width: 768px) {
+  .procedure-stepper {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .stepper-title {
+    font-size: 1rem;
+  }
+
+  .step-card {
+    padding: 1rem;
+  }
+
+  .step-number {
+    width: 2rem;
+    height: 2rem;
+    font-size: 1rem;
+    top: -0.75rem;
+    left: 1rem;
+  }
+
+  .step-content {
+    font-size: 0.9375rem;
+  }
+
+  .stepper-navigation {
+    flex-direction: column;
+  }
+
+  .nav-button {
+    width: 100%;
+    padding: 0.875rem;
+  }
+
+  .step-indicators {
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding: 0.5rem 0;
+  }
+
+  .step-indicator {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+  }
+}

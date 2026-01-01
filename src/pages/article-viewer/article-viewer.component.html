@@ -1,63 +1,105 @@
-<div class="min-h-screen bg-black text-white font-mono">
+<div class="h-screen md:min-h-screen bg-black text-white font-mono flex flex-col overflow-hidden">
   <!-- Mobile Header -->
-  <header class="sticky top-0 z-30 bg-black/95 backdrop-blur-sm border-b border-cyan-500/20 md:hidden">
-    <div class="px-4 py-3 flex items-center justify-between">
-      <a [routerLink]="['/vehicle', contentSource(), vehicleId()]"
-        class="text-cyan-400 hover:text-cyan-300 text-sm uppercase tracking-wider">&larr; Back</a>
-      @if (geminiApi.aiEnabled()) {
-      <button (click)="showOriginal.set(!showOriginal())" class="text-xs text-cyan-400 hover:text-cyan-300 uppercase tracking-wider">
-        {{ showOriginal() ? 'AI' : 'Original' }}
-      </button>
-      }
+  <header class="sticky top-0 z-30 bg-black/95 backdrop-blur-sm border-b border-cyan-500/20 md:hidden flex-shrink-0">
+    <div class="px-2 py-2">
+      <div class="flex items-center justify-between mb-1">
+        <a [routerLink]="['/vehicle', contentSource(), vehicleId()]"
+          class="text-cyan-400 hover:text-cyan-300 text-xs uppercase tracking-wider flex-shrink-0">&larr; Back</a>
+        @if (documentHeader()) {
+        <h2 class="document-header">{{ documentHeader() }}</h2>
+        }
+        <div class="flex items-center gap-2">
+          <!-- Stepper Toggle (Mobile) -->
+          <button 
+            (click)="toggleStepperMode()"
+            class="text-xs text-cyan-400 hover:text-cyan-300 uppercase tracking-wider px-2 py-1 border border-cyan-500/30 rounded text-[10px]"
+            [class.bg-cyan-500/20]="stepperMode()">
+            {{ stepperMode() ? '📋' : '📋' }}
+          </button>
+          
+          @if (geminiApi.aiEnabled()) {
+          <button (click)="showOriginal.set(!showOriginal())" class="text-xs text-cyan-400 hover:text-cyan-300 uppercase tracking-wider flex-shrink-0">
+            {{ showOriginal() ? 'AI' : 'Original' }}
+          </button>
+          }
+        </div>
+      </div>
     </div>
   </header>
 
-  <div class="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
-    <!-- Desktop Header -->
-    <div class="hidden md:flex justify-between items-center mb-6">
+  <!-- Desktop Header -->
+  <div class="hidden md:block flex-shrink-0 border-b border-cyan-500/20">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
       <a [routerLink]="['/vehicle', contentSource(), vehicleId()]"
         class="text-cyan-400 hover:text-cyan-300 inline-block text-sm uppercase tracking-wider">&larr; Back to Dashboard</a>
 
-      <!-- AI Toggle -->
-      @if (geminiApi.aiEnabled()) {
-      <div class="flex items-center space-x-2">
-        <div class="flex flex-col items-end mr-2" *ngIf="isRewriting()">
-          <span class="text-xs text-cyan-400 animate-pulse">Enhancing...</span>
-        </div>
-        <span class="text-sm font-medium" [class.text-gray-400]="!showOriginal() && !isRewriting()"
-          [class.text-cyan-400]="isRewriting()">
-          {{ isRewriting() ? 'AI-Working' : 'AI-Rewritten' }}
-        </span>
-        <label for="toggle" class="relative inline-flex items-center cursor-pointer">
-          <input type="checkbox" id="toggle" class="sr-only peer" [checked]="showOriginal()"
-            (change)="showOriginal.set(!showOriginal())">
-          <div
-            class="w-11 h-6 bg-gray-900 border border-cyan-500/50 rounded-full peer peer-focus:ring-2 peer-focus:ring-cyan-500/50 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500 peer-checked:border-cyan-500">
-          </div>
-        </label>
-        <span class="text-sm font-medium" [class.text-gray-400]="showOriginal()">Original</span>
-      </div>
-      }
-    </div>
+      <!-- Controls -->
+      <div class="flex items-center space-x-4">
+        <!-- Stepper Toggle -->
+        <button 
+          (click)="toggleStepperMode()"
+          class="text-xs text-cyan-400 hover:text-cyan-300 uppercase tracking-wider px-3 py-1.5 border border-cyan-500/30 rounded hover:border-cyan-500/50 transition-colors"
+          [class.bg-cyan-500/20]="stepperMode()"
+          [class.border-cyan-500/50]="stepperMode()">
+          {{ stepperMode() ? '📋 Stepper' : '📋 Steps' }}
+        </button>
 
-    <div class="bg-gray-900 border border-cyan-500/30 rounded-xl p-6 md:p-8 lg:p-10">
-      @if (articleData()) {
-      <div class="motor-content" [innerHTML]="displayContent()"></div>
-      } @else {
-      <!-- Loading Skeleton -->
-      <div class="space-y-4 animate-pulse">
-        <div class="text-center text-cyan-300 mb-4">
-          {{ isRewriting() ? 'Gemini is rewriting this article to be easier to read...' : 'Loading article...' }}
+        <!-- AI Toggle -->
+        @if (geminiApi.aiEnabled()) {
+        <div class="flex items-center space-x-2">
+          <div class="flex flex-col items-end mr-2" *ngIf="isRewriting()">
+            <span class="text-xs text-cyan-400 animate-pulse">Enhancing...</span>
+          </div>
+          <span class="text-sm font-medium" [class.text-gray-400]="!showOriginal() && !isRewriting()"
+            [class.text-cyan-400]="isRewriting()">
+            {{ isRewriting() ? 'AI-Working' : 'AI-Rewritten' }}
+          </span>
+          <label for="toggle" class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="toggle" class="sr-only peer" [checked]="showOriginal()"
+              (change)="showOriginal.set(!showOriginal())">
+            <div
+              class="w-11 h-6 bg-gray-900 border border-cyan-500/50 rounded-full peer peer-focus:ring-2 peer-focus:ring-cyan-500/50 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500 peer-checked:border-cyan-500">
+            </div>
+          </label>
+          <span class="text-sm font-medium" [class.text-gray-400]="showOriginal()">Original</span>
         </div>
-        <div class="h-8 bg-gray-900 border border-cyan-500/20 rounded w-3/4"></div>
-        <div class="h-4 bg-gray-900 border border-cyan-500/20 rounded w-full"></div>
-        <div class="h-4 bg-gray-900 border border-cyan-500/20 rounded w-5/6"></div>
-        <div class="h-4 bg-gray-900 border border-cyan-500/20 rounded w-full"></div>
-        <div class="h-8 bg-gray-900 border border-cyan-500/20 rounded w-1/2 mt-8"></div>
-        <div class="h-4 bg-gray-900 border border-cyan-500/20 rounded w-full"></div>
-        <div class="h-4 bg-gray-900 border border-cyan-500/20 rounded w-full"></div>
+        }
       </div>
-      }
+    </div>
+  </div>
+
+  <!-- Content Area - Full Screen on Mobile -->
+  <div class="flex-1 overflow-y-auto w-full">
+    <!-- Mobile: Minimal padding, Desktop: Normal padding -->
+    <div class="px-0.5 md:px-6 lg:px-8 py-0.5 md:py-6 lg:py-8 w-full">
+      <div class="bg-gray-900 border border-cyan-500/30 rounded-xl md:rounded-xl p-1 md:p-8 lg:p-10 w-full text-left">
+        @if (articleData()) {
+          @if (stepperMode() && procedureSteps().length > 0) {
+            <!-- Stepper Wizard Mode -->
+            <app-procedure-stepper 
+              [steps]="procedureSteps()" 
+              [title]="articleTitle() || 'Procedure Steps'">
+            </app-procedure-stepper>
+          } @else {
+            <!-- Normal Content Mode -->
+            <div class="motor-content" [innerHTML]="displayContent()"></div>
+          }
+        } @else {
+        <!-- Loading Skeleton -->
+        <div class="space-y-4 animate-pulse">
+          <div class="text-center text-cyan-300 mb-4">
+            {{ isRewriting() ? 'Gemini is rewriting this article to be easier to read...' : 'Loading article...' }}
+          </div>
+          <div class="h-8 bg-gray-900 border border-cyan-500/20 rounded w-3/4"></div>
+          <div class="h-4 bg-gray-900 border border-cyan-500/20 rounded w-full"></div>
+          <div class="h-4 bg-gray-900 border border-cyan-500/20 rounded w-5/6"></div>
+          <div class="h-4 bg-gray-900 border border-cyan-500/20 rounded w-full"></div>
+          <div class="h-8 bg-gray-900 border border-cyan-500/20 rounded w-1/2 mt-8"></div>
+          <div class="h-4 bg-gray-900 border border-cyan-500/20 rounded w-full"></div>
+          <div class="h-4 bg-gray-900 border border-cyan-500/20 rounded w-full"></div>
+        </div>
+        }
+      </div>
     </div>
   </div>
 </div>

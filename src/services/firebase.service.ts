@@ -19,7 +19,6 @@ export interface StoredArticle {
 export class FirebaseService {
     private app: FirebaseApp;
     private db: Firestore;
-
     // Global circuit breaker: if we hit a timeout once, assume offline for the session
     // to avoid penalizing every subsequent request with a 2s delay.
     private static isOffline = false;

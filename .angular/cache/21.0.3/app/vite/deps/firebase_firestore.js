@@ -22,7 +22,7 @@ import {
   pingServer,
   registerVersion,
   updateEmulatorBanner
-} from "./chunk-C25N664B.js";
+} from "./chunk-DOQT5HZP.js";
 import {
   __spreadProps,
   __spreadValues
