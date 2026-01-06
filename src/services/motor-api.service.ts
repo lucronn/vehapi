@@ -234,20 +234,27 @@ export class MotorApiService {
     const params = searchTerm ? { searchTerm } : {};
     // Use the new method and map response
     return this.getPartsForVehicle(contentSource, vehicleId, undefined, searchTerm).pipe(
-      map(response => ({
-        ...response,
-        body: {
-          total: response.body.items?.length || 0,
-          data: response.body.items?.map(item => ({
-            partNumber: item.partNumber,
-            description: item.description,
-            manufacturer: '', // Not in PartLineItem
-            listPrice: 0, // Not in PartLineItem
-            dealerPrice: 0, // Not in PartLineItem
-            category: '' // Not in PartLineItem
-          })) || []
-        } as PartsResponse
-      }))
+      map(response => {
+        // Fix: API returns body as array directly, not { items: [] }
+        // Also map partDescription -> description and price -> listPrice
+        const bodyAny = response.body as any;
+        const rawItems = Array.isArray(bodyAny) ? bodyAny : (bodyAny?.items || []);
+
+        return {
+          ...response,
+          body: {
+            total: rawItems.length,
+            data: rawItems.map((item: any) => ({
+              partNumber: item.partNumber,
+              description: item.partDescription || item.description || '',
+              manufacturer: item.manufacturer || '',
+              listPrice: item.price ? parseFloat(item.price.toString().replace(/[^0-9.]/g, '')) : 0,
+              dealerPrice: 0,
+              category: ''
+            }))
+          } as PartsResponse
+        };
+      })
     );
   }
 
