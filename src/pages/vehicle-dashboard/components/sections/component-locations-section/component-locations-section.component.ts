@@ -50,4 +50,12 @@ export class ComponentLocationsSectionComponent implements OnInit {
     trackById(index: number, item: ComponentLocation): string {
         return item.id || index.toString();
     }
+
+    getThumbnailUrl(thumbnailHref: string | undefined): string {
+        if (!thumbnailHref) return '';
+        // If it's already a full URL, return as is (although getGraphicUrl also checks this, 
+        // it's good practice to have the same logic or precise delegation)
+        if (thumbnailHref.startsWith('http')) return thumbnailHref;
+        return this.motorApi.getGraphicUrl(thumbnailHref);
+    }
 }

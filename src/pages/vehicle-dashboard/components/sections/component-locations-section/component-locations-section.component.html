@@ -14,7 +14,7 @@
             <!-- Thumbnail -->
             <div class="aspect-video bg-gray-900 relative overflow-hidden flex items-center justify-center">
                 @if (item.thumbnailHref) {
-                <img [src]="item.thumbnailHref" alt="Diagram thumbnail"
+                <img [src]="getThumbnailUrl(item.thumbnailHref)" alt="Diagram thumbnail"
                     class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
                 } @else {
                 <lucide-icon [img]="icons.Image"
