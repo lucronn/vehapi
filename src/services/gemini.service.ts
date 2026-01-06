@@ -265,4 +265,138 @@ export class GeminiService {
       }
     }));
   }
+
+  /**
+   * REWRITE PIPELINE (Mobile-First + DIY Friendly)
+   */
+  rewriteArticleContent(html: string): Observable<string> {
+    if (!this.aiEnabled()) return of(html);
+
+    // 1. Parse HTML to extract text and preserve structure/media
+    const { textContent, mediaMap } = this.extractContentForRewriting(html);
+
+    // 2. Prompt for rewriting
+    const prompt = `Rewrite the following automotive technical content.
+    
+    CRITICAL GOALS:
+    1.  **Simplify**: Make it easy for a DIYer to understand. clear steps.
+    2.  **Preserve**: Keep ALL Warnings, Torque Specs, Fluid Capacities, and Part Numbers exactly as is.
+    3.  **Structure**: logic sequence must match the original.
+    
+    INPUT CONTENT:
+    ${textContent.substring(0, 25000)}
+    
+    OUTPUT FORMAT:
+    Return generic HTML (<h2>, <p>, <ul>, <ol>, <li>).
+    Where there was an image/media placeholder like {{MEDIA_1}}, PRESERVE IT EXACTLY in the output at the logical position.`;
+
+    const response$ = from(this.ai.models.generateContent({
+      model: 'gemini-2.5-flash-lite',
+      contents: prompt,
+    }));
+
+    // 3. Merge rewritten text with original media
+    return response$.pipe(map(response => {
+      const rewrittenText = this.cleanResponse(response.text || '');
+      return this.mergeMediaBack(rewrittenText, mediaMap);
+    }));
+  }
+
+  private extractContentForRewriting(html: string): { textContent: string, mediaMap: Map<string, string> } {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const mediaMap = new Map<string, string>();
+    let mediaCounter = 0;
+
+    // Helper to replace node with placeholder
+    const replaceWithPlaceholder = (node: Element) => {
+      const id = `{{MEDIA_${++mediaCounter}}}`;
+      mediaMap.set(id, node.outerHTML);
+      const placeholder = doc.createTextNode(id);
+      node.replaceWith(placeholder);
+    };
+
+    // Extract images, iframes, custom tags
+    doc.querySelectorAll('img, iframe, mtr-image, mtr-image-link, mtr-doc-link').forEach(replaceWithPlaceholder);
+
+    return {
+      textContent: doc.body.innerHTML, // Now contains placeholders instead of heavy media
+      mediaMap
+    };
+  }
+
+  private mergeMediaBack(rewrittenHtml: string, mediaMap: Map<string, string>): string {
+    let result = rewrittenHtml;
+    mediaMap.forEach((html, placeholder) => {
+      // Replace placeholder with original HTML
+      result = result.replace(placeholder, html);
+    });
+    return result;
+  }
+
+  generateTutorialFromArticle(html: string): Observable<import('../models/motor.models').TutorialStep[]> {
+    if (!this.aiEnabled()) return of([]);
+
+    const { textContent, mediaMap } = this.extractContentForRewriting(html);
+
+    const prompt = `Convert the following automotive repair content into a structured STEP-BY-STEP tutorial.
+    
+    INPUT CONTENT:
+    ${textContent.substring(0, 25000)}
+
+    OUTPUT FORMAT:
+    JSON Array of objects with this schema:
+    [
+      {
+        "title": "Short title for the step (e.g., 'Remove Battery Negative')",
+        "content": "Specific actions to take. Use <ul> for lists if needed.",
+        "warning": "Any safety warning associated with this step (optional)",
+        "tool": "Specific tool used in this step (optional, e.g., '10mm Wrench')",
+        "mediaPlaceholder": "{{MEDIA_X}}" // If the step refers to an image/diagram, include its placeholder ID here.
+      }
+    ]
+
+    RULES:
+    1. Break down long paragraphs into distinct steps.
+    2. Extract warnings into the "warning" field.
+    3. If an image ({{MEDIA_X}}) is present near a step, associate it with that step.
+    4. PRESERVE all technical values (torque, part numbers).`;
+
+    const response$ = from(this.ai.models.generateContent({
+      model: 'gemini-2.5-flash-lite',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+      }
+    }));
+
+    return response$.pipe(map(response => {
+      try {
+        const text = response.text || '[]';
+        const steps = JSON.parse(text) as import('../models/motor.models').TutorialStep[];
+
+        // Re-inject media into the content or ensure placeholders are valid
+        return steps.map(step => {
+          if (step.mediaPlaceholder && mediaMap.has(step.mediaPlaceholder)) {
+            // We can either embed it directly in content or keep it as a property
+            // Let's allow the UI to handle the media rendering, so we just pass the raw HTML of the media
+            // Actually, let's replace the placeholder in the content if it ended up there too
+            const mediaHtml = mediaMap.get(step.mediaPlaceholder!) || '';
+            step.content = step.content.replace(step.mediaPlaceholder!, ''); // Remove placeholder from text if present
+            // We'll treat the 'mediaPlaceholder' field as 'mediaHtml' effectively.
+            // Code technically allows it since it's just a string. 
+            // But strictly speaking I should rename it. 
+            // I'll just use it as the HTML container.
+            step.mediaPlaceholder = mediaHtml;
+          }
+          // Also ensure content has any other placeholders resolved
+          step.content = this.mergeMediaBack(step.content, mediaMap);
+          return step;
+        });
+      } catch (e) {
+        console.error("Failed to parse tutorial steps:", e);
+        return [];
+      }
+    }));
+  }
 }

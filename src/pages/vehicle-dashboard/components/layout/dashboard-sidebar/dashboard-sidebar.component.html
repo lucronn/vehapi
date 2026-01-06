@@ -1,6 +1,8 @@
 <aside class="w-72 bg-black border-r border-cyan-500/20 flex-shrink-0 flex flex-col hidden md:flex">
     <div class="p-6 border-b border-cyan-500/20">
-        <a routerLink="/" class="text-cyan-400 hover:text-cyan-300 mb-6 inline-block text-xs uppercase tracking-wider">&larr; Change Vehicle</a>
+        <a routerLink="/"
+            class="text-cyan-400 hover:text-cyan-300 mb-6 inline-block text-xs uppercase tracking-wider">&larr; Change
+            Vehicle</a>
         @if (vehicleName) {
         <h1 class="text-xl font-bold text-cyan-400 tracking-wider leading-tight">{{ vehicleName }}</h1>
         } @else {
@@ -75,5 +77,13 @@
             <lucide-icon [img]="icons.ClipboardList" class="w-5 h-5 mr-3"></lucide-icon> Maintenance
         </button>
         }
+
+        <div class="my-2 border-t border-cyan-500/20 mx-4"></div>
+
+        <button (click)="onSectionClick('browse-all')"
+            [class]="{'bg-cyan-500/10 text-cyan-400 border-cyan-500': activeSection === 'browse-all', 'text-gray-400 hover:bg-gray-900 hover:text-white hover:border-cyan-500/40 border-transparent': activeSection !== 'browse-all'}"
+            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
+            <lucide-icon [img]="icons.Package" class="w-5 h-5 mr-3"></lucide-icon> Browse All Data
+        </button>
     </nav>
 </aside>

@@ -69,8 +69,12 @@ export interface Article {
 export interface FilterTab {
   name: string;
   count: number;
-  type: string;
-  buckets?: FilterTab[]; // Support nested buckets
+  type?: string;
+  filterTabType?: FilterTabType;
+  buckets?: Bucket[];
+  articleTrailId?: string;
+  isCountUnknown?: boolean;
+  sort?: number;
 }
 
 export interface ArticlesData {
@@ -312,16 +316,34 @@ export interface GetVehiclesRequest {
 }
 
 // Search Results Response
-export interface SearchResult {
-  id: string;
-  title: string;
-  articleId: string;
+export interface SearchResultsResponse {
+  articleDetails: Article[];
+  filterTabs: FilterTab[];
+  vehicleGeoBlockingDetails?: any;
 }
 
-export interface SearchResultsResponse {
-  results: SearchResult[];
-  totalCount: number;
+export interface Bucket {
+  name: string;
+  nameOverride?: string;
+  count: number;
+  sort: number;
+  buckets?: Bucket[]; // Legacy API calls them buckets sometimes
+  children?: Bucket[]; // Normalized to children
 }
+
+// Normalized structure for View Model
+export interface BucketArticles {
+  bucketName: string;
+  bucketFilterCategory: string;
+  articles: Article[];
+  sort: number;
+  bucketNameOverride?: string;
+  bucketFilterTabType?: FilterTabType;
+  isParent?: boolean;
+  children?: BucketArticles[];
+}
+
+
 
 // Part Line Item
 export interface PartLineItem {
@@ -382,6 +404,21 @@ export interface LogEntry {
   metadata?: Record<string, any>;
 }
 
+
 export interface EmptyResponse {
   [key: string]: any;
+}
+
+export interface TutorialStep {
+  title: string;
+  content: string; // HTML content for this step
+  warning?: string; // Optional warning text
+  tool?: string;    // Optional tool required for this step
+  mediaPlaceholder?: string; // ID of media to show (extracted from original)
+}
+
+export interface AuthStatusResponse {
+  status: 'success' | 'error' | 'authenticating' | 'idle';
+  progress: number;
+  message: string;
 }

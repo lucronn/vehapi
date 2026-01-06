@@ -30,8 +30,6 @@ export class HomeComponent implements OnInit {
   private router = inject(Router);
 
   @ViewChild('searchInputRef') searchInputRef!: ElementRef<HTMLInputElement>;
-  @ViewChild('mobileSearchInputRef') mobileSearchInputRef!: ElementRef<HTMLInputElement>;
-  @ViewChild('suggestionsContainer') suggestionsContainerRef!: ElementRef<HTMLDivElement>;
   @ViewChild('desktopSuggestionsContainer') desktopSuggestionsContainerRef!: ElementRef<HTMLDivElement>;
 
   // Search State
@@ -129,29 +127,18 @@ export class HomeComponent implements OnInit {
 
   private updateViewportHeight(): void {
     if (typeof window === 'undefined') return;
-    
+
     // Store base viewport height (without keyboard)
     if (this.baseViewportHeight() === 0) {
       this.baseViewportHeight.set(window.innerHeight);
     }
-    
+
     // Use visual viewport height if available (accounts for mobile keyboard)
     const height = window.visualViewport?.height ?? window.innerHeight;
     this.viewportHeight.set(height);
   }
 
-  // Computed max height for suggestions list (accounts for fixed search bar)
-  suggestionsMaxHeight = computed(() => {
-    const vh = this.viewportHeight();
-    if (vh === 0) return null;
-    // Reserve space for header (~50px) and fixed search bar (~120px) on mobile
-    // On desktop, use 60vh as before
-    const isMobile = vh < 768;
-    if (isMobile) {
-      return vh - 170; // Header + search bar + padding
-    }
-    return null; // Desktop uses max-h-[60vh] class
-  });
+
 
   // Determine if dropdown should appear above or below input
   dropdownPosition = signal<'above' | 'below'>('below');
@@ -160,12 +147,8 @@ export class HomeComponent implements OnInit {
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     if (this.showSuggestions()) {
-      const clickedInsideInput = 
-        this.searchInputRef?.nativeElement.contains(event.target as Node) ||
-        this.mobileSearchInputRef?.nativeElement.contains(event.target as Node);
-      const clickedInsideSuggestions = 
-        this.suggestionsContainerRef?.nativeElement.contains(event.target as Node) ||
-        this.desktopSuggestionsContainerRef?.nativeElement.contains(event.target as Node);
+      const clickedInsideInput = this.searchInputRef?.nativeElement.contains(event.target as Node);
+      const clickedInsideSuggestions = this.desktopSuggestionsContainerRef?.nativeElement.contains(event.target as Node);
       if (!clickedInsideInput && !clickedInsideSuggestions) {
         this.showSuggestions.set(false);
       }
@@ -382,7 +365,7 @@ export class HomeComponent implements OnInit {
 
   private calculateDropdownPosition(): void {
     if (typeof window === 'undefined') return;
-    
+
     const input = this.searchInputRef?.nativeElement;
     if (!input) return;
 
@@ -413,17 +396,17 @@ export class HomeComponent implements OnInit {
     if (this.isVin() || this.selectedVehicle()) { this.submitSearch(); return; }
     const currentSuggestions = this.suggestions();
     const selectedIndex = this.selectedSuggestionIndex();
-    
+
     // If a suggestion is highlighted via keyboard, select it
     if (selectedIndex >= 0 && selectedIndex < currentSuggestions.length) {
       this.selectSuggestion(new MouseEvent('mousedown'), currentSuggestions[selectedIndex]);
       this.selectedSuggestionIndex.set(-1);
       return;
     }
-    
+
     // Otherwise, select first suggestion if available
-    if (currentSuggestions.length > 0) { 
-      this.selectSuggestion(new MouseEvent('mousedown'), currentSuggestions[0]); 
+    if (currentSuggestions.length > 0) {
+      this.selectSuggestion(new MouseEvent('mousedown'), currentSuggestions[0]);
     }
   }
 
@@ -462,7 +445,7 @@ export class HomeComponent implements OnInit {
 
   private scrollToSuggestion(index: number): void {
     // Scroll the selected suggestion into view
-    const container = this.desktopSuggestionsContainerRef?.nativeElement || this.suggestionsContainerRef?.nativeElement;
+    const container = this.desktopSuggestionsContainerRef?.nativeElement;
     if (!container) return;
 
     // Find the scrollable container (might be nested)
@@ -495,18 +478,18 @@ export class HomeComponent implements OnInit {
         this.isLoading.set(true);
         this.showSuggestions.set(false); // Hide while loading
         this.motorApi.getMakes(suggestion.value as number).subscribe({
-          next: (res) => { 
-            this.makes.set(res.body); 
+          next: (res) => {
+            this.makes.set(res.body);
             this.isLoading.set(false);
             // Show suggestions after makes are loaded
             if (res.body && res.body.length > 0) {
               this.showSuggestions.set(true);
             }
           },
-          error: () => { 
-            this.isLoading.set(false); 
-            this.errorMessage.set('Could not load makes.'); 
-            this.showSuggestions.set(false); 
+          error: () => {
+            this.isLoading.set(false);
+            this.errorMessage.set('Could not load makes.');
+            this.showSuggestions.set(false);
           }
         });
         break;

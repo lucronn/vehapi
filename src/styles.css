@@ -10,9 +10,27 @@
 
 @layer components {
 
-    /* Mobile Safe Area Support */
+    /* Mobile Safe Area Support & Viewport Reset */
+    :root {
+        --safe-area-top: env(safe-area-inset-top, 0px);
+        --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    html,
+    body {
+        height: 100%;
+        width: 100vw;
+        overflow-x: hidden;
+        overscroll-behavior-y: none;
+        /* Prevent pull-to-refresh on body */
+    }
+
     .safe-area-inset-bottom {
-        padding-bottom: env(safe-area-inset-bottom);
+        padding-bottom: var(--safe-area-bottom);
+    }
+
+    .safe-area-mb {
+        margin-bottom: var(--safe-area-bottom);
     }
 
     /* High-Tech Glow Effects */
@@ -77,7 +95,8 @@
 
     .motor-content th,
     .motor-content td {
-        @apply border border-gray-700 p-2 min-w-[120px]; /* Min width ensures validation of scroll */
+        @apply border border-gray-700 p-2 min-w-[120px];
+        /* Min width ensures validation of scroll */
     }
 
     .motor-content pre,

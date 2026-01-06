@@ -5,7 +5,7 @@ import { LucideAngularModule, House, TriangleAlert, FileText, Cable, Wrench, Cli
 
 import { SectionAvailability } from '../../../../../services/vehicle-data.service';
 
-export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'component-locations' | 'procedures' | 'parts' | 'specs' | 'maintenance';
+export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'component-locations' | 'procedures' | 'parts' | 'specs' | 'maintenance' | 'browse-all';
 
 /**
  * Dashboard sidebar navigation component

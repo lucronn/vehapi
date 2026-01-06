@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams, HttpRequest, HttpEvent } from '@angular/common/http';
-import { Observable, map, of, tap, catchError } from 'rxjs';
+import { Observable, map, of, tap, catchError, timeout } from 'rxjs';
 import {
   ApiResponse,
   ArticlesData,
@@ -39,7 +39,8 @@ import {
   EmptyResponse,
   IntervalType,
   MaintenanceScheduleSeverity,
-  ContentSource
+  ContentSource,
+  AuthStatusResponse
 } from '../models/motor.models';
 
 @Injectable({ providedIn: 'root' })
@@ -120,8 +121,8 @@ export class MotorApiService {
   private getWithLogging<T>(url: string, params?: HttpParams | { [param: string]: string | number | boolean | readonly (string | number | boolean)[] }): Observable<T> {
     const startTime = performance.now();
     this.logRequest('GET', url, params);
-    
-    return this.http.get<T>(url, { params, observe: 'response' }).pipe(
+
+    return this.http.get<T>(url, { params, observe: 'response', withCredentials: true }).pipe(
       tap(response => {
         const duration = Math.round(performance.now() - startTime);
         const bodySize = response.body ? JSON.stringify(response.body).length : 0;
@@ -190,7 +191,7 @@ export class MotorApiService {
 
     const startTime = performance.now();
     this.logRequest('GET', url, params);
-    
+
     return this.http.get<ApiResponse<ArticlesData>>(url, { params, observe: 'response' }).pipe(
       tap(response => {
         const duration = Math.round(performance.now() - startTime);
@@ -281,7 +282,7 @@ export class MotorApiService {
     if (frequencyTypeCode) params = params.set('frequencyTypeCode', frequencyTypeCode);
     if (severity) params = params.set('severity', severity);
     if (searchTerm) params = params.set('searchTerm', searchTerm);
-    
+
     return this.http.get<ApiResponse<MaintenanceSchedulesByFrequencyResponse>>(
       `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/maintenanceSchedules/frequency`,
       { params }
@@ -317,14 +318,14 @@ export class MotorApiService {
   ): Observable<ApiResponse<MaintenanceSchedulesByIntervalResponse | any>> {
     let params = new HttpParams();
     // Normalize intervalType to match OpenAPI enum
-    const normalizedIntervalType = intervalType === 'miles' ? 'Miles' : 
-                                   intervalType === 'months' ? 'Months' : 
-                                   intervalType as IntervalType;
+    const normalizedIntervalType = intervalType === 'miles' ? 'Miles' :
+      intervalType === 'months' ? 'Months' :
+        intervalType as IntervalType;
     if (normalizedIntervalType) params = params.set('intervalType', normalizedIntervalType);
     if (interval !== undefined) params = params.set('interval', interval.toString());
     if (severity) params = params.set('severity', severity);
     if (searchTerm) params = params.set('searchTerm', searchTerm);
-    
+
     return this.http.get<ApiResponse<MaintenanceSchedulesByIntervalResponse>>(
       `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/maintenanceSchedules/intervals`,
       { params }
@@ -340,7 +341,7 @@ export class MotorApiService {
     let params = new HttpParams();
     if (severity) params = params.set('severity', severity);
     if (searchTerm) params = params.set('searchTerm', searchTerm);
-    
+
     return this.http.get<ApiResponse<IndicatorsWithMaintenanceSchedulesResponse>>(
       `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/maintenanceSchedules/indicators`,
       { params }
@@ -363,7 +364,7 @@ export class MotorApiService {
     const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/article/${articleId}/title`;
     const startTime = performance.now();
     this.logRequest('GET', url);
-    
+
     return this.http.get<ApiResponse<StringResponse>>(url, { observe: 'response' }).pipe(
       tap(response => {
         const duration = Math.round(performance.now() - startTime);
@@ -425,12 +426,12 @@ export class MotorApiService {
       if (url.startsWith('http://') || url.startsWith('https://')) {
         return url;
       }
-      
+
       // Skip if already processed (contains baseUrl)
       if (url.includes(this.baseUrl)) {
         return url;
       }
-      
+
       // Skip data URLs, anchors, and javascript
       if (url.startsWith('data:') || url.startsWith('#') || url.startsWith('javascript:')) {
         return url;
@@ -481,7 +482,7 @@ export class MotorApiService {
       url = url.trim();
       // Skip if empty
       if (!url) return match;
-      
+
       const processedUrl = processUrl(url, 'src');
       // Preserve original quote style
       const quote = match.includes("'") ? "'" : '"';
@@ -502,13 +503,13 @@ export class MotorApiService {
     processed = processed.replace(/href\s*=\s*["']([^"']+)["']/gi, (match, url) => {
       url = url.trim();
       // Skip anchors, hash routes, javascript, mailto, tel
-      if (url.startsWith('#') || 
-          url.startsWith('javascript:') || 
-          url.startsWith('mailto:') || 
-          url.startsWith('tel:')) {
+      if (url.startsWith('#') ||
+        url.startsWith('javascript:') ||
+        url.startsWith('mailto:') ||
+        url.startsWith('tel:')) {
         return match;
       }
-      
+
       // Skip if already a full URL (http/https) - these are external links
       if (url.startsWith('http://') || url.startsWith('https://')) {
         // But if it's pointing to our own baseUrl with a hash route, convert it
@@ -519,7 +520,7 @@ export class MotorApiService {
         }
         return match;
       }
-      
+
       // Process internal relative URLs
       const processedUrl = processUrl(url, 'href');
       const quote = match.includes("'") ? "'" : '"';
@@ -531,7 +532,7 @@ export class MotorApiService {
       const processedUrl = processUrl(url, 'background');
       // Remove quotes from url() if they were there
       const originalHadQuotes = /url\(["']/.test(match);
-      return originalHadQuotes 
+      return originalHadQuotes
         ? `background-image: url("${processedUrl}")`
         : `background-image: url(${processedUrl})`;
     });
@@ -551,7 +552,7 @@ export class MotorApiService {
         }
         return trimmed;
       }).join(', ');
-      
+
       const quote = match.includes("'") ? "'" : '"';
       return `srcset=${quote}${processedSrcset}${quote}`;
     });
@@ -575,7 +576,7 @@ export class MotorApiService {
     let params = new HttpParams();
     if (width) params = params.set('w', width.toString());
     if (height) params = params.set('h', height.toString());
-    
+
     return this.http.get(
       `${this.baseUrl}/api/source/${contentSource}/graphic/${id}`,
       { params, responseType: 'blob' }
@@ -594,7 +595,7 @@ export class MotorApiService {
     let params = new HttpParams();
     if (width) params = params.set('w', width.toString());
     if (height) params = params.set('h', height.toString());
-    
+
     return this.http.get(
       `${this.baseUrl}/api/manufacturer/${manufacturerId}/graphic/${id}`,
       { params, responseType: 'blob' }
@@ -641,7 +642,7 @@ export class MotorApiService {
     if (bucketName) params = params.set('bucketName', bucketName);
     if (articleSubtype) params = params.set('articleSubtype', articleSubtype);
     if (searchTerm) params = params.set('searchTerm', searchTerm);
-    
+
     return this.http.get<ApiResponse<ArticleResponse>>(
       `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/article/${articleId}`,
       { params }
@@ -670,7 +671,7 @@ export class MotorApiService {
     if (motorVehicleId) params = params.set('motorVehicleId', motorVehicleId);
     if (prettyPrint !== undefined) params = params.set('prettyPrint', prettyPrint.toString());
     if (searchTerm) params = params.set('searchTerm', searchTerm);
-    
+
     return this.http.get<ApiResponse<LaborResponseOpenApi>>(
       `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/labor/${articleId}`,
       { params }
@@ -716,7 +717,7 @@ export class MotorApiService {
   getVehiclesDeprecated(contentSource: ContentSource, vehicleIds: string[]): Observable<ApiResponse<ModelAndVehicleIdListResponse>> {
     let params = new HttpParams();
     vehicleIds.forEach(id => params = params.append('vehicleIds', id));
-    
+
     return this.http.get<ApiResponse<ModelAndVehicleIdListResponse>>(
       `${this.baseUrl}/api/source/${contentSource}/vehicles`,
       { params }
@@ -744,7 +745,7 @@ export class MotorApiService {
     let params = new HttpParams();
     if (searchTerm) params = params.set('searchTerm', searchTerm);
     if (motorVehicleId) params = params.set('motorVehicleId', motorVehicleId);
-    
+
     return this.http.get<ApiResponse<SearchResultsResponse>>(
       `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/articles/v2`,
       { params }
@@ -772,7 +773,7 @@ export class MotorApiService {
     let params = new HttpParams();
     if (motorVehicleId) params = params.set('motorVehicleId', motorVehicleId);
     if (searchTerm) params = params.set('searchTerm', searchTerm);
-    
+
     return this.http.get<ApiResponse<PartLineItemListResponse>>(
       `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/parts`,
       { params }
@@ -794,6 +795,28 @@ export class MotorApiService {
     return this.http.post<ApiResponse<ArticleBookmarkResponse>>(
       `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/article/${articleId}/bookmark`,
       null
+    );
+  }
+
+  // ==========================================
+  // AUTH ENDPOINTS
+  // ==========================================
+
+  /**
+   * Get authentication status
+   * Used for polling when auth is in progress
+   * @returns Observable of AuthStatusResponse
+   */
+  getAuthStatus(): Observable<AuthStatusResponse> {
+    // Note: This endpoint might return 401/403 if not authenticated, which is expected during auth
+    // We bypass the global error handling/logging for this specific call to avoid noise
+    return this.http.get<AuthStatusResponse>(`${this.baseUrl}/auth/status`, { withCredentials: true }).pipe(
+      timeout(5000),
+      catchError(error => {
+        console.error('[Auth Polling] Failed:', error);
+        // If we can't reach the status endpoint, assume error
+        return of({ status: 'error' as const, progress: 0, message: error.message || 'Connection failed' });
+      })
     );
   }
 
@@ -899,7 +922,7 @@ export class MotorApiService {
   getVehicleDeltaReport(quarter?: string): Observable<ApiResponse<VehicleDeltaReportListResponse>> {
     let params = new HttpParams();
     if (quarter) params = params.set('quarter', quarter);
-    
+
     return this.http.get<ApiResponse<VehicleDeltaReportListResponse>>(
       `${this.baseUrl}/api/source/track-change/deltareport`,
       { params }

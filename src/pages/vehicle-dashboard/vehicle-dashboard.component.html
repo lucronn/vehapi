@@ -8,7 +8,8 @@
   <!-- Mobile Header -->
   <div
     class="md:hidden fixed top-0 w-full bg-black/95 backdrop-blur-sm z-50 border-b border-cyan-500/20 px-4 py-3 flex items-center justify-between">
-    <h1 class="text-xl font-bold text-cyan-400 tracking-wider truncate max-w-[200px]">{{ vehicleName() || 'TORQUE' }}</h1>
+    <h1 class="text-xl font-bold text-cyan-400 tracking-wider truncate max-w-[200px]">{{ vehicleName() || 'TORQUE' }}
+    </h1>
     <button (click)="toggleMobileMenu()" class="text-cyan-400 p-2 hover:bg-black/50 rounded-lg transition-colors">
       <span class="sr-only">Open menu</span>
       @if (isMobileMenuOpen()) {
@@ -57,7 +58,13 @@
         Maintenance
       </button>
       <hr class="border-cyan-500/20 my-4" />
-      <a routerLink="/" class="block w-full text-center p-4 text-gray-400 hover:text-cyan-400 transition-colors">Exit Vehicle</a>
+      <button (click)="setSection('browse-all')" [class.text-cyan-400]="activeSection() === 'browse-all'"
+        class="w-full flex items-center p-4 rounded-xl bg-gray-900 border border-cyan-500/20 hover:bg-gray-800 hover:border-cyan-500/40 transition-all font-bold text-lg">
+        Browse All Data
+      </button>
+      <hr class="border-cyan-500/20 my-4" />
+      <a routerLink="/" class="block w-full text-center p-4 text-gray-400 hover:text-cyan-400 transition-colors">Exit
+        Vehicle</a>
     </nav>
   </div>
   }
@@ -72,7 +79,8 @@
     <!-- Search Results -->
     @if (searchTerm() && filteredArticles().length > 0) {
     <div class="max-w-5xl mx-auto mb-8 bg-gray-900 border border-cyan-500/30 rounded-lg p-6">
-      <h3 class="text-cyan-400 font-bold mb-4 uppercase tracking-wider">Search Results ({{ filteredArticles().length }})</h3>
+      <h3 class="text-cyan-400 font-bold mb-4 uppercase tracking-wider">Search Results ({{ filteredArticles().length }})
+      </h3>
       <div class="space-y-2">
         @for (article of filteredArticles().slice(0, 10); track article.id) {
         <a [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', article.id]"
@@ -113,7 +121,8 @@
       }
       @case ('diagrams') {
       <div class="space-y-6">
-        <h2 class="text-3xl font-bold text-white mb-6 uppercase tracking-wider">Wiring Diagrams & Component Locations</h2>
+        <h2 class="text-3xl font-bold text-white mb-6 uppercase tracking-wider">Wiring Diagrams & Component Locations
+        </h2>
         <app-diagrams-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
         </app-diagrams-section>
@@ -156,6 +165,75 @@
         <app-maintenance-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
         </app-maintenance-section>
+      </div>
+      }
+      @case ('browse-all') {
+      <div class="space-y-8">
+        <h2 class="text-3xl font-bold text-white mb-6 uppercase tracking-wider">All Vehicle Data</h2>
+
+        <!-- Filter Tabs Navigation -->
+        <div class="flex flex-wrap gap-2 border-b border-cyan-500/30 pb-4">
+          @for (tab of searchResultsState.filterTabsAndTheirFullBuckets(); track tab.filterTab) {
+          <button
+            class="px-4 py-2 rounded-lg border border-cyan-500/30 bg-gray-900 hover:bg-gray-800 text-cyan-400 font-bold uppercase tracking-wide">
+            {{ tab.filterTab }} <span class="text-xs ml-1 text-gray-400">({{ tab.articlesCount }})</span>
+          </button>
+          }
+        </div>
+
+        <!-- Render All Tabs & Buckets (Simplified View) -->
+        <div class="space-y-12">
+          @for (tab of searchResultsState.filterTabsAndTheirFullBuckets(); track tab.filterTab) {
+          <div class="bg-gray-900/50 p-6 rounded-xl border border-cyan-500/20">
+            <h3 class="text-2xl font-bold text-cyan-500 mb-6">{{ tab.filterTab }}</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              @for (bucket of tab.buckets; track bucket.bucketName) {
+              <div class="space-y-3">
+                <h4 class="text-xl font-bold text-white border-b border-gray-700 pb-2">{{ bucket.bucketNameOverride ||
+                  bucket.bucketName }}</h4>
+
+                <!-- Direct Articles -->
+                @if (bucket.articles.length > 0) {
+                <ul class="space-y-1">
+                  @for (article of bucket.articles; track article.id) {
+                  <li>
+                    <a [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', article.id]"
+                      class="block text-gray-300 hover:text-cyan-400 hover:bg-gray-800/50 p-1 rounded transition">
+                      {{ article.title }}
+                    </a>
+                  </li>
+                  }
+                </ul>
+                }
+
+                <!-- Child Buckets -->
+                @if (bucket.children && bucket.children.length > 0) {
+                <div class="pl-4 border-l border-gray-700 space-y-4 mt-2">
+                  @for (child of bucket.children; track child.bucketName) {
+                  <div>
+                    <h5 class="text-lg font-semibold text-gray-400 mb-2">{{ child.bucketNameOverride || child.bucketName
+                      }}</h5>
+                    <ul class="space-y-1">
+                      @for (art of child.articles; track art.id) {
+                      <li>
+                        <a [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', art.id]"
+                          class="block text-sm text-gray-300 hover:text-cyan-400 transition">
+                          {{ art.title }}
+                        </a>
+                      </li>
+                      }
+                    </ul>
+                  </div>
+                  }
+                </div>
+                }
+              </div>
+              }
+            </div>
+          </div>
+          }
+        </div>
       </div>
       }
       }

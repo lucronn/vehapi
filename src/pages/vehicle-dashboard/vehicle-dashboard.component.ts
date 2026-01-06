@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { map, switchMap, debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { map, switchMap, debounceTime, distinctUntilChanged, catchError } from 'rxjs/operators';
 import { Subject, of } from 'rxjs';
 
 // Models
@@ -11,6 +11,9 @@ import { Article } from '../../models/motor.models';
 // Services
 import { VehicleDataService } from '../../services/vehicle-data.service';
 import { MotorApiService } from '../../services/motor-api.service';
+import { GeminiService } from '../../services/gemini.service';
+import { SearchResultsState } from '../../services/search-results.state';
+import { effect } from '@angular/core';
 
 // Components
 import { DashboardSidebarComponent } from './components/layout/dashboard-sidebar/dashboard-sidebar.component';
@@ -28,7 +31,7 @@ import { CommonIssuesSectionComponent } from './components/sections/common-issue
 // Icons
 import { LucideAngularModule, Menu, X } from 'lucide-angular';
 
-export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'component-locations' | 'procedures' | 'parts' | 'specs' | 'maintenance';
+export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'component-locations' | 'procedures' | 'parts' | 'specs' | 'maintenance' | 'browse-all';
 
 /**
  * Main vehicle dashboard orchestrator component
@@ -60,6 +63,8 @@ export class VehicleDashboardComponent {
   private router = inject(Router);
   private motorApi = inject(MotorApiService);
   private vehicleData = inject(VehicleDataService);
+  private gemini = inject(GeminiService);
+  public searchResultsState = inject(SearchResultsState);
 
   readonly icons = { Menu, X };
 
@@ -107,6 +112,20 @@ export class VehicleDashboardComponent {
   );
   availableSections = toSignal(this.sections$, { initialValue: null });
 
+  // Trigger Initial Data Load
+  constructor() {
+    effect(() => {
+      const cs = this.contentSource();
+      const vid = this.vehicleId();
+      const mvid = this.motorVehicleId();
+      // Only load if we have valid params
+      if (cs && vid) {
+        // Load initial buckets (empty search)
+        this.searchResultsState.search(cs, vid, '', mvid);
+      }
+    });
+  }
+
   // UI State
   activeSection = signal<DashboardSection>('overview');
   isMobileMenuOpen = signal(false);
@@ -122,13 +141,36 @@ export class VehicleDashboardComponent {
     debounceTime(300),
     distinctUntilChanged(),
     switchMap(term => {
-      if (!term || term.length < 2) return [];
+      if (!term || term.length < 2) {
+        // Reset to empty search to show full buckets
+        const cs = this.contentSource();
+        const vid = this.vehicleId();
+        if (cs && vid) {
+          this.searchResultsState.search(cs, vid, '', this.motorVehicleId());
+        }
+        return of([]);
+      }
       const cs = this.contentSource();
       const vid = this.vehicleId();
-      if (!cs || !vid) return [];
+      if (!cs || !vid) return of([]);
 
-      return this.motorApi.searchArticles(cs, vid, term).pipe(
-        map(res => res.body.articleDetails || [])
+      // Optimize search term with AI if enabled
+      let searchOb$ = of(term);
+      if (this.gemini.aiEnabled()) {
+        searchOb$ = this.gemini.analyzeSearchIntent(term, '').pipe(
+          map(intent => intent.optimizedTerm || term),
+          catchError(() => of(term)) // Fallback to original term on error
+        );
+      }
+
+      return searchOb$.pipe(
+        switchMap(optimizedTerm => {
+          // Use State for search
+          this.searchResultsState.search(cs, vid, optimizedTerm, this.motorVehicleId());
+          // Return observable purely for filteredArticles consumption if needed, 
+          // but we should arguably rely on searchResultsState.articleDetails()
+          return of([]);
+        })
       );
     })
   );
@@ -137,7 +179,8 @@ export class VehicleDashboardComponent {
 
   filteredArticles = computed(() => {
     const search = this.searchTerm().toLowerCase();
-    const results = this.searchResults();
+    // Use State articles
+    const results = this.searchResultsState.articleDetails();
 
     if (!search || search.length < 2) return [];
     return results;
