@@ -298,7 +298,8 @@ export class VehicleDataService {
                         });
                         return; // Exit early as updateState will be called in subscribe
                     }
-                } else if (section === 'tsbs') {
+                }
+                else if (section === 'tsbs') {
                     const validBuckets = getBucketNamesForType('TSBs', fullData);
                     filtered = articles.filter(a =>
                         validBuckets.includes(a.bucket) ||
@@ -307,7 +308,9 @@ export class VehicleDataService {
                         id: a.id,
                         bulletinNumber: a.bulletinNumber || '',
                         title: a.title,
-                        releaseDate: a.releaseDate || ''
+                        releaseDate: a.releaseDate || '',
+                        description: a.description || a.subtitle || '', // Added description mapping
+                        thumbnailHref: a.thumbnailHref
                     } as Tsb));
                 } else if (section === 'procedures') {
                     const validBuckets = getBucketNamesForType('Procedures', fullData);
