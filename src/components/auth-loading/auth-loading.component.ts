@@ -39,12 +39,14 @@ export class AuthLoadingComponent implements OnInit, OnDestroy {
         this.motorApi.getAuthStatus().subscribe({
             next: (response) => {
                 let nextPollDelay = 4000; // Default idle poll
+                let shouldContinue = true;
 
                 if (response.status === 'authenticating') {
                     this.progress.set(response.progress);
                     this.message.set(response.message || 'ACCESSING DATABASE...');
                     nextPollDelay = 500; // Fast poll when active
                 } else if (response.status === 'success') {
+                    shouldContinue = false; // Stop polling on success
                     // Only show completion if we were previously showing progress
                     if (this.progress() > 0) {
                         this.progress.set(100);
@@ -65,7 +67,7 @@ export class AuthLoadingComponent implements OnInit, OnDestroy {
                     }
                 }
 
-                if (!this.destroyed) {
+                if (!this.destroyed && shouldContinue) {
                     setTimeout(() => this.poll(), nextPollDelay);
                 }
             },
