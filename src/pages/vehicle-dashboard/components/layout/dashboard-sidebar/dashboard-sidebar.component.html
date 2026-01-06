@@ -10,80 +10,101 @@
         }
     </div>
 
-    <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+    <nav class="flex-1 py-4 space-y-1 overflow-y-auto px-2">
         <button (click)="onSectionClick('overview')"
-            [class]="{'bg-cyan-500/10 text-cyan-400 border-cyan-500': activeSection === 'overview', 'text-gray-400 hover:bg-gray-900 hover:text-white hover:border-cyan-500/40 border-transparent': activeSection !== 'overview'}"
-            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
-            <lucide-icon [img]="icons.House" class="w-5 h-5 mr-3"></lucide-icon> Overview
+            [class]="activeSection === 'overview' ? 'bg-cyan-500/10 text-cyan-400 font-semibold' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'"
+            class="w-full flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200 group">
+            <lucide-icon [img]="icons.House"
+                [class]="activeSection === 'overview' ? 'text-cyan-400' : 'text-gray-500 group-hover:text-gray-300'"
+                class="w-5 h-5 mr-3 transition-colors"></lucide-icon> Overview
         </button>
+
         @if (!availableSections || availableSections.hasDtcs) {
         <button (click)="onSectionClick('dtcs')"
-            [class]="{'bg-cyan-500/10 text-cyan-400 border-cyan-500': activeSection === 'dtcs', 'text-gray-400 hover:bg-gray-900 hover:text-white hover:border-cyan-500/40 border-transparent': activeSection !== 'dtcs'}"
-            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
-            <lucide-icon [img]="icons.TriangleAlert" class="w-5 h-5 mr-3"></lucide-icon> Diagnostic Codes
+            [class]="activeSection === 'dtcs' ? 'bg-cyan-500/10 text-cyan-400 font-semibold' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'"
+            class="w-full flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200 group">
+            <lucide-icon [img]="icons.TriangleAlert"
+                [class]="activeSection === 'dtcs' ? 'text-cyan-400' : 'text-gray-500 group-hover:text-gray-300'"
+                class="w-5 h-5 mr-3 transition-colors"></lucide-icon> Diagnostic Codes
         </button>
         }
 
         @if (!availableSections || availableSections.hasTsbs) {
         <button (click)="onSectionClick('tsbs')"
-            [class]="{'bg-cyan-500/10 text-cyan-400 border-cyan-500': activeSection === 'tsbs', 'text-gray-400 hover:bg-gray-900 hover:text-white hover:border-cyan-500/40 border-transparent': activeSection !== 'tsbs'}"
-            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
-            <lucide-icon [img]="icons.FileText" class="w-5 h-5 mr-3"></lucide-icon> Service Bulletins
+            [class]="activeSection === 'tsbs' ? 'bg-cyan-500/10 text-cyan-400 font-semibold' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'"
+            class="w-full flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200 group">
+            <lucide-icon [img]="icons.FileText"
+                [class]="activeSection === 'tsbs' ? 'text-cyan-400' : 'text-gray-500 group-hover:text-gray-300'"
+                class="w-5 h-5 mr-3 transition-colors"></lucide-icon> Service Bulletins
         </button>
         }
 
         @if (!availableSections || availableSections.hasDiagrams) {
         <button (click)="onSectionClick('diagrams')"
-            [class]="{'bg-cyan-500/10 text-cyan-400 border-cyan-500': activeSection === 'diagrams', 'text-gray-400 hover:bg-gray-900 hover:text-white hover:border-cyan-500/40 border-transparent': activeSection !== 'diagrams'}"
-            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
-            <lucide-icon [img]="icons.Cable" class="w-5 h-5 mr-3"></lucide-icon> Wiring Diagrams
+            [class]="activeSection === 'diagrams' ? 'bg-cyan-500/10 text-cyan-400 font-semibold' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'"
+            class="w-full flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200 group">
+            <lucide-icon [img]="icons.Cable"
+                [class]="activeSection === 'diagrams' ? 'text-cyan-400' : 'text-gray-500 group-hover:text-gray-300'"
+                class="w-5 h-5 mr-3 transition-colors"></lucide-icon> Wiring Diagrams
         </button>
         }
 
         @if (!availableSections || availableSections.hasComponentLocations) {
         <button (click)="onSectionClick('component-locations')"
-            [class]="{'bg-cyan-500/10 text-cyan-400 border-cyan-500': activeSection === 'component-locations', 'text-gray-400 hover:bg-gray-900 hover:text-white hover:border-cyan-500/40 border-transparent': activeSection !== 'component-locations'}"
-            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
-            <lucide-icon [img]="icons.Cable" class="w-5 h-5 mr-3"></lucide-icon> Component Locations
+            [class]="activeSection === 'component-locations' ? 'bg-cyan-500/10 text-cyan-400 font-semibold' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'"
+            class="w-full flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200 group">
+            <lucide-icon [img]="icons.Cable"
+                [class]="activeSection === 'component-locations' ? 'text-cyan-400' : 'text-gray-500 group-hover:text-gray-300'"
+                class="w-5 h-5 mr-3 transition-colors"></lucide-icon> Component Locations
         </button>
         }
 
         @if (!availableSections || availableSections.hasProcedures) {
         <button (click)="onSectionClick('procedures')"
-            [class]="{'bg-cyan-500/10 text-cyan-400 border-cyan-500': activeSection === 'procedures', 'text-gray-400 hover:bg-gray-900 hover:text-white hover:border-cyan-500/40 border-transparent': activeSection !== 'procedures'}"
-            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
-            <lucide-icon [img]="icons.Wrench" class="w-5 h-5 mr-3"></lucide-icon> Procedures
+            [class]="activeSection === 'procedures' ? 'bg-cyan-500/10 text-cyan-400 font-semibold' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'"
+            class="w-full flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200 group">
+            <lucide-icon [img]="icons.Wrench"
+                [class]="activeSection === 'procedures' ? 'text-cyan-400' : 'text-gray-500 group-hover:text-gray-300'"
+                class="w-5 h-5 mr-3 transition-colors"></lucide-icon> Procedures
         </button>
         }
 
         <button (click)="onSectionClick('parts')"
-            [class]="{'bg-cyan-500/10 text-cyan-400 border-cyan-500': activeSection === 'parts', 'text-gray-400 hover:bg-gray-900 hover:text-white hover:border-cyan-500/40 border-transparent': activeSection !== 'parts'}"
-            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
-            <lucide-icon [img]="icons.Package" class="w-5 h-5 mr-3"></lucide-icon> Parts
+            [class]="activeSection === 'parts' ? 'bg-cyan-500/10 text-cyan-400 font-semibold' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'"
+            class="w-full flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200 group">
+            <lucide-icon [img]="icons.Package"
+                [class]="activeSection === 'parts' ? 'text-cyan-400' : 'text-gray-500 group-hover:text-gray-300'"
+                class="w-5 h-5 mr-3 transition-colors"></lucide-icon> Parts
         </button>
 
         @if (!availableSections || availableSections.hasSpecs) {
         <button (click)="onSectionClick('specs')"
-            [class]="{'bg-cyan-500/10 text-cyan-400 border-cyan-500': activeSection === 'specs', 'text-gray-400 hover:bg-gray-900 hover:text-white hover:border-cyan-500/40 border-transparent': activeSection !== 'specs'}"
-            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
-            <lucide-icon [img]="icons.ClipboardList" class="w-5 h-5 mr-3"></lucide-icon> Specs & Fluids
+            [class]="activeSection === 'specs' ? 'bg-cyan-500/10 text-cyan-400 font-semibold' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'"
+            class="w-full flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200 group">
+            <lucide-icon [img]="icons.ClipboardList"
+                [class]="activeSection === 'specs' ? 'text-cyan-400' : 'text-gray-500 group-hover:text-gray-300'"
+                class="w-5 h-5 mr-3 transition-colors"></lucide-icon> Specs & Fluids
         </button>
         }
 
         @if (!availableSections || availableSections.hasMaintenance) {
         <button (click)="onSectionClick('maintenance')"
-            [class]="{'bg-cyan-500/10 text-cyan-400 border-cyan-500': activeSection === 'maintenance', 'text-gray-400 hover:bg-gray-900 hover:text-white hover:border-cyan-500/40 border-transparent': activeSection !== 'maintenance'}"
-            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
-            <lucide-icon [img]="icons.ClipboardList" class="w-5 h-5 mr-3"></lucide-icon> Maintenance
+            [class]="activeSection === 'maintenance' ? 'bg-cyan-500/10 text-cyan-400 font-semibold' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'"
+            class="w-full flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200 group">
+            <lucide-icon [img]="icons.ClipboardList"
+                [class]="activeSection === 'maintenance' ? 'text-cyan-400' : 'text-gray-500 group-hover:text-gray-300'"
+                class="w-5 h-5 mr-3 transition-colors"></lucide-icon> Maintenance
         </button>
         }
 
         <div class="my-2 border-t border-cyan-500/20 mx-4"></div>
 
         <button (click)="onSectionClick('browse-all')"
-            [class]="{'bg-cyan-500/10 text-cyan-400 border-cyan-500': activeSection === 'browse-all', 'text-gray-400 hover:bg-gray-900 hover:text-white hover:border-cyan-500/40 border-transparent': activeSection !== 'browse-all'}"
-            class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-md border-l-4 transition-colors">
-            <lucide-icon [img]="icons.Package" class="w-5 h-5 mr-3"></lucide-icon> Browse All Data
+            [class]="activeSection === 'browse-all' ? 'bg-cyan-500/10 text-cyan-400 font-semibold' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'"
+            class="w-full flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200 group">
+            <lucide-icon [img]="icons.Package"
+                [class]="activeSection === 'browse-all' ? 'text-cyan-400' : 'text-gray-500 group-hover:text-gray-300'"
+                class="w-5 h-5 mr-3 transition-colors"></lucide-icon> Browse All Data
         </button>
     </nav>
 </aside>
