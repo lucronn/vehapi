@@ -271,7 +271,7 @@ export class VehicleDataService {
                     ).map(a => ({
                         id: a.id,
                         code: a.code || a.title, // Fallback to title if code is missing
-                        description: a.title,
+                        description: a.description || a.subtitle || a.title || '', // meaningful fallback order
                         bucket: a.bucket
                     } as Dtc));
 
