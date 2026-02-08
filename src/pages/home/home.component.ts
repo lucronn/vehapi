@@ -1,15 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, ElementRef, HostListener, ViewChild, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal, ElementRef, HostListener, ViewChild, OnInit, DestroyRef, ChangeDetectorRef } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, debounceTime, distinctUntilChanged, firstValueFrom, catchError, of } from 'rxjs';
 
 import { MotorApiService } from '../../services/motor-api.service';
 import { VehiclePersistenceService } from '../../services/vehicle-persistence.service';
 import { LogoComponent } from '../../components/logo/logo.component';
 import { Make, Model, Engine, PersistedVehicle } from '../../models/motor.models';
-import { LucideAngularModule, Search, X, ArrowRight, ArrowUpRight } from 'lucide-angular';
+import { LucideAngularModule, Search, X, ArrowRight, ArrowUpRight, ArrowLeft } from 'lucide-angular';
 
 type Suggestion =
   | { type: 'Year'; value: number; display: string }
@@ -24,10 +24,12 @@ type Suggestion =
   imports: [CommonModule, FormsModule, LogoComponent, RouterModule, LucideAngularModule],
 })
 export class HomeComponent implements OnInit {
-  readonly icons = { Search, X, ArrowRight, ArrowUpRight };
+  readonly icons = { Search, X, ArrowRight, ArrowUpRight, ArrowLeft };
   private motorApi = inject(MotorApiService);
   private persistence = inject(VehiclePersistenceService);
   private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
+  private cdr = inject(ChangeDetectorRef);
 
   @ViewChild('searchInputRef') searchInputRef!: ElementRef<HTMLInputElement>;
   @ViewChild('desktopSuggestionsContainer') desktopSuggestionsContainerRef!: ElementRef<HTMLDivElement>;
@@ -75,7 +77,8 @@ export class HomeComponent implements OnInit {
 
     this.searchSubject.pipe(
       debounceTime(500),
-      distinctUntilChanged()
+      distinctUntilChanged(),
+      takeUntilDestroyed(this.destroyRef) // Prevents memory leak
     ).subscribe(term => {
       this.searchTerm.set(term);
     });
@@ -125,8 +128,12 @@ export class HomeComponent implements OnInit {
     }
   }
 
+  isMobile = signal(false);
+
   private updateViewportHeight(): void {
     if (typeof window === 'undefined') return;
+
+    this.isMobile.set(window.innerWidth < 768);
 
     // Store base viewport height (without keyboard)
     if (this.baseViewportHeight() === 0) {
@@ -630,5 +637,42 @@ export class HomeComponent implements OnInit {
   startNewSearch(): void {
     this.persistence.clearVehicle();
     this.persistedVehicle.set(null);
+  }
+  onMobileSearchTrigger(): void {
+    console.log('🔵 Mobile Search Trigger Tapped', {
+      isMobile: this.isMobile(),
+      showSuggestions: this.showSuggestions(),
+      selectedVehicle: this.selectedVehicle()
+    });
+
+    // Unconditionally show suggestions - removed isMobile() check
+    this.showSuggestions.set(true);
+
+    console.log('🟢 Suggestions state set to TRUE');
+    console.log('🟡 Wizard Render Conditions:', {
+      isMobile: this.isMobile(),
+      showSuggestions: this.showSuggestions(),
+      selectedVehicle: this.selectedVehicle(),
+      shouldRender: this.isMobile() && this.showSuggestions() && !this.selectedVehicle()
+    });
+
+    // CRITICAL FIX: Force Angular to detect the change
+    // Signals should trigger change detection automatically, but seems to fail on mobile
+    this.cdr.detectChanges();
+    console.log('🟣 Change detection triggered manually');
+  }
+
+  closeMobileWizard(): void {
+    // If we are deep in selection, maybe go back one step?
+    // For now, just close the wizard if they hit back on the top level
+    if (this.selectedModel()) {
+      this.removeSelection(new MouseEvent('click'), 'Model');
+    } else if (this.selectedMake()) {
+      this.removeSelection(new MouseEvent('click'), 'Make');
+    } else if (this.selectedYear()) {
+      this.removeSelection(new MouseEvent('click'), 'Year');
+    } else {
+      this.showSuggestions.set(false);
+    }
   }
 }

@@ -68,7 +68,8 @@ export interface Article {
 
 export interface FilterTab {
   name: string;
-  count: number;
+  count?: number; // Some APIs use count
+  articlesCount?: number; // MOTOR v2 uses articlesCount
   type?: string;
   filterTabType?: FilterTabType;
   buckets?: Bucket[];
@@ -93,6 +94,8 @@ export interface ArticleResponse {
 // Article Content Data (internal use - wraps HTML)
 export interface ArticleContentData {
   html: string;
+  content?: string;
+  html_content?: string;
   id?: string;
   title?: string;
   metadata?: Record<string, any>;

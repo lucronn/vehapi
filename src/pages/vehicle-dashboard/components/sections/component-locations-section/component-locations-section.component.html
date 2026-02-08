@@ -3,8 +3,9 @@
     <app-loading-skeleton class="block h-64"></app-loading-skeleton>
     } @else {
     @if (locations().length === 0) {
-    <app-empty-state icon="MapPin" title="No Component Locations Found"
-        message="There are no component location diagrams available for this vehicle."></app-empty-state>
+    <app-empty-state icon="package" message="No Component Locations Found"
+        submessage="There are no component location diagrams available for this vehicle.">
+    </app-empty-state>
     } @else {
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @for (item of locations(); track trackById($index, item)) {

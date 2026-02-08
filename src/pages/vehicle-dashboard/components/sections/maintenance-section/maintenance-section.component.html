@@ -1,55 +1,81 @@
-<div class="animate-fade-in space-y-6">
+<div class="animate-fade-in space-y-8">
 
-    <!-- Controls -->
-    <div class="flex items-center justify-between bg-gray-900 p-4 rounded-lg border border-cyan-500/30">
-        <div class="flex items-center text-gray-300">
-            <lucide-icon [img]="icons.Gauge" class="w-5 h-5 mr-2 text-cyan-400"></lucide-icon>
-            <span class="font-medium mr-4">Mileage Interval:</span>
+    <!-- High-Tech Interval Selector -->
+    <div class="glass-card p-1">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 px-8 py-6">
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-12 h-12 rounded-2xl bg-[hsl(var(--accent-cyan)/0.1)] flex items-center justify-center text-[hsl(var(--accent-cyan))]">
+                    <lucide-icon [img]="icons.Gauge" class="w-6 h-6"></lucide-icon>
+                </div>
+                <div>
+                    <p class="text-[9px] uppercase tracking-[0.3em] font-black text-[hsl(var(--text-muted))]">System
+                        Threshold</p>
+                    <h3 class="text-lg font-bold text-white tracking-tight">Mileage Vector</h3>
+                </div>
+            </div>
 
-            <select [value]="selectedInterval()" (change)="onIntervalChange($event)"
-                class="bg-black border border-cyan-500/50 text-white text-sm rounded-lg focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 block p-2.5 font-mono">
-                @for (interval of availableIntervals; track interval) {
-                <option [value]="interval">{{ interval | number }} miles</option>
-                }
-            </select>
+            <div class="flex items-center gap-4 self-end md:self-auto">
+                <div class="h-px w-8 bg-white/10 hidden md:block"></div>
+                <select [value]="selectedInterval()" (change)="onIntervalChange($event)"
+                    class="bg-white/5 border border-white/5 text-white text-sm rounded-xl focus:ring-0 focus:border-[hsl(var(--accent-cyan))] block p-3 pr-10 font-black uppercase tracking-widest cursor-pointer outline-none transition-all hover:bg-white/10">
+                    @for (interval of availableIntervals; track interval) {
+                    <option [value]="interval" class="bg-[hsl(var(--bg-deep))]">{{ interval | number }} MI</option>
+                    }
+                </select>
+            </div>
         </div>
     </div>
 
     @if (isLoading()) {
-    <app-loading-skeleton class="block h-64"></app-loading-skeleton>
+    <app-loading-skeleton type="card" [count]="1"></app-loading-skeleton>
     } @else {
     @if (schedules().length === 0) {
-    <app-empty-state icon="ClipboardList" title="No Maintenance Found"
-        message="No maintenance items found for this interval."></app-empty-state>
+    <app-empty-state icon="package" message="No Maintenance Scheduled"
+        submessage="No critical service events detected for this interval.">
+    </app-empty-state>
     } @else {
-    <div class="bg-gray-900 rounded-lg overflow-hidden border border-cyan-500/30">
-        <table class="w-full text-left text-sm text-gray-300">
-            <thead class="bg-gray-900 text-gray-400 uppercase text-xs">
-                <tr>
-                    <th scope="col" class="px-6 py-3">Action</th>
-                    <th scope="col" class="px-6 py-3">Description</th>
-                    <th scope="col" class="px-6 py-3">System</th>
-                </tr>
-            </thead>
-            <tbody>
-                @for (item of schedules(); track $index) {
-                <tr class="border-b border-cyan-500/20 hover:bg-gray-900/50">
-                    <td class="px-6 py-4 font-medium text-white">
-                        <span
-                            class="px-2 py-1 rounded bg-cyan-900/50 text-cyan-300 border border-cyan-800 uppercase text-xs">
-                            {{ item.action }}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 text-white">
-                        {{ item.description }}
-                    </td>
-                    <td class="px-6 py-4 text-gray-500">
-                        {{ item.frequency || 'N/A' }}
-                    </td>
-                </tr>
-                }
-            </tbody>
-        </table>
+    <div class="glass-card overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-white/[0.02] border-b border-white/5">
+                    <tr>
+                        <th scope="col"
+                            class="px-8 py-6 text-[10px] uppercase tracking-[0.3em] font-black text-[hsl(var(--text-muted))]">
+                            Logic</th>
+                        <th scope="col"
+                            class="px-8 py-6 text-[10px] uppercase tracking-[0.3em] font-black text-[hsl(var(--text-muted))]">
+                            Operation</th>
+                        <th scope="col"
+                            class="px-8 py-6 text-[10px] uppercase tracking-[0.3em] font-black text-[hsl(var(--text-muted))] text-right">
+                            Cycle</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    @for (item of schedules(); track $index) {
+                    <tr class="hover:bg-white/[0.01] transition-colors group animate-fade-in-up"
+                        [style.animation-delay]="$index * 50 + 'ms'">
+                        <td class="px-8 py-6">
+                            <span
+                                class="inline-flex items-center px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest bg-[hsl(var(--accent-cyan)/0.1)] text-[hsl(var(--accent-cyan))] border border-[hsl(var(--accent-cyan)/0.2)]">
+                                {{ item.action }}
+                            </span>
+                        </td>
+                        <td class="px-8 py-6">
+                            <p
+                                class="text-white font-bold tracking-tight group-hover:text-[hsl(var(--accent-cyan))] transition-colors">
+                                {{ item.description }}</p>
+                        </td>
+                        <td class="px-8 py-6 text-right">
+                            <span
+                                class="text-[10px] font-black text-[hsl(var(--text-muted))] uppercase tracking-widest">{{
+                                item.frequency || 'AS NEEDED' }}</span>
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
     }
     }

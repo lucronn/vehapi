@@ -1,205 +1,257 @@
-<div class="min-h-screen md:h-screen bg-black text-white font-mono flex flex-col md:flex-row overflow-hidden">
-
-  <!-- Sidebar Navigation - Desktop Only -->
+<div class="min-h-screen bg-[hsl(var(--bg-deep))] text-white flex flex-col md:flex-row overflow-hidden relative">
+  <!-- Sidebar Navigation - Desktop -->
   <app-dashboard-sidebar [vehicleName]="vehicleName()" [activeSection]="activeSection()"
-    (sectionChange)="setSection($event)">
+    [availableSections]="availableSections()" (sectionChange)="setSection($event)">
   </app-dashboard-sidebar>
 
   <!-- Mobile Header -->
   <div
-    class="md:hidden fixed top-0 w-full bg-black/95 backdrop-blur-sm z-50 border-b border-cyan-500/20 px-4 py-3 flex items-center justify-between">
-    <h1 class="text-xl font-bold text-cyan-400 tracking-wider truncate max-w-[200px]">{{ vehicleName() || 'TORQUE' }}
-    </h1>
-    <button (click)="toggleMobileMenu()" class="text-cyan-400 p-2 hover:bg-black/50 rounded-lg transition-colors">
-      <span class="sr-only">Open menu</span>
-      @if (isMobileMenuOpen()) {
-      <lucide-icon [img]="icons.X" class="w-6 h-6"></lucide-icon>
-      } @else {
-      <lucide-icon [img]="icons.Menu" class="w-6 h-6"></lucide-icon>
-      }
+    class="md:hidden sticky top-0 w-full glass-card border-x-0 rounded-none z-50 px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <app-logo class="w-6 h-6"></app-logo>
+      <h1 class="text-lg font-bold tracking-tight truncate max-w-[180px]">{{ vehicleName() || 'TORQUE' }}</h1>
+    </div>
+    <button (click)="toggleMobileMenu()" class="p-3 hover:bg-white/5 rounded-xl transition-colors">
+      <lucide-icon [img]="isMobileMenuOpen() ? icons.X : icons.Menu" class="w-6 h-6"></lucide-icon>
     </button>
   </div>
 
-  <!-- Mobile Navigation Overlay -->
+  <!-- Mobile Navigation Overlay (New High-Tech Style) -->
   @if (isMobileMenuOpen()) {
-  <div class="fixed inset-0 z-40 bg-black/95 md:hidden pt-16 px-6 backdrop-blur-xl">
-    <nav class="space-y-2 pt-4">
-      <button (click)="setSection('overview')" [class.text-cyan-400]="activeSection() === 'overview'"
-        class="w-full flex items-center p-4 rounded-xl bg-gray-900 border border-cyan-500/20 hover:bg-gray-800 hover:border-cyan-500/40 transition-all font-bold text-lg">
-        Overview
+  <div class="fixed inset-0 z-40 bg-[hsl(var(--bg-deep)/0.95)] backdrop-blur-2xl md:hidden pt-24 px-6 animate-fade-in">
+    <div class="grid grid-cols-2 gap-4">
+      <button (click)="setSection('overview')" [class.neon-border-cyan]="activeSection() === 'overview'"
+        class="glass-card p-6 flex flex-col items-center gap-3 text-sm font-bold uppercase tracking-widest">
+        <lucide-icon [img]="icons.House" class="w-6 h-6"></lucide-icon> Dash
       </button>
-      <button (click)="setSection('dtcs')" [class.text-cyan-400]="activeSection() === 'dtcs'"
-        class="w-full flex items-center p-4 rounded-xl bg-gray-900 border border-cyan-500/20 hover:bg-gray-800 hover:border-cyan-500/40 transition-all font-bold text-lg">
-        Diagnostic Codes
+      <button (click)="setSection('dtcs')" [class.neon-border-cyan]="activeSection() === 'dtcs'"
+        class="glass-card p-6 flex flex-col items-center gap-3 text-sm font-bold uppercase tracking-widest">
+        <lucide-icon [img]="icons.TriangleAlert" class="w-6 h-6"></lucide-icon> Faults
       </button>
-      <button (click)="setSection('tsbs')" [class.text-cyan-400]="activeSection() === 'tsbs'"
-        class="w-full flex items-center p-4 rounded-xl bg-gray-900 border border-cyan-500/20 hover:bg-gray-800 hover:border-cyan-500/40 transition-all font-bold text-lg">
-        Service Bulletins
+      <button (click)="setSection('tsbs')" [class.neon-border-cyan]="activeSection() === 'tsbs'"
+        class="glass-card p-6 flex flex-col items-center gap-3 text-sm font-bold uppercase tracking-widest">
+        <lucide-icon [img]="icons.FileText" class="w-6 h-6"></lucide-icon> TSBs
       </button>
-      <button (click)="setSection('diagrams')" [class.text-cyan-400]="activeSection() === 'diagrams'"
-        class="w-full flex items-center p-4 rounded-xl bg-gray-900 border border-cyan-500/20 hover:bg-gray-800 hover:border-cyan-500/40 transition-all font-bold text-lg">
-        Wiring & Components
+      <button (click)="setSection('procedures')" [class.neon-border-cyan]="activeSection() === 'procedures'"
+        class="glass-card p-6 flex flex-col items-center gap-3 text-sm font-bold uppercase tracking-widest">
+        <lucide-icon [img]="icons.Wrench" class="w-6 h-6"></lucide-icon> Fixes
       </button>
-      <button (click)="setSection('procedures')" [class.text-cyan-400]="activeSection() === 'procedures'"
-        class="w-full flex items-center p-4 rounded-xl bg-gray-900 border border-cyan-500/20 hover:bg-gray-800 hover:border-cyan-500/40 transition-all font-bold text-lg">
-        Procedures
-      </button>
-      <button (click)="setSection('component-locations')"
-        [class.text-cyan-400]="activeSection() === 'component-locations'"
-        class="w-full flex items-center p-4 rounded-xl bg-gray-900 border border-cyan-500/20 hover:bg-gray-800 hover:border-cyan-500/40 transition-all font-bold text-lg">
-        Component Locations
-      </button>
-      <button (click)="setSection('parts')" [class.text-cyan-400]="activeSection() === 'parts'"
-        class="w-full flex items-center p-4 rounded-xl bg-gray-900 border border-cyan-500/20 hover:bg-gray-800 hover:border-cyan-500/40 transition-all font-bold text-lg">
-        Parts
-      </button>
-      <button (click)="setSection('maintenance')" [class.text-cyan-400]="activeSection() === 'maintenance'"
-        class="w-full flex items-center p-4 rounded-xl bg-gray-900 border border-cyan-500/20 hover:bg-gray-800 hover:border-cyan-500/40 transition-all font-bold text-lg">
-        Maintenance
-      </button>
-      <hr class="border-cyan-500/20 my-4" />
-      <button (click)="setSection('browse-all')" [class.text-cyan-400]="activeSection() === 'browse-all'"
-        class="w-full flex items-center p-4 rounded-xl bg-gray-900 border border-cyan-500/20 hover:bg-gray-800 hover:border-cyan-500/40 transition-all font-bold text-lg">
-        Browse All Data
-      </button>
-      <hr class="border-cyan-500/20 my-4" />
-      <a routerLink="/" class="block w-full text-center p-4 text-gray-400 hover:text-cyan-400 transition-colors">Exit
-        Vehicle</a>
-    </nav>
+    </div>
+    <div class="mt-8 space-y-4">
+      <button (click)="setSection('browse-all')" class="w-full btn-glass py-4 uppercase tracking-[0.2em] text-xs">Full
+        Data Inventory</button>
+      <a routerLink="/"
+        class="block w-full text-center py-4 text-[hsl(var(--text-muted))] hover:text-white uppercase tracking-[0.2em] text-xs transition-colors">Terminate
+        Session</a>
+    </div>
   </div>
   }
 
-  <!-- Main Content -->
-  <main class="flex-1 overflow-y-auto bg-black p-4 md:p-6 lg:p-8 pt-16 md:pt-6 w-full">
+  <!-- Main Content Area -->
+  <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 custom-scrollbar relative">
 
-    <!-- Global Search -->
-    <app-dashboard-search [searchTerm]="searchTerm()" (searchChange)="onSearch($event)">
-    </app-dashboard-search>
-
-    <!-- Search Results -->
-    @if (searchTerm() && filteredArticles().length > 0) {
-    <div class="max-w-5xl mx-auto mb-8 bg-gray-900 border border-cyan-500/30 rounded-lg p-6">
-      <h3 class="text-cyan-400 font-bold mb-4 uppercase tracking-wider">Search Results ({{ filteredArticles().length }})
-      </h3>
-      <div class="space-y-2">
-        @for (article of filteredArticles().slice(0, 10); track article.id) {
-        <a [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', article.id]"
-          class="block p-3 bg-black border border-cyan-500/20 hover:bg-gray-900 hover:border-cyan-500/40 rounded-lg transition-colors">
-          <span class="text-white font-medium">{{ article.title }}</span>
-        </a>
-        }
-      </div>
+    <!-- Background Decoration -->
+    <div
+      class="absolute top-0 right-0 w-[500px] h-[500px] bg-[hsl(var(--accent-cyan)/0.03)] rounded-full blur-[100px] -z-10">
     </div>
-    }
 
-    <!-- Section Content -->
-    <div class="max-w-7xl mx-auto">
+    <!-- Search / Interaction Bar -->
+    <div class="max-w-5xl mx-auto mb-6">
+      <app-dashboard-search [searchTerm]="searchTerm()" (searchChange)="onSearch($event)">
+      </app-dashboard-search>
+
+      <!-- Search Results Dropdown-style -->
+      @if (searchTerm() && filteredArticles().length > 0) {
+      <div class="mt-4 glass-card neon-border-cyan overflow-hidden animate-fade-in z-30">
+        <div class="px-6 py-3 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
+          <h3 class="text-[10px] uppercase tracking-[0.21em] text-[hsl(var(--accent-cyan))] font-bold">System Query
+            Results ({{ filteredArticles().length }})</h3>
+          <button (click)="onSearch('')"
+            class="text-[10px] text-[hsl(var(--text-muted))] hover:text-white uppercase tracking-widest">Dismiss</button>
+        </div>
+        <div class="max-h-64 overflow-y-auto px-2 py-2">
+          @for (article of filteredArticles().slice(0, 15); track article.id) {
+          <a [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', article.id]"
+            class="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-all group">
+            <div
+              class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[hsl(var(--text-muted))] group-hover:bg-[hsl(var(--accent-cyan)/0.1)] group-hover:text-[hsl(var(--accent-cyan))] transition-colors">
+              <lucide-icon [img]="icons.FileText" class="w-4 h-4"></lucide-icon>
+            </div>
+            <span class="text-sm font-medium text-white/80 group-hover:text-white transition-colors">{{ article.title
+              }}</span>
+          </a>
+          }
+        </div>
+      </div>
+      }
+    </div>
+
+    <!-- Active Unit Intelligence -->
+    <div class="max-w-[1600px] mx-auto space-y-12">
       @switch (activeSection()) {
       @case ('overview') {
-      <div class="space-y-8">
-        <h2 class="text-3xl font-bold text-white mb-6 uppercase tracking-wider">Common Issues & Quick Access</h2>
+      <div class="space-y-6 animate-fade-in-up">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div class="space-y-2">
+            <p class="text-[hsl(var(--accent-cyan))] text-[10px] uppercase tracking-[0.3em] font-bold">Vehicle Data</p>
+            <h2 class="text-2xl md:text-4xl font-bold tracking-tight">{{ vehicleName() || 'Loading...' }}</h2>
+          </div>
+        </div>
+
+        <!-- Specifications & Fluids from API -->
+        @if (availableSections()?.hasSpecs) {
+        <app-specs-fluids-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
+          [motorVehicleId]="motorVehicleId()">
+        </app-specs-fluids-section>
+        }
+
+        @if (availableSections()?.hasDtcs || availableSections()?.hasTsbs) {
         <app-common-issues-section [vehicleName]="vehicleName()" [contentSource]="contentSource()"
           [vehicleId]="vehicleId()">
         </app-common-issues-section>
+        }
       </div>
       }
       @case ('dtcs') {
-      <div class="space-y-6">
-        <h2 class="text-3xl font-bold text-white mb-6 uppercase tracking-wider">Diagnostic Trouble Codes</h2>
+      <div class="space-y-6 animate-fade-in-up">
+        <div class="space-y-2">
+          <p class="text-[hsl(var(--accent-cyan))] text-[10px] uppercase tracking-[0.3em] font-bold">Diagnostics</p>
+          <h2 class="text-2xl md:text-4xl font-bold tracking-tight">Diagnostic Trouble Codes</h2>
+        </div>
         <app-dtc-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
         </app-dtc-section>
       </div>
       }
       @case ('tsbs') {
-      <div class="space-y-6">
-        <h2 class="text-3xl font-bold text-white mb-6 uppercase tracking-wider">Technical Service Bulletins</h2>
+      <div class="space-y-6 animate-fade-in-up">
+        <div class="space-y-2">
+          <p class="text-[hsl(var(--accent-cyan))] text-[10px] uppercase tracking-[0.3em] font-bold">Service Info</p>
+          <h2 class="text-2xl md:text-4xl font-bold tracking-tight">Technical Bulletins</h2>
+        </div>
         <app-tsb-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
         </app-tsb-section>
       </div>
       }
       @case ('diagrams') {
-      <div class="space-y-6">
-        <h2 class="text-3xl font-bold text-white mb-6 uppercase tracking-wider">Wiring Diagrams & Component Locations
-        </h2>
+      <div class="space-y-6 animate-fade-in-up">
+        <div class="space-y-2">
+          <p class="text-[hsl(var(--accent-cyan))] text-[10px] uppercase tracking-[0.3em] font-bold">Wiring & Components
+          </p>
+          <h2 class="text-2xl md:text-4xl font-bold tracking-tight">Wiring Diagrams</h2>
+        </div>
         <app-diagrams-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
         </app-diagrams-section>
       </div>
       }
       @case ('procedures') {
-      <div class="space-y-6">
-        <h2 class="text-3xl font-bold text-white mb-6 uppercase tracking-wider">Repair Procedures</h2>
+      <div class="space-y-6 animate-fade-in-up">
+        <div class="space-y-2">
+          <p class="text-[hsl(var(--accent-cyan))] text-[10px] uppercase tracking-[0.3em] font-bold">Service Procedures
+          </p>
+          <h2 class="text-2xl md:text-4xl font-bold tracking-tight">Repair & Service</h2>
+        </div>
         <app-procedures-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
         </app-procedures-section>
       </div>
       }
       @case ('parts') {
-      <div class="space-y-6">
-        <h2 class="text-3xl font-bold text-white mb-6 uppercase tracking-wider">Parts</h2>
+      <div class="space-y-6 animate-fade-in-up">
+        <div class="space-y-2">
+          <p class="text-[hsl(var(--accent-cyan))] text-[10px] uppercase tracking-[0.3em] font-bold">Parts</p>
+          <h2 class="text-2xl md:text-4xl font-bold tracking-tight">Component Inventory</h2>
+        </div>
         <app-parts-section [contentSource]="contentSource()" [vehicleId]="vehicleId()">
         </app-parts-section>
       </div>
       }
       @case ('specs') {
-      <div class="space-y-6">
-        <h2 class="text-3xl font-bold text-white mb-6 uppercase tracking-wider">Specifications & Fluid Capacities</h2>
+      <div class="space-y-6 animate-fade-in-up">
+        <div class="space-y-2">
+          <p class="text-[hsl(var(--accent-cyan))] text-[10px] uppercase tracking-[0.3em] font-bold">Tech Specs</p>
+          <h2 class="text-2xl md:text-4xl font-bold tracking-tight">Specifications & Fluids</h2>
+        </div>
         <app-specs-fluids-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
         </app-specs-fluids-section>
       </div>
       }
       @case ('component-locations') {
-      <div class="space-y-6">
-        <h2 class="text-3xl font-bold text-white mb-6 uppercase tracking-wider">Component Locations</h2>
+      <div class="space-y-6 animate-fade-in-up">
+        <div class="space-y-2">
+          <p class="text-[hsl(var(--accent-cyan))] text-[10px] uppercase tracking-[0.3em] font-bold">Component Locations
+          </p>
+          <h2 class="text-2xl md:text-4xl font-bold tracking-tight">Component Locations</h2>
+        </div>
         <app-component-locations-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
         </app-component-locations-section>
       </div>
       }
       @case ('maintenance') {
-      <div class="space-y-6">
-        <h2 class="text-3xl font-bold text-white mb-6 uppercase tracking-wider">Maintenance Schedules</h2>
+      <div class="space-y-6 animate-fade-in-up">
+        <div class="space-y-2">
+          <p class="text-[hsl(var(--accent-cyan))] text-[10px] uppercase tracking-[0.3em] font-bold">Maintenance</p>
+          <h2 class="text-2xl md:text-4xl font-bold tracking-tight">Maintenance Schedules</h2>
+        </div>
         <app-maintenance-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
         </app-maintenance-section>
       </div>
       }
       @case ('browse-all') {
-      <div class="space-y-8">
-        <h2 class="text-3xl font-bold text-white mb-6 uppercase tracking-wider">All Vehicle Data</h2>
+      <div class="space-y-6 animate-fade-in-up">
+        <div class="space-y-2">
+          <p class="text-[hsl(var(--accent-cyan))] text-[10px] uppercase tracking-[0.3em] font-bold">All Data</p>
+          <h2 class="text-2xl md:text-4xl font-bold tracking-tight">Reference Catalog</h2>
+        </div>
 
         <!-- Filter Tabs Navigation -->
-        <div class="flex flex-wrap gap-2 border-b border-cyan-500/30 pb-4">
+        <div class="flex flex-wrap gap-2 pb-6 border-b border-white/5">
+          <button (click)="setBrowseFilter(null)"
+            [class]="selectedBrowseFilter() === null ? 'bg-[hsl(var(--accent-cyan)/0.2)] text-[hsl(var(--accent-cyan))] border-[hsl(var(--accent-cyan))]' : 'border-white/5 bg-white/[0.02] text-[hsl(var(--text-secondary))]'"
+            class="px-5 py-2.5 rounded-xl border hover:bg-white/5 hover:text-white text-[10px] font-bold uppercase tracking-widest transition-all">
+            All <span class="opacity-40 ml-1">[{{ searchResultsState.filterTabsAndTheirFullBuckets().length }}]</span>
+          </button>
           @for (tab of searchResultsState.filterTabsAndTheirFullBuckets(); track tab.filterTab) {
-          <button
-            class="px-4 py-2 rounded-lg border border-cyan-500/30 bg-gray-900 hover:bg-gray-800 text-cyan-400 font-bold uppercase tracking-wide">
-            {{ tab.filterTab }} <span class="text-xs ml-1 text-gray-400">({{ tab.articlesCount }})</span>
+          <button (click)="setBrowseFilter(tab.filterTab)"
+            [class]="selectedBrowseFilter() === tab.filterTab ? 'bg-[hsl(var(--accent-cyan)/0.2)] text-[hsl(var(--accent-cyan))] border-[hsl(var(--accent-cyan))]' : 'border-white/5 bg-white/[0.02] text-[hsl(var(--text-secondary))]'"
+            class="px-5 py-2.5 rounded-xl border hover:bg-white/5 hover:text-white text-[10px] font-bold uppercase tracking-widest transition-all">
+            {{ tab.filterTab }} <span class="opacity-40 ml-1">[{{ tab.articlesCount }}]</span>
           </button>
           }
         </div>
 
-        <!-- Render All Tabs & Buckets (Simplified View) -->
-        <div class="space-y-12">
-          @for (tab of searchResultsState.filterTabsAndTheirFullBuckets(); track tab.filterTab) {
-          <div class="bg-gray-900/50 p-6 rounded-xl border border-cyan-500/20">
-            <h3 class="text-2xl font-bold text-cyan-500 mb-6">{{ tab.filterTab }}</h3>
+        <!-- Render Filtered Tabs -->
+        <div class="space-y-8">
+          @for (tab of filteredBrowseTabs(); track tab.filterTab) {
+          <div class="glass-card p-5 border-white/5">
+            <div class="flex items-center gap-4 mb-6">
+              <div
+                class="w-10 h-10 rounded-2xl bg-[hsl(var(--accent-cyan)/0.1)] flex items-center justify-center text-[hsl(var(--accent-cyan))]">
+                <lucide-icon [img]="icons.Package" class="w-5 h-5"></lucide-icon>
+              </div>
+              <h3 class="text-2xl font-bold text-white tracking-tight">{{ tab.filterTab }}</h3>
+            </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               @for (bucket of tab.buckets; track bucket.bucketName) {
-              <div class="space-y-3">
-                <h4 class="text-xl font-bold text-white border-b border-gray-700 pb-2">{{ bucket.bucketNameOverride ||
-                  bucket.bucketName }}</h4>
+              <div class="space-y-6">
+                <h4
+                  class="text-[10px] uppercase tracking-[0.25em] text-[hsl(var(--text-muted))] font-bold border-b border-white/5 pb-3">
+                  {{ bucket.bucketNameOverride || bucket.bucketName }}
+                </h4>
 
                 <!-- Direct Articles -->
                 @if (bucket.articles.length > 0) {
-                <ul class="space-y-1">
+                <ul class="space-y-2">
                   @for (article of bucket.articles; track article.id) {
                   <li>
                     <a [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', article.id]"
-                      class="block text-gray-300 hover:text-cyan-400 hover:bg-gray-800/50 p-1 rounded transition">
+                      class="block text-sm text-[hsl(var(--text-secondary))] hover:text-[hsl(var(--accent-cyan))] hover:translate-x-1 transition-all">
                       {{ article.title }}
                     </a>
                   </li>
@@ -209,16 +261,18 @@
 
                 <!-- Child Buckets -->
                 @if (bucket.children && bucket.children.length > 0) {
-                <div class="pl-4 border-l border-gray-700 space-y-4 mt-2">
+                <div class="bg-white/[0.01] p-4 rounded-2xl border border-white/5 space-y-6">
                   @for (child of bucket.children; track child.bucketName) {
                   <div>
-                    <h5 class="text-lg font-semibold text-gray-400 mb-2">{{ child.bucketNameOverride || child.bucketName
-                      }}</h5>
-                    <ul class="space-y-1">
+                    <h5 class="text-xs font-bold text-white/50 mb-3 flex items-center gap-2 italic">
+                      <div class="w-1 h-1 rounded-full bg-white/20"></div>
+                      {{ child.bucketNameOverride || child.bucketName }}
+                    </h5>
+                    <ul class="space-y-2 pl-3">
                       @for (art of child.articles; track art.id) {
                       <li>
                         <a [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', art.id]"
-                          class="block text-sm text-gray-300 hover:text-cyan-400 transition">
+                          class="block text-xs text-[hsl(var(--text-secondary))] hover:text-[hsl(var(--accent-cyan))] transition-all">
                           {{ art.title }}
                         </a>
                       </li>

@@ -46,7 +46,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class MotorApiService {
   private http = inject(HttpClient);
-  public readonly baseUrl = 'https://us-central1-vehapi-torque.cloudfunctions.net/motorApiAuthProxy';
+  public readonly baseUrl = 'https://motorapiauthproxy-yonqvhjh7a-uc.a.run.app';
 
   // Cache for article searches to prevent redundant API calls
   private articleCache = new Map<string, ApiResponse<ArticlesData>>();
@@ -186,38 +186,20 @@ export class MotorApiService {
     }
 
     const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/articles/v2`;
-    // Reference implementation always sends searchTerm, even if empty
-    const params: any = { searchTerm: searchTerm };
+    const params: any = {};
+    if (searchTerm) params.searchTerm = searchTerm;
 
     const startTime = performance.now();
     this.logRequest('GET', url, params);
 
-    return this.http.get<ApiResponse<ArticlesData>>(url, { params, observe: 'response' }).pipe(
-      tap(response => {
-        const duration = Math.round(performance.now() - startTime);
-        const bodySize = response.body ? JSON.stringify(response.body).length : 0;
-        this.logResponse(
-          url,
-          response.status,
-          response.statusText,
-          Object.fromEntries(response.headers.keys().map(key => [key, response.headers.get(key)])),
-          bodySize,
-          duration
-        );
-      }),
-      map(response => {
-        const data = response.body!;
+    return this.getWithLogging<ApiResponse<ArticlesData>>(url, params).pipe(
+      map(data => {
         // Cache the successful response
         if (data.header.statusCode === 200) {
           this.articleCache.set(cacheKey, data);
           console.log(`[API CACHE SET] searchArticles: ${cacheKey}`);
         }
         return data;
-      }),
-      catchError(error => {
-        const duration = Math.round(performance.now() - startTime);
-        this.logApiError(url, error, duration);
-        throw error;
       })
     );
   }
@@ -261,7 +243,8 @@ export class MotorApiService {
   getArticleLabor(contentSource: string, vehicleId: string, articleId: string, motorVehicleId?: string): Observable<ApiResponse<LaborResponse>> {
     const params: any = {};
     if (motorVehicleId) params.motorVehicleId = motorVehicleId;
-    return this.http.get<ApiResponse<LaborResponse>>(`${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/labor/${articleId}`, { params });
+    const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/labor/${articleId}`;
+    return this.getWithLogging<ApiResponse<LaborResponse>>(url, params);
   }
 
   // Backward compatible method
@@ -285,15 +268,13 @@ export class MotorApiService {
     severity?: MaintenanceScheduleSeverity,
     searchTerm?: string
   ): Observable<ApiResponse<MaintenanceSchedulesByFrequencyResponse | any>> {
-    let params = new HttpParams();
-    if (frequencyTypeCode) params = params.set('frequencyTypeCode', frequencyTypeCode);
-    if (severity) params = params.set('severity', severity);
-    if (searchTerm) params = params.set('searchTerm', searchTerm);
+    let params: any = {};
+    if (frequencyTypeCode) params.frequencyTypeCode = frequencyTypeCode;
+    if (severity) params.severity = severity;
+    if (searchTerm) params.searchTerm = searchTerm;
 
-    return this.http.get<ApiResponse<MaintenanceSchedulesByFrequencyResponse>>(
-      `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/maintenanceSchedules/frequency`,
-      { params }
-    );
+    const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/maintenanceSchedules/frequency`;
+    return this.getWithLogging<ApiResponse<MaintenanceSchedulesByFrequencyResponse>>(url, params);
   }
 
   // Backward compatible overload for existing code
@@ -323,20 +304,18 @@ export class MotorApiService {
     severity?: MaintenanceScheduleSeverity,
     searchTerm?: string
   ): Observable<ApiResponse<MaintenanceSchedulesByIntervalResponse | any>> {
-    let params = new HttpParams();
+    let params: any = {};
     // Normalize intervalType to match OpenAPI enum
     const normalizedIntervalType = intervalType === 'miles' ? 'Miles' :
       intervalType === 'months' ? 'Months' :
         intervalType as IntervalType;
-    if (normalizedIntervalType) params = params.set('intervalType', normalizedIntervalType);
-    if (interval !== undefined) params = params.set('interval', interval.toString());
-    if (severity) params = params.set('severity', severity);
-    if (searchTerm) params = params.set('searchTerm', searchTerm);
+    if (normalizedIntervalType) params.intervalType = normalizedIntervalType;
+    if (interval !== undefined) params.interval = interval.toString();
+    if (severity) params.severity = severity;
+    if (searchTerm) params.searchTerm = searchTerm;
 
-    return this.http.get<ApiResponse<MaintenanceSchedulesByIntervalResponse>>(
-      `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/maintenanceSchedules/intervals`,
-      { params }
-    );
+    const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/maintenanceSchedules/intervals`;
+    return this.getWithLogging<ApiResponse<MaintenanceSchedulesByIntervalResponse>>(url, params);
   }
 
   getIndicatorsWithMaintenanceSchedules(
@@ -345,20 +324,62 @@ export class MotorApiService {
     severity?: MaintenanceScheduleSeverity,
     searchTerm?: string
   ): Observable<ApiResponse<IndicatorsWithMaintenanceSchedulesResponse>> {
-    let params = new HttpParams();
-    if (severity) params = params.set('severity', severity);
-    if (searchTerm) params = params.set('searchTerm', searchTerm);
+    let params: any = {};
+    if (severity) params.severity = severity;
+    if (searchTerm) params.searchTerm = searchTerm;
 
-    return this.http.get<ApiResponse<IndicatorsWithMaintenanceSchedulesResponse>>(
-      `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/maintenanceSchedules/indicators`,
-      { params }
+    const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/maintenanceSchedules/indicators`;
+    return this.getWithLogging<ApiResponse<IndicatorsWithMaintenanceSchedulesResponse>>(url, params);
+  }
+
+  getArticleContent(contentSource: string, vehicleId: string, articleId: string, motorVehicleId?: string): Observable<ApiResponse<ArticleContentData>> {
+    const effectiveSource = motorVehicleId ? 'MOTOR' : contentSource;
+    const effectiveId = motorVehicleId || vehicleId;
+    const url = `${this.baseUrl}/api/source/${effectiveSource}/vehicle/${effectiveId}/article/${articleId}`;
+    return this.getWithLogging<ApiResponse<ArticleContentData>>(url).pipe(
+      map(res => {
+        // Normalize content fields to 'html' for components
+        if (res && res.body && !res.body.html) {
+          const body = res.body as any;
+
+          // Check for standard HTML fields first
+          if (body.content) {
+            res.body.html = body.content;
+          } else if (body.html_content) {
+            res.body.html = body.html_content;
+          } else if (body.pdf) {
+            // Handle PDF content - check if it's base64 data or HTML content
+            const pdfContent = body.pdf;
+            if (typeof pdfContent === 'string') {
+              if (pdfContent.startsWith('data:application/pdf;base64,') ||
+                pdfContent.startsWith('JVBERi') || // PDF magic bytes in base64
+                pdfContent.match(/^[A-Za-z0-9+/=]+$/)) {
+                // It's a base64 PDF - create an embed
+                const base64Data = pdfContent.startsWith('data:') ? pdfContent :
+                  `data:application/pdf;base64,${pdfContent}`;
+                res.body.html = `<iframe src="${base64Data}" width="100%" height="800px" style="border: none;"></iframe>`;
+              } else if (pdfContent.startsWith('<')) {
+                // It's actually HTML content labeled as pdf
+                res.body.html = pdfContent;
+              } else {
+                // It might be a URL or plain text
+                res.body.html = pdfContent;
+              }
+            }
+          }
+
+          // Final fallback
+          if (!res.body.html) {
+            res.body.html = '';
+          }
+        }
+        return res;
+      })
     );
   }
 
-  getArticleContent(contentSource: string, vehicleId: string, articleId: string): Observable<ApiResponse<ArticleContentData>> {
-    const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/article/${articleId}`;
-    return this.getWithLogging<ApiResponse<ArticleContentData>>(url);
-  }
+
+
 
   getArticleXml(contentSource: string, articleId: string): Observable<string> {
     // Returns raw XML text, not wrapped in ApiResponse
@@ -367,35 +388,13 @@ export class MotorApiService {
   }
 
   getArticleTitle(contentSource: string, vehicleId: string, articleId: string): Observable<ApiResponse<string>> {
-    // OpenAPI returns StringResponse wrapper, but we extract the value for backward compatibility
     const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/article/${articleId}/title`;
-    const startTime = performance.now();
-    this.logRequest('GET', url);
-
-    return this.http.get<ApiResponse<StringResponse>>(url, { observe: 'response' }).pipe(
-      tap(response => {
-        const duration = Math.round(performance.now() - startTime);
-        const bodySize = response.body ? JSON.stringify(response.body).length : 0;
-        this.logResponse(
-          url,
-          response.status,
-          response.statusText,
-          Object.fromEntries(response.headers.keys().map(key => [key, response.headers.get(key)])),
-          bodySize,
-          duration
-        );
-      }),
-      map(response => {
-        const body = response.body!;
+    return this.getWithLogging<ApiResponse<StringResponse>>(url).pipe(
+      map(body => {
         return {
           ...body,
           body: body.body.value
         } as ApiResponse<string>;
-      }),
-      catchError(error => {
-        const duration = Math.round(performance.now() - startTime);
-        this.logApiError(url, error, duration);
-        throw error;
       })
     );
   }
@@ -472,7 +471,7 @@ export class MotorApiService {
     // Convert to: <a href="#/vehicle/{contentSource}/{vehicleId}/article/{id}">Link Text</a>
     // Note: Using hash-based routing, so links start with #/
     if (contentSource && vehicleId) {
-      html = html.replace(/<mtr-doc-link\s+id=["']([^"']+)["']>([^<]*)<\/mtr-doc-link>/gi, (match, id, text) => {
+      html = html.replace(/<mtr-doc-link\s+id=["']?([^"'>\s]+)["']?[^>]*>([^<]*)<\/mtr-doc-link>/gi, (match, id, text) => {
         const linkText = text.trim() || 'View Article';
         // Use relative hash route (Angular uses hash location strategy)
         return `<a href="#/vehicle/${contentSource}/${vehicleId}/article/${id}" class="text-cyan-400 hover:text-cyan-300 underline">${linkText}</a>`;
@@ -482,32 +481,77 @@ export class MotorApiService {
       html = html.replace(/<mtr-doc-link[^>]*>([^<]*)<\/mtr-doc-link>/gi, '$1');
     }
 
+    // Process custom mtr-image elements (Client-side handling)
+    // Format: <mtr-image id='11033139'></mtr-image>
+    html = html.replace(/<mtr-image\s+([^>]*)\/?>/gi, (match, attrs) => {
+      const idMatch = attrs.match(/id\s*=\s*("|'|)?([^"'\s]+)\1/i);
+      if (!idMatch) return match;
+      const id = idMatch[2];
+      // Use the proper API endpoint via the proxy
+      // Use efficient graphic endpoint if possible, otherwise fallback to generic
+      const graphicUrl = contentSource
+        ? `${this.baseUrl}/api/source/${contentSource}/graphic/${id}`
+        : `${this.baseUrl}/graphic/${id}`;
+
+      return `<img src="${graphicUrl}" class="article-image" ${attrs.replace(/id\s*=\s*[^"'\s]+/, '')}>`;
+    });
+
     // Process src attributes (images, iframes, videos, etc.)
-    // Matches: src="..." or src='...' (handles both quotes, including spaces around =)
-    let processed = html.replace(/src\s*=\s*["']([^"']+)["']/gi, (match, url) => {
+    // Matches: src="..." or src='...' or src=... (handles quotes and unquoted)
+    let processed = html.replace(/src\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, (match, urlWithQuotes) => {
+      // Check if quoted
+      let url = urlWithQuotes;
+      let quote = '';
+
+      if (urlWithQuotes.startsWith('"') && urlWithQuotes.endsWith('"')) {
+        url = urlWithQuotes.substring(1, urlWithQuotes.length - 1);
+        quote = '"';
+      } else if (urlWithQuotes.startsWith("'") && urlWithQuotes.endsWith("'")) {
+        url = urlWithQuotes.substring(1, urlWithQuotes.length - 1);
+        quote = "'";
+      }
+
       // Trim whitespace from URL
       url = url.trim();
       // Skip if empty
       if (!url) return match;
 
       const processedUrl = processUrl(url, 'src');
-      // Preserve original quote style
-      const quote = match.includes("'") ? "'" : '"';
-      return `src=${quote}${processedUrl}${quote}`;
+
+      // If original was unquoted, we should probably quote it now to be safe, or return as is
+      // Let's force double quotes for consistency
+      return `src="${processedUrl}"`;
     });
 
     // Also handle img tags that might not follow standard format
     // Handle: <img ... data-src="..." /> (lazy loading patterns)
-    processed = processed.replace(/data-src\s*=\s*["']([^"']+)["']/gi, (match, url) => {
+    processed = processed.replace(/data-src\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, (match, urlWithQuotes) => {
+      let url = urlWithQuotes;
+      if (urlWithQuotes.startsWith('"') && urlWithQuotes.endsWith('"')) {
+        url = urlWithQuotes.substring(1, urlWithQuotes.length - 1);
+      } else if (urlWithQuotes.startsWith("'") && urlWithQuotes.endsWith("'")) {
+        url = urlWithQuotes.substring(1, urlWithQuotes.length - 1);
+      }
+
       url = url.trim();
       if (!url) return match;
       const processedUrl = processUrl(url, 'data-src');
-      const quote = match.includes("'") ? "'" : '"';
-      return `data-src=${quote}${processedUrl}${quote}`;
+      return `data-src="${processedUrl}"`;
     });
 
     // Process href attributes (links)
-    processed = processed.replace(/href\s*=\s*["']([^"']+)["']/gi, (match, url) => {
+    processed = processed.replace(/href\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, (match, urlWithQuotes) => {
+      let url = urlWithQuotes;
+      let quote = '"'; // Default to double quote for output
+
+      if (urlWithQuotes.startsWith('"') && urlWithQuotes.endsWith('"')) {
+        url = urlWithQuotes.substring(1, urlWithQuotes.length - 1);
+        quote = '"';
+      } else if (urlWithQuotes.startsWith("'") && urlWithQuotes.endsWith("'")) {
+        url = urlWithQuotes.substring(1, urlWithQuotes.length - 1);
+        quote = "'";
+      }
+
       url = url.trim();
       // Skip anchors, hash routes, javascript, mailto, tel
       if (url.startsWith('#') ||
@@ -522,7 +566,6 @@ export class MotorApiService {
         // But if it's pointing to our own baseUrl with a hash route, convert it
         if (url.includes(this.baseUrl) && url.includes('#/')) {
           const hashPart = url.substring(url.indexOf('#/'));
-          const quote = match.includes("'") ? "'" : '"';
           return `href=${quote}${hashPart}${quote}`;
         }
         return match;
@@ -530,8 +573,7 @@ export class MotorApiService {
 
       // Process internal relative URLs
       const processedUrl = processUrl(url, 'href');
-      const quote = match.includes("'") ? "'" : '"';
-      return `href=${quote}${processedUrl}${quote}`;
+      return `href="${processedUrl}"`;
     });
 
     // Process background-image URLs in style attributes
@@ -586,7 +628,7 @@ export class MotorApiService {
 
     return this.http.get(
       `${this.baseUrl}/api/source/${contentSource}/graphic/${id}`,
-      { params, responseType: 'blob' }
+      { params, responseType: 'blob', withCredentials: true }
     );
   }
 
@@ -605,7 +647,7 @@ export class MotorApiService {
 
     return this.http.get(
       `${this.baseUrl}/api/manufacturer/${manufacturerId}/graphic/${id}`,
-      { params, responseType: 'blob' }
+      { params, responseType: 'blob', withCredentials: true }
     );
   }
 
@@ -643,17 +685,15 @@ export class MotorApiService {
     articleSubtype?: string,
     searchTerm?: string
   ): Observable<ApiResponse<ArticleResponse>> {
-    let params = new HttpParams();
-    if (motorVehicleId) params = params.set('motorVehicleId', motorVehicleId);
-    if (prettyPrint !== undefined) params = params.set('prettyPrint', prettyPrint.toString());
-    if (bucketName) params = params.set('bucketName', bucketName);
-    if (articleSubtype) params = params.set('articleSubtype', articleSubtype);
-    if (searchTerm) params = params.set('searchTerm', searchTerm);
+    let params: any = {};
+    if (motorVehicleId) params.motorVehicleId = motorVehicleId;
+    if (prettyPrint !== undefined) params.prettyPrint = prettyPrint.toString();
+    if (bucketName) params.bucketName = bucketName;
+    if (articleSubtype) params.articleSubtype = articleSubtype;
+    if (searchTerm) params.searchTerm = searchTerm;
 
-    return this.http.get<ApiResponse<ArticleResponse>>(
-      `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/article/${articleId}`,
-      { params }
-    );
+    const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/article/${articleId}`;
+    return this.getWithLogging<ApiResponse<ArticleResponse>>(url, params);
   }
 
   /**
@@ -674,15 +714,13 @@ export class MotorApiService {
     prettyPrint?: boolean,
     searchTerm?: string
   ): Observable<ApiResponse<LaborResponseOpenApi>> {
-    let params = new HttpParams();
-    if (motorVehicleId) params = params.set('motorVehicleId', motorVehicleId);
-    if (prettyPrint !== undefined) params = params.set('prettyPrint', prettyPrint.toString());
-    if (searchTerm) params = params.set('searchTerm', searchTerm);
+    let params: any = {};
+    if (motorVehicleId) params.motorVehicleId = motorVehicleId;
+    if (prettyPrint !== undefined) params.prettyPrint = prettyPrint.toString();
+    if (searchTerm) params.searchTerm = searchTerm;
 
-    return this.http.get<ApiResponse<LaborResponseOpenApi>>(
-      `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/labor/${articleId}`,
-      { params }
-    );
+    const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/labor/${articleId}`;
+    return this.getWithLogging<ApiResponse<LaborResponseOpenApi>>(url, params);
   }
 
   // ==========================================
@@ -696,9 +734,8 @@ export class MotorApiService {
    * @returns Observable of ModelAndVehicleIdListResponse
    */
   getMotorModels(year: number, make: string): Observable<ApiResponse<ModelAndVehicleIdListResponse>> {
-    return this.http.get<ApiResponse<ModelAndVehicleIdListResponse>>(
-      `${this.baseUrl}/api/motor/year/${year}/make/${make}/models`
-    );
+    const url = `${this.baseUrl}/api/motor/year/${year}/make/${make}/models`;
+    return this.getWithLogging<ApiResponse<ModelAndVehicleIdListResponse>>(url);
   }
 
   /**
@@ -711,7 +748,8 @@ export class MotorApiService {
     const request: GetVehiclesRequest = { vehicleIds };
     return this.http.post<ApiResponse<ModelAndVehicleIdListResponse>>(
       `${this.baseUrl}/api/source/${contentSource}/vehicles`,
-      request
+      request,
+      { withCredentials: true }
     );
   }
 
@@ -751,12 +789,13 @@ export class MotorApiService {
   ): Observable<ApiResponse<SearchResultsResponse>> {
     let params = new HttpParams();
     if (searchTerm) params = params.set('searchTerm', searchTerm);
-    if (motorVehicleId) params = params.set('motorVehicleId', motorVehicleId);
 
-    return this.http.get<ApiResponse<SearchResultsResponse>>(
-      `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/articles/v2`,
-      { params }
-    );
+    // If we have a motorVehicleId, we should ideally use it with MOTOR source for broader compatibility
+    const effectiveSource = motorVehicleId ? 'MOTOR' : contentSource;
+    const effectiveId = motorVehicleId || vehicleId;
+
+    const url = `${this.baseUrl}/api/source/${effectiveSource}/vehicle/${effectiveId}/articles/v2`;
+    return this.getWithLogging<ApiResponse<SearchResultsResponse>>(url, params);
   }
 
   // ==========================================

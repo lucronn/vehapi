@@ -1,112 +1,121 @@
-<div class="h-screen md:min-h-screen bg-black text-white font-mono flex flex-col overflow-hidden">
-  <!-- Mobile Header -->
-  <header class="sticky top-0 z-30 bg-black/95 backdrop-blur-sm border-b border-cyan-500/20 md:hidden flex-shrink-0">
-    <div class="px-2 py-2">
-      <div class="flex items-center justify-between mb-1">
-        <a [routerLink]="['/vehicle', contentSource(), vehicleId()]"
-          class="text-cyan-400 hover:text-cyan-300 text-xs uppercase tracking-wider flex-shrink-0">&larr; Back</a>
-        @if (documentHeader()) {
-        <h2 class="document-header">{{ documentHeader() }}</h2>
-        }
-        <div class="flex items-center gap-2">
-          <!-- Stepper Toggle (Mobile) -->
-          <button (click)="toggleStepperMode()"
-            class="text-xs text-cyan-400 hover:text-cyan-300 uppercase tracking-wider px-2 py-1 border border-cyan-500/30 rounded text-[10px]"
-            [class.bg-cyan-500/20]="stepperMode()">
-            {{ stepperMode() ? '📋' : '📋' }}
-          </button>
+<div class="min-h-screen bg-[hsl(var(--bg-deep))] text-white flex flex-col">
+  <!-- Header -->
+  <header class="sticky top-0 z-50 border-b border-white/5 bg-[hsl(var(--bg-deep))]/80 backdrop-blur-xl">
+    <div class="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+      <a [routerLink]="['/vehicle', contentSource(), vehicleId()]"
+        class="group flex items-center gap-2 text-[hsl(var(--text-muted))] hover:text-white text-xs uppercase tracking-wider transition-all">
+        <lucide-icon [img]="icons.ArrowLeft"
+          class="w-4 h-4 group-hover:-translate-x-1 transition-transform"></lucide-icon>
+        <span class="hidden sm:inline">Dashboard</span>
+      </a>
 
-          @if (geminiApi.aiEnabled()) {
-          <button (click)="showOriginal.set(!showOriginal())"
-            class="text-xs text-cyan-400 hover:text-cyan-300 uppercase tracking-wider flex-shrink-0">
-            {{ showOriginal() ? 'AI' : 'Original' }}
-          </button>
-          }
+      <div class="flex items-center gap-4">
+        <div class="hidden sm:block text-[10px] uppercase tracking-widest text-[hsl(var(--text-muted))]">
+          Technical Document
         </div>
+        @if (sections().length > 0) {
+        <button (click)="toggleMobileToc()"
+          class="lg:hidden p-2 hover:bg-white/10 rounded-lg transition-colors text-white">
+          <lucide-icon [img]="isMobileTocOpen() ? icons.X : icons.List" class="w-5 h-5"></lucide-icon>
+        </button>
+        }
       </div>
     </div>
   </header>
 
-  <!-- Desktop Header -->
-  <div class="hidden md:block flex-shrink-0 border-b border-cyan-500/20">
-    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-      <a [routerLink]="['/vehicle', contentSource(), vehicleId()]"
-        class="text-cyan-400 hover:text-cyan-300 inline-block text-sm uppercase tracking-wider">&larr; Back to
-        Dashboard</a>
+  <!-- Mobile TOC Overlay -->
+  @if (isMobileTocOpen()) {
+  <div class="fixed inset-0 z-[60] bg-[hsl(var(--bg-deep))] lg:hidden pt-24 px-6 animate-fade-in overflow-y-auto">
+    <h3
+      class="text-sm font-bold text-white uppercase tracking-wider mb-6 flex items-center gap-2 border-b border-white/10 pb-4">
+      <span class="w-1.5 h-1.5 rounded-full bg-[hsl(var(--accent-cyan))]"></span>
+      Table of Contents
+    </h3>
+    <nav class="flex flex-col space-y-1 pb-12">
+      @for (section of sections(); track section.id) {
+      <button (click)="scrollToSection(section.id)"
+        class="text-left py-3 px-3 text-sm text-[hsl(var(--text-secondary))] hover:text-white rounded-lg transition-all border-l-2 border-transparent focus:bg-white/5 active:bg-white/5"
+        [class.pl-3]="section.level === 1" [class.pl-6]="section.level === 2" [class.pl-9]="section.level === 3">
+        {{ section.title }}
+      </button>
+      }
+    </nav>
+  </div>
+  }
 
-      <!-- Controls -->
-      <div class="flex items-center space-x-4">
-        <!-- Stepper Toggle -->
-        <button (click)="toggleStepperMode()"
-          class="text-xs text-cyan-400 hover:text-cyan-300 uppercase tracking-wider px-3 py-1.5 border border-cyan-500/30 rounded hover:border-cyan-500/50 transition-colors"
-          [class.bg-cyan-500/20]="stepperMode()" [class.border-cyan-500/50]="stepperMode()">
-          {{ stepperMode() ? '📋 Stepper' : '📋 Steps' }}
-        </button>
+  <!-- Content Grid -->
+  <main class="flex-1 overflow-x-hidden">
+    <div class="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      @if (articleData()) {
+      <div class="flex flex-col lg:flex-row gap-8 lg:gap-12 relative animate-fade-in">
 
-        <!-- AI Toggle -->
-        @if (geminiApi.aiEnabled()) {
-        <div class="flex items-center space-x-2">
-          <div class="flex flex-col items-end mr-2" *ngIf="isRewriting()">
-            <span class="text-xs text-cyan-400 animate-pulse">Enhancing...</span>
-          </div>
-          <span class="text-sm font-medium" [class.text-gray-400]="!showOriginal() && !isRewriting()"
-            [class.text-cyan-400]="isRewriting()">
-            {{ isRewriting() ? 'AI-Working' : 'AI-Rewritten' }}
-          </span>
-          <label for="toggle" class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" id="toggle" class="sr-only peer" [checked]="showOriginal()"
-              (change)="showOriginal.set(!showOriginal())">
-            <div
-              class="w-11 h-6 bg-gray-900 border border-cyan-500/50 rounded-full peer peer-focus:ring-2 peer-focus:ring-cyan-500/50 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500 peer-checked:border-cyan-500">
+        <!-- Main Article Content -->
+        <div class="flex-1 min-w-0">
+          <!-- Title Section -->
+          <div class="mb-8 border-b border-white/10 pb-6">
+            <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-white mb-4 leading-tight">
+              {{ articleTitle() }}
+            </h1>
+            <div class="flex items-center gap-3">
+              <div
+                class="h-1 w-12 bg-gradient-to-r from-[hsl(var(--accent-cyan))] to-[hsl(var(--accent-violet))] rounded-full">
+              </div>
+              @if (params()?.get('articleId'); as id) {
+              <span class="text-xs font-mono text-white/30 uppercase tracking-widest">ID: {{ id }}</span>
+              }
             </div>
-          </label>
-          <span class="text-sm font-medium" [class.text-gray-400]="showOriginal()">Original</span>
-        </div>
-        }
-      </div>
-    </div>
-  </div>
-
-  <!-- Content Area - Full Screen on Mobile -->
-  <div class="flex-1 overflow-y-auto w-full">
-    <!-- Mobile: Minimal padding, Desktop: Normal padding -->
-    <div class="px-0.5 md:px-6 lg:px-8 py-0.5 md:py-6 lg:py-8 w-full">
-      <div class="bg-gray-900 border border-cyan-500/30 rounded-xl md:rounded-xl p-1 md:p-8 lg:p-10 w-full text-left">
-        @if (articleData()) {
-        @if (stepperMode()) {
-        @if (isGeneratingTutorial()) {
-        <div class="flex flex-col items-center justify-center py-20 animate-pulse">
-          <div class="text-cyan-400 text-xl font-bold mb-2">Generating Step-by-Step Guide...</div>
-          <div class="text-gray-400">AI is analyzing the procedure</div>
-        </div>
-        } @else if (tutorialSteps().length > 0) {
-        <!-- AI Tutorial Mode -->
-        <app-tutorial-stepper [data]="tutorialSteps()"></app-tutorial-stepper>
-        } @else if (procedureSteps().length > 0) {
-        <!-- Legacy Stepper Mode -->
-        <app-procedure-stepper [steps]="procedureSteps()" [title]="articleTitle() || 'Procedure Steps'">
-        </app-procedure-stepper>
-        }
-        } @else {
-        <!-- Normal Content Mode -->
-        <div class="motor-content" [innerHTML]="displayContent()"></div>
-        }
-        } @else {
-        <!-- Loading Skeleton -->
-        <div class="space-y-4 animate-pulse">
-          <div class="text-center text-cyan-300 mb-4">
-            {{ isRewriting() ? 'Gemini is rewriting this article to be easier to read...' : 'Loading article...' }}
           </div>
-          <div class="h-8 bg-gray-900 border border-cyan-500/20 rounded w-3/4"></div>
-          <div class="h-4 bg-gray-900 border border-cyan-500/20 rounded w-full"></div>
-          <div class="h-4 bg-gray-900 border border-cyan-500/20 rounded w-5/6"></div>
-          <div class="h-4 bg-gray-900 border border-cyan-500/20 rounded w-full"></div>
-          <div class="h-8 bg-gray-900 border border-cyan-500/20 rounded w-1/2 mt-8"></div>
-          <div class="h-4 bg-gray-900 border border-cyan-500/20 rounded w-full"></div>
-          <div class="h-4 bg-gray-900 border border-cyan-500/20 rounded w-full"></div>
+
+          <!-- Content -->
+          <article class="article-content" [innerHTML]="articleContent()" (click)="onContentClick($event)"></article>
         </div>
+
+        <!-- Sidebar / Appendix -->
+        @if (sections().length > 0) {
+        <aside class="lg:w-72 xl:w-80 flex-shrink-0 hidden lg:block">
+          <div class="sticky top-28 p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-[hsl(var(--accent-cyan))]"></span>
+              Contents
+            </h3>
+
+            <nav class="flex flex-col max-h-[calc(100vh-12rem)] overflow-y-auto custom-scrollbar pr-2">
+              @for (section of sections(); track section.id) {
+              <button (click)="scrollToSection(section.id)"
+                class="text-left py-2 px-3 text-sm text-[hsl(var(--text-muted))] hover:text-white hover:bg-white/5 rounded-lg transition-all border-l-2 border-transparent hover:border-[hsl(var(--accent-cyan))] truncate"
+                [class.pl-3]="section.level === 1" [class.pl-6]="section.level === 2"
+                [class.pl-9]="section.level === 3">
+                {{ section.title }}
+              </button>
+              }
+            </nav>
+          </div>
+        </aside>
         }
+
+        <!-- Mobile Floating TOC Button (Removed, moved to header) -->
       </div>
+      } @else {
+      <!-- Loading State -->
+      <div class="max-w-3xl mx-auto space-y-8 animate-pulse">
+        <div class="space-y-3">
+          <div class="h-10 bg-white/5 rounded-2xl w-3/4"></div>
+          <div class="h-1 bg-white/5 rounded-full w-16"></div>
+        </div>
+        <div class="space-y-4">
+          <div class="h-4 bg-white/5 rounded-full w-full"></div>
+          <div class="h-4 bg-white/5 rounded-full w-5/6"></div>
+          <div class="h-4 bg-white/5 rounded-full w-4/6"></div>
+          <div class="h-64 bg-white/5 rounded-3xl mt-8"></div>
+        </div>
+      </div>
+      }
     </div>
-  </div>
+  </main>
+
+  <!-- Image Viewer Modal -->
+  @if (selectedImageUrl()) {
+  <app-image-viewer-modal [imageUrl]="selectedImageUrl()!" (close)="closeImageViewer()">
+  </app-image-viewer-modal>
+  }
 </div>

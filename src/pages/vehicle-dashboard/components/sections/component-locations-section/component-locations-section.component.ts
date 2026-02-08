@@ -43,7 +43,11 @@ export class ComponentLocationsSectionComponent implements OnInit {
             this.vehicleId,
             this.motorVehicleId,
             this.isLoading,
-            (data) => this.locations.set(data as ComponentLocation[])
+            (data) => this.locations.set(data as ComponentLocation[]),
+            (error) => {
+                console.error('Failed to load component locations', error);
+                this.isLoading.set(false);
+            }
         );
     }
 

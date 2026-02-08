@@ -11,7 +11,6 @@ import { Article } from '../../models/motor.models';
 // Services
 import { VehicleDataService } from '../../services/vehicle-data.service';
 import { MotorApiService } from '../../services/motor-api.service';
-import { GeminiService } from '../../services/gemini.service';
 import { SearchResultsState } from '../../services/search-results.state';
 import { effect } from '@angular/core';
 
@@ -29,7 +28,10 @@ import { PartsSectionComponent } from './components/sections/parts-section/parts
 import { CommonIssuesSectionComponent } from './components/sections/common-issues-section/common-issues-section.component';
 
 // Icons
-import { LucideAngularModule, Menu, X } from 'lucide-angular';
+import { LucideAngularModule, Menu, X, House, TriangleAlert, FileText, Wrench, Package } from 'lucide-angular';
+
+// Local Components
+import { LogoComponent } from '../../components/logo/logo.component';
 
 export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'component-locations' | 'procedures' | 'parts' | 'specs' | 'maintenance' | 'browse-all';
 
@@ -55,7 +57,8 @@ export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'comp
     ComponentLocationsSectionComponent,
     MaintenanceSectionComponent,
     PartsSectionComponent,
-    CommonIssuesSectionComponent
+    CommonIssuesSectionComponent,
+    LogoComponent
   ],
 })
 export class VehicleDashboardComponent {
@@ -63,10 +66,9 @@ export class VehicleDashboardComponent {
   private router = inject(Router);
   private motorApi = inject(MotorApiService);
   private vehicleData = inject(VehicleDataService);
-  private gemini = inject(GeminiService);
   public searchResultsState = inject(SearchResultsState);
 
-  readonly icons = { Menu, X };
+  readonly icons = { Menu, X, House, TriangleAlert, FileText, Wrench, Package };
 
   // Route parameters
   params = toSignal(this.route.paramMap);
@@ -74,9 +76,21 @@ export class VehicleDashboardComponent {
   vehicleId = computed(() => this.params()?.get('vehicleId') ?? '');
   motorVehicleId = computed(() => {
     const vid = this.vehicleId();
-    if (vid && vid.includes(':')) {
-      return vid.split(':')[1];
+    const cs = this.contentSource()?.toUpperCase();
+
+    // If content source is MOTOR, the vehicleId IS exactly what we need
+    // No splitting required as MOTOR often uses composite IDs like "61009:2913"
+    if (cs === 'MOTOR') {
+      return vid;
     }
+
+    // Improved parsing for composite IDs from other sources (e.g., "Source:ID")
+    if (vid && vid.includes(':')) {
+      const parts = vid.split(':');
+      // Return everything after the first segment (handles multi-colon cases)
+      return parts.slice(1).join(':');
+    }
+
     return undefined;
   });
 
@@ -103,7 +117,10 @@ export class VehicleDashboardComponent {
     switchMap(params => {
       const cs = params.get('contentSource');
       const vid = params.get('vehicleId');
-      const mvid = vid && vid.includes(':') ? vid.split(':')[1] : undefined;
+
+      // Use the same consistent logic as the motorVehicleId computed signal
+      const mvid = cs?.toUpperCase() === 'MOTOR' ? vid : (vid && vid.includes(':') ? vid.split(':').slice(1).join(':') : undefined);
+
       if (cs && vid) {
         return this.vehicleData.getAvailableSections(cs, vid, mvid);
       }
@@ -112,16 +129,42 @@ export class VehicleDashboardComponent {
   );
   availableSections = toSignal(this.sections$, { initialValue: null });
 
-  // Trigger Initial Data Load
+  // Trigger Initial Data Load and Fallback Logic
   constructor() {
+    // Data loading effect
     effect(() => {
       const cs = this.contentSource();
       const vid = this.vehicleId();
       const mvid = this.motorVehicleId();
-      // Only load if we have valid params
+
       if (cs && vid) {
-        // Load initial buckets (empty search)
         this.searchResultsState.search(cs, vid, '', mvid);
+      }
+    });
+
+    // Section availability fallback effect
+    effect(() => {
+      const avail = this.availableSections();
+      if (!avail) return;
+
+      const current = this.activeSection();
+      if (current === 'overview' || current === 'browse-all') return;
+
+      // Check if current section is still available
+      const mapping: Record<string, boolean> = {
+        'dtcs': avail.hasDtcs,
+        'tsbs': avail.hasTsbs,
+        'diagrams': avail.hasDiagrams,
+        'procedures': avail.hasProcedures,
+        'specs': avail.hasSpecs,
+        'parts': avail.hasParts,
+        'maintenance': avail.hasMaintenance,
+        'component-locations': avail.hasComponentLocations
+      };
+
+      if (mapping[current] === false) {
+        console.warn(`[Dashboard] Section "${current}" is unavailable. Reverting to overview.`);
+        this.activeSection.set('overview');
       }
     });
   }
@@ -129,6 +172,7 @@ export class VehicleDashboardComponent {
   // UI State
   activeSection = signal<DashboardSection>('overview');
   isMobileMenuOpen = signal(false);
+  selectedBrowseFilter = signal<string | null>(null); // For browse-all filter pills
 
   // Search state
   searchTerm = signal('');
@@ -154,24 +198,11 @@ export class VehicleDashboardComponent {
       const vid = this.vehicleId();
       if (!cs || !vid) return of([]);
 
-      // Optimize search term with AI if enabled
-      let searchOb$ = of(term);
-      if (this.gemini.aiEnabled()) {
-        searchOb$ = this.gemini.analyzeSearchIntent(term, '').pipe(
-          map(intent => intent.optimizedTerm || term),
-          catchError(() => of(term)) // Fallback to original term on error
-        );
-      }
-
-      return searchOb$.pipe(
-        switchMap(optimizedTerm => {
-          // Use State for search
-          this.searchResultsState.search(cs, vid, optimizedTerm, this.motorVehicleId());
-          // Return observable purely for filteredArticles consumption if needed, 
-          // but we should arguably rely on searchResultsState.articleDetails()
-          return of([]);
-        })
-      );
+      // Direct search without AI optimization
+      this.searchResultsState.search(cs, vid, term, this.motorVehicleId());
+      // Return observable purely for filteredArticles consumption if needed, 
+      // but we should arguably rely on searchResultsState.articleDetails()
+      return of([]);
     })
   );
 
@@ -184,6 +215,15 @@ export class VehicleDashboardComponent {
 
     if (!search || search.length < 2) return [];
     return results;
+  });
+
+  // Filtered tabs for browse-all section
+  filteredBrowseTabs = computed(() => {
+    const selectedFilter = this.selectedBrowseFilter();
+    const allTabs = this.searchResultsState.filterTabsAndTheirFullBuckets();
+
+    if (!selectedFilter) return allTabs;
+    return allTabs.filter(tab => tab.filterTab === selectedFilter);
   });
 
   // Section navigation
@@ -200,5 +240,10 @@ export class VehicleDashboardComponent {
   onSearch(term: string): void {
     this.searchTerm.set(term);
     this.searchTerm$.next(term);
+  }
+
+  // Filter pills for browse-all
+  setBrowseFilter(filterTab: string | null): void {
+    this.selectedBrowseFilter.set(filterTab);
   }
 }

@@ -1,6 +1,7 @@
-import { Component, Input, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, OnInit, signal, inject, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { VehicleDataService } from '../../../../../services/vehicle-data.service';
 import { MotorApiService } from '../../../../../services/motor-api.service';
 import { Part } from '../../../../../models/motor.models';
@@ -24,6 +25,7 @@ export class PartsSectionComponent implements OnInit {
     @Input({ required: true }) vehicleId!: string;
 
     private motorApi = inject(MotorApiService);
+    private destroyRef = inject(DestroyRef);
 
     parts = signal<Part[]>([]);
     isLoading = signal(false);
@@ -38,10 +40,11 @@ export class PartsSectionComponent implements OnInit {
         // Initial load
         this.loadParts();
 
-        // Setup search debounce
+        // Setup search debounce with automatic cleanup
         this.searchSubject.pipe(
             debounceTime(500),
-            distinctUntilChanged()
+            distinctUntilChanged(),
+            takeUntilDestroyed(this.destroyRef)
         ).subscribe(term => {
             this.loadParts(term);
         });

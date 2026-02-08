@@ -5,6 +5,10 @@ import { Spec, Fluid } from '../../../../../models/motor.models';
 import { LoadingSkeletonComponent } from '../../../../../components/loading-skeleton/loading-skeleton.component';
 import { EmptyStateComponent } from '../../../../../components/empty-state/empty-state.component';
 
+import { LucideAngularModule, Gauge, Droplets, Info, ChevronRight } from 'lucide-angular';
+
+import { RouterModule } from '@angular/router';
+
 /**
  * Displays vehicle specifications and fluids
  * Handles data loading with cache management
@@ -13,10 +17,11 @@ import { EmptyStateComponent } from '../../../../../components/empty-state/empty
     selector: 'app-specs-fluids-section',
     templateUrl: './specs-fluids-section.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, LoadingSkeletonComponent, EmptyStateComponent],
+    imports: [CommonModule, RouterModule, LoadingSkeletonComponent, EmptyStateComponent, LucideAngularModule],
     standalone: true
 })
 export class SpecsFluidsSectionComponent implements OnInit {
+    readonly icons = { Gauge, Droplets, Info, ChevronRight };
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
     @Input() motorVehicleId?: string;
@@ -54,6 +59,9 @@ export class SpecsFluidsSectionComponent implements OnInit {
             },
             error: (err) => {
                 console.error('Failed to load specs/fluids', err);
+                // On error, we still want to stop loading. 
+                // We'll leave the signals as empty arrays, which triggers the empty state.
+                // In a future pass, we could add a specific error state UI.
                 this.isLoading.set(false);
             }
         });

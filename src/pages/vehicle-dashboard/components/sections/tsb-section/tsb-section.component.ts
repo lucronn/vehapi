@@ -5,7 +5,7 @@ import { VehicleDataService } from '../../../../../services/vehicle-data.service
 import { Tsb } from '../../../../../models/motor.models';
 import { LoadingSkeletonComponent } from '../../../../../components/loading-skeleton/loading-skeleton.component';
 import { EmptyStateComponent } from '../../../../../components/empty-state/empty-state.component';
-import { LucideAngularModule, FileText, X } from 'lucide-angular';
+import { LucideAngularModule, FileText, X, ArrowUpRight } from 'lucide-angular';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { MotorApiService } from '../../../../../services/motor-api.service';
 
@@ -37,7 +37,7 @@ export class TsbSectionComponent implements OnInit {
     tsbContent = signal<SafeHtml | null>(null);
     isLoadingContent = signal(false);
 
-    readonly icons = { FileText, X };
+    readonly icons = { FileText, X, ArrowUpRight };
 
 
 
@@ -54,7 +54,11 @@ export class TsbSectionComponent implements OnInit {
             this.vehicleId,
             this.motorVehicleId,
             this.isLoading,
-            (data) => this.tsbs.set(data)
+            (data) => this.tsbs.set(data),
+            (error) => {
+                console.error('Failed to load TSBs', error);
+                this.isLoading.set(false);
+            }
         );
     }
 

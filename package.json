@@ -8,6 +8,7 @@
     "build": "ng build",
     "preview": "ng serve --configuration=production",
     "firebase:init": "firebase init hosting",
+    "firebase:login": "firebase login",
     "firebase:deploy": "npm run build && firebase deploy --only hosting",
     "firebase:serve": "npm run build && firebase serve"
   },
@@ -31,6 +32,7 @@
     "@tailwindcss/typography": "^0.5.19",
     "@types/node": "^22.14.0",
     "autoprefixer": "^10.4.22",
+    "firebase-tools": "^15.4.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "typescript": "~5.9.0",

@@ -63,7 +63,11 @@ export class ProceduresSectionComponent implements OnInit {
             this.vehicleId,
             this.motorVehicleId,
             this.isLoading,
-            (data) => this.procedures.set(data)
+            (data) => this.procedures.set(data),
+            (error) => {
+                console.error('Failed to load procedures', error);
+                this.isLoading.set(false);
+            }
         );
     }
 

@@ -1,874 +1,626 @@
-.motor-content {
-  font-size: 1.125rem;
-  /* 18px */
-  color: #e5e7eb;
+/* Article Content - Enhanced Theme Styling */
+
+.article-content {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.85);
+  max-width: 100%;
 }
 
-/* Mobile: Reduce font size and margins for maximum screen space */
-@media (max-width: 768px) {
-  .motor-content {
-    font-size: 0.9375rem;
-    /* 15px on mobile - slightly smaller */
-  }
-
-  .motor-content h1,
-  .motor-content h2,
-  .motor-content h3 {
-    margin-top: 0.75rem;
-    margin-bottom: 0.5rem;
-    padding: 0.75rem 1rem;
-    background-color: rgba(34, 211, 238, 0.1);
-    border: 1px solid rgba(34, 211, 238, 0.3);
-    border-radius: 0.5rem;
-    border-bottom: 1px solid rgba(34, 211, 238, 0.3);
-    font-weight: 700;
-    font-size: 0.9375rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #22d3ee;
-  }
-
-  .motor-content p {
-    margin-bottom: 0.625rem;
-    line-height: 1.5;
-  }
-
-  .motor-content ol>li {
-    padding: 0.5rem 0.5rem 0.5rem 2.5rem;
-    margin-bottom: 0.5rem;
-  }
-
-  /* Mobile: Transform tables into compact card-based layout */
-  .motor-content .table-wrapper-mobile {
-    overflow-x: visible;
-    margin-bottom: 0.5rem;
-    width: 100%;
-  }
-
-  .motor-content .table-wrapper-mobile table {
-    display: block;
-    width: 100%;
-    border: none;
-    background: transparent;
-    margin: 0;
-  }
-
-  .motor-content .table-wrapper-mobile colgroup {
-    display: none;
-  }
-
-  /* Hide thead on mobile - headers are shown via data-label */
-  .motor-content .table-wrapper-mobile thead {
-    display: none;
-  }
-
-  /* Hide first tbody row if it was marked as header row */
-  .motor-content .table-wrapper-mobile tbody tr.mobile-header-row {
-    display: none;
-  }
-
-  .motor-content .table-wrapper-mobile tbody {
-    display: block;
-    width: 100%;
-  }
-
-  .motor-content .table-wrapper-mobile tbody tr {
-    display: block;
-    width: 100%;
-    margin-bottom: 0.375rem;
-    background-color: rgba(31, 41, 55, 0.5);
-    border: 1px solid #374151;
-    border-radius: 0.375rem;
-    padding: 0.5rem;
-    box-sizing: border-box;
-    position: relative;
-    scroll-margin-top: 4rem;
-    /* Space for sticky header when scrolling */
-  }
-
-  .motor-content .table-wrapper-mobile tbody tr:last-child {
-    margin-bottom: 0;
-  }
-
-  /* Navigation arrows between steps */
-  .motor-content .step-nav-arrow {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2rem;
-    height: 1.5rem;
-    margin: 0.25rem auto;
-    background-color: rgba(34, 211, 238, 0.2);
-    color: #22d3ee;
-    border-radius: 0.25rem;
-    font-size: 1rem;
-    font-weight: bold;
-    cursor: pointer;
-    border: 1px solid rgba(34, 211, 238, 0.3);
-    transition: all 0.2s;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .motor-content .step-nav-arrow:active {
-    background-color: rgba(34, 211, 238, 0.4);
-    transform: scale(0.95);
-  }
-
-  /* Stack table cells vertically - compact */
-  .motor-content .table-wrapper-mobile td {
-    display: block;
-    width: 100% !important;
-    padding: 0.25rem 0;
-    text-align: left;
-    border: none;
-    border-bottom: 1px solid rgba(55, 65, 81, 0.2);
-    font-size: 0.8125rem;
-    /* 13px - more compact */
-    line-height: 1.4;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    white-space: normal;
-    min-width: auto !important;
-    max-width: 100% !important;
-  }
-
-  /* Hide empty cells */
-  .motor-content .table-wrapper-mobile td[style*="display: none"] {
-    display: none !important;
-    padding: 0;
-    margin: 0;
-    border: none;
-  }
-
-  .motor-content .table-wrapper-mobile td:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-  }
-
-  /* Show data-label inline with content - no line break */
-  .motor-content .table-wrapper-mobile td[data-label] {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.375rem;
-  }
-
-  .motor-content .table-wrapper-mobile td[data-label]::before {
-    content: attr(data-label);
-    font-weight: 600;
-    color: #22d3ee;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    line-height: 1.4;
-    flex-shrink: 0;
-    white-space: nowrap;
-    display: inline-flex;
-    align-items: baseline;
-  }
-
-  /* For STEP labels, add colon and space */
-  .motor-content .table-wrapper-mobile td[data-label="STEP"]::before {
-    content: attr(data-label) ' ';
-  }
-
-  /* Style step numbers when consolidated - make them inline */
-  .motor-content .table-wrapper-mobile td .step-number {
-    font-weight: 700;
-    color: #e5e7eb;
-    font-size: 0.875rem;
-    display: inline;
-  }
-
-  /* Ensure content flows inline with label */
-  .motor-content .table-wrapper-mobile td[data-label] > * {
-    display: inline;
-    margin: 0;
-  }
-
-  /* Hide label if cell content is effectively empty */
-  .motor-content .table-wrapper-mobile td[data-label]:empty::before {
-    display: none;
-  }
-
-  /* Ensure nested content displays properly */
-  .motor-content .table-wrapper-mobile td p,
-  .motor-content .table-wrapper-mobile td div,
-  .motor-content .table-wrapper-mobile td span {
-    display: inline;
-    margin: 0;
-  }
-
-  /* Prevent text from breaking awkwardly */
-  .motor-content .table-wrapper-mobile td {
-    hyphens: auto;
-    -webkit-hyphens: auto;
-  }
-}
-
-.motor-content h1,
-.motor-content h2,
-.motor-content h3 {
-  color: #22d3ee;
-  /* cyan-400 */
-  border-bottom: 2px solid #374151;
-  /* gray-700 */
-  padding-bottom: 0.5rem;
-  margin-top: 2rem;
-  margin-bottom: 1.25rem;
+/* Enhanced Headings with Theme Styling */
+.article-content h1,
+.article-content h2,
+.article-content h3,
+.article-content h4,
+.article-content h5,
+.article-content h6 {
+  color: white;
   font-weight: 600;
-}
-
-
-.motor-content p {
+  margin-top: 2.5rem;
   margin-bottom: 1.25rem;
-  line-height: 1.8;
+  line-height: 1.3;
 }
 
-@media (max-width: 768px) {
-  .motor-content p {
-    margin-bottom: 0.625rem;
-    line-height: 1.5;
-  }
-}
-
-/* List Styling - Steps as distinct cards */
-.motor-content ol {
-  counter-reset: step-counter;
-  list-style: none;
-  /* Remove default numbers */
-  margin-left: 0;
-  /* Reset margin */
-  padding-left: 0;
-}
-
-.motor-content ol>li {
-  position: relative;
-  background-color: rgba(31, 41, 55, 0.5);
-  /* gray-800 with opacity */
-  border: 1px solid #374151;
-  /* gray-700 */
-  border-radius: 0.5rem;
-  padding: 1rem 1rem 1rem 3.5rem;
-  /* Left padding for number */
-  margin-bottom: 1rem;
-}
-
-/* Custom Step Number */
-.motor-content ol>li::before {
-  counter-increment: step-counter;
-  content: counter(step-counter);
-  position: absolute;
-  left: 0.75rem;
-  top: 0.75rem;
-  width: 2rem;
-  height: 2rem;
-  background-color: #22d3ee;
-  /* cyan-400 */
-  color: #111827;
-  /* gray-900 */
+.article-content h1,
+.article-content .enhanced-h1 {
+  font-size: 1.875rem;
   font-weight: 700;
-  border-radius: 9999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: linear-gradient(135deg, white, hsl(var(--accent-cyan)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.article-content h2,
+.article-content .enhanced-h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.article-content h3,
+.article-content .enhanced-h3 {
+  font-size: 1.25rem;
+  color: hsl(var(--accent-cyan));
+}
+
+.article-content h4,
+.article-content .enhanced-h4 {
+  font-size: 1.125rem;
+}
+
+.article-content h5 {
   font-size: 1rem;
 }
 
-/* Nested List Styling - Substeps */
-.motor-content ol ol {
-  counter-reset: substep-counter;
-  margin-top: 1rem;
-  margin-bottom: 0;
+.article-content h6 {
+  font-size: 0.9375rem;
 }
 
-.motor-content ol ol>li {
-  background-color: rgba(17, 24, 39, 0.5);
-  /* darker gray-900 with opacity */
-  border: 1px solid #374151;
-  margin-bottom: 0.75rem;
+/* Paragraphs */
+.article-content p {
+  margin-bottom: 1rem;
+  line-height: 1.7;
 }
 
-/* Nested Step Badge */
-.motor-content ol ol>li::before {
-  counter-increment: substep-counter;
-  content: counter(substep-counter, lower-alpha);
-  /* a, b, c... */
-  background-color: #4b5563;
-  /* gray-600 */
-  color: #fff;
-  width: 1.75rem;
-  height: 1.75rem;
+/* Callout Boxes - Warnings, Notes, Important */
+.article-content .callout {
+  display: flex;
+  gap: 1rem;
+  padding: 1.25rem;
+  margin: 1.5rem 0;
+  border-radius: 0.75rem;
+  border: 1px solid;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s;
+}
+
+.article-content .callout:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.article-content .callout-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.article-content .callout-content {
+  flex: 1;
+}
+
+.article-content .callout-content strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+
+.article-content .callout-content p {
+  margin: 0;
+}
+
+.article-content .callout-warning {
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.article-content .callout-warning strong,
+.article-content .callout-warning * {
+  color: hsl(var(--status-error)) !important;
+}
+
+.article-content .callout-note {
+  border-color: hsla(var(--accent-cyan-raw), 0.3);
+  background: hsla(var(--accent-cyan-raw), 0.05);
+}
+
+.article-content .callout-note strong,
+.article-content .callout-note * {
+  color: hsl(var(--status-info)) !important;
+}
+
+.article-content .callout-important {
+  border-color: rgba(251, 191, 36, 0.3);
+  background: rgba(251, 191, 36, 0.05);
+}
+
+.article-content .callout-important strong,
+.article-content .callout-important * {
+  color: hsl(var(--status-warning)) !important;
+}
+
+/* Enhanced Lists */
+.article-content ul,
+.article-content ol,
+.article-content .enhanced-list {
+  margin: 1.5rem 0;
+  padding-left: 2rem;
+}
+
+.article-content .enhanced-ol {
+  counter-reset: item-counter;
+  list-style: none;
+  padding-left: 0;
+}
+
+.article-content .enhanced-ol li {
+  position: relative;
+  padding-left: 3rem;
+  margin-bottom: 1rem;
+}
+
+.article-content .enhanced-ol li::before {
+  counter-increment: item-counter;
+  content: counter(item-counter);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2rem;
+  height: 2rem;
+  background: linear-gradient(135deg, hsl(var(--accent-cyan)), hsl(var(--accent-violet)));
+  color: black;
+  font-weight: 700;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 0.875rem;
 }
 
-.motor-content ul {
-  margin-left: 1.5rem;
-  margin-bottom: 1.5rem;
-  padding-left: 1rem;
-}
-
-.motor-content li {
+.article-content .enhanced-ul li {
   margin-bottom: 0.75rem;
-  line-height: 1.6;
+  position: relative;
+  list-style: none;
 }
 
-/* Hard highlight style - removed background, just bold colored text */
-.motor-content strong {
-  color: #fbbf24;
-  /* amber-400 - distinct but easier on eyes */
-  font-weight: 700;
-  background-color: transparent;
-  padding: 0;
+.article-content .enhanced-ul li::before {
+  content: '▸';
+  position: absolute;
+  left: -1.5rem;
+  color: hsl(var(--accent-cyan));
+  font-weight: bold;
+  font-size: 1.125rem;
 }
 
-.motor-content a {
-  color: #67e8f9;
-  /* cyan-300 */
-  text-decoration: underline;
-  text-underline-offset: 4px;
+/* Strong/Bold */
+.article-content strong,
+.article-content b {
+  color: white;
+  font-weight: 600;
 }
 
-.motor-content table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 2rem;
-  background-color: #1f2937;
-  /* gray-800 */
-  border-radius: 0.5rem;
-  overflow: hidden;
-  /* Ensure table respects container width */
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-@media (max-width: 768px) {
-  .motor-content table {
-    margin-bottom: 0.5rem;
-  }
-}
-
-/* Table wrapper for horizontal scroll on mobile */
-.motor-content .table-wrapper-mobile {
-  width: 100%;
+/* Tables - Enhanced with Theme */
+.article-content .table-wrapper {
+  margin: 2rem 0;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  margin-bottom: 1rem;
-  /* Smooth scrolling on iOS */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-@media (max-width: 768px) {
-  /* Create scrollable container for wide tables */
-  .motor-content {
-    overflow-x: visible;
-    /* Allow child elements to overflow */
-  }
-
-  /* Table wrapper styling for mobile */
-  .motor-content .table-wrapper-mobile {
-    display: block;
-    width: 100%;
-    max-width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    /* Smooth scrolling on iOS */
-    margin-left: 0;
-    margin-right: 0;
-  }
-
-  /* Ensure tables inside wrapper can be wider than viewport */
-  .motor-content .table-wrapper-mobile table {
-    margin-bottom: 0;
-    /* Remove bottom margin since wrapper has it */
-  }
-}
-
-.motor-content th,
-.motor-content td {
-  border-bottom: 1px solid #374151;
-  /* gray-700 */
-  padding: 1rem;
-  text-align: left;
-}
-
-.motor-content th {
-  background-color: #111827;
-  /* gray-900 */
-  color: #e5e7eb;
-  font-weight: 600;
-}
-
-/* Force all containers and images to be responsive */
-.motor-content div,
-.motor-content p,
-.motor-content figure,
-.motor-content img {
-  max-width: 100% !important;
-  box-sizing: border-box !important;
-}
-
-.motor-content img {
-  height: auto !important;
-  border-radius: 0.5rem;
-  margin: 1rem auto !important;
-  /* Override massive inline margins */
-  border: 1px solid #4b5563;
-  display: block;
-  /* Ensure centering works */
-}
-
-.motor-content .note,
-.motor-content .caution,
-.motor-content .warning {
-  padding: 1.25rem;
-  margin-bottom: 1.5rem;
-  border-left-width: 4px;
-  border-radius: 0.5rem;
-  /* Soften background */
-}
-
-/* Style "Important" sections and similar as cards on mobile */
-@media (max-width: 768px) {
-  .motor-content .note,
-  .motor-content .caution,
-  .motor-content .warning {
-    padding: 0.75rem 1rem;
-    margin-top: 0.5rem;
-    margin-bottom: 0.5rem;
-    border-radius: 0.5rem;
-    border: 1px solid;
-  }
-
-  /* Style "Important" sections as cards */
-  .motor-content .important-section,
-  .motor-content p:has(strong:first-child),
-  .motor-content div:has(strong:first-child) {
-    background-color: rgba(251, 191, 36, 0.1);
-    /* amber with low opacity */
-    border: 1px solid rgba(251, 191, 36, 0.3);
-    border-radius: 0.5rem;
-    padding: 0.75rem 1rem;
-    margin-top: 0.5rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .motor-content .important-section strong:first-child,
-  .motor-content p strong:first-child,
-  .motor-content div strong:first-child {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: #fbbf24;
-    /* amber-400 */
-    font-size: 0.875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 700;
-  }
-}
-
-.motor-content .note {
-  background-color: rgba(30, 58, 138, 0.4);
-  /* blue-900 softer */
-  border-color: #60a5fa;
-  /* blue-400 */
-  color: #dbeafe;
-  /* blue-100 */
-}
-
-.motor-content .caution,
-.motor-content .warning {
-  background-color: rgba(127, 29, 29, 0.4);
-  /* red-900 softer */
-  border-color: #f87171;
-  /* red-400 */
-  color: #fee2e2;
-  /* red-100 */
-}
-
-/* Prose styles for Gemini content */
-.prose table {
+.article-content table,
+.article-content .enhanced-table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 1rem;
+  font-size: 0.875rem;
 }
 
-.prose th,
-.prose td {
-  border: 1px solid #4b5563;
-  padding: 0.75rem;
+.article-content th {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
   text-align: left;
-}
-
-.prose th {
-  background-color: #1f2937;
-}
-
-.prose ul,
-.prose ol {
-  margin-left: 1.5rem;
-  margin-bottom: 1rem;
-}
-
-/* Document header in mobile header */
-header .document-header {
+  padding: 0.875rem 1rem;
   font-size: 0.75rem;
-  font-weight: 600;
-  color: #e5e7eb;
-  margin: 0;
-  flex: 1;
-  text-align: center;
-  padding: 0 0.5rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.9);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+  font-weight: 700;
   white-space: nowrap;
 }
 
-/* Section Cards - Grouped Content */
-.motor-content .section-card {
-  margin-bottom: 1.5rem;
+.article-content td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  vertical-align: top;
+  line-height: 1.5;
+}
+
+/* First column styling (usually labels) */
+.article-content td:first-child {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Numeric columns - right align */
+.article-content td:nth-child(2),
+.article-content td:nth-child(3),
+.article-content td:nth-child(4) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.article-content tr:last-child td {
+  border-bottom: none;
+}
+
+.article-content tbody tr {
+  transition: background 0.15s;
+}
+
+/* Table Column Fixes */
+.article-content th,
+.article-content td {
+  white-space: normal;
+  /* Ensure Notes column has enough width to not look like a vertical strip */
+  min-width: 120px;
+}
+
+/* Allow the table to grow wider than the screen inside the wrapper */
+.article-content table {
+  width: auto;
+  min-width: 100%;
+}
+
+.article-content tbody tr:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Alternating row colors */
+.article-content tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.article-content tbody tr:nth-child(even):hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Force Text Color on all children to prevent legacy inheritance issues */
+.article-content {
+  color: white !important;
+  /* Ensure base is white */
+}
+
+/* Select ALL possible elements to force color */
+.article-content *:not(.callout):not(.callout *) {
+  color: inherit !important;
+  border-color: rgba(255, 255, 255, 0.1);
+  background-color: transparent !important;
+  /* Force transparent background to avoid white boxes */
+}
+
+.article-content strong,
+.article-content b,
+.article-content h1,
+.article-content h2,
+.article-content h3,
+.article-content h4,
+.article-content h5,
+.article-content h6 {
+  color: white !important;
+}
+
+/* Specific overrides for callouts to be readable */
+.article-content .callout-warning,
+.article-content .callout-warning * {
+  color: #fca5a5 !important;
+  /* Light Red */
+}
+
+.article-content .callout-note,
+.article-content .callout-note * {
+  color: #93c5fd !important;
+  /* Light Blue */
+}
+
+.article-content .callout-important,
+.article-content .callout-important * {
+  color: #fcd34d !important;
+  /* Light Amber */
+}
+
+/* Ensure white text in tables */
+.article-content table,
+.article-content td,
+.article-content th {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Images, Objects, Iframes */
+.article-content img,
+.article-content .article-image,
+.article-content object,
+.article-content .article-object,
+.article-content iframe,
+.article-content .article-iframe,
+.article-content embed,
+.article-content .article-embed {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 2rem auto;
   border-radius: 0.75rem;
-  border: 1px solid;
-  overflow: hidden;
-  background-color: rgba(17, 24, 39, 0.6);
-  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
-.motor-content .section-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+.article-content iframe,
+.article-content .article-iframe,
+.article-content object,
+.article-content .article-object,
+.article-content embed,
+.article-content .article-embed {
+  width: 100% !important;
+  /* Force width container */
+  height: 100% !important;
+  /* Internal content should fill wrapper */
+  min-height: 500px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
 }
 
-.motor-content .section-card-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid;
-  font-weight: 600;
-}
-
-.motor-content .section-card-icon {
-  font-size: 1.5rem;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.motor-content .section-card-title {
-  margin: 0;
-  font-size: 1.125rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  flex: 1;
-}
-
-.motor-content .section-card-content {
-  padding: 1.25rem;
-}
-
-.motor-content .section-card-content > *:first-child {
-  margin-top: 0;
-}
-
-.motor-content .section-card-content > *:last-child {
-  margin-bottom: 0;
-}
-
-/* Headings inside cards should be styled normally since we exclude them from content */
-
-/* Ensure all content types are included in cards */
-.motor-content .section-card-content ol,
-.motor-content .section-card-content ul,
-.motor-content .section-card-content table,
-.motor-content .section-card-content p,
-.motor-content .section-card-content div {
-  margin-bottom: 1rem;
-}
-
-.motor-content .section-card-content ol:last-child,
-.motor-content .section-card-content ul:last-child,
-.motor-content .section-card-content table:last-child,
-.motor-content .section-card-content p:last-child {
-  margin-bottom: 0;
-}
-
-/* Section Card Type Styles */
-.motor-content .section-card-special-tools {
-  border-color: rgba(34, 211, 238, 0.4);
-  background-color: rgba(6, 182, 212, 0.1);
-}
-
-.motor-content .section-card-special-tools .section-card-header {
-  background-color: rgba(6, 182, 212, 0.15);
-  border-bottom-color: rgba(34, 211, 238, 0.3);
-  color: #67e8f9;
-}
-
-.motor-content .section-card-warning {
-  border-color: rgba(248, 113, 113, 0.4);
-  background-color: rgba(127, 29, 29, 0.2);
-}
-
-.motor-content .section-card-warning .section-card-header {
-  background-color: rgba(127, 29, 29, 0.25);
-  border-bottom-color: rgba(248, 113, 113, 0.3);
-  color: #fca5a5;
-}
-
-.motor-content .section-card-removal {
-  border-color: rgba(251, 146, 60, 0.4);
-  background-color: rgba(154, 52, 18, 0.15);
-}
-
-.motor-content .section-card-removal .section-card-header {
-  background-color: rgba(154, 52, 18, 0.2);
-  border-bottom-color: rgba(251, 146, 60, 0.3);
-  color: #fdba74;
-}
-
-.motor-content .section-card-installation {
-  border-color: rgba(74, 222, 128, 0.4);
-  background-color: rgba(20, 83, 45, 0.15);
-  margin-top: 3rem;
+/* The wrapper we inject via TS */
+.responsive-object-wrapper {
+  width: 100%;
+  min-height: 85vh;
+  /* This dictates the height */
   position: relative;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
 }
 
-/* Add visual separator before installation procedure */
-.motor-content .section-card-installation::before {
-  content: '';
-  position: absolute;
-  top: -1.5rem;
-  left: 0;
-  right: 0;
+.article-content img,
+.article-content .article-image {
+  cursor: zoom-in;
+  transition: all 200ms ease-in-out;
+  /* Force proper display of extreme-width images (e.g., 49k px sprites) */
+  width: 100% !important;
+  height: 400px !important;
+  /* Force fixed height to prevent aspect-ratio collapse */
+  max-height: 600px;
+  object-fit: contain;
+  /* Centers the image within the forced dimensions */
+  background: rgba(255, 255, 255, 0.02);
+  /* Subtle background to show image bounds */
+  /* VISUAL PROTOCOL: Standardized Motion */
+}
+
+.article-content img:hover,
+.article-content .article-image:hover {
+  border-color: hsl(var(--accent-cyan));
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+  transform: scale(1.01);
+}
+
+.article-content img.expanded,
+.article-content .article-image.expanded {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 95vw;
+  max-height: 95vh;
+  z-index: 9999;
+  cursor: zoom-out;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+}
+
+/* Links */
+.article-content a {
+  color: hsl(var(--accent-cyan));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.2s;
+}
+
+.article-content a:hover {
+  color: hsl(var(--accent-violet));
+}
+
+/* Code */
+.article-content code,
+.article-content pre {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875em;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.article-content pre {
+  padding: 1rem;
+  margin: 1.5rem 0;
+  overflow-x: auto;
+}
+
+.article-content pre code {
+  background: none;
+  padding: 0;
+  border: none;
+}
+
+/* Horizontal Rules */
+.article-content hr {
+  border: none;
   height: 1px;
-  background: linear-gradient(to right, transparent, rgba(34, 211, 238, 0.3), transparent);
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+  margin: 2.5rem 0;
 }
 
-.motor-content .section-card-installation .section-card-header {
-  background-color: rgba(20, 83, 45, 0.2);
-  border-bottom-color: rgba(74, 222, 128, 0.3);
-  color: #86efac;
+/* Blockquotes */
+.article-content blockquote {
+  border-left: 3px solid hsl(var(--accent-cyan));
+  padding-left: 1.5rem;
+  margin: 1.5rem 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-style: italic;
 }
 
-/* Extra spacing when installation follows removal */
-.motor-content .section-card-removal + .section-card-installation {
-  margin-top: 3.5rem;
-}
-
-.motor-content .section-card-removal + .section-card-installation::before {
-  top: -1.75rem;
-  height: 2px;
-  background: linear-gradient(to right, transparent, rgba(34, 211, 238, 0.5), transparent);
-}
-
-.motor-content .section-card-note {
-  border: none;
-  background-color: transparent;
-  margin-bottom: 0.5rem;
-  display: block;
-  padding: 0;
-  border-radius: 0;
-}
-
-.motor-content .section-card-note .section-card-header {
-  display: none;
-}
-
-.motor-content .section-card-note .section-card-content {
-  padding: 0;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  color: #d1d5db;
-  display: inline;
-}
-
-.motor-content .section-card-note .section-card-content p,
-.motor-content .section-card-note .section-card-content div {
-  margin: 0;
-  display: inline;
-}
-
-.motor-content .section-card-note .section-card-content p:not(:last-child)::after,
-.motor-content .section-card-note .section-card-content div:not(:last-child)::after {
-  content: ' ';
-}
-
-.motor-content .section-card-warning {
-  border: none;
-  background-color: transparent;
-  margin-bottom: 0.5rem;
-  display: block;
-  padding: 0;
-  border-radius: 0;
-}
-
-.motor-content .section-card-warning .section-card-header {
-  display: none;
-}
-
-.motor-content .section-card-warning .section-card-content {
-  padding: 0;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  color: #d1d5db;
-  display: inline;
-}
-
-.motor-content .section-card-warning .section-card-content p,
-.motor-content .section-card-warning .section-card-content div {
-  margin: 0;
-  display: inline;
-}
-
-.motor-content .section-card-warning .section-card-content p:not(:last-child)::after,
-.motor-content .section-card-warning .section-card-content div:not(:last-child)::after {
-  content: ' ';
-}
-
-/* Inline notes and warnings inside other cards - minimal styling, no borders/backgrounds */
-.motor-content .section-inline-note,
-.motor-content .section-inline-warning {
-  display: inline-flex;
-  align-items: flex-start;
-  gap: 0.375rem;
-  padding: 0;
-  border: none;
-  background: transparent;
-  border-radius: 0;
-  margin: 0.25rem 0;
-  font-size: 0.875rem;
-  line-height: 1.5;
-}
-
-.motor-content .section-inline-note {
-  color: #67e8f9;
-}
-
-.motor-content .section-inline-warning {
-  color: #fca5a5;
-}
-
-.motor-content .section-inline-note::before,
-.motor-content .section-inline-warning::before {
-  display: none;
-}
-
-.motor-content .section-inline-note p,
-.motor-content .section-inline-warning p,
-.motor-content .section-inline-note div,
-.motor-content .section-inline-warning div {
-  margin: 0;
-  display: inline;
-  color: #d1d5db;
-}
-
-.motor-content .section-card-prerequisites {
-  border-color: rgba(168, 85, 247, 0.4);
-  background-color: rgba(88, 28, 135, 0.15);
-}
-
-.motor-content .section-card-prerequisites .section-card-header {
-  background-color: rgba(88, 28, 135, 0.2);
-  border-bottom-color: rgba(168, 85, 247, 0.3);
-  color: #c4b5fd;
-}
-
-.motor-content .section-card-torque {
-  border-color: rgba(250, 204, 21, 0.4);
-  background-color: rgba(113, 63, 18, 0.15);
-}
-
-.motor-content .section-card-torque .section-card-header {
-  background-color: rgba(113, 63, 18, 0.2);
-  border-bottom-color: rgba(250, 204, 21, 0.3);
-  color: #fde047;
-}
-
-.motor-content .section-card-important {
-  border-color: rgba(251, 191, 36, 0.4);
-  background-color: rgba(146, 64, 14, 0.15);
-}
-
-.motor-content .section-card-important .section-card-header {
-  background-color: rgba(146, 64, 14, 0.2);
-  border-bottom-color: rgba(251, 191, 36, 0.3);
-  color: #fcd34d;
-}
-
-.motor-content .section-card-general {
-  border-color: rgba(107, 114, 128, 0.4);
-  background-color: rgba(31, 41, 55, 0.3);
-}
-
-.motor-content .section-card-general .section-card-header {
-  background-color: rgba(31, 41, 55, 0.4);
-  border-bottom-color: rgba(107, 114, 128, 0.3);
-  color: #d1d5db;
-}
-
-/* Mobile adjustments for section cards */
-@media (max-width: 768px) {
-  .motor-content .section-card {
-    margin-bottom: 1rem;
-    border-radius: 0.5rem;
+/* Mobile Optimizations */
+@media (max-width: 640px) {
+  .article-content {
+    font-size: 0.875rem;
   }
 
-  .motor-content .section-card-header {
-    padding: 0.75rem 1rem;
-    gap: 0.5rem;
+  .article-content h1,
+  .article-content .enhanced-h1 {
+    font-size: 1.5rem;
   }
 
-  .motor-content .section-card-icon {
+  .article-content h2,
+  .article-content .enhanced-h2 {
     font-size: 1.25rem;
   }
 
-  .motor-content .section-card-title {
-    font-size: 0.9375rem;
+  .article-content h3,
+  .article-content .enhanced-h3 {
+    font-size: 1.125rem;
   }
 
-  .motor-content .section-card-content {
+  .article-content h4,
+  .article-content .enhanced-h4 {
+    font-size: 1rem;
+  }
+
+  .article-content .callout {
     padding: 1rem;
+    gap: 0.75rem;
   }
 
-  .motor-content .section-card-content h1,
-  .motor-content .section-card-content h2,
-  .motor-content .section-card-content h3 {
-    margin-top: 0.5rem;
-    margin-bottom: 0.5rem;
+  .article-content .callout-icon {
+    font-size: 1.25rem;
   }
 
-  .motor-content .section-card-content p {
-    margin-bottom: 0.625rem;
+  .article-content .enhanced-ol li::before {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.75rem;
   }
 
-  /* Even more compact on mobile for notes and warnings */
-  .motor-content .section-card-note,
-  .motor-content .section-card-warning {
-    margin-bottom: 0.375rem;
-    gap: 0.25rem;
+  .article-content .enhanced-ol li {
+    padding-left: 2.5rem;
   }
 
+  .article-content img,
+  .article-content .article-image {
+    margin: 1.5rem auto;
+    border-radius: 0.5rem;
+  }
 
-  .motor-content .section-card-note .section-card-content,
-  .motor-content .section-card-warning .section-card-content {
+  .article-content .table-wrapper {
+    margin: 1.5rem -1rem;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  .article-content table {
     font-size: 0.8125rem;
   }
 
-  /* Mobile spacing for installation procedure */
-  .motor-content .section-card-installation {
-    margin-top: 2rem;
+  .article-content th,
+  .article-content td {
+    padding: 0.625rem 0.75rem;
   }
 
-  .motor-content .section-card-installation::before {
-    top: -1rem;
+  .article-content th {
+    font-size: 0.6875rem;
+  }
+}
+
+/* Tablet */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .article-content {
+    font-size: 0.90625rem;
+  }
+}
+
+/* ========================================
+   MOBILE TABLE TRANSFORMATION
+   ======================================== */
+/* Fixes: Notes columns, multi-column tables on small screens */
+/* Transforms horizontal tables into vertical card layouts */
+
+@media (max-width: 767px) {
+
+  /* Hide table headers on mobile */
+  .article-content table thead {
+    display: none;
   }
 
-  .motor-content .section-card-removal + .section-card-installation {
-    margin-top: 2.5rem;
+  /* Make table display as block to allow vertical stacking */
+  .article-content table {
+    display: block !important;
+    width: 100% !important;
+    border: none !important;
+    background: transparent !important;
   }
 
-  .motor-content .section-card-removal + .section-card-installation::before {
-    top: -1.25rem;
+  .article-content table tbody {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+
+  /* Each row becomes a card */
+  .article-content table tr {
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 1rem !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 0.75rem !important;
+    gap: 0.75rem !important;
+    transition: all 0.2s !important;
+  }
+
+  .article-content table tr:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: hsl(var(--accent-cyan) / 0.3) !important;
+    transform: translateY(-1px) !important;
+  }
+
+  /* Each cell shows as label-value pair */
+  .article-content table td {
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    gap: 0.25rem !important;
+  }
+
+  /* Add labels using data attributes */
+  .article-content table td::before {
+    content: attr(data-label) !important;
+    font-weight: 600 !important;
+    font-size: 0.75rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    color: hsl(var(--accent-cyan)) !important;
+    opacity: 0.9 !important;
+    display: block !important;
+  }
+
+  /* Special handling for notes/long text */
+  .article-content table td[data-label*="Note"],
+  .article-content table td[data-label*="Qualifier"],
+  .article-content table td[data-label*="Description"] {
+    padding: 0.75rem !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-radius: 0.5rem !important;
+    font-size: 0.875rem !important;
+    line-height: 1.6 !important;
   }
 }

@@ -6,33 +6,43 @@ import { LucideAngularModule, Search } from 'lucide-angular';
  * Dashboard global search component
  */
 @Component({
-    selector: 'app-dashboard-search',
-    template: `
-    <div class="max-w-5xl mx-auto mb-8">
-      <div class="relative">
-        <input type="text" 
-          placeholder="Global Search (e.g., 'brake caliper', 'P0300')" 
-          (input)="onSearchChange($event)"
-          [value]="searchTerm"
-          class="w-full p-4 pl-14 bg-black border-2 border-cyan-500/50 rounded-lg text-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all font-mono text-sm" />
-        <lucide-icon [img]="icons.Search" 
-          class="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-500">
-        </lucide-icon>
+  selector: 'app-dashboard-search',
+  template: `
+    <div class="relative group">
+      <!-- Glow Background -->
+      <div class="absolute -inset-1 bg-gradient-to-r from-[hsl(var(--accent-cyan))] to-[hsl(var(--accent-violet))] rounded-2xl blur opacity-10 group-focus-within:opacity-25 transition duration-500"></div>
+      
+      <div class="relative glass-card overflow-hidden animate-scan">
+        <div class="flex items-center px-6">
+            <lucide-icon [img]="icons.Search" 
+                class="w-5 h-5 text-[hsl(var(--text-muted))] group-focus-within:text-[hsl(var(--accent-cyan))] transition-colors">
+            </lucide-icon>
+            <input type="text" 
+                placeholder="Global System Search (e.g. 'brake torque', 'P0300', 'fuse box')" 
+                (input)="onSearchChange($event)"
+                [value]="searchTerm"
+                class="w-full bg-transparent border-none text-white placeholder-white/20 py-5 px-4 focus:ring-0 text-sm md:text-md outline-none font-medium" />
+            
+            <div class="hidden md:flex items-center gap-2">
+                <span class="px-2 py-1 rounded bg-white/5 border border-white/10 text-[8px] uppercase tracking-widest text-[hsl(var(--text-muted))]">CMD</span>
+                <span class="px-2 py-1 rounded bg-white/5 border border-white/10 text-[8px] uppercase tracking-widest text-[hsl(var(--text-muted))]">K</span>
+            </div>
+        </div>
       </div>
     </div>
   `,
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, LucideAngularModule],
-    standalone: true
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [CommonModule, LucideAngularModule],
+  standalone: true
 })
 export class DashboardSearchComponent {
-    @Input() searchTerm: string = '';
-    @Output() searchChange = new EventEmitter<string>();
+  @Input() searchTerm: string = '';
+  @Output() searchChange = new EventEmitter<string>();
 
-    readonly icons = { Search };
+  readonly icons = { Search };
 
-    onSearchChange(event: Event) {
-        const value = (event.target as HTMLInputElement).value;
-        this.searchChange.emit(value);
-    }
+  onSearchChange(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    this.searchChange.emit(value);
+  }
 }

@@ -1,110 +1,182 @@
-<aside class="w-72 bg-black border-r border-cyan-500/20 flex-shrink-0 flex flex-col hidden md:flex">
-    <div class="p-6 border-b border-cyan-500/20">
+<aside
+    class="w-64 bg-white/[0.01] border-r border-white/5 flex-shrink-0 flex flex-col hidden md:flex relative z-20 backdrop-blur-md">
+    <!-- Header Area -->
+    <div class="p-5 space-y-6">
         <a routerLink="/"
-            class="text-cyan-400 hover:text-cyan-300 mb-6 inline-block text-xs uppercase tracking-wider">&larr; Change
-            Vehicle</a>
-        @if (vehicleName) {
-        <h1 class="text-xl font-bold text-cyan-400 tracking-wider leading-tight">{{ vehicleName }}</h1>
-        } @else {
-        <div class="h-8 bg-gray-900 border border-cyan-500/20 rounded-md animate-pulse w-3/4"></div>
-        }
+            class="group flex items-center gap-2 text-[hsl(var(--text-muted))] hover:text-white text-[10px] uppercase tracking-[0.3em] font-bold transition-all">
+            <lucide-icon [img]="icons.LogOut"
+                class="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform"></lucide-icon>
+            Exit Session
+        </a>
+
+        <div class="space-y-4">
+            <div class="flex items-center gap-2">
+                <div class="h-px w-4 bg-[hsl(var(--accent-cyan))]"></div>
+                <p class="text-[hsl(var(--text-muted))] text-[9px] uppercase tracking-[0.4em] font-black">Active Vehicle
+                </p>
+            </div>
+            @if (vehicleName) {
+            <h1 class="text-2xl font-black text-white tracking-tighter leading-[1.1]">{{ vehicleName }}</h1>
+            } @else {
+            <div class="space-y-2">
+                <div class="h-6 bg-white/5 rounded-lg animate-pulse w-full"></div>
+                <div class="h-6 bg-white/5 rounded-lg animate-pulse w-2/3"></div>
+            </div>
+            }
+        </div>
     </div>
 
-    <nav class="flex-1 py-4 space-y-1 overflow-y-auto px-2">
+    <!-- Navigation Area -->
+    <nav class="flex-1 py-2 space-y-0.5 overflow-y-auto px-4 custom-scrollbar">
         <button (click)="onSectionClick('overview')"
-            [class]="activeSection === 'overview' ? 'bg-cyan-500/10 text-cyan-400 font-semibold' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'"
-            class="w-full flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200 group">
+            [class]="activeSection === 'overview' ? 'bg-gradient-to-r from-[hsl(var(--accent-cyan)/0.15)] to-transparent text-[hsl(var(--accent-cyan))] border-l-2 border-[hsl(var(--accent-cyan))]' : 'text-[hsl(var(--text-secondary))] hover:bg-white/[0.03] hover:text-white border-l-2 border-transparent'"
+            class="w-full flex items-center px-3 py-3 text-[10px] font-black transition-all duration-300 group relative overflow-hidden">
+            <div *ngIf="activeSection === 'overview'"
+                class="absolute inset-0 bg-[hsl(var(--accent-cyan)/0.05)] opacity-50">
+            </div>
             <lucide-icon [img]="icons.House"
-                [class]="activeSection === 'overview' ? 'text-cyan-400' : 'text-gray-500 group-hover:text-gray-300'"
-                class="w-5 h-5 mr-3 transition-colors"></lucide-icon> Overview
+                class="w-4 h-4 mr-4 transition-colors opacity-50 group-hover:opacity-100"></lucide-icon>
+            <span class="uppercase tracking-[0.2em]">Dashboard</span>
         </button>
 
-        @if (!availableSections || availableSections.hasDtcs) {
+        <div class="pt-6 pb-2 px-3">
+            <p class="text-white/40 text-[9px] uppercase tracking-[0.3em] font-black">Diagnostics</p>
+        </div>
+
+        @if (availableSections?.hasDtcs) {
         <button (click)="onSectionClick('dtcs')"
-            [class]="activeSection === 'dtcs' ? 'bg-cyan-500/10 text-cyan-400 font-semibold' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'"
-            class="w-full flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200 group">
+            [class]="activeSection === 'dtcs' ? 'bg-gradient-to-r from-[hsl(var(--accent-cyan)/0.15)] to-transparent text-[hsl(var(--accent-cyan))] border-l-2 border-[hsl(var(--accent-cyan))]' : 'text-[hsl(var(--text-secondary))] hover:bg-white/[0.03] hover:text-white border-l-2 border-transparent'"
+            class="w-full flex items-center px-4 py-4 text-[10px] font-black transition-all duration-300 group relative">
+            <div *ngIf="activeSection === 'dtcs'" class="absolute inset-0 bg-[hsl(var(--accent-cyan)/0.05)] opacity-50">
+            </div>
             <lucide-icon [img]="icons.TriangleAlert"
-                [class]="activeSection === 'dtcs' ? 'text-cyan-400' : 'text-gray-500 group-hover:text-gray-300'"
-                class="w-5 h-5 mr-3 transition-colors"></lucide-icon> Diagnostic Codes
+                class="w-4 h-4 mr-4 transition-colors opacity-50 group-hover:opacity-100"></lucide-icon>
+            <span class="uppercase tracking-[0.2em]">Fault Codes</span>
         </button>
         }
 
-        @if (!availableSections || availableSections.hasTsbs) {
+        @if (availableSections?.hasTsbs) {
         <button (click)="onSectionClick('tsbs')"
-            [class]="activeSection === 'tsbs' ? 'bg-cyan-500/10 text-cyan-400 font-semibold' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'"
-            class="w-full flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200 group">
+            [class]="activeSection === 'tsbs' ? 'bg-gradient-to-r from-[hsl(var(--accent-cyan)/0.15)] to-transparent text-[hsl(var(--accent-cyan))] border-l-2 border-[hsl(var(--accent-cyan))]' : 'text-[hsl(var(--text-secondary))] hover:bg-white/[0.03] hover:text-white border-l-2 border-transparent'"
+            class="w-full flex items-center px-4 py-4 text-[10px] font-black transition-all duration-300 group relative">
+            <div *ngIf="activeSection === 'tsbs'" class="absolute inset-0 bg-[hsl(var(--accent-cyan)/0.05)] opacity-50">
+            </div>
             <lucide-icon [img]="icons.FileText"
-                [class]="activeSection === 'tsbs' ? 'text-cyan-400' : 'text-gray-500 group-hover:text-gray-300'"
-                class="w-5 h-5 mr-3 transition-colors"></lucide-icon> Service Bulletins
+                class="w-4 h-4 mr-4 transition-colors opacity-50 group-hover:opacity-100"></lucide-icon>
+            <span class="uppercase tracking-[0.2em]">Service Bulletins</span>
         </button>
         }
 
-        @if (!availableSections || availableSections.hasDiagrams) {
+        <div class="pt-6 pb-2 px-3">
+            <p class="text-white/40 text-[9px] uppercase tracking-[0.3em] font-black">Service Data</p>
+        </div>
+
+        @if (availableSections?.hasDiagrams) {
         <button (click)="onSectionClick('diagrams')"
-            [class]="activeSection === 'diagrams' ? 'bg-cyan-500/10 text-cyan-400 font-semibold' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'"
-            class="w-full flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200 group">
+            [class]="activeSection === 'diagrams' ? 'bg-gradient-to-r from-[hsl(var(--accent-cyan)/0.15)] to-transparent text-[hsl(var(--accent-cyan))] border-l-2 border-[hsl(var(--accent-cyan))]' : 'text-[hsl(var(--text-secondary))] hover:bg-white/[0.03] hover:text-white border-l-2 border-transparent'"
+            class="w-full flex items-center px-4 py-4 text-[10px] font-black transition-all duration-300 group relative">
+            <div *ngIf="activeSection === 'diagrams'"
+                class="absolute inset-0 bg-[hsl(var(--accent-cyan)/0.05)] opacity-50">
+            </div>
             <lucide-icon [img]="icons.Cable"
-                [class]="activeSection === 'diagrams' ? 'text-cyan-400' : 'text-gray-500 group-hover:text-gray-300'"
-                class="w-5 h-5 mr-3 transition-colors"></lucide-icon> Wiring Diagrams
+                class="w-4 h-4 mr-4 transition-colors opacity-50 group-hover:opacity-100"></lucide-icon>
+            <span class="uppercase tracking-[0.2em]">Wiring Diagrams</span>
         </button>
         }
 
-        @if (!availableSections || availableSections.hasComponentLocations) {
-        <button (click)="onSectionClick('component-locations')"
-            [class]="activeSection === 'component-locations' ? 'bg-cyan-500/10 text-cyan-400 font-semibold' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'"
-            class="w-full flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200 group">
-            <lucide-icon [img]="icons.Cable"
-                [class]="activeSection === 'component-locations' ? 'text-cyan-400' : 'text-gray-500 group-hover:text-gray-300'"
-                class="w-5 h-5 mr-3 transition-colors"></lucide-icon> Component Locations
-        </button>
-        }
-
-        @if (!availableSections || availableSections.hasProcedures) {
+        @if (availableSections?.hasProcedures) {
         <button (click)="onSectionClick('procedures')"
-            [class]="activeSection === 'procedures' ? 'bg-cyan-500/10 text-cyan-400 font-semibold' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'"
-            class="w-full flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200 group">
+            [class]="activeSection === 'procedures' ? 'bg-gradient-to-r from-[hsl(var(--accent-cyan)/0.15)] to-transparent text-[hsl(var(--accent-cyan))] border-l-2 border-[hsl(var(--accent-cyan))]' : 'text-[hsl(var(--text-secondary))] hover:bg-white/[0.03] hover:text-white border-l-2 border-transparent'"
+            class="w-full flex items-center px-4 py-4 text-[10px] font-black transition-all duration-300 group relative">
+            <div *ngIf="activeSection === 'procedures'"
+                class="absolute inset-0 bg-[hsl(var(--accent-cyan)/0.05)] opacity-50">
+            </div>
             <lucide-icon [img]="icons.Wrench"
-                [class]="activeSection === 'procedures' ? 'text-cyan-400' : 'text-gray-500 group-hover:text-gray-300'"
-                class="w-5 h-5 mr-3 transition-colors"></lucide-icon> Procedures
+                class="w-4 h-4 mr-4 transition-colors opacity-50 group-hover:opacity-100"></lucide-icon>
+            <span class="uppercase tracking-[0.2em]">Procedures</span>
         </button>
         }
 
-        <button (click)="onSectionClick('parts')"
-            [class]="activeSection === 'parts' ? 'bg-cyan-500/10 text-cyan-400 font-semibold' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'"
-            class="w-full flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200 group">
-            <lucide-icon [img]="icons.Package"
-                [class]="activeSection === 'parts' ? 'text-cyan-400' : 'text-gray-500 group-hover:text-gray-300'"
-                class="w-5 h-5 mr-3 transition-colors"></lucide-icon> Parts
-        </button>
-
-        @if (!availableSections || availableSections.hasSpecs) {
+        @if (availableSections?.hasSpecs) {
         <button (click)="onSectionClick('specs')"
-            [class]="activeSection === 'specs' ? 'bg-cyan-500/10 text-cyan-400 font-semibold' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'"
-            class="w-full flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200 group">
+            [class]="activeSection === 'specs' ? 'bg-gradient-to-r from-[hsl(var(--accent-cyan)/0.15)] to-transparent text-[hsl(var(--accent-cyan))] border-l-2 border-[hsl(var(--accent-cyan))]' : 'text-[hsl(var(--text-secondary))] hover:bg-white/[0.03] hover:text-white border-l-2 border-transparent'"
+            class="w-full flex items-center px-4 py-4 text-[10px] font-black transition-all duration-300 group relative">
+            <div *ngIf="activeSection === 'specs'"
+                class="absolute inset-0 bg-[hsl(var(--accent-cyan)/0.05)] opacity-50">
+            </div>
             <lucide-icon [img]="icons.ClipboardList"
-                [class]="activeSection === 'specs' ? 'text-cyan-400' : 'text-gray-500 group-hover:text-gray-300'"
-                class="w-5 h-5 mr-3 transition-colors"></lucide-icon> Specs & Fluids
+                class="w-4 h-4 mr-4 transition-colors opacity-50 group-hover:opacity-100"></lucide-icon>
+            <span class="uppercase tracking-[0.2em]">Specifications</span>
         </button>
         }
 
-        @if (!availableSections || availableSections.hasMaintenance) {
+        @if (availableSections?.hasComponentLocations) {
+        <button (click)="onSectionClick('component-locations')"
+            [class]="activeSection === 'component-locations' ? 'bg-gradient-to-r from-[hsl(var(--accent-cyan)/0.15)] to-transparent text-[hsl(var(--accent-cyan))] border-l-2 border-[hsl(var(--accent-cyan))]' : 'text-[hsl(var(--text-secondary))] hover:bg-white/[0.03] hover:text-white border-l-2 border-transparent'"
+            class="w-full flex items-center px-4 py-4 text-[10px] font-black transition-all duration-300 group relative">
+            <div *ngIf="activeSection === 'component-locations'"
+                class="absolute inset-0 bg-[hsl(var(--accent-cyan)/0.05)] opacity-50">
+            </div>
+            <lucide-icon [img]="icons.MapPin"
+                class="w-4 h-4 mr-4 transition-colors opacity-50 group-hover:opacity-100"></lucide-icon>
+            <span class="uppercase tracking-[0.2em]">Component Locations</span>
+        </button>
+        }
+
+        @if (availableSections?.hasMaintenance) {
         <button (click)="onSectionClick('maintenance')"
-            [class]="activeSection === 'maintenance' ? 'bg-cyan-500/10 text-cyan-400 font-semibold' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'"
-            class="w-full flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200 group">
-            <lucide-icon [img]="icons.ClipboardList"
-                [class]="activeSection === 'maintenance' ? 'text-cyan-400' : 'text-gray-500 group-hover:text-gray-300'"
-                class="w-5 h-5 mr-3 transition-colors"></lucide-icon> Maintenance
+            [class]="activeSection === 'maintenance' ? 'bg-gradient-to-r from-[hsl(var(--accent-cyan)/0.15)] to-transparent text-[hsl(var(--accent-cyan))] border-l-2 border-[hsl(var(--accent-cyan))]' : 'text-[hsl(var(--text-secondary))] hover:bg-white/[0.03] hover:text-white border-l-2 border-transparent'"
+            class="w-full flex items-center px-4 py-4 text-[10px] font-black transition-all duration-300 group relative">
+            <div *ngIf="activeSection === 'maintenance'"
+                class="absolute inset-0 bg-[hsl(var(--accent-cyan)/0.05)] opacity-50">
+            </div>
+            <lucide-icon [img]="icons.Calendar"
+                class="w-4 h-4 mr-4 transition-colors opacity-50 group-hover:opacity-100"></lucide-icon>
+            <span class="uppercase tracking-[0.2em]">Maintenance</span>
         </button>
         }
 
-        <div class="my-2 border-t border-cyan-500/20 mx-4"></div>
+        <div class="pt-6 pb-2 px-3">
+            <p class="text-white/40 text-[9px] uppercase tracking-[0.3em] font-black">Reference</p>
+        </div>
+
+        @if (availableSections?.hasParts) {
+        <button (click)="onSectionClick('parts')"
+            [class]="activeSection === 'parts' ? 'bg-gradient-to-r from-[hsl(var(--accent-cyan)/0.15)] to-transparent text-[hsl(var(--accent-cyan))] border-l-2 border-[hsl(var(--accent-cyan))]' : 'text-[hsl(var(--text-secondary))] hover:bg-white/[0.03] hover:text-white border-l-2 border-transparent'"
+            class="w-full flex items-center px-4 py-4 text-[10px] font-black transition-all duration-300 group relative">
+            <div *ngIf="activeSection === 'parts'"
+                class="absolute inset-0 bg-[hsl(var(--accent-cyan)/0.05)] opacity-50">
+            </div>
+            <lucide-icon [img]="icons.Package"
+                class="w-4 h-4 mr-4 transition-colors opacity-50 group-hover:opacity-100"></lucide-icon>
+            <span class="uppercase tracking-[0.2em]">Parts Catalog</span>
+        </button>
+        }
 
         <button (click)="onSectionClick('browse-all')"
-            [class]="activeSection === 'browse-all' ? 'bg-cyan-500/10 text-cyan-400 font-semibold' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'"
-            class="w-full flex items-center px-4 py-3 text-sm rounded-lg transition-all duration-200 group">
+            [class]="activeSection === 'browse-all' ? 'bg-[hsl(var(--accent-cyan)/0.15)] text-[hsl(var(--accent-cyan))] border-l-2 border-[hsl(var(--accent-cyan))]' : 'text-[hsl(var(--text-secondary))] hover:bg-white/[0.03] hover:text-white border-l-2 border-transparent'"
+            class="w-full flex items-center px-3 py-3 text-[10px] font-black transition-all duration-300 group relative overflow-hidden">
+            <div
+                class="absolute inset-0 bg-gradient-to-r from-[hsl(var(--accent-cyan)/0.1)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+            </div>
             <lucide-icon [img]="icons.Package"
-                [class]="activeSection === 'browse-all' ? 'text-cyan-400' : 'text-gray-500 group-hover:text-gray-300'"
-                class="w-5 h-5 mr-3 transition-colors"></lucide-icon> Browse All Data
+                class="w-4 h-4 mr-4 transition-colors opacity-50 group-hover:opacity-100"></lucide-icon>
+            <span class="uppercase tracking-[0.2em]">All Data</span>
         </button>
+
     </nav>
+
+    <!-- Sidebar Footer -->
+    <div class="p-4 border-t border-white/5 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="relative flex h-2 w-2">
+                <span
+                    class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </div>
+            <span
+                class="text-[9px] uppercase tracking-[0.2em] font-black text-[hsl(var(--text-muted))]">Connected</span>
+        </div>
+        <div class="text-[8px] font-mono text-[hsl(var(--text-muted))] opacity-30">V2.4.0</div>
+    </div>
 </aside>

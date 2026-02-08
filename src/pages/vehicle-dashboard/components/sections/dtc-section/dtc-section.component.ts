@@ -41,7 +41,11 @@ export class DtcSectionComponent implements OnInit {
             this.vehicleId,
             this.motorVehicleId,
             this.isLoading,
-            (data) => this.dtcs.set(data)
+            (data) => this.dtcs.set(data),
+            (error) => {
+                console.error('Failed to load DTCs', error);
+                this.isLoading.set(false);
+            }
         );
     }
 

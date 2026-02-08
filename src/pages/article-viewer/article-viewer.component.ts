@@ -10,8 +10,6 @@ import { MotorApiService } from '../../services/motor-api.service';
 import { GeminiService } from '../../services/gemini.service';
 import { FirebaseService } from '../../services/firebase.service';
 import { ProcedureStepperComponent, ProcedureStep } from './components/procedure-stepper/procedure-stepper.component';
-import { TutorialComponent } from '../../components/tutorial/tutorial.component';
-import { TutorialStep } from '../../models/motor.models';
 
 @Component({
   selector: 'app-article-viewer',
@@ -19,7 +17,7 @@ import { TutorialStep } from '../../models/motor.models';
   styleUrls: ['./article-viewer.component.css'],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterModule, ProcedureStepperComponent, TutorialComponent],
+  imports: [CommonModule, RouterModule, ProcedureStepperComponent],
 })
 export class ArticleViewerComponent {
   private route = inject(ActivatedRoute);
@@ -39,17 +37,10 @@ export class ArticleViewerComponent {
   rewrittenContent = signal<SafeHtml>('');
   articleTitle = signal<string>('');
   documentHeader = signal<string>('');
-
+  
   // Stepper Wizard State
-  // Main Stepper State
   stepperMode = signal(false);
-
-  // Legacy Regex Stepper
   procedureSteps = signal<ProcedureStep[]>([]);
-
-  // AI Tutorial Stepper
-  tutorialSteps = signal<TutorialStep[]>([]);
-  isGeneratingTutorial = signal(false);
 
   private firebase = inject(FirebaseService);
 
@@ -70,7 +61,7 @@ export class ArticleViewerComponent {
           switchMap(({ title, content }) => {
             const processed = this.extractDocumentHeader(content.body.html);
             // Use service method for processing if available, otherwise use our method
-            const processedHtml = this.motorApi.processHtmlContent
+            const processedHtml = this.motorApi.processHtmlContent 
               ? this.motorApi.processHtmlContent(processed.content, contentSource, vehicleId)
               : processed.content;
             const originalHtml = this.processAndSanitizeHtml(processedHtml);
@@ -84,7 +75,7 @@ export class ArticleViewerComponent {
             if (this.geminiApi.aiEnabled()) {
               this.isRewriting.set(true);
               this.showOriginal.set(false);
-
+              
               return this.geminiApi.rewriteArticle(titleText, processed.content).pipe(
                 map(rewrittenHtml => {
                   const processedRewritten = this.processAndSanitizeHtml(rewrittenHtml);
@@ -126,41 +117,9 @@ export class ArticleViewerComponent {
   toggleStepperMode() {
     this.stepperMode.update(mode => {
       const newMode = !mode;
-
-      if (newMode) {
-        // If we already have AI steps, just show them
-        if (this.tutorialSteps().length > 0) return true;
-
-        // If AI is enabled, try generating AI tutorial
-        if (this.geminiApi.aiEnabled()) {
-          this.isGeneratingTutorial.set(true);
-          // Use the processed (potentially rewritten) content for generation
-          // But ideally we use the original processed HTML so the AI has specific tags if needed?
-          // Actually, `rewriteArticle` returns 'clean' HTML.
-          // Let's use `processed.content` from existing article data if possible.
-          // Accessing `articleData()` signal value.
-          const data = this.articleData();
-          if (data?.original) {
-            this.geminiApi.generateTutorialFromArticle(typeof data.original === 'string' ? data.original : '')
-              .subscribe({
-                next: (steps) => {
-                  this.tutorialSteps.set(steps);
-                  this.isGeneratingTutorial.set(false);
-                },
-                error: (err) => {
-                  console.error("Tutorial generation failed", err);
-                  this.isGeneratingTutorial.set(false);
-                  // Fallback to regex
-                  this.extractProcedureSteps();
-                }
-              });
-          }
-        } else {
-          // Fallback to legacy regex extraction
-          if (this.procedureSteps().length === 0) {
-            this.extractProcedureSteps();
-          }
-        }
+      if (newMode && this.procedureSteps().length === 0) {
+        // Extract steps when enabling stepper mode
+        this.extractProcedureSteps();
       }
       return newMode;
     });
@@ -175,7 +134,7 @@ export class ArticleViewerComponent {
     if (!htmlString) return;
 
     const steps: ProcedureStep[] = [];
-
+    
     // Extract steps from ordered lists (ol > li)
     const olMatches = htmlString.matchAll(/<ol[^>]*>([\s\S]*?)<\/ol>/gi);
     for (const olMatch of olMatches) {
@@ -221,12 +180,12 @@ export class ArticleViewerComponent {
 
   private extractDocumentHeader(html: string): { header: string; content: string } {
     if (!html) return { header: '', content: '' };
-
+    
     // Extract h2.document-header element - handle various class attribute formats
     const headerMatch = html.match(/<h2[^>]*class\s*=\s*["'][^"']*document-header[^"']*["'][^>]*>(.*?)<\/h2>/is);
     let header = '';
     let content = html;
-
+    
     if (headerMatch) {
       // Extract and clean text content (strip HTML tags)
       const headerHtml = headerMatch[1];
@@ -234,7 +193,7 @@ export class ArticleViewerComponent {
       // Remove the h2 element from the content (handle multiline with 's' flag)
       content = html.replace(/<h2[^>]*class\s*=\s*["'][^"']*document-header[^"']*["'][^>]*>.*?<\/h2>/is, '');
     }
-
+    
     return { header, content };
   }
 
@@ -244,21 +203,21 @@ export class ArticleViewerComponent {
       const fullUrl = this.motorApi.getGraphicUrl(relativePath);
       return `src="${fullUrl}"`;
     });
-
+    
     // Group content into section cards (must be before other processing)
     processedHtml = this.groupContentIntoCards(processedHtml);
-
+    
     // Process tables for mobile-friendly card layout
     processedHtml = this.processTablesForMobile(processedHtml);
-
+    
     // Wrap "Important" sections in styled containers
     processedHtml = this.processImportantSections(processedHtml);
-
+    
     const sanitized = this.sanitizer.bypassSecurityTrustHtml(processedHtml);
-
+    
     // Attach navigation handlers after a brief delay to ensure DOM is ready
     setTimeout(() => this.attachNavigationHandlers(), 100);
-
+    
     return sanitized;
   }
 
@@ -270,7 +229,7 @@ export class ArticleViewerComponent {
     const noteWarningPattern = /<div[^>]*class\s*=\s*["'][^"']*(warning|caution|note)[^"']*["'][^>]*>([\s\S]*?)<\/div>/gi;
     const noteWarningMatches: Array<{ match: string; type: string; content: string; index: number }> = [];
     let noteMatch;
-
+    
     // First, collect all matches with their positions
     while ((noteMatch = noteWarningPattern.exec(html)) !== null) {
       if (!noteMatch[0].includes('section-card')) {
@@ -282,18 +241,18 @@ export class ArticleViewerComponent {
         });
       }
     }
-
+    
     // Process from end to start to maintain indices
     for (let i = noteWarningMatches.length - 1; i >= 0; i--) {
       const item = noteWarningMatches[i];
-
+      
       // Check if this div is already inside a section card
       const beforeMatch = html.substring(0, item.index);
       const lastCardOpen = beforeMatch.lastIndexOf('<div class="section-card');
       const lastCardClose = beforeMatch.lastIndexOf('</div>');
-
+      
       const config = this.getSectionConfig(item.type === 'warning' || item.type === 'caution' ? 'warning' : 'note');
-
+      
       // If we're inside a section card, just add inline classes instead of creating a new card
       if (lastCardOpen > lastCardClose && lastCardOpen !== -1) {
         // Remove redundant labels from content
@@ -305,11 +264,11 @@ export class ArticleViewerComponent {
           /<strong[^>]*>.*?(?:Note|Warning|Caution):?\s*<\/strong>\s*/gi,
           /<p[^>]*>.*?<strong[^>]*>.*?(?:Note|Warning|Caution):?\s*<\/strong>\s*/gi
         ];
-
+        
         labelPatterns.forEach(pattern => {
           cleanedContent = cleanedContent.replace(pattern, '');
         });
-
+        
         // Replace the div with inline styling and cleaned content
         const inlineDiv = item.match.replace(
           /class\s*=\s*["']([^"']*)["']/,
@@ -326,11 +285,11 @@ export class ArticleViewerComponent {
           /<strong[^>]*>.*?(?:Note|Warning|Caution):?\s*<\/strong>\s*/gi,
           /<p[^>]*>.*?<strong[^>]*>.*?(?:Note|Warning|Caution):?\s*<\/strong>\s*/gi
         ];
-
+        
         labelPatterns.forEach(pattern => {
           cleanedContent = cleanedContent.replace(pattern, '');
         });
-
+        
         // Not inside a card, create a new section card (without header since we're hiding it)
         const newCard = `<div class="section-card section-card-${config.type}" data-section-type="${config.type}">
           <div class="section-card-header" style="display: none;">
@@ -359,7 +318,7 @@ export class ArticleViewerComponent {
       html = html.replace(pattern, (match) => {
         if (match.includes('section-card')) return match;
         const config = this.getSectionConfig(type);
-
+        
         // Remove redundant labels from content
         let cleanedMatch = match;
         if (type === 'warning') {
@@ -369,7 +328,7 @@ export class ArticleViewerComponent {
           cleanedMatch = cleanedMatch.replace(/Note:\s*/gi, '');
           cleanedMatch = cleanedMatch.replace(/<strong[^>]*>.*?Note:?\s*<\/strong>\s*/gi, '');
         }
-
+        
         return `<div class="section-card section-card-${config.type}" data-section-type="${config.type}">
           <div class="section-card-header" style="display: none;">
             <span class="section-card-icon">${config.icon}</span>
@@ -390,14 +349,14 @@ export class ArticleViewerComponent {
     while ((match = headingRegex.exec(html)) !== null) {
       const headingText = match[2].replace(/<[^>]*>/g, '').trim();
       const startIndex = match.index;
-
+      
       // Find the end of this section (next heading of same or higher level, or end of HTML)
       let endIndex = html.length;
       const currentLevel = parseInt(match[1]);
       const nextHeadingRegex = /<h([1-6])[^>]*>/gi;
       let nextMatch;
       nextHeadingRegex.lastIndex = startIndex + match[0].length;
-
+      
       while ((nextMatch = nextHeadingRegex.exec(html)) !== null) {
         const nextLevel = parseInt(nextMatch[1]);
         if (nextLevel <= currentLevel) {
@@ -429,23 +388,23 @@ export class ArticleViewerComponent {
     // Process sections from end to start to maintain indices
     for (let i = sections.length - 1; i >= 0; i--) {
       const section = sections[i];
-
+      
       // Check if already in a card by looking backwards from the heading
       const beforeHeading = html.substring(0, section.startIndex);
       const lastCardOpen = beforeHeading.lastIndexOf('<div class="section-card');
       const lastCardClose = beforeHeading.lastIndexOf('</div>');
-
+      
       // If we're already inside a card, skip
       if (lastCardOpen > lastCardClose && lastCardOpen !== -1) {
         continue;
       }
-
+      
       // Also check if the section content itself is already wrapped
       const sectionHtml = html.substring(section.startIndex, section.endIndex);
       if (sectionHtml.trim().startsWith('<div class="section-card')) continue;
 
       const config = this.detectSectionType(section.text);
-
+      
       // Only wrap if it's not a general section, or if it's a procedure-related heading
       if (config.type === 'general') {
         // Check if it matches any procedure pattern
@@ -463,15 +422,15 @@ export class ArticleViewerComponent {
         config.title = matchedConfig.title;
         config.color = matchedConfig.color;
       }
-
+      
       // Extract the section content (everything after the heading until next section)
       // Exclude the heading itself since we're showing it in the card header
       const headingEndIndex = section.startIndex + section.fullMatch.length;
       const sectionContent = html.substring(headingEndIndex, section.endIndex).trim();
-
+      
       // Only wrap if there's actual content (not just the heading)
       if (!sectionContent) continue;
-
+      
       // Wrap in card
       const wrappedSection = `<div class="section-card section-card-${config.type}" data-section-type="${config.type}">
         <div class="section-card-header">
@@ -489,13 +448,13 @@ export class ArticleViewerComponent {
     // Step 4: Fallback - Look for procedure text patterns that might not be in headings
     // This catches cases where "Installation Procedure" etc. appear as plain text
     const procedureTextPatterns = [
-      {
-        pattern: /(?:<p[^>]*>|<div[^>]*>|<h[1-6][^>]*>).*?(?:Removal\s+Procedure|Remove\s+Procedure).*?(?:<\/p>|<\/div>|<\/h[1-6]>)/gi,
+      { 
+        pattern: /(?:<p[^>]*>|<div[^>]*>|<h[1-6][^>]*>).*?(?:Removal\s+Procedure|Remove\s+Procedure).*?(?:<\/p>|<\/div>|<\/h[1-6]>)/gi, 
         type: 'removal',
         title: 'Removal Procedure'
       },
-      {
-        pattern: /(?:<p[^>]*>|<div[^>]*>|<h[1-6][^>]*>).*?(?:Installation\s+Procedure|Install\s+Procedure).*?(?:<\/p>|<\/div>|<\/h[1-6]>)/gi,
+      { 
+        pattern: /(?:<p[^>]*>|<div[^>]*>|<h[1-6][^>]*>).*?(?:Installation\s+Procedure|Install\s+Procedure).*?(?:<\/p>|<\/div>|<\/h[1-6]>)/gi, 
         type: 'installation',
         title: 'Installation Procedure'
       },
@@ -505,13 +464,13 @@ export class ArticleViewerComponent {
     for (const { pattern, type, title } of procedureTextPatterns) {
       let match;
       const matches: Array<{ index: number; content: string }> = [];
-
+      
       while ((match = pattern.exec(html)) !== null) {
         // Check if already in a card
         const beforeMatch = html.substring(0, match.index);
         const lastCardOpen = beforeMatch.lastIndexOf('<div class="section-card');
         const lastCardClose = beforeMatch.lastIndexOf('</div>');
-
+        
         if (lastCardOpen <= lastCardClose || lastCardOpen === -1) {
           matches.push({ index: match.index, content: match[0] });
         }
@@ -521,7 +480,7 @@ export class ArticleViewerComponent {
       for (let i = matches.length - 1; i >= 0; i--) {
         const procMatch = matches[i];
         const startIndex = procMatch.index;
-
+        
         // Find content until next procedure or next heading
         let endIndex = html.length;
         const nextProcedureRegex = /(?:Removal\s+Procedure|Installation\s+Procedure|Install\s+Procedure|Remove\s+Procedure)/gi;
@@ -563,7 +522,7 @@ export class ArticleViewerComponent {
 
   private detectSectionType(text: string): { type: string; icon: string; title: string; color: string } {
     const lowerText = text.toLowerCase();
-
+    
     // More specific patterns first
     if (/\b(removal\s+procedure|remove\s+procedure|disassembly\s+procedure)\b/.test(lowerText)) {
       return this.getSectionConfig('removal');
@@ -595,7 +554,7 @@ export class ArticleViewerComponent {
     if (/\bimportant\b/.test(lowerText)) {
       return this.getSectionConfig('important');
     }
-
+    
     return this.getSectionConfig('general');
   }
 
@@ -611,7 +570,7 @@ export class ArticleViewerComponent {
       'important': { icon: '⭐', color: 'amber', title: 'Important' },
       'general': { icon: '📄', color: 'gray', title: 'Section' }
     };
-
+    
     const config = configs[type] || configs['general'];
     return { type, ...config };
   }
@@ -654,10 +613,10 @@ export class ArticleViewerComponent {
       // Extract headers from thead or first row
       const theadMatch = tableContent.match(/<thead[^>]*>([\s\S]*?)<\/thead>/i);
       const firstRowMatch = tableContent.match(/<tr[^>]*>([\s\S]*?)<\/tr>/i);
-
+      
       let headers: string[] = [];
       const headerSource = theadMatch ? theadMatch[1] : (firstRowMatch ? firstRowMatch[1] : '');
-
+      
       if (headerSource) {
         // Extract th or td elements from header row
         const cellMatches = headerSource.match(/<(th|td)[^>]*>(.*?)<\/\1>/gi);
@@ -675,7 +634,7 @@ export class ArticleViewerComponent {
       let isFirstDataRow = !theadMatch; // If no thead, first row is headers
       let rowIndex = 0;
       const rowIds: string[] = [];
-
+      
       if (headers.length > 0) {
         // Process each row
         processedContent = processedContent.replace(/<tr([^>]*)>([\s\S]*?)<\/tr>/gi, (rowMatch, rowAttrs, rowContent) => {
@@ -683,7 +642,7 @@ export class ArticleViewerComponent {
           if (theadMatch && rowContent.includes('<th')) {
             return rowMatch;
           }
-
+          
           // Mark first data row as header row if no thead exists
           let newRowAttrs = rowAttrs;
           if (isFirstDataRow && !theadMatch) {
@@ -691,14 +650,14 @@ export class ArticleViewerComponent {
             isFirstDataRow = false;
             return rowMatch; // Skip this row
           }
-
+          
           // Add ID to row for navigation
           const rowId = `table-row-${Date.now()}-${rowIndex++}`;
           rowIds.push(rowId);
           if (!newRowAttrs.includes('id=')) {
             newRowAttrs = (newRowAttrs || '') + ` id="${rowId}"`;
           }
-
+          
           // Process each td in this row
           let cellIndex = 0;
           const processedRow = rowContent.replace(/<td([^>]*)>(.*?)<\/td>/gi, (tdMatch, tdAttrs, tdContent) => {
@@ -710,11 +669,11 @@ export class ArticleViewerComponent {
               const labelMatch = tdAttrs.match(/data-label=["']([^"']+)["']/);
               if (labelMatch) label = labelMatch[1];
             }
-
+            
             // Consolidate "STEP" labels with numbers and remove redundant labels
             let processedContent = tdContent.trim();
             const cleanLabel = label.toUpperCase().trim();
-
+            
             // If label is "STEP" and content is just a number, combine them
             if (cleanLabel === 'STEP' || cleanLabel === 'STEP:') {
               const numberMatch = processedContent.match(/^\s*(\d+)\s*$/);
@@ -722,14 +681,14 @@ export class ArticleViewerComponent {
                 // Content is just a number - combine with STEP label
                 processedContent = `<span class="step-number">${numberMatch[1]}</span>`;
                 label = 'STEP';
-              } else if (processedContent.match(/^(go\s+to\s+)?step\s*\d+/i) ||
-                processedContent.match(/^step\s*\d+/i) ||
-                processedContent.length === 0) {
+              } else if (processedContent.match(/^(go\s+to\s+)?step\s*\d+/i) || 
+                         processedContent.match(/^step\s*\d+/i) ||
+                         processedContent.length === 0) {
                 // Content already has step info or is empty - remove redundant label
                 label = '';
               }
             }
-
+            
             // Remove label if cell content is empty or just whitespace
             const textContent = processedContent.replace(/<[^>]*>/g, '').trim();
             if (!textContent || textContent.length === 0) {
@@ -737,7 +696,7 @@ export class ArticleViewerComponent {
               // Hide completely empty cells
               return `<td${tdAttrs} style="display: none;">${processedContent}</td>`;
             }
-
+            
             // Only add data-label if we have one and it's not redundant
             if (label && !tdAttrs.includes('data-label')) {
               return `<td${tdAttrs} data-label="${label}">${processedContent}</td>`;
@@ -750,11 +709,11 @@ export class ArticleViewerComponent {
               const newAttrs = tdAttrs.replace(/\s*data-label=["'][^"']+["']/, '');
               return `<td${newAttrs}>${processedContent}</td>`;
             }
-
+            
             cellIndex++;
             return `<td${tdAttrs}>${processedContent}</td>`;
           });
-
+          
           return `<tr${newRowAttrs}>${processedRow}</tr>`;
         });
       }
@@ -773,5 +732,6 @@ export class ArticleViewerComponent {
 
       return `<div class="table-wrapper-mobile"><table${tableAttrs}>${finalContent}</table></div>`;
     });
+>>>>>>> b1a1ba7 (Remove frontend authentication - proxy handles auth to Motor API)
   }
 }

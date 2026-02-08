@@ -52,7 +52,12 @@ export class MaintenanceSectionComponent implements OnInit {
             this.motorVehicleId,
             this.selectedInterval(),
             this.isLoading,
-            (data) => this.schedules.set(data)
+            (data) => this.schedules.set(data),
+            (error) => {
+                console.error('Failed to load maintenance schedules', error);
+                // Ensure loading state is cleared even if service didn't handle it
+                this.isLoading.set(false);
+            }
         );
     }
 }

@@ -43,7 +43,11 @@ export class DiagramsSectionComponent implements OnInit {
             this.vehicleId,
             this.motorVehicleId,
             this.isLoading,
-            (data) => this.diagrams.set(data)
+            (data) => this.diagrams.set(data),
+            (error) => {
+                console.error('Failed to load diagrams', error);
+                this.isLoading.set(false);
+            }
         );
     }
 
