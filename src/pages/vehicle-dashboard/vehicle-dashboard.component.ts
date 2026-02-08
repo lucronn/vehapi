@@ -32,6 +32,7 @@ import { LucideAngularModule, Menu, X, House, TriangleAlert, FileText, Wrench, P
 
 // Local Components
 import { LogoComponent } from '../../components/logo/logo.component';
+import { OrientationSelectorModalComponent, OrientationOption } from '../../components/orientation-selector-modal/orientation-selector-modal.component';
 
 export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'component-locations' | 'procedures' | 'parts' | 'specs' | 'maintenance' | 'browse-all';
 
@@ -58,7 +59,8 @@ export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'comp
     MaintenanceSectionComponent,
     PartsSectionComponent,
     CommonIssuesSectionComponent,
-    LogoComponent
+    LogoComponent,
+    OrientationSelectorModalComponent
   ],
 })
 export class VehicleDashboardComponent {
@@ -172,6 +174,11 @@ export class VehicleDashboardComponent {
   // UI State
   activeSection = signal<DashboardSection>('overview');
   isMobileMenuOpen = signal(false);
+
+  // Orientation Selection State
+  showOrientationModal = signal(false);
+  orientationOptions = signal<OrientationOption[]>([]);
+  pendingArticleId = signal<string | null>(null);
   selectedBrowseFilter = signal<string | null>(null); // For browse-all filter pills
 
   // Search state
@@ -245,5 +252,50 @@ export class VehicleDashboardComponent {
   // Filter pills for browse-all
   setBrowseFilter(filterTab: string | null): void {
     this.selectedBrowseFilter.set(filterTab);
+  }
+
+  // Orientation Selection
+  onArticleClick(event: Event, articleId: string): void {
+    // Check if this article needs orientation selection
+    // Article ID "-999" or similar indicates orientation required
+    if (articleId === '-999' || articleId.includes('SelectOrientation')) {
+      event.preventDefault();
+      this.loadOrientationOptions(articleId);
+    }
+  }
+
+  private loadOrientationOptions(articleId: string): void {
+    // In production this would call the Motor API to get orientations
+    // For now, we'll show a placeholder
+    // TODO: Implement Motor API call to /api/source/{}/vehicle/{}/article/{}/orientations
+
+    const cs = this.contentSource();
+    const vid = this.vehicleId();
+
+    // Mock orientation options (this should come from API)
+    this.orientationOptions.set([
+      { id: 'P:539447705', displayName: '3.5L V6 DOHC', qualifier: '290 HP' },
+      { id: 'P:539447706', displayName: '3.7L V6 Flexfuel', qualifier: '305 HP' },
+      { id: 'P:539447707', displayName: '3.5L V6 EcoBoost', qualifier: '365 HP - Police Package' },
+      { id: 'P:539447708', displayName: '2.0L I4 EcoBoost', qualifier: '240 HP' }
+    ]);
+
+    this.pendingArticleId.set(articleId);
+    this.showOrientationModal.set(true);
+  }
+
+  onOrientationSelected(option: OrientationOption): void {
+    this.showOrientationModal.set(false);
+
+    // Navigate to the article with the selected orientation ID
+    const cs = this.contentSource();
+    const vid = this.vehicleId();
+    this.router.navigate(['/vehicle', cs, vid, 'article', option.id]);
+  }
+
+  closeOrientationModal(): void {
+    this.showOrientationModal.set(false);
+    this.orientationOptions.set([]);
+    this.pendingArticleId.set(null);
   }
 }

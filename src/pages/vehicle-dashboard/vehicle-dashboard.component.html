@@ -72,6 +72,7 @@
         <div class="max-h-64 overflow-y-auto px-2 py-2">
           @for (article of filteredArticles().slice(0, 15); track article.id) {
           <a [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', article.id]"
+            (click)="onArticleClick($event, article.id)"
             class="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-all group">
             <div
               class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[hsl(var(--text-muted))] group-hover:bg-[hsl(var(--accent-cyan)/0.1)] group-hover:text-[hsl(var(--accent-cyan))] transition-colors">
@@ -85,6 +86,12 @@
       </div>
       }
     </div>
+
+    <!-- Orientation Selector Modal -->
+    @if (showOrientationModal()) {
+    <app-orientation-selector-modal [options]="orientationOptions()" (selectOrientation)="onOrientationSelected($event)"
+      (close)="closeOrientationModal()"></app-orientation-selector-modal>
+    }
 
     <!-- Active Unit Intelligence -->
     <div class="max-w-[1600px] mx-auto space-y-12">
