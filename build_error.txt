@@ -1,0 +1,395 @@
+﻿
+> torque@0.0.0 build
+> ng build
+
+node.exe : Node.js 
+version v25.4.0 
+detected.
+At line:1 char:1
++ & "C:\Program Files\
+nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: (Node.js ve   
+ rsion v25.4.0 det    
+ected.:String) []    
+, RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+Odd numbered Node.js 
+versions will not 
+enter LTS status and 
+should not be used 
+for production. For 
+more information, 
+please see https://nod
+ejs.org/en/about/previ
+ous-releases/.
+[33mΓ¥»[39m Building...
+[32mΓ£ö[39m Building...
+Application bundle generation failed. [4.767 seconds] - 2026-02-08T07:25:17.053Z
+
+[1m[33m[33mΓû▓ [43
+;33m[[43;30mWARNING[
+43;33m][0m 
+[1mExpected 
+identifier but found 
+"10px"[0m 
+[css-syntax-error]
+
+    
+src/styles.css:576:9:
+[37m      576 Γöé   .
+text-[[32m10px[37m],
+          Γò╡         
+ [32m~~~~[0m
+
+
+[33mΓû▓ [43;33m[[43
+;30mWARNING[43;33m][
+0m [1mExpected 
+identifier but found 
+"10px"[0m 
+[css-syntax-error]
+
+    src/styles.css:263
+5:20:
+[37m      2635 Γöé .h
+over\:text-:hover[[32
+m10px[37m],.hover\:te
+xt-:hover[8px] {
+           Γò╡        
+             
+[32m~~~~[0m
+
+
+[33mΓû▓ [43;33m[[43
+;30mWARNING[43;33m][
+0m [1mExpected 
+identifier but found 
+"10px"[0m 
+[css-syntax-error]
+
+    src/styles.css:263
+9:47:
+[37m      2639 Γöé 
+...n .group-focus-with
+in\:text-[[32m10px[3
+7m],.group:focus-withi
+n .group...
+           Γò╡        
+                      
+   [32m~~~~[0m
+
+
+[33mΓû▓ [43;33m[[43
+;30mWARNING[43;33m][
+0m [1mExpected 
+identifier but found 
+"10px"[0m 
+[css-syntax-error]
+
+    src/styles.css:264
+3:45:
+[37m      2643 Γöé 
+...er .group-hover\/it
+em\:text-[[32m10px[3
+7m],.group\/item:hover
+ .group-...
+           Γò╡        
+                      
+   [32m~~~~[0m
+
+
+[33mΓû▓ [43;33m[[43
+;30mWARNING[43;33m][
+0m [1mExpected 
+identifier but found 
+"10px"[0m 
+[css-syntax-error]
+
+    src/styles.css:264
+7:33:
+[37m      2647 Γöé 
+...up:hover .group-hov
+er\:text-[[32m10px[3
+7m],.group:hover 
+.group-hover\...
+           Γò╡        
+                      
+   [32m~~~~[0m
+
+
+[33mΓû▓ [43;33m[[43
+;30mWARNING[43;33m][
+0m [1mExpected 
+identifier but found 
+"10px"[0m 
+[css-syntax-error]
+
+    src/styles.css:265
+1:45:
+[37m      2651 Γöé 
+...er .group-hover\/it
+em\:text-[[32m10px[3
+7m],.group\/item:hover
+ .group-...
+           Γò╡        
+                      
+   [32m~~~~[0m
+
+
+[33mΓû▓ [43;33m[[43
+;30mWARNING[43;33m][
+0m [1mExpected 
+identifier but found 
+"10px"[0m 
+[css-syntax-error]
+
+    src/styles.css:265
+5:33:
+[37m      2655 Γöé 
+...up:hover .group-hov
+er\:text-[[32m10px[3
+7m],.group:hover 
+.group-hover\...
+           Γò╡        
+                      
+   [32m~~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;3
+1m[[41;97mERROR[41;3
+1m][0m [1mTS2307: 
+Cannot find module '..
+/../services/gemini.se
+rvice' or its 
+corresponding type 
+declarations.[0m 
+[1m[35m[plugin 
+angular-compiler][0m
+
+    src/pages/article-
+viewer/article-viewer.
+component.ts:10:30:
+[37m      10 Γöé 
+import { 
+GeminiService } from 
+[32m'../../services/ge
+mini.service'[37m;
+         Γò╡          
+                     
+[32m~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;9
+7mERROR[41;31m][0m 
+[1mTS2307: Cannot 
+find module './compone
+nts/procedure-stepper/
+procedure-stepper.comp
+onent' or its 
+corresponding type 
+declarations.[0m 
+[1m[35m[plugin 
+angular-compiler][0m
+
+    src/pages/article-
+viewer/article-viewer.
+component.ts:12:57:
+[37m      12 Γöé 
+...ep } from [32m'./c
+omponents/procedure-st
+epper/procedure-steppe
+r.com[37m...
+         Γò╡          
+    [32m~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;9
+7mERROR[41;31m][0m 
+[1mNG1010: 'imports' 
+must be an array of 
+components, 
+directives, pipes, or 
+NgModules.
+  Value could not be 
+determined 
+statically.[0m 
+[1m[35m[plugin 
+angular-compiler][0m
+
+    src/pages/article-
+viewer/article-viewer.
+component.ts:20:40:
+[37m      20 Γöé   
+imports: 
+[CommonModule, 
+RouterModule, [32mPro
+cedureStepperComponent
+[37m],
+         Γò╡          
+                      
+         [32m~~~~~~~~
+~~~~~~~~~~~~~~~~~[0m
+
+  Unknown reference.
+
+    src/pages/article-
+viewer/article-viewer.
+component.ts:20:40:
+[37m      20 Γöé   
+imports: 
+[CommonModule, 
+RouterModule, [32mPro
+cedureStepperComponent
+[37m],
+         Γò╡          
+                      
+         [32m~~~~~~~~
+~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;9
+7mERROR[41;31m][0m 
+[1mTS2339: Property 
+'aiEnabled' does not 
+exist on type 
+'unknown'.[0m 
+[1m[35m[plugin 
+angular-compiler][0m
+
+    src/pages/article-
+viewer/article-viewer.
+component.ts:75:31:
+[37m      75 Γöé     
+        if (this.gemin
+iApi.[32maiEnabled[3
+7m()) {
+         Γò╡          
+                      
+[32m~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;9
+7mERROR[41;31m][0m 
+[1mTS2339: Property 
+'rewriteArticle' does 
+not exist on type 
+'unknown'.[0m 
+[1m[35m[plugin 
+angular-compiler][0m
+
+    src/pages/article-
+viewer/article-viewer.
+component.ts:79:36:
+[37m      79 Γöé ... 
+  return this.geminiAp
+i.[32mrewriteArticle
+[37m(titleText, 
+processed.co...
+         Γò╡          
+                   [3
+2m~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;9
+7mERROR[41;31m][0m 
+[1mTS2345: Argument 
+of type 'unknown' is 
+not assignable to 
+parameter of type 
+'string'.[0m 
+[1m[35m[plugin 
+angular-compiler][0m
+
+    src/pages/article-
+viewer/article-viewer.
+component.ts:81:73:
+[37m      81 Γöé 
+...t 
+processedRewritten = t
+his.processAndSanitize
+Html([32mrewrittenHtm
+l[37m);
+         Γò╡          
+                      
+                      
+ 
+[32m~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;9
+7mERROR[41;31m][0m 
+[1mTS1185: Merge 
+conflict marker 
+encountered.[0m 
+[1m[35m[plugin 
+angular-compiler][0m
+
+    src/pages/article-
+viewer/article-viewer.
+component.ts:735:0:
+[37m      735 Γöé 
+[32m>>>>>>>[37m 
+b1a1ba7 (Remove 
+frontend 
+authentication - 
+proxy handles a...
+          Γò╡ 
+[32m~~~~~~~[0m
+
+
+[31mX [41;31m[[41;9
+7mERROR[41;31m][0m 
+[1mCould not resolve 
+"../../services/gemini
+.service"[0m
+
+    src/pages/article-
+viewer/article-viewer.
+component.ts:9:30:
+[37m      9 Γöé 
+import { 
+GeminiService } from 
+[32m'../../services/ge
+mini.service'[37m;
+        Γò╡           
+                    [
+32m~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;9
+7mERROR[41;31m][0m 
+[1mCould not resolve 
+"./components/procedur
+e-stepper/procedure-st
+epper.component"[0m
+
+    src/pages/article-
+viewer/article-viewer.
+component.ts:11:57:
+[37m      11 Γöé 
+...ep } from [32m'./c
+omponents/procedure-st
+epper/procedure-steppe
+r.com[37m...
+         Γò╡          
+    [32m~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
