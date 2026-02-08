@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams, HttpRequest, HttpEvent } from '@angular/common/http';
 import { Observable, map, of, tap, catchError, timeout } from 'rxjs';
+import { OrientationOption } from '../components/orientation-selector-modal/orientation-selector-modal.component';
 import {
   ApiResponse,
   ArticlesData,
@@ -205,6 +206,16 @@ export class MotorApiService {
   }
 
   // Specific Data Endpoints
+
+  getArticleOrientations(
+    contentSource: string,
+    vehicleId: string,
+    articleId: string
+  ): Observable<ApiResponse<{ orientations: OrientationOption[], total: number }>> {
+    const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/article/${articleId}/orientations`;
+    this.logRequest('GET', url);
+    return this.getWithLogging<ApiResponse<{ orientations: OrientationOption[], total: number }>>(url);
+  }
 
   getFluids(contentSource: string, vehicleId: string): Observable<ApiResponse<FluidsResponse>> {
     const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/fluids`;

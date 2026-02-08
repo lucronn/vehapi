@@ -83,11 +83,20 @@ export class SearchResultsState {
                 });
             });
 
-        // Filter out empty buckets
+        // Filter out empty buckets, BUT preserve important categories even if empty
+        // This ensures Diagnostics/DTCs always show up in Browse All even if no articles yet loaded
+        const importantBuckets = ['Diagnostics', 'Diagnostic Trouble Codes', 'DTCs', 'Fault Codes'];
+
         bucketList = bucketList.filter(
-            (bucketArticles) =>
-                bucketArticles.articles.length > 0 ||
-                (bucketArticles.isParent === true && bucketArticles.children?.some((item) => item.articles.length > 0))
+            (bucketArticles) => {
+                const hasArticles = bucketArticles.articles.length > 0 ||
+                    (bucketArticles.isParent === true && bucketArticles.children?.some((item) => item.articles.length > 0));
+
+                const isImportantCategory = importantBuckets.includes(bucketArticles.bucketName) ||
+                    importantBuckets.includes(bucketArticles.bucketFilterCategory);
+
+                return hasArticles || isImportantCategory;
+            }
         );
 
         // Sort
