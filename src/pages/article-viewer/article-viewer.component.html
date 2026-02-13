@@ -1,41 +1,40 @@
-<div class="min-h-screen bg-[hsl(var(--bg-deep))] text-white flex flex-col">
+<div class="min-h-screen flex flex-col" style="background:var(--bg);color:var(--text-primary)">
   <!-- Header -->
-  <header class="sticky top-0 z-50 border-b border-white/5 bg-[hsl(var(--bg-deep))]/80 backdrop-blur-xl">
-    <div class="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+  <!-- Header (Only show if not in window mode) -->
+  @if (!articleId) {
+  <header class="sticky top-0 z-50" style="background:var(--bg-surface);border-bottom:1px solid var(--border)">
+    <div class="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
       <a [routerLink]="['/vehicle', contentSource(), vehicleId()]"
-        class="group flex items-center gap-2 text-[hsl(var(--text-muted))] hover:text-white text-xs uppercase tracking-wider transition-all">
+        class="group flex items-center gap-2 text-xs font-medium transition-all" style="color:var(--text-muted)">
         <lucide-icon [img]="icons.ArrowLeft"
           class="w-4 h-4 group-hover:-translate-x-1 transition-transform"></lucide-icon>
         <span class="hidden sm:inline">Dashboard</span>
       </a>
 
-      <div class="flex items-center gap-4">
-        <div class="hidden sm:block text-[10px] uppercase tracking-widest text-[hsl(var(--text-muted))]">
-          Technical Document
-        </div>
+      <div class="flex items-center gap-3">
         @if (sections().length > 0) {
-        <button (click)="toggleMobileToc()"
-          class="lg:hidden p-2 hover:bg-white/10 rounded-lg transition-colors text-white">
+        <button (click)="toggleMobileToc()" class="lg:hidden btn-ghost p-2 rounded-lg">
           <lucide-icon [img]="isMobileTocOpen() ? icons.X : icons.List" class="w-5 h-5"></lucide-icon>
         </button>
         }
       </div>
     </div>
   </header>
+  }
 
   <!-- Mobile TOC Overlay -->
   @if (isMobileTocOpen()) {
-  <div class="fixed inset-0 z-[60] bg-[hsl(var(--bg-deep))] lg:hidden pt-24 px-6 animate-fade-in overflow-y-auto">
-    <h3
-      class="text-sm font-bold text-white uppercase tracking-wider mb-6 flex items-center gap-2 border-b border-white/10 pb-4">
-      <span class="w-1.5 h-1.5 rounded-full bg-[hsl(var(--accent-cyan))]"></span>
-      Table of Contents
+  <div class="fixed inset-0 z-[60] lg:hidden pt-20 px-5 animate-fade-in overflow-y-auto" style="background:var(--bg)">
+    <h3 class="text-sm font-bold uppercase tracking-wide mb-5 flex items-center gap-2 pb-3"
+      style="color:var(--text-primary);border-bottom:1px solid var(--border)">
+      <span class="w-1.5 h-1.5 rounded-full" style="background:var(--primary)"></span>
+      Contents
     </h3>
-    <nav class="flex flex-col space-y-1 pb-12">
+    <nav class="flex flex-col space-y-0.5 pb-12">
       @for (section of sections(); track section.id) {
-      <button (click)="scrollToSection(section.id)"
-        class="text-left py-3 px-3 text-sm text-[hsl(var(--text-secondary))] hover:text-white rounded-lg transition-all border-l-2 border-transparent focus:bg-white/5 active:bg-white/5"
-        [class.pl-3]="section.level === 1" [class.pl-6]="section.level === 2" [class.pl-9]="section.level === 3">
+      <button (click)="scrollToSection(section.id)" class="text-left py-2.5 px-3 text-sm rounded-lg transition-all"
+        style="color:var(--text-secondary)" [class.pl-3]="section.level === 1" [class.pl-6]="section.level === 2"
+        [class.pl-9]="section.level === 3">
         {{ section.title }}
       </button>
       }
@@ -43,48 +42,46 @@
   </div>
   }
 
-  <!-- Content Grid -->
+  <!-- Content -->
   <main class="flex-1 overflow-x-hidden">
-    <div class="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-      @if (articleData()) {
+    <div class="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+      @if (!isLoading() && articleContent()) {
       <div class="flex flex-col lg:flex-row gap-8 lg:gap-12 relative animate-fade-in">
 
-        <!-- Main Article Content -->
+        <!-- Main Article -->
         <div class="flex-1 min-w-0">
-          <!-- Title Section -->
-          <div class="mb-8 border-b border-white/10 pb-6">
-            <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-white mb-4 leading-tight">
+          <div class="mb-8 pb-5" style="border-bottom:1px solid var(--border)">
+            <h1 class="text-2xl sm:text-3xl font-bold tracking-tight mb-3 leading-tight"
+              style="color:var(--text-primary)">
               {{ articleTitle() }}
             </h1>
             <div class="flex items-center gap-3">
-              <div
-                class="h-1 w-12 bg-gradient-to-r from-[hsl(var(--accent-cyan))] to-[hsl(var(--accent-violet))] rounded-full">
-              </div>
+              <div class="h-0.5 w-10 rounded-full" style="background:var(--primary)"></div>
               @if (params()?.get('articleId'); as id) {
-              <span class="text-xs font-mono text-white/30 uppercase tracking-widest">ID: {{ id }}</span>
+              <span class="text-xs font-mono" style="color:var(--text-muted)">{{ id }}</span>
               }
             </div>
           </div>
 
-          <!-- Content -->
           <article class="article-content" [innerHTML]="articleContent()" (click)="onContentClick($event)"></article>
         </div>
 
-        <!-- Sidebar / Appendix -->
+        <!-- Desktop TOC Sidebar -->
         @if (sections().length > 0) {
         <aside class="lg:w-72 xl:w-80 flex-shrink-0 hidden lg:block">
-          <div class="sticky top-28 p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
-            <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
-              <span class="w-1.5 h-1.5 rounded-full bg-[hsl(var(--accent-cyan))]"></span>
+          <div class="sticky top-20 card p-5">
+            <h3 class="text-sm font-bold uppercase tracking-wide mb-4 flex items-center gap-2"
+              style="color:var(--text-primary)">
+              <span class="w-1.5 h-1.5 rounded-full" style="background:var(--primary)"></span>
               Contents
             </h3>
 
-            <nav class="flex flex-col max-h-[calc(100vh-12rem)] overflow-y-auto custom-scrollbar pr-2">
+            <nav class="flex flex-col max-h-[calc(100vh-12rem)] overflow-y-auto pr-2">
               @for (section of sections(); track section.id) {
               <button (click)="scrollToSection(section.id)"
-                class="text-left py-2 px-3 text-sm text-[hsl(var(--text-muted))] hover:text-white hover:bg-white/5 rounded-lg transition-all border-l-2 border-transparent hover:border-[hsl(var(--accent-cyan))] truncate"
-                [class.pl-3]="section.level === 1" [class.pl-6]="section.level === 2"
-                [class.pl-9]="section.level === 3">
+                class="text-left py-2 px-3 text-sm rounded-lg transition-all truncate"
+                style="color:var(--text-muted);border-left:2px solid transparent" [class.pl-3]="section.level === 1"
+                [class.pl-6]="section.level === 2" [class.pl-9]="section.level === 3">
                 {{ section.title }}
               </button>
               }
@@ -92,21 +89,19 @@
           </div>
         </aside>
         }
-
-        <!-- Mobile Floating TOC Button (Removed, moved to header) -->
       </div>
       } @else {
       <!-- Loading State -->
       <div class="max-w-3xl mx-auto space-y-8 animate-pulse">
         <div class="space-y-3">
-          <div class="h-10 bg-white/5 rounded-2xl w-3/4"></div>
-          <div class="h-1 bg-white/5 rounded-full w-16"></div>
+          <div class="h-10 rounded-xl w-3/4" style="background:var(--bg-muted)"></div>
+          <div class="h-1 rounded-full w-16" style="background:var(--bg-muted)"></div>
         </div>
         <div class="space-y-4">
-          <div class="h-4 bg-white/5 rounded-full w-full"></div>
-          <div class="h-4 bg-white/5 rounded-full w-5/6"></div>
-          <div class="h-4 bg-white/5 rounded-full w-4/6"></div>
-          <div class="h-64 bg-white/5 rounded-3xl mt-8"></div>
+          <div class="h-4 rounded-full w-full" style="background:var(--bg-muted)"></div>
+          <div class="h-4 rounded-full w-5/6" style="background:var(--bg-muted)"></div>
+          <div class="h-4 rounded-full w-4/6" style="background:var(--bg-muted)"></div>
+          <div class="h-64 rounded-2xl mt-8" style="background:var(--bg-muted)"></div>
         </div>
       </div>
       }

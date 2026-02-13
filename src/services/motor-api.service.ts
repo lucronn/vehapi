@@ -47,7 +47,8 @@ import {
 @Injectable({ providedIn: 'root' })
 export class MotorApiService {
   private http = inject(HttpClient);
-  public readonly baseUrl = 'https://motorapiauthproxy-yonqvhjh7a-uc.a.run.app';
+  // public readonly baseUrl = 'https://motorapiauthproxy-yonqvhjh7a-uc.a.run.app';
+  public readonly baseUrl = 'https://vehapiproxi.vercel.app';
 
   // Cache for article searches to prevent redundant API calls
   private articleCache = new Map<string, ApiResponse<ArticlesData>>();
@@ -161,7 +162,7 @@ export class MotorApiService {
     return this.getWithLogging<ApiResponse<Make[]>>(url);
   }
 
-  getModels(year: number, make: string): Observable<ApiResponse<ModelsData>> {
+  getModels(year: number, make: string | number): Observable<ApiResponse<ModelsData>> {
     const url = `${this.baseUrl}/api/year/${year}/make/${make}/models`;
     return this.getWithLogging<ApiResponse<ModelsData>>(url);
   }
@@ -741,10 +742,10 @@ export class MotorApiService {
   /**
    * Get motor models for a given year and make
    * @param year Year
-   * @param make Make name
+   * @param make Make name or make ID (numeric)
    * @returns Observable of ModelAndVehicleIdListResponse
    */
-  getMotorModels(year: number, make: string): Observable<ApiResponse<ModelAndVehicleIdListResponse>> {
+  getMotorModels(year: number, make: string | number): Observable<ApiResponse<ModelAndVehicleIdListResponse>> {
     const url = `${this.baseUrl}/api/motor/year/${year}/make/${make}/models`;
     return this.getWithLogging<ApiResponse<ModelAndVehicleIdListResponse>>(url);
   }

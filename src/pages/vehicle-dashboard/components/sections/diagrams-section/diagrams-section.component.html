@@ -3,51 +3,46 @@
     <app-loading-skeleton type="grid" [count]="6"></app-loading-skeleton>
     }
     @else if (diagrams().length === 0) {
-    <app-empty-state message="No diagrams found"
-        submessage="Wiring diagrams and component locations may not be available" icon="package">
+    <app-empty-state message="No Diagrams" submessage="Wiring diagrams are not available for this vehicle."
+        icon="package">
     </app-empty-state>
     }
     @else {
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         @for (diagram of diagrams(); track trackById($index, diagram)) {
         <a [routerLink]="['/vehicle', contentSource, vehicleId, 'article', diagram.id]"
-            class="glass-card p-4 block hover:shadow-lg hover:shadow-cyan-500/10 transition-all group animate-fade-in-up"
+            class="card block transition-all group animate-fade-in-up overflow-hidden"
             [style.animation-delay]="$index * 50 + 'ms'">
             <div class="flex flex-col h-full">
-                <!-- Thumbnail or Icon -->
-                <div class="mb-3">
+                <!-- Thumbnail -->
+                <div class="aspect-video relative overflow-hidden flex items-center justify-center"
+                    style="background:var(--bg-muted)">
                     @if (diagram.thumbnailHref) {
-                    <img [src]="getThumbnailUrl(diagram.thumbnailHref)" [alt]="diagram.title || 'Diagram thumbnail'"
-                        class="w-full h-32 object-cover border border-cyan-500/30 rounded group-hover:border-cyan-500/50 transition-colors mb-2"
+                    <img [src]="getThumbnailUrl(diagram.thumbnailHref)" [alt]="diagram.title || 'Diagram'"
+                        class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
                         (error)="$event.target.style.display='none'" />
                     } @else {
-                    <div
-                        class="w-full h-32 flex items-center justify-center bg-gray-800 border border-cyan-500/30 rounded group-hover:border-cyan-500/50 transition-colors mb-2">
-                        <lucide-icon [img]="icons.Cable"
-                            class="w-8 h-8 text-purple-500 group-hover:text-purple-400 transition-colors">
-                        </lucide-icon>
-                    </div>
+                    <lucide-icon [img]="icons.Cable" class="w-8 h-8 transition-colors" style="color:var(--text-muted)">
+                    </lucide-icon>
                     }
                 </div>
-                <div class="flex items-start gap-3 mb-3">
-                    <div class="flex-shrink-0">
-                        <lucide-icon [img]="icons.Cable"
-                            class="w-5 h-5 text-purple-500 group-hover:text-purple-400 transition-colors">
+
+                <div class="p-4 space-y-2">
+                    <div class="flex items-start gap-2">
+                        <lucide-icon [img]="icons.Cable" class="w-4 h-4 flex-shrink-0 mt-0.5"
+                            style="color:var(--primary)">
                         </lucide-icon>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <h3
-                            class="font-semibold text-white group-hover:text-cyan-400 transition-colors text-sm line-clamp-2">
+                        <h3 class="font-semibold text-sm line-clamp-2" style="color:var(--text-primary)">
                             {{ diagram.title || diagram.name || 'Diagram' }}
                         </h3>
                     </div>
+                    @if (isWiringDiagram(diagram) && diagram.diagramType) {
+                    <span class="inline-block text-xs px-2 py-0.5 rounded"
+                        style="background:var(--bg-muted);color:var(--text-muted);border:1px solid var(--border)">
+                        {{ diagram.diagramType }}
+                    </span>
+                    }
                 </div>
-                @if (isWiringDiagram(diagram) && diagram.diagramType) {
-                <span
-                    class="inline-block text-xs px-2 py-0.5 bg-black border border-cyan-500/20 rounded text-gray-400 self-start">
-                    {{ diagram.diagramType }}
-                </span>
-                }
             </div>
         </a>
         }

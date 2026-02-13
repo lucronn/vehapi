@@ -1,86 +1,67 @@
-<div class="space-y-12 animate-fade-in">
-    <!-- Loading State -->
-    @if (isLoading()) {
-    <app-loading-skeleton type="grid" [count]="2"></app-loading-skeleton>
-    }
-
-    <!-- Empty State -->
-    @else if (specs().length === 0 && fluids().length === 0) {
-    <app-empty-state icon="info" message="No Specifications Found"
-        submessage="Vital statistics are not available for this unit configuration.">
-    </app-empty-state>
-    }
-
-    <!-- Data Display -->
-    @else {
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
-        <!-- Key Specifications (Documents) -->
-        @if (specs().length > 0) {
-        <div class="space-y-6">
-            <div class="flex items-center gap-3 mb-8">
-                <div
-                    class="w-8 h-8 rounded-lg bg-[hsl(var(--accent-cyan)/0.1)] flex items-center justify-center text-[hsl(var(--accent-cyan))]">
-                    <lucide-icon [img]="icons.Gauge" class="w-4 h-4"></lucide-icon>
-                </div>
-                <h3 class="text-[10px] uppercase font-black tracking-[0.4em] text-white">Specifications</h3>
-            </div>
-
-            <div class="glass-card overflow-hidden">
-                @for (spec of specs(); track trackByTitle($index, spec)) {
-                <a [routerLink]="['/vehicle', contentSource, vehicleId, 'article', spec.id]"
-                    class="flex justify-between items-center px-6 py-4 border-b border-white/5 last:border-0 hover:bg-white/[0.05] transition-all group cursor-pointer relative overflow-hidden animate-fade-in-up"
-                    [style.animation-delay]="$index * 50 + 'ms'">
-                    <div
-                        class="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.02] to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000">
-                    </div>
-                    <span
-                        class="text-xs uppercase tracking-widest text-[hsl(var(--text-muted))] font-bold group-hover:text-white transition-colors flex-1 truncate mr-4">{{
-                        spec.title }}</span>
-                    <lucide-icon [img]="icons.ChevronRight"
-                        class="w-4 h-4 text-white/30 group-hover:text-[hsl(var(--accent-cyan))] transition-colors"></lucide-icon>
-                </a>
-                }
-            </div>
+@if (specs().length > 0) {
+<div class="space-y-6">
+    <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+            style="background:rgba(0,212,255,0.1);color:hsl(191,97%,50%)">
+            <lucide-icon [img]="icons.Gauge" class="w-4 h-4"></lucide-icon>
         </div>
-        }
+        <h3 class="text-xs uppercase font-bold tracking-wide" style="color:var(--text-muted)">Specifications</h3>
+    </div>
 
-        <!-- Fluid Capacities -->
-        @if (fluids().length > 0) {
-        <div class="space-y-6">
-            <div class="flex items-center gap-3 mb-8">
-                <div
-                    class="w-8 h-8 rounded-lg bg-[hsl(var(--accent-violet)/0.1)] flex items-center justify-center text-[hsl(var(--accent-violet))]">
-                    <lucide-icon [img]="icons.Droplets" class="w-4 h-4"></lucide-icon>
-                </div>
-                <h3 class="text-[10px] uppercase font-black tracking-[0.4em] text-white">Fluid Capacities</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        @for (spec of specs(); track trackByTitle($index, spec)) {
+        <a [routerLink]="['/vehicle', contentSource, vehicleId, 'article', spec.id]"
+            class="card flex justify-between items-center px-4 py-4 transition-all group"
+            [style.animation-delay]="$index * 50 + 'ms'">
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+                <lucide-icon [img]="icons.FileText" class="w-4 h-4 flex-shrink-0"
+                    style="color:var(--text-muted)"></lucide-icon>
+                <span class="text-sm font-medium truncate" style="color:var(--text-primary)">{{ spec.title }}</span>
             </div>
-
-            <div class="glass-card overflow-hidden">
-                @for (fluid of fluids(); track trackByTitle($index, fluid)) {
-                <div class="flex justify-between items-center px-6 py-4 border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors group animate-fade-in-up"
-                    [style.animation-delay]="$index * 50 + 'ms'">
-                    <span
-                        class="text-xs uppercase tracking-widest text-[hsl(var(--text-muted))] font-bold group-hover:text-white transition-colors flex-1 truncate mr-4">{{
-                        fluid.title }}</span>
-                    <div class="text-right flex flex-col items-end">
-                        @if (fluid.capacity) {
-                        <div
-                            class="text-sm font-black text-white group-hover:text-[hsl(var(--accent-violet))] transition-colors">
-                            {{ fluid.capacity }}</div>
-                        }
-                        @if (fluid.specification) {
-                        <div class="text-[10px] font-medium text-[hsl(var(--text-muted))]">{{ fluid.specification }}
-                        </div>
-                        }
-                        @if (!fluid.capacity && !fluid.specification) {
-                        <span class="text-white">-</span>
-                        }
-                    </div>
-                </div>
-                }
-            </div>
-        </div>
+            <lucide-icon [img]="icons.ArrowRight"
+                class="w-4 h-4 flex-shrink-0 opacity-0 group-hover:opacity-60 transition-opacity"
+                style="color:var(--text-muted)"></lucide-icon>
+        </a>
         }
     </div>
-    }
 </div>
+}
+
+@if (fluids().length > 0) {
+<div class="space-y-6">
+    <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+            style="background:rgba(0,212,255,0.1);color:hsl(191,97%,50%)">
+            <lucide-icon [img]="icons.Droplets" class="w-4 h-4"></lucide-icon>
+        </div>
+        <h3 class="text-xs uppercase font-bold tracking-wide" style="color:var(--text-muted)">Fluids & Capacities</h3>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        @for (fluid of fluids(); track trackByTitle($index, fluid)) {
+        <a [routerLink]="['/vehicle', contentSource, vehicleId, 'article', fluid.id]"
+            class="card flex justify-between items-center px-4 py-4 transition-all group"
+            [style.animation-delay]="$index * 50 + 'ms'">
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+                <lucide-icon [img]="icons.FileText" class="w-4 h-4 flex-shrink-0"
+                    style="color:var(--text-muted)"></lucide-icon>
+                <span class="text-sm font-medium truncate" style="color:var(--text-primary)">{{ fluid.title }}</span>
+            </div>
+            <lucide-icon [img]="icons.ArrowRight"
+                class="w-4 h-4 flex-shrink-0 opacity-0 group-hover:opacity-60 transition-opacity"
+                style="color:var(--text-muted)"></lucide-icon>
+        </a>
+        }
+    </div>
+</div>
+}
+
+@if (!isLoading() && specs().length === 0 && fluids().length === 0) {
+<app-empty-state icon="package" message="No Specifications"
+    submessage="Specifications and fluids data is not available for this vehicle.">
+</app-empty-state>
+}
+
+@if (isLoading()) {
+<app-loading-skeleton type="grid" [count]="6"></app-loading-skeleton>
+}

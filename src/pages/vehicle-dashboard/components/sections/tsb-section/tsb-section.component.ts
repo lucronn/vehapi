@@ -8,6 +8,8 @@ import { EmptyStateComponent } from '../../../../../components/empty-state/empty
 import { LucideAngularModule, FileText, X, ArrowUpRight } from 'lucide-angular';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { MotorApiService } from '../../../../../services/motor-api.service';
+import { WindowManagerService } from '../../../../../services/window-manager.service';
+import { ArticleViewerComponent } from '../../../../article-viewer/article-viewer.component';
 
 /**
  * Displays technical service bulletins (TSBs)
@@ -27,15 +29,10 @@ export class TsbSectionComponent implements OnInit {
 
     private vehicleData = inject(VehicleDataService);
     private motorApi = inject(MotorApiService);
-    private sanitizer = inject(DomSanitizer);
+    private windowManager = inject(WindowManagerService);
 
     tsbs = signal<Tsb[]>([]);
     isLoading = signal(false);
-
-    // Viewer State
-    selectedTsb = signal<Tsb | null>(null);
-    tsbContent = signal<SafeHtml | null>(null);
-    isLoadingContent = signal(false);
 
     readonly icons = { FileText, X, ArrowUpRight };
 
@@ -67,27 +64,16 @@ export class TsbSectionComponent implements OnInit {
     }
 
     viewTsb(tsb: Tsb) {
-        this.selectedTsb.set(tsb);
-        this.isLoadingContent.set(true);
-
-        this.motorApi.getArticleContent(this.contentSource, this.vehicleId, tsb.id).subscribe({
-            next: (res) => {
-                const rawHtml = res.body?.html || '<p>No content available.</p>';
-                const processedHtml = this.motorApi.processHtmlContent(rawHtml, this.contentSource, this.vehicleId);
-                this.tsbContent.set(this.sanitizer.bypassSecurityTrustHtml(processedHtml));
-                this.isLoadingContent.set(false);
-            },
-            error: (err) => {
-                console.error('Failed to load TSB content', err);
-                this.tsbContent.set(this.sanitizer.bypassSecurityTrustHtml('<p class="text-red-400">Failed to load content.</p>'));
-                this.isLoadingContent.set(false);
+        this.windowManager.openWindow(
+            `TSB: ${tsb.bulletinNumber || 'View'}`,
+            ArticleViewerComponent,
+            {
+                contentSource: this.contentSource,
+                vehicleId: this.vehicleId,
+                articleId: tsb.id,
+                articleTitleInput: tsb.title
             }
-        });
-    }
-
-    closeViewer() {
-        this.selectedTsb.set(null);
-        this.tsbContent.set(null);
+        );
     }
 
     getThumbnailUrl(thumbnailHref: string | undefined): string {

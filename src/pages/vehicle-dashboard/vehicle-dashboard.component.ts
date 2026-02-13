@@ -33,6 +33,7 @@ import { LucideAngularModule, Menu, X, House, TriangleAlert, FileText, Wrench, P
 // Local Components
 import { LogoComponent } from '../../components/logo/logo.component';
 import { OrientationSelectorModalComponent, OrientationOption } from '../../components/orientation-selector-modal/orientation-selector-modal.component';
+import { ThemeToggleComponent } from '../../components/theme-toggle/theme-toggle.component';
 
 export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'component-locations' | 'procedures' | 'parts' | 'specs' | 'maintenance' | 'browse-all';
 
@@ -60,7 +61,8 @@ export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'comp
     PartsSectionComponent,
     CommonIssuesSectionComponent,
     LogoComponent,
-    OrientationSelectorModalComponent
+    OrientationSelectorModalComponent,
+    ThemeToggleComponent
   ],
 })
 export class VehicleDashboardComponent {

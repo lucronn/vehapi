@@ -7,6 +7,8 @@ import { LoadingSkeletonComponent } from '../../../../../components/loading-skel
 import { EmptyStateComponent } from '../../../../../components/empty-state/empty-state.component';
 import { LucideAngularModule, Lightbulb, AlertCircle, CheckCircle2, Wrench, ArrowRight } from 'lucide-angular';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { WindowManagerService } from '../../../../../services/window-manager.service';
+import { ArticleViewerComponent } from '../../../../article-viewer/article-viewer.component';
 
 /**
  * Displays common vehicle issues with AI-generated solutions
@@ -26,6 +28,7 @@ export class CommonIssuesSectionComponent implements OnInit {
     // private geminiApi = inject(GeminiService); // Removed
     private firebase = inject(FirebaseService);
     private sanitizer = inject(DomSanitizer);
+    private windowManager = inject(WindowManagerService);
 
     commonIssues = signal<CommonIssue[]>([]);
     isLoading = signal(false);
@@ -62,8 +65,27 @@ export class CommonIssuesSectionComponent implements OnInit {
     }
 
     generateSolution(issueTitle: string): void {
-        console.log('Access requested for:', issueTitle);
-        // Placeholder for direct content access (e.g. deep link to manual)
+        // For now, we simulate a solution or use the description.
+        // In a real scenario, we might fetch this from the API or AI.
+        const issue = this.commonIssues().find(i => i.title === issueTitle);
+        const description = issue?.description || 'No description available.';
+        const htmlContent = `
+            <div class="p-4">
+                <h3>${issueTitle}</h3>
+                <p>${description}</p>
+                <hr class="my-4"/>
+                <p><strong>Suggested Action:</strong> Please consult the service manual or a certified technician for detailed diagnostic procedures related to this issue.</p>
+            </div>
+        `;
+
+        this.windowManager.openWindow(
+            `Issue: ${issueTitle}`,
+            ArticleViewerComponent,
+            {
+                articleTitleInput: issueTitle,
+                htmlContentInput: htmlContent
+            }
+        );
     }
 
     getSeverityColor(severity: string): string {

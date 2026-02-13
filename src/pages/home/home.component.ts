@@ -10,6 +10,7 @@ import { VehiclePersistenceService } from '../../services/vehicle-persistence.se
 import { LogoComponent } from '../../components/logo/logo.component';
 import { Make, Model, Engine, PersistedVehicle } from '../../models/motor.models';
 import { LucideAngularModule, Search, X, ArrowRight, ArrowUpRight, ArrowLeft } from 'lucide-angular';
+import { ThemeToggleComponent } from '../../components/theme-toggle/theme-toggle.component';
 
 type Suggestion =
   | { type: 'Year'; value: number; display: string }
@@ -21,7 +22,7 @@ type Suggestion =
   selector: 'app-home',
   templateUrl: './home.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, LogoComponent, RouterModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LogoComponent, RouterModule, LucideAngularModule, ThemeToggleComponent],
 })
 export class HomeComponent implements OnInit {
   readonly icons = { Search, X, ArrowRight, ArrowUpRight, ArrowLeft };
@@ -33,6 +34,7 @@ export class HomeComponent implements OnInit {
 
   @ViewChild('searchInputRef') searchInputRef!: ElementRef<HTMLInputElement>;
   @ViewChild('desktopSuggestionsContainer') desktopSuggestionsContainerRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('searchContainer') searchContainerRef!: ElementRef<HTMLDivElement>;
 
   // Search State
   searchInput = signal(''); // Immediate input value
@@ -156,7 +158,9 @@ export class HomeComponent implements OnInit {
     if (this.showSuggestions()) {
       const clickedInsideInput = this.searchInputRef?.nativeElement.contains(event.target as Node);
       const clickedInsideSuggestions = this.desktopSuggestionsContainerRef?.nativeElement.contains(event.target as Node);
-      if (!clickedInsideInput && !clickedInsideSuggestions) {
+      const clickedInsideContainer = this.searchContainerRef?.nativeElement.contains(event.target as Node);
+
+      if (!clickedInsideInput && !clickedInsideSuggestions && !clickedInsideContainer) {
         this.showSuggestions.set(false);
       }
     }
@@ -178,6 +182,7 @@ export class HomeComponent implements OnInit {
   isVin = computed(() => this.searchTerm().length > 10 && /^[A-HJ-NPR-Z0-9]{17}$/i.test(this.searchTerm()));
 
   currentPlaceholder = computed(() => {
+    if (this.selectedVehicle()) return this.selectedVehicle()?.displayName;
     if (this.isVin()) return 'Searching by VIN...';
     switch (this.searchStep()) {
       case 'Year': return 'Enter VIN or Year...';
@@ -547,8 +552,12 @@ export class HomeComponent implements OnInit {
         }
         break;
       case 'Engine':
-        this.selectedVehicle.set(suggestion.value as { vehicleId: string; displayName: string });
+        const selectedEngine = suggestion.value as { vehicleId: string; displayName: string };
+        console.log('Selected Engine:', selectedEngine);
+        this.selectedVehicle.set(selectedEngine);
         this.showSuggestions.set(false);
+        // Force change detection to update UI immediately
+        this.cdr.detectChanges();
         break;
     }
   }
@@ -617,7 +626,14 @@ export class HomeComponent implements OnInit {
   }
 
   private selectVehicle(): void {
-    const vehicle = this.selectedVehicle();
+    let vehicle = this.selectedVehicle();
+
+    // If no vehicle selected but model is selected, use model as vehicle (implicit engine selection)
+    if (!vehicle && this.selectedModel()) {
+      const model = this.selectedModel()!;
+      vehicle = { vehicleId: model.id, displayName: model.model };
+    }
+
     if (vehicle) {
       this.isLoading.set(true);
       this.router.navigate(['/vehicle', this.currentContentSource(), vehicle.vehicleId]);

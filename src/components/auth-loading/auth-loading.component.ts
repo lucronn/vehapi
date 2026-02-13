@@ -9,12 +9,14 @@ import { timer, Subscription, switchMap, filter, takeWhile, finalize } from 'rxj
     imports: [CommonModule],
     template: `
     <div class="fixed top-0 left-0 right-0 z-[100]">
-      <div class="h-1 w-full bg-cyan-900/30 overflow-hidden">
-        <div class="h-full bg-cyan-400 transition-all duration-300 ease-out shadow-[0_0_10px_rgba(34,211,238,0.5)]"
+      <div class="h-0.5 w-full overflow-hidden" style="background:var(--border)">
+        <div class="h-full transition-all duration-300 ease-out"
+             style="background:var(--primary)"
              [style.width.%]="progress()"></div>
       </div>
       @if (progress() > 0 && progress() < 100) {
-        <div class="absolute top-2 right-4 bg-black/80 backdrop-blur text-cyan-400 text-xs font-mono border border-cyan-500/30 px-3 py-1 rounded shadow-[0_0_10px_rgba(34,211,238,0.3)]">
+        <div class="absolute top-2 right-4 text-xs font-medium px-3 py-1 rounded-md"
+          style="background:var(--bg-surface);color:var(--primary);border:1px solid var(--border)">
           {{ message() }} {{ progress() }}%
         </div>
       }

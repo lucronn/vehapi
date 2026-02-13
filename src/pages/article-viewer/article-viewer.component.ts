@@ -1,20 +1,19 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, Input, signal, ViewEncapsulation, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { map, switchMap, of, catchError } from 'rxjs';
+import { map, switchMap, of, catchError, Subject, takeUntil } from 'rxjs';
 
 import { MotorApiService } from '../../services/motor-api.service';
 import { LucideAngularModule, ArrowLeft, Maximize2, List, X } from 'lucide-angular';
+import { ImageViewerModalComponent } from './components/image-viewer-modal/image-viewer-modal.component';
 
 export interface TableOfContents {
   id: string;
   title: string;
   level: number;
 }
-
-import { ImageViewerModalComponent } from './components/image-viewer-modal/image-viewer-modal.component';
 
 @Component({
   selector: 'app-article-viewer',
@@ -23,57 +22,92 @@ import { ImageViewerModalComponent } from './components/image-viewer-modal/image
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, RouterModule, LucideAngularModule, ImageViewerModalComponent],
+  standalone: true
 })
-export class ArticleViewerComponent {
+export class ArticleViewerComponent implements OnInit {
+  // Inputs for Window Mode
+  @Input() contentSource?: string;
+  @Input() vehicleId?: string;
+  @Input() articleId?: string;
+  @Input() articleTitleInput?: string;
+  @Input() htmlContentInput?: string; // New input for direct content
+
   private route = inject(ActivatedRoute);
   private motorApi = inject(MotorApiService);
   private sanitizer = inject(DomSanitizer);
 
   readonly icons = { ArrowLeft, Maximize2, List, X };
 
-  params = toSignal(this.route.paramMap);
-  contentSource = computed(() => this.params()?.get('contentSource') ?? '');
-  vehicleId = computed(() => this.params()?.get('vehicleId') ?? '');
-  articleId = computed(() => this.params()?.get('articleId') ?? '');
+  // Use a Subject to trigger data loading when inputs change or on init
+  private loadTrigger = new Subject<void>();
 
+  // State
   articleTitle = signal<string>('');
   articleContent = signal<SafeHtml>('');
   sections = signal<TableOfContents[]>([]);
   isMobileTocOpen = signal(false);
+  isLoading = signal(false);
+  error = signal<string | null>(null);
 
   selectedImageUrl = signal<string | null>(null);
 
-  private articleData$ = this.route.paramMap.pipe(
-    switchMap(params => {
-      const contentSource = params.get('contentSource');
-      const vehicleId = params.get('vehicleId');
-      const articleId = params.get('articleId');
+  ngOnInit() {
+    // Check if we have inputs or need to read from route
+    if (!this.contentSource || !this.vehicleId || !this.articleId) {
+      this.route.paramMap.subscribe(params => {
+        this.contentSource = params.get('contentSource') ?? '';
+        this.vehicleId = params.get('vehicleId') ?? '';
+        this.articleId = params.get('articleId') ?? '';
+        this.loadData();
+      });
+    } else {
+      this.loadData();
+    }
 
-      if (contentSource && vehicleId && articleId) {
-        return this.motorApi.getArticleTitle(contentSource, vehicleId, articleId).pipe(
-          catchError(() => of({ body: articleId } as any)),
-          switchMap(title => {
-            return this.motorApi.getArticleContent(contentSource, vehicleId, articleId).pipe(
-              map(content => {
-                const rawTitle = title?.body || articleId || '';
-                const cleanTitle = this.cleanTitle(rawTitle);
-                const { html: processedHtml, sections } = this.processHtml(content.body.html, contentSource, vehicleId);
+    if (this.articleTitleInput) {
+      this.articleTitle.set(this.articleTitleInput);
+    }
 
-                this.articleTitle.set(cleanTitle);
-                this.articleContent.set(processedHtml);
-                this.sections.set(sections);
+    if (this.htmlContentInput) {
+      this.articleContent.set(this.sanitizer.bypassSecurityTrustHtml(this.htmlContentInput));
+      this.isLoading.set(false);
+      return;
+    }
+  }
 
-                return { title: cleanTitle, content: processedHtml };
-              })
-            );
-          })
-        );
+  loadData() {
+    if (this.htmlContentInput) return; // Skip loading if we have direct content
+    if (!this.contentSource || !this.vehicleId || !this.articleId) return;
+
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    // Fetch Title if not provided
+    if (!this.articleTitleInput) {
+      this.motorApi.getArticleTitle(this.contentSource, this.vehicleId, this.articleId).subscribe({
+        next: (res) => {
+          const rawTitle = res.body || this.articleId || '';
+          this.articleTitle.set(this.cleanTitle(rawTitle));
+        },
+        error: () => this.articleTitle.set('Article')
+      });
+    }
+
+    // Fetch Content
+    this.motorApi.getArticleContent(this.contentSource, this.vehicleId, this.articleId).subscribe({
+      next: (content) => {
+        const { html: processedHtml, sections } = this.processHtml(content.body.html, this.contentSource!, this.vehicleId!);
+        this.articleContent.set(processedHtml);
+        this.sections.set(sections);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to load article', err);
+        this.error.set('Failed to load article content.');
+        this.isLoading.set(false);
       }
-      return of(null);
-    })
-  );
-
-  articleData = toSignal(this.articleData$);
+    });
+  }
 
   private cleanTitle(rawTitle: string): string {
     if (!rawTitle) return '';
@@ -87,6 +121,7 @@ export class ArticleViewerComponent {
 
     let processed = this.motorApi.processHtmlContent(html, contentSource, vehicleId);
 
+    // Remove legacy attributes
     processed = processed.replace(/\s(style|bgcolor|text|color|border|cellpadding|cellspacing|align|valign)=("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
     processed = processed.replace(/<font[^>]*>/gi, '').replace(/<\/font>/gi, '');
     processed = processed.replace(/<(table|tr|td|div|p|span)\s+[^>]*>/gi, (match) => {
