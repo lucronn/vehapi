@@ -106,20 +106,20 @@
         @if (selectedYear() || selectedMake() || selectedModel() || selectedVehicle()) {
         <div class="flex flex-wrap gap-2 justify-center">
           @if (selectedYear(); as year) {
-          <button (click)="removeSelection($event, 'Year')" class="pill">
+          <button (click)="removeSelection($event, 'Year')" class="pill" [attr.aria-label]="'Remove year ' + year">
             <span>{{ year }}</span>
             <lucide-icon [img]="icons.X" class="w-3 h-3"></lucide-icon>
           </button>
           }
           @if (selectedMake(); as make) {
-          <button (click)="removeSelection($event, 'Make')" class="pill">
+          <button (click)="removeSelection($event, 'Make')" class="pill" [attr.aria-label]="'Remove make ' + make.makeName">
             <span>{{ make.makeName }}</span>
             <lucide-icon [img]="icons.X" class="w-3 h-3"></lucide-icon>
           </button>
           }
           @if (selectedModel(); as model) {
           @if (!selectedVehicle()) {
-          <button (click)="removeSelection($event, 'Model')" class="pill">
+          <button (click)="removeSelection($event, 'Model')" class="pill" [attr.aria-label]="'Remove model ' + model.model">
             <span>{{ model.model }}</span>
             <lucide-icon [img]="icons.X" class="w-3 h-3"></lucide-icon>
           </button>
@@ -127,7 +127,8 @@
           }
           @if (selectedVehicle(); as vehicle) {
           <button (click)="removeSelection($event, 'Engine')" class="pill"
-            style="border-color:var(--status-success);color:var(--status-success);background:var(--status-success-bg)">
+            style="border-color:var(--status-success);color:var(--status-success);background:var(--status-success-bg)"
+            [attr.aria-label]="'Remove engine ' + vehicle.displayName">
             <span class="truncate max-w-[200px]">{{ vehicle.displayName }}</span>
             <lucide-icon [img]="icons.X" class="w-3 h-3"></lucide-icon>
           </button>
@@ -160,7 +161,8 @@
                 class="hidden md:block flex-1 bg-transparent border-none py-4 focus:ring-0 text-base outline-none text-white placeholder:text-torque-muted"
                 [ngModel]="searchInput()" (ngModelChange)="onSearchInput($event)" (focus)="onSearchFocus()"
                 (click)="onSearchFocus(); $event.stopPropagation()" (keydown.enter)="handleEnterKey()"
-                (keydown.space)="handleSpacebar($event)" [disabled]="!!selectedVehicle()" autocomplete="off" />
+                (keydown.space)="handleSpacebar($event)" [disabled]="!!selectedVehicle()" autocomplete="off"
+                aria-label="Vehicle Search" />
 
               <!-- Mobile placeholder for selected state -->
               <span *ngIf="isMobile()" class="flex-1 text-base truncate text-torque-muted">
@@ -291,7 +293,7 @@
   <div class="fixed inset-0 z-[100] flex flex-col animate-fade-in bg-[hsl(230,35%,7%)]">
     <!-- Wizard Header -->
     <div class="px-4 py-4 flex items-center gap-3 border-b border-white/5 bg-[hsl(230,35%,9%)]/90 backdrop-blur-xl">
-      <button (click)="closeMobileWizard()" class="btn-glass p-2 -ml-1">
+      <button (click)="closeMobileWizard()" class="btn-glass p-2 -ml-1" aria-label="Go back">
         <lucide-icon [img]="icons.ArrowLeft" class="w-5 h-5"></lucide-icon>
       </button>
       <div class="flex-1">
