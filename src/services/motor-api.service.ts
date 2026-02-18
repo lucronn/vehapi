@@ -765,22 +765,6 @@ export class MotorApiService {
     );
   }
 
-  /**
-   * Get vehicles by vehicle IDs (GET - deprecated)
-   * @param contentSource Content source identifier
-   * @param vehicleIds Array of vehicle IDs
-   * @returns Observable of ModelAndVehicleIdListResponse
-   */
-  getVehiclesDeprecated(contentSource: ContentSource, vehicleIds: string[]): Observable<ApiResponse<ModelAndVehicleIdListResponse>> {
-    let params = new HttpParams();
-    vehicleIds.forEach(id => params = params.append('vehicleIds', id));
-
-    return this.http.get<ApiResponse<ModelAndVehicleIdListResponse>>(
-      `${this.baseUrl}/api/source/${contentSource}/vehicles`,
-      { params }
-    );
-  }
-
   // ==========================================
   // SEARCH ENDPOINTS
   // ==========================================
