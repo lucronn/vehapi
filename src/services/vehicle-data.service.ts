@@ -443,26 +443,33 @@ export class VehicleDataService {
     public parseSpecTable(html: string): string {
         if (!html) return '';
 
-        // Basic Regex-based parser for HTML tables
-        const tableRegex = /<table[^>]*>([\s\S]*?)<\/table>/gi;
-        let tableMatch;
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const tables = doc.querySelectorAll('table');
         const summaries: string[] = [];
 
-        while ((tableMatch = tableRegex.exec(html)) !== null) {
-            const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
-            let rowMatch;
+        tables.forEach((t) => {
+            const table = t as HTMLTableElement;
             const rows: string[] = [];
+            const trs = table.rows;
 
-            while ((rowMatch = rowRegex.exec(tableMatch[1])) !== null) {
-                const cellRegex = /<(?:td|th)[^>]*>([\s\S]*?)<\/(?:td|th)>/gi;
-                let cellMatch;
+            // Iterate rows, stop early if we have 3 valid rows
+            for (let i = 0; i < trs.length && rows.length < 3; i++) {
+                const tr = trs[i];
                 const cells: string[] = [];
-                while ((cellMatch = cellRegex.exec(rowMatch[1])) !== null) {
-                    // Strip tags and normalize whitespace
-                    let text = cellMatch[1].replace(/<[^>]*>/g, '').trim();
-                    text = text.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ');
-                    if (text) cells.push(text);
+                const children = tr.children;
+
+                for (let j = 0; j < children.length; j++) {
+                    const child = children[j];
+                    const tagName = child.tagName.toLowerCase();
+                    if (tagName === 'td' || tagName === 'th') {
+                        let text = child.textContent || '';
+                        // Normalize whitespace and handle non-breaking spaces
+                        text = text.trim().replace(/\s+/g, ' ');
+                        if (text) cells.push(text);
+                    }
                 }
+
                 if (cells.length >= 2) {
                     // Limit length of individual values to prevent UI bloat
                     const key = cells[0].replace(/:$/, '').trim();
@@ -470,11 +477,12 @@ export class VehicleDataService {
                     rows.push(`${key}: ${value}`);
                 }
             }
+
             if (rows.length > 0) {
                 // Return top 3 rows to keep it concise
-                summaries.push(rows.slice(0, 3).join(' | '));
+                summaries.push(rows.join(' | '));
             }
-        }
+        });
 
         return summaries.join('\n');
     }
