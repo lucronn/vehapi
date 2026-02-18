@@ -17,7 +17,7 @@ export class CreditsService {
     private userIdService = inject(UserIdService);
 
     // State
-    balance = signal<number>(0);
+    balance = signal<number>(100); // Mock initial balance
     unlocks = signal<UnlockMap>({});
     isLoading = signal<boolean>(false);
 
@@ -46,6 +46,8 @@ export class CreditsService {
     }
 
     async refreshBalance() {
+        // MOCK: Commented out HTTP call
+        /*
         try {
             const data = await firstValueFrom(
                 this.http.get<{ credits: number, unlocks: UnlockMap }>(
@@ -58,10 +60,18 @@ export class CreditsService {
         } catch (error) {
             console.error('Failed to fetch credit balance:', error);
         }
+        */
+        // MOCK Implementation
+        console.log('Mock: Refreshing balance to 100');
+        // We keep the current balance if it's already set, or default to 100 if we want to reset
+        // For now, let's just leave it as is or maybe reset to 100 if we want a fresh start
+        // this.balance.set(100);
     }
 
     async startCheckout(amount: number) {
         this.isLoading.set(true);
+        // MOCK: Commented out HTTP call
+        /*
         try {
             // Price IDs should ideally be from config/env, here we mock mapped to amounts
             // In reality, you'd pass a priceId corresponding to the package (e.g. 50 credits)
@@ -84,6 +94,14 @@ export class CreditsService {
         } finally {
             this.isLoading.set(false);
         }
+        */
+
+        // MOCK Implementation
+        setTimeout(() => {
+            this.balance.update(b => b + amount);
+            alert(`Mock Checkout: Successfully added ${amount} credits!`);
+            this.isLoading.set(false);
+        }, 1000); // Simulate network delay
     }
 
     async unlockModule(vehicleId: string, moduleType: string, cost: number): Promise<boolean> {
@@ -92,6 +110,9 @@ export class CreditsService {
         }
 
         this.isLoading.set(true);
+
+        // MOCK: Commented out HTTP call
+        /*
         try {
             const res = await firstValueFrom(
                 this.http.post<{ success: true, credits: number, unlocks: UnlockMap }>(
@@ -113,6 +134,23 @@ export class CreditsService {
         } finally {
             this.isLoading.set(false);
         }
+        */
+
+        // MOCK Implementation
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                this.balance.update(b => b - cost);
+                this.unlocks.update(u => {
+                    const vehicleUnlocks = u[vehicleId] || [];
+                    if (!vehicleUnlocks.includes(moduleType)) {
+                        vehicleUnlocks.push(moduleType);
+                    }
+                    return { ...u, [vehicleId]: vehicleUnlocks };
+                });
+                this.isLoading.set(false);
+                resolve(true);
+            }, 500);
+        });
     }
 
     hasAccess(vehicleId: string, moduleType: string): boolean {
