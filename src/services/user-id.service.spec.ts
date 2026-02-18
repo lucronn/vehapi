@@ -3,6 +3,8 @@ import { expect, test, describe, beforeEach, mock } from 'bun:test';
 // Mock @angular/core before importing the service
 mock.module('@angular/core', () => ({
     Injectable: () => (target: any) => target,
+    inject: () => ({}),
+    WritableSignal: class {},
 }));
 
 describe('UserIdService', () => {
