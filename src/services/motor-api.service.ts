@@ -505,7 +505,8 @@ export class MotorApiService {
         ? `${this.baseUrl}/api/source/${contentSource}/graphic/${id}`
         : `${this.baseUrl}/graphic/${id}`;
 
-      return `<img src="${graphicUrl}" class="article-image" ${attrs.replace(/id\s*=\s*[^"'\s]+/, '')}>`;
+      // Fix: Correctly remove id attribute even if quoted
+      return `<img src="${graphicUrl}" class="article-image" ${attrs.replace(/id\s*=\s*(?:("|')[^"']*\1|[^"'\s]+)/i, '')}>`;
     });
 
     // Process src attributes (images, iframes, videos, etc.)
