@@ -1,17 +1,20 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 1. Vehicles Table
--- Stores the core vehicle information.
+-- ==========================================
+-- 1. Core Vehicle Tables
+-- ==========================================
+
+-- Vehicles Table
 CREATE TABLE vehicles (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     year INTEGER NOT NULL,
     make TEXT NOT NULL,
     model TEXT NOT NULL,
-    submodel TEXT, -- For trim levels like "Base", "Blue", etc.
-    engine TEXT, -- e.g., "V6-3.6L"
-    vin TEXT, -- Partial or full VIN if applicable
-    external_id TEXT, -- The ID from the source system (e.g., "66966:2600")
+    submodel TEXT,
+    engine TEXT,
+    vin TEXT,
+    external_id TEXT, -- e.g., "66966:2600"
     content_source TEXT, -- e.g., "MOTOR", "OEM"
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -20,142 +23,72 @@ CREATE TABLE vehicles (
 CREATE INDEX idx_vehicles_external_id ON vehicles(external_id);
 CREATE INDEX idx_vehicles_ymm ON vehicles(year, make, model);
 
--- 2. Categories Table
--- Represents the hierarchical structure of data (formerly "Buckets").
--- Can be used for Procedures, Diagrams, Specifications groupings, etc.
+-- Categories Table (Hierarchical)
 CREATE TABLE categories (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     parent_id UUID REFERENCES categories(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
-    type TEXT NOT NULL, -- e.g., "Procedures", "Wiring Diagrams", "Specifications", "Maintenance"
+    type TEXT NOT NULL, -- e.g., "Procedures", "Diagrams", "Specs", "Maintenance"
     sort_order INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 CREATE INDEX idx_categories_parent_id ON categories(parent_id);
-CREATE INDEX idx_categories_type ON categories(type);
 
--- 3. Articles Table
--- Stores text-based content like Procedures, TSBs, Descriptions.
-CREATE TABLE articles (
+-- ==========================================
+-- 2. Technical Data Tables (Standardized)
+-- ==========================================
+
+-- Procedures Table
+-- Standardized format for repair instructions
+CREATE TABLE procedures (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
     category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
-    external_id TEXT, -- e.g., "P:565148963"
+    external_id TEXT,
     title TEXT NOT NULL,
-    subtitle TEXT,
-    content TEXT, -- HTML or Markdown content
-    article_type TEXT NOT NULL, -- "Procedure", "TSB", "Description", "Precautions"
-    metadata JSONB, -- Stores extra fields like bulletinNumber, releaseDate, etc.
+    description TEXT,
+    steps JSONB, -- Array of objects: { "order": 1, "text": "...", "image_url": "...", "warning": "..." }
+    tools_required JSONB, -- Array of strings: ["10mm Socket", "Lift"]
+    parts_required JSONB, -- Array of objects: { "part_number": "...", "quantity": 1 }
+    time_estimate_hours NUMERIC(4, 2),
+    cautions TEXT, -- General warnings/cautions for the procedure
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX idx_articles_vehicle_id ON articles(vehicle_id);
-CREATE INDEX idx_articles_category_id ON articles(category_id);
-CREATE INDEX idx_articles_external_id ON articles(external_id);
+CREATE INDEX idx_procedures_vehicle_id ON procedures(vehicle_id);
 
--- 4. Diagrams Table
--- specialized table for visual content, often linked to articles or standalone
-CREATE TABLE diagrams (
+-- Technical Service Bulletins (TSBs) Table
+CREATE TABLE tsbs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
-    category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
-    external_id TEXT, -- e.g., "CMPLOC:527847494"
+    bulletin_number TEXT NOT NULL,
+    issue_date DATE,
     title TEXT NOT NULL,
-    subtitle TEXT,
-    image_url TEXT, -- URL to the full image
-    thumbnail_url TEXT, -- URL to the thumbnail
-    metadata JSONB,
+    summary TEXT,
+    content TEXT, -- Full content (HTML or Text)
+    affected_components JSONB, -- Array of strings
+    models_affected JSONB, -- Array of strings if multi-model
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX idx_diagrams_vehicle_id ON diagrams(vehicle_id);
+CREATE INDEX idx_tsbs_vehicle_id ON tsbs(vehicle_id);
+CREATE INDEX idx_tsbs_bulletin_number ON tsbs(bulletin_number);
 
--- 5. Parts Table
--- Stores parts information associated with vehicles.
-CREATE TABLE parts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
-    part_number TEXT NOT NULL,
-    description TEXT NOT NULL,
-    manufacturer TEXT,
-    price NUMERIC(10, 2), -- Storing price as numeric
-    quantity INTEGER DEFAULT 1,
-    category TEXT, -- e.g., "Brake", "Engine"
-    metadata JSONB, -- Extra details
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE INDEX idx_parts_vehicle_id ON parts(vehicle_id);
-CREATE INDEX idx_parts_part_number ON parts(part_number);
-
--- 6. Labor Table
--- Stores labor estimates.
-CREATE TABLE labor (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
-    operation_id TEXT,
-    description TEXT NOT NULL,
-    hours NUMERIC(5, 2), -- Labor hours, e.g., 1.50
-    skill_level TEXT, -- e.g., "B", "A"
-    category TEXT,
-    metadata JSONB,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE INDEX idx_labor_vehicle_id ON labor(vehicle_id);
-
--- 7. Maintenance Schedules Table
--- Stores scheduled maintenance intervals and actions.
-CREATE TABLE maintenance_schedules (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
-    interval_miles INTEGER,
-    interval_months INTEGER,
-    interval_kilometers INTEGER,
-    interval_hours INTEGER, -- For operating hours
-    action TEXT NOT NULL, -- "Inspect", "Replace", "Rotate", etc.
-    description TEXT NOT NULL, -- Detailed description of the task
-    frequency_description TEXT, -- e.g., "Every 10,000 miles"
-    is_severe_service BOOLEAN DEFAULT FALSE,
-    metadata JSONB,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE INDEX idx_maintenance_vehicle_id ON maintenance_schedules(vehicle_id);
-CREATE INDEX idx_maintenance_interval ON maintenance_schedules(interval_miles);
-
--- 8. Specifications Table
--- Stores vehicle specifications and fluid capacities.
-CREATE TABLE specifications (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
-    category TEXT NOT NULL, -- e.g., "Torque", "Fluids", "Dimensions"
-    name TEXT NOT NULL, -- e.g., "Engine Oil Capacity", "Wheel Nut Torque"
-    value TEXT NOT NULL, -- e.g., "5.5 Quarts", "100 ft-lbs"
-    unit TEXT, -- e.g., "Quarts", "ft-lbs"
-    metadata JSONB,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE INDEX idx_specifications_vehicle_id ON specifications(vehicle_id);
-
--- 9. DTCs (Diagnostic Trouble Codes) Table
+-- Diagnostic Trouble Codes (DTCs) Table
 CREATE TABLE dtcs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
     code TEXT NOT NULL, -- e.g., "P0300"
     description TEXT NOT NULL,
-    possible_causes TEXT, -- Often a list or long text
-    bucket TEXT, -- Classification of the DTC
-    metadata JSONB,
+    possible_causes JSONB, -- Array of strings
+    symptoms JSONB, -- Array of strings
+    diagnostic_steps JSONB, -- Structured steps similar to procedures
+    monitor_strategy TEXT, -- How the ECU monitors this
+    malfunction_criteria TEXT, -- What triggers the code
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -163,14 +96,122 @@ CREATE TABLE dtcs (
 CREATE INDEX idx_dtcs_vehicle_id ON dtcs(vehicle_id);
 CREATE INDEX idx_dtcs_code ON dtcs(code);
 
--- 10. AI Processing Metadata Table (Optional but requested)
--- Tracks the AI processing status of raw data chunks before normalization.
+-- Specifications Table
+CREATE TABLE specifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
+    category TEXT NOT NULL, -- e.g., "Torque", "Fluids", "Engine"
+    name TEXT NOT NULL, -- e.g., "Cylinder Head Torque"
+    value TEXT NOT NULL, -- e.g., "50"
+    unit TEXT, -- e.g., "ft-lbs", "liters"
+    display_text TEXT, -- e.g., "50 ft-lbs"
+    metadata JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_specifications_vehicle_id ON specifications(vehicle_id);
+
+-- Maintenance Schedules Table
+CREATE TABLE maintenance_schedules (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
+    interval_value INTEGER, -- The numeric interval (e.g., 10000)
+    interval_unit TEXT, -- "Miles", "Kilometers", "Months", "Hours"
+    action TEXT NOT NULL, -- "Inspect", "Replace", "Change", "Rotate"
+    item TEXT NOT NULL, -- "Engine Oil", "Tires", "Air Filter"
+    description TEXT, -- Full description line
+    frequency_code TEXT, -- e.g., "A", "B", "I", "R"
+    is_severe_service BOOLEAN DEFAULT FALSE,
+    labor_time_hours NUMERIC(4, 2),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_maintenance_vehicle_id ON maintenance_schedules(vehicle_id);
+
+-- Labor Estimates Table
+CREATE TABLE labor (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
+    operation_code TEXT,
+    description TEXT NOT NULL,
+    hours NUMERIC(5, 2),
+    skill_level TEXT, -- "A", "B", "C"
+    category_id UUID REFERENCES categories(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_labor_vehicle_id ON labor(vehicle_id);
+
+-- Parts Table
+CREATE TABLE parts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
+    part_number TEXT NOT NULL,
+    description TEXT NOT NULL,
+    manufacturer TEXT,
+    list_price NUMERIC(10, 2),
+    dealer_price NUMERIC(10, 2),
+    quantity INTEGER DEFAULT 1,
+    fitment_notes TEXT, -- Specific fitment details for this vehicle
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_parts_vehicle_id ON parts(vehicle_id);
+CREATE INDEX idx_parts_part_number ON parts(part_number);
+
+-- Wiring Diagrams & Component Locations
+CREATE TABLE diagrams (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
+    category_id UUID REFERENCES categories(id),
+    title TEXT NOT NULL,
+    description TEXT,
+    image_url TEXT NOT NULL,
+    thumbnail_url TEXT,
+    diagram_type TEXT, -- "Wiring", "Component Location", "Vacuum"
+    interactive_points JSONB, -- For interactive diagrams: [{ "x": 10, "y": 20, "label": "Fuse 1" }]
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_diagrams_vehicle_id ON diagrams(vehicle_id);
+
+-- ==========================================
+-- 3. Processing Logs
+-- ==========================================
+
 CREATE TABLE ai_processing_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
     source_file TEXT,
+    category TEXT, -- "Procedures", "TSBs", etc.
     status TEXT, -- "PENDING", "PROCESSING", "COMPLETED", "FAILED"
     error_message TEXT,
+    tokens_used INTEGER,
     processed_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- ==========================================
+-- 4. Security (RLS)
+-- ==========================================
+
+-- Enable Row Level Security on all tables
+ALTER TABLE vehicles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE procedures ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tsbs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dtcs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE specifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE maintenance_schedules ENABLE ROW LEVEL SECURITY;
+ALTER TABLE labor ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE diagrams ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ai_processing_logs ENABLE ROW LEVEL SECURITY;
+
+-- Create simple read-only policy for authenticated users (example)
+-- CREATE POLICY "Enable read access for all users" ON vehicles FOR SELECT USING (true);
