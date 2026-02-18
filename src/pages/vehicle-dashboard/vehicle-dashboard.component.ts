@@ -34,6 +34,8 @@ import { LucideAngularModule, Menu, X, House, TriangleAlert, FileText, Wrench, P
 import { LogoComponent } from '../../components/logo/logo.component';
 import { OrientationSelectorModalComponent, OrientationOption } from '../../components/orientation-selector-modal/orientation-selector-modal.component';
 import { ThemeToggleComponent } from '../../components/theme-toggle/theme-toggle.component';
+import { ArticleViewerComponent } from '../article-viewer/article-viewer.component';
+import { WindowManagerService } from '../../services/window-manager.service';
 
 export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'component-locations' | 'procedures' | 'parts' | 'specs' | 'maintenance' | 'browse-all';
 
@@ -133,6 +135,9 @@ export class VehicleDashboardComponent {
   );
   availableSections = toSignal(this.sections$, { initialValue: null });
 
+  // State for vehicle resolution (non-MOTOR -> MOTOR)
+  isResolvingVehicle = signal(false);
+
   // Trigger Initial Data Load and Fallback Logic
   constructor() {
     // Data loading effect
@@ -142,7 +147,12 @@ export class VehicleDashboardComponent {
       const mvid = this.motorVehicleId();
 
       if (cs && vid) {
-        this.searchResultsState.search(cs, vid, '', mvid);
+        // If it's a non-MOTOR source, try to resolve it to a MOTOR ID first
+        if (cs.toUpperCase() !== 'MOTOR') {
+          this.resolveVehicleMapping(cs, vid);
+        } else {
+          this.searchResultsState.search(cs, vid, '', mvid);
+        }
       }
     });
 
@@ -198,7 +208,9 @@ export class VehicleDashboardComponent {
         // Reset to empty search to show full buckets
         const cs = this.contentSource();
         const vid = this.vehicleId();
-        if (cs && vid) {
+        // Only search if we are on MOTOR source (or if we decided to support others directly)
+        // But for now, we rely on the redirection logic for Ford
+        if (cs && vid && cs.toUpperCase() === 'MOTOR') {
           this.searchResultsState.search(cs, vid, '', this.motorVehicleId());
         }
         return of([]);
@@ -256,13 +268,88 @@ export class VehicleDashboardComponent {
     this.selectedBrowseFilter.set(filterTab);
   }
 
+  // Vehicle Mapping Resolution
+  private resolveVehicleMapping(contentSource: string, vehicleId: string) {
+    this.motorApi.getMotorVehicles(contentSource, vehicleId).pipe(
+      map(res => res.body || [])
+    ).subscribe({
+      next: (mappings: any[]) => {
+        if (!mappings || mappings.length === 0) {
+          console.warn('[Dashboard] No MOTOR mapping found for vehicle, falling back to original source');
+          this.searchResultsState.search(contentSource, vehicleId, '', this.motorVehicleId());
+          return;
+        }
+
+        // Flatten mappings to get all engine options
+        // Each mapping has { model: string, engines: { id: string, name: string }[] }
+        const options: OrientationOption[] = [];
+
+        mappings.forEach(mapping => {
+          if (mapping.engines && Array.isArray(mapping.engines)) {
+            mapping.engines.forEach((engine: any) => {
+              options.push({
+                id: engine.id,
+                displayName: `${mapping.model} - ${engine.name}`,
+                qualifier: 'Select this configuration'
+              });
+            });
+          }
+        });
+
+        if (options.length > 0) {
+          // If only one option, could auto-select, but explicit is safer for now
+          // unless it is extremely obvious. 
+          // For Ford Crown Vic, we have different models (LX, Interceptor), so selection is good.
+          this.orientationOptions.set(options);
+          this.isResolvingVehicle.set(true);
+          this.showOrientationModal.set(true);
+        } else {
+          // No options parsed, fall back
+          console.warn('[Dashboard] No valid engine options found in mapping, falling back');
+          this.searchResultsState.search(contentSource, vehicleId, '', this.motorVehicleId());
+        }
+      },
+      error: (err) => {
+        console.error('[Dashboard] Failed to resolve vehicle mapping, falling back', err);
+        this.searchResultsState.search(contentSource, vehicleId, '', this.motorVehicleId());
+      }
+    });
+  }
+
+  // Services
+  private windowManager = inject(WindowManagerService);
+
+  // ... existing code ...
   // Orientation Selection
-  onArticleClick(event: Event, articleId: string): void {
+  onArticleClick(event: Event, article: Article | any): void {
+    // Prevent default navigation
+    event.preventDefault();
+
+    const articleId = article.id || article;
+
     // Check if this article needs orientation selection
     // Article ID "-999" or similar indicates orientation required
-    if (articleId === '-999' || articleId.includes('SelectOrientation')) {
-      event.preventDefault();
+    if (articleId === '-999' || (typeof articleId === 'string' && articleId.includes('SelectOrientation'))) {
       this.loadOrientationOptions(articleId);
+      return;
+    }
+
+    // Open in Window
+    const contentSource = this.contentSource();
+    const vehicleId = this.vehicleId();
+    const title = article.title || 'Article Viewer';
+
+    if (contentSource && vehicleId && articleId) {
+      this.windowManager.openWindow(
+        title,
+        ArticleViewerComponent,
+        {
+          articleId: articleId,
+          contentSource: contentSource,
+          vehicleId: vehicleId,
+          articleTitleInput: title
+        }
+      );
     }
   }
 
@@ -289,7 +376,17 @@ export class VehicleDashboardComponent {
   onOrientationSelected(option: OrientationOption): void {
     this.showOrientationModal.set(false);
 
-    // Navigate to the article with the selected orientation ID
+    // If we are resolving a vehicle mapping, redirect to the MOTOR vehicle
+    if (this.isResolvingVehicle()) {
+      this.isResolvingVehicle.set(false);
+      this.orientationOptions.set([]); // Clear options
+
+      // Navigate to the MOTOR source with the selected Engine ID
+      this.router.navigate(['/vehicle', 'MOTOR', option.id]);
+      return;
+    }
+
+    // Normal article orientation selection
     const cs = this.contentSource();
     const vid = this.vehicleId();
     this.router.navigate(['/vehicle', cs, vid, 'article', option.id]);
@@ -299,5 +396,6 @@ export class VehicleDashboardComponent {
     this.showOrientationModal.set(false);
     this.orientationOptions.set([]);
     this.pendingArticleId.set(null);
+    this.isResolvingVehicle.set(false); // Reset this state on close
   }
 }

@@ -1,11 +1,13 @@
 import { Component, Input, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { VehicleDataService } from '../../../../../services/vehicle-data.service';
 import { Dtc } from '../../../../../models/motor.models';
 import { LoadingSkeletonComponent } from '../../../../../components/loading-skeleton/loading-skeleton.component';
 import { EmptyStateComponent } from '../../../../../components/empty-state/empty-state.component';
-import { LucideAngularModule, TriangleAlert } from 'lucide-angular';
+import { LucideAngularModule, TriangleAlert, ArrowRight } from 'lucide-angular';
+import { ArticleViewerComponent } from '../../../../article-viewer/article-viewer.component';
+import { WindowManagerService } from '../../../../../services/window-manager.service';
 
 /**
  * Displays diagnostic trouble codes (DTCs)
@@ -23,10 +25,12 @@ export class DtcSectionComponent implements OnInit {
     @Input() motorVehicleId?: string;
 
     private vehicleData = inject(VehicleDataService);
+    private windowManager = inject(WindowManagerService);
+    private router = inject(Router);
 
     dtcs = signal<Dtc[]>([]);
     isLoading = signal(false);
-    readonly icons = { TriangleAlert };
+    readonly icons = { TriangleAlert, ArrowRight };
 
     ngOnInit() {
         this.loadData();
@@ -51,5 +55,26 @@ export class DtcSectionComponent implements OnInit {
 
     trackByCode(index: number, dtc: Dtc): string {
         return dtc.code || index.toString();
+    }
+
+    viewDtc(dtc: Dtc) {
+        console.log('[DtcSection] Opening DTC:', dtc);
+
+        if (this.windowManager.isDesktop()) {
+            this.windowManager.openWindow(
+                `DTC: ${dtc.code}`,
+                ArticleViewerComponent,
+                {
+                    contentSource: this.contentSource,
+                    vehicleId: this.vehicleId,
+                    articleId: dtc.id,
+                    articleTitleInput: `${dtc.code} - ${dtc.description}`
+                }
+            );
+        } else {
+            this.router.navigate(['/vehicle', this.contentSource, this.vehicleId, 'article', dtc.id], {
+                queryParams: { title: `${dtc.code} - ${dtc.description}` }
+            });
+        }
     }
 }

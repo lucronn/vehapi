@@ -1,6 +1,6 @@
 import { Component, Input, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { VehicleDataService } from '../../../../../services/vehicle-data.service';
 import { Tsb } from '../../../../../models/motor.models';
 import { LoadingSkeletonComponent } from '../../../../../components/loading-skeleton/loading-skeleton.component';
@@ -30,6 +30,7 @@ export class TsbSectionComponent implements OnInit {
     private vehicleData = inject(VehicleDataService);
     private motorApi = inject(MotorApiService);
     private windowManager = inject(WindowManagerService);
+    private router = inject(Router);
 
     tsbs = signal<Tsb[]>([]);
     isLoading = signal(false);
@@ -64,16 +65,22 @@ export class TsbSectionComponent implements OnInit {
     }
 
     viewTsb(tsb: Tsb) {
-        this.windowManager.openWindow(
-            `TSB: ${tsb.bulletinNumber || 'View'}`,
-            ArticleViewerComponent,
-            {
-                contentSource: this.contentSource,
-                vehicleId: this.vehicleId,
-                articleId: tsb.id,
-                articleTitleInput: tsb.title
-            }
-        );
+        if (this.windowManager.isDesktop()) {
+            this.windowManager.openWindow(
+                `TSB: ${tsb.bulletinNumber || 'View'}`,
+                ArticleViewerComponent,
+                {
+                    contentSource: this.contentSource,
+                    vehicleId: this.vehicleId,
+                    articleId: tsb.id,
+                    articleTitleInput: tsb.title
+                }
+            );
+        } else {
+            this.router.navigate(['/vehicle', this.contentSource, this.vehicleId, 'article', tsb.id], {
+                queryParams: { title: tsb.title }
+            });
+        }
     }
 
     getThumbnailUrl(thumbnailHref: string | undefined): string {

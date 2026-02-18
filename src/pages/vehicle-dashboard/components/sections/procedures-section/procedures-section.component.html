@@ -18,8 +18,8 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             @for (procedure of group.items; track trackById($index, procedure)) {
-            <a [routerLink]="['/vehicle', contentSource, vehicleId, 'article', procedure.id]"
-                class="card p-4 transition-all group">
+            <div (click)="viewProcedure(procedure)"
+                class="card p-4 transition-all group cursor-pointer hover:bg-white/5">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                         style="background:rgba(0,212,255,0.1);color:hsl(191,97%,50%)">
@@ -35,7 +35,7 @@
                         }
                     </div>
                 </div>
-            </a>
+            </div>
             }
         </div>
     </div>

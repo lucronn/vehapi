@@ -4,11 +4,11 @@ import { WindowManagerService } from '../../services/window-manager.service';
 import { WindowComponent } from '../window/window.component';
 
 @Component({
-    selector: 'app-window-container',
-    standalone: true,
-    imports: [CommonModule, WindowComponent],
-    template: `
-    <div class="fixed inset-0 pointer-events-none z-[1000]">
+  selector: 'app-window-container',
+  standalone: true,
+  imports: [CommonModule, WindowComponent],
+  template: `
+    <div class="fixed inset-0 pointer-events-none z-[9999]">
       @for (window of windowManager.windows(); track window.id) {
         @if (!window.isMinimized) {
           <app-window
@@ -28,5 +28,5 @@ import { WindowComponent } from '../window/window.component';
   `
 })
 export class WindowContainerComponent {
-    windowManager = inject(WindowManagerService);
+  windowManager = inject(WindowManagerService);
 }

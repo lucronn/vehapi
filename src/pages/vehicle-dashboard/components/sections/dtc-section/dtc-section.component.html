@@ -9,8 +9,9 @@
     }
     @else {
     @for (dtc of dtcs(); track trackByCode($index, dtc)) {
-    <a [routerLink]="['/vehicle', contentSource, vehicleId, 'article', dtc.id]"
-        class="card p-5 block transition-all group animate-fade-in-up" [style.animation-delay]="$index * 50 + 'ms'">
+    <div (click)="viewDtc(dtc)"
+        class="card p-5 flex flex-col transition-all group animate-fade-in-up cursor-pointer hover:bg-white/5"
+        [style.animation-delay]="$index * 50 + 'ms'">
         <div class="space-y-3">
             <div class="flex items-center justify-between">
                 <span class="text-lg font-bold" style="color:var(--status-warning)">{{ dtc.code }}</span>
@@ -26,7 +27,7 @@
                     class="w-3 h-3 group-hover:translate-x-0.5 transition-transform"></lucide-icon>
             </div>
         </div>
-    </a>
+    </div>
     }
     }
 </div>

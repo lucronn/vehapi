@@ -1,5 +1,6 @@
 import { Component, Input, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 // import { GeminiService } from '../../../../../services/gemini.service'; // Removed
 import { FirebaseService } from '../../../../../services/firebase.service';
 import { CommonIssue } from '../../../../../models/motor.models';
@@ -29,6 +30,7 @@ export class CommonIssuesSectionComponent implements OnInit {
     private firebase = inject(FirebaseService);
     private sanitizer = inject(DomSanitizer);
     private windowManager = inject(WindowManagerService);
+    private router = inject(Router);
 
     commonIssues = signal<CommonIssue[]>([]);
     isLoading = signal(false);
@@ -78,14 +80,24 @@ export class CommonIssuesSectionComponent implements OnInit {
             </div>
         `;
 
-        this.windowManager.openWindow(
-            `Issue: ${issueTitle}`,
-            ArticleViewerComponent,
-            {
-                articleTitleInput: issueTitle,
-                htmlContentInput: htmlContent
-            }
-        );
+        if (this.windowManager.isDesktop()) {
+            this.windowManager.openWindow(
+                `Issue: ${issueTitle}`,
+                ArticleViewerComponent,
+                {
+                    articleTitleInput: issueTitle,
+                    htmlContentInput: htmlContent
+                }
+            );
+        } else {
+            // For mobile, navigate and pass content via history state
+            this.router.navigate(['/vehicle', this.contentSource, this.vehicleId, 'article', 'issue-' + encodeURIComponent(issueTitle)], {
+                state: {
+                    title: issueTitle,
+                    content: htmlContent
+                }
+            });
+        }
     }
 
     getSeverityColor(severity: string): string {

@@ -1,11 +1,14 @@
 import { Component, Input, OnInit, signal, inject, ChangeDetectionStrategy, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { VehicleDataService } from '../../../../../services/vehicle-data.service';
 import { Procedure } from '../../../../../models/motor.models';
 import { LoadingSkeletonComponent } from '../../../../../components/loading-skeleton/loading-skeleton.component';
 import { EmptyStateComponent } from '../../../../../components/empty-state/empty-state.component';
 import { LucideAngularModule, Wrench } from 'lucide-angular';
+
+import { ArticleViewerComponent } from '../../../../article-viewer/article-viewer.component';
+import { WindowManagerService } from '../../../../../services/window-manager.service';
 
 /**
  * Displays repair procedures
@@ -23,6 +26,8 @@ export class ProceduresSectionComponent implements OnInit {
     @Input() motorVehicleId?: string;
 
     private vehicleData = inject(VehicleDataService);
+    private windowManager = inject(WindowManagerService);
+    private router = inject(Router);
 
     procedures = signal<Procedure[]>([]);
 
@@ -73,5 +78,24 @@ export class ProceduresSectionComponent implements OnInit {
 
     trackById(index: number, procedure: Procedure): string {
         return procedure.id || index.toString();
+    }
+
+    viewProcedure(procedure: Procedure) {
+        if (this.windowManager.isDesktop()) {
+            this.windowManager.openWindow(
+                procedure.title || 'Procedure',
+                ArticleViewerComponent,
+                {
+                    contentSource: this.contentSource,
+                    vehicleId: this.vehicleId,
+                    articleId: procedure.id,
+                    articleTitleInput: procedure.title
+                }
+            );
+        } else {
+            this.router.navigate(['/vehicle', this.contentSource, this.vehicleId, 'article', procedure.id], {
+                queryParams: { title: procedure.title }
+            });
+        }
     }
 }

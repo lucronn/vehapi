@@ -425,7 +425,7 @@ export class VehicleDataService {
                     loadingSignal.set(false);
                     // Map response to simple MaintenanceSchedule[]
                     // Handle potential variations in API response structure
-                    const schedules = (res.body as any)?.data || (res.body as any)?.items || [];
+                    const schedules = (res.body as any)?.schedules || (res.body as any)?.items || (res.body as any)?.data || [];
                     updateState(schedules);
                 },
                 error: (err) => {

@@ -6,7 +6,8 @@
 
   <!-- Mobile Header -->
   <div class="md:hidden sticky top-0 w-full z-50 px-4 py-3 flex items-center justify-between
-    bg-[hsl(230,35%,9%)]/90 backdrop-blur-xl border-b border-white/5">
+    bg-[hsl(230,35%,9%)]/90 backdrop-blur-xl border-b border-white/5"
+    style="padding-top: calc(0.75rem + env(safe-area-inset-top, 0px))">
     <div class="flex items-center gap-2">
       <app-logo class="w-5 h-5"></app-logo>
       <div>
@@ -82,8 +83,7 @@
         </div>
         <div class="max-h-64 overflow-y-auto">
           @for (article of filteredArticles().slice(0, 15); track article.id) {
-          <a [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', article.id]"
-            (click)="onArticleClick($event, article.id)"
+          <a href="javascript:void(0)" (click)="onArticleClick($event, article)"
             class="flex items-center gap-3 px-4 py-3 transition-all group hover:bg-white/[0.03] border-b border-white/[0.03]">
             <lucide-icon [img]="icons.FileText" class="w-4 h-4 flex-shrink-0 text-torque-muted"></lucide-icon>
             <span class="text-sm font-medium text-white/80 group-hover:text-white">{{ article.title }}</span>

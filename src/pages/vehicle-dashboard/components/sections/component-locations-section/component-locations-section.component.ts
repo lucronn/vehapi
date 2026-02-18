@@ -1,12 +1,14 @@
 import { Component, Input, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { VehicleDataService } from '../../../../../services/vehicle-data.service';
 import { ComponentLocation } from '../../../../../models/motor.models';
 import { LoadingSkeletonComponent } from '../../../../../components/loading-skeleton/loading-skeleton.component';
 import { EmptyStateComponent } from '../../../../../components/empty-state/empty-state.component';
 import { LucideAngularModule, TriangleAlert, MapPin, Image } from 'lucide-angular';
 import { MotorApiService } from '../../../../../services/motor-api.service';
+import { ArticleViewerComponent } from '../../../../article-viewer/article-viewer.component';
+import { WindowManagerService } from '../../../../../services/window-manager.service';
 
 /**
  * Displays Component Locations
@@ -25,6 +27,8 @@ export class ComponentLocationsSectionComponent implements OnInit {
 
     private vehicleData = inject(VehicleDataService);
     private motorApi = inject(MotorApiService); // For graphic URL if needed
+    private windowManager = inject(WindowManagerService);
+    private router = inject(Router);
 
     locations = signal<ComponentLocation[]>([]);
     isLoading = signal(false);
@@ -61,5 +65,24 @@ export class ComponentLocationsSectionComponent implements OnInit {
         // it's good practice to have the same logic or precise delegation)
         if (thumbnailHref.startsWith('http')) return thumbnailHref;
         return this.motorApi.getGraphicUrl(thumbnailHref);
+    }
+
+    viewLocation(item: ComponentLocation) {
+        if (this.windowManager.isDesktop()) {
+            this.windowManager.openWindow(
+                item.title || 'Component Location',
+                ArticleViewerComponent,
+                {
+                    contentSource: this.contentSource,
+                    vehicleId: this.vehicleId,
+                    articleId: item.id,
+                    articleTitleInput: item.title
+                }
+            );
+        } else {
+            this.router.navigate(['/vehicle', this.contentSource, this.vehicleId, 'article', item.id], {
+                queryParams: { title: item.title }
+            });
+        }
     }
 }

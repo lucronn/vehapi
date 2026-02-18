@@ -51,6 +51,8 @@
 
   --safe-area-top: env(safe-area-inset-top, 0px);
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
 }
 
 [data-theme="light"] {
@@ -97,6 +99,8 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    /* iOS dynamic viewport height — fallback to 100% for older browsers */
+    height: 100%;
   }
 
   body {
@@ -105,12 +109,16 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    height: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    /* iOS dynamic viewport height */
     width: 100%;
     overflow-x: hidden;
     overscroll-behavior-y: none;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
+    -webkit-overflow-scrolling: touch;
+    /* iOS momentum scrolling */
     transition: background-color 0.3s ease, color 0.3s ease;
   }
 
@@ -711,17 +719,7 @@
     border-color: var(--border);
   }
 
-  /* CRITICAL FIX: Force proper display of MOTOR API images */
-  .article-content img,
-  .article-content .article-image,
-  app-article-viewer img {
-    width: 100% !important;
-    height: 400px !important;
-    max-height: 600px !important;
-    object-fit: contain !important;
-    background: var(--bg-muted) !important;
-    border-radius: var(--radius) !important;
-  }
+
 
   /* ---- Animations ---- */
   .animate-fade-in {
@@ -788,8 +786,10 @@
     display: flex;
     justify-content: space-around;
     align-items: center;
-    padding: 0.25rem 0;
-    padding-bottom: max(0.25rem, var(--safe-area-bottom));
+    padding: 0.5rem 0;
+    padding-bottom: calc(0.5rem + var(--safe-area-bottom));
+    padding-left: var(--safe-area-left);
+    padding-right: var(--safe-area-right);
     z-index: 50;
   }
 

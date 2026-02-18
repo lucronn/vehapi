@@ -9,8 +9,8 @@
     } @else {
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         @for (item of locations(); track trackById($index, item)) {
-        <a [routerLink]="['/vehicle', contentSource, vehicleId, 'article', item.id]"
-            class="card block overflow-hidden transition-all group">
+        <div (click)="viewLocation(item)"
+            class="card block overflow-hidden transition-all group cursor-pointer hover:bg-white/5">
 
             <!-- Thumbnail -->
             <div class="aspect-video relative overflow-hidden flex items-center justify-center"
@@ -30,7 +30,7 @@
                     {{ item.bucket }}
                 </div>
             </div>
-        </a>
+        </div>
         }
     </div>
     }

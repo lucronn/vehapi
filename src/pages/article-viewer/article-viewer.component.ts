@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, Input, signal, ViewEncapsulation, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, Input, signal, ViewEncapsulation, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -24,7 +24,7 @@ export interface TableOfContents {
   imports: [CommonModule, RouterModule, LucideAngularModule, ImageViewerModalComponent],
   standalone: true
 })
-export class ArticleViewerComponent implements OnInit {
+export class ArticleViewerComponent implements OnInit, OnChanges {
   // Inputs for Window Mode
   @Input() contentSource?: string;
   @Input() vehicleId?: string;
@@ -42,30 +42,86 @@ export class ArticleViewerComponent implements OnInit {
   private loadTrigger = new Subject<void>();
 
   // State
+  private internalArticleId = signal<string | null>(null);
   articleTitle = signal<string>('');
   articleContent = signal<SafeHtml>('');
   sections = signal<TableOfContents[]>([]);
   isMobileTocOpen = signal(false);
   isLoading = signal(false);
   error = signal<string | null>(null);
+  articleSubtitle = signal<string>('');
 
   selectedImageUrl = signal<string | null>(null);
+  rawResponse = signal<any>(null); // For debugging
+  params = toSignal(this.route.paramMap);
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['articleId']) {
+      this.internalArticleId.set(this.articleId!);
+    }
+
+    if (changes['articleId'] || changes['vehicleId'] || changes['contentSource']) {
+      // If we have all required inputs, load data
+      if (this.contentSource && this.vehicleId && this.internalArticleId()) {
+        console.log('[ArticleViewer] Inputs changed, loading data:', {
+          source: this.contentSource,
+          vehicle: this.vehicleId,
+          article: this.internalArticleId()
+        });
+        this.loadData();
+      }
+    }
+  }
 
   ngOnInit() {
     // Check if we have inputs or need to read from route
-    if (!this.contentSource || !this.vehicleId || !this.articleId) {
+    console.log('[ArticleViewer] Init with inputs:', {
+      source: this.contentSource,
+      vehicle: this.vehicleId,
+      article: this.articleId
+    });
+
+    if (this.articleId) {
+      this.internalArticleId.set(this.articleId);
+    }
+
+    // Check for passed state (from direct navigation on mobile)
+    const state = typeof window !== 'undefined' ? window.history.state : null;
+    if (state && state.content) {
+      this.htmlContentInput = state.content;
+      if (state.title) this.articleTitleInput = state.title;
+      console.log('[ArticleViewer] Loaded content from history state');
+    }
+
+    if (!this.contentSource || !this.vehicleId || !this.internalArticleId()) {
       this.route.paramMap.subscribe(params => {
         this.contentSource = params.get('contentSource') ?? '';
         this.vehicleId = params.get('vehicleId') ?? '';
-        this.articleId = params.get('articleId') ?? '';
-        this.loadData();
+        const aid = params.get('articleId') ?? '';
+        this.internalArticleId.set(aid);
+
+        console.log('[ArticleViewer] Loaded params from route:', {
+          source: this.contentSource,
+          vehicle: this.vehicleId,
+          article: aid
+        });
+
+        // Also check query params for title
+        this.route.queryParamMap.subscribe(qp => {
+          const title = qp.get('title');
+          if (title && !this.articleTitleInput) {
+            this.articleTitleInput = title;
+            this.articleTitle.set(this.cleanTitle(title));
+          }
+          this.loadData();
+        });
       });
     } else {
       this.loadData();
     }
 
     if (this.articleTitleInput) {
-      this.articleTitle.set(this.articleTitleInput);
+      this.articleTitle.set(this.cleanTitle(this.articleTitleInput));
     }
 
     if (this.htmlContentInput) {
@@ -76,17 +132,23 @@ export class ArticleViewerComponent implements OnInit {
   }
 
   loadData() {
-    if (this.htmlContentInput) return; // Skip loading if we have direct content
-    if (!this.contentSource || !this.vehicleId || !this.articleId) return;
+    if (this.htmlContentInput) {
+      // If we have content input, we might still need to parse sections
+      const { sections } = this.processHtml(this.htmlContentInput, this.contentSource || '', this.vehicleId || '');
+      this.sections.set(sections);
+      return;
+    }
+    const aid = this.internalArticleId();
+    if (!this.contentSource || !this.vehicleId || !aid) return;
 
     this.isLoading.set(true);
     this.error.set(null);
 
     // Fetch Title if not provided
     if (!this.articleTitleInput) {
-      this.motorApi.getArticleTitle(this.contentSource, this.vehicleId, this.articleId).subscribe({
+      this.motorApi.getArticleTitle(this.contentSource, this.vehicleId, aid).subscribe({
         next: (res) => {
-          const rawTitle = res.body || this.articleId || '';
+          const rawTitle = res.body || aid || '';
           this.articleTitle.set(this.cleanTitle(rawTitle));
         },
         error: () => this.articleTitle.set('Article')
@@ -94,16 +156,35 @@ export class ArticleViewerComponent implements OnInit {
     }
 
     // Fetch Content
-    this.motorApi.getArticleContent(this.contentSource, this.vehicleId, this.articleId).subscribe({
+    this.motorApi.getArticleContent(this.contentSource, this.vehicleId, aid).subscribe({
       next: (content) => {
-        const { html: processedHtml, sections } = this.processHtml(content.body.html, this.contentSource!, this.vehicleId!);
-        this.articleContent.set(processedHtml);
+        console.log('[ArticleViewer] Raw API Response:', content);
+        this.rawResponse.set(content);
+        if (!content || !content.body || !content.body.html) {
+          console.error('[ArticleViewer] API returned empty content body or html');
+        }
+
+        const rawHtml = (content.body as any)?.html || '';
+        const { htmlString, safeHtml, sections } = this.processHtml(rawHtml, this.contentSource!, this.vehicleId!);
+
+        console.log('[ArticleViewer] Processed HTML length:', htmlString?.length);
+        console.log('[ArticleViewer] Processed HTML snippet:', htmlString?.substring(0, 100));
+
+        if (!htmlString || htmlString.trim() === '') {
+          console.warn('[ArticleViewer] Content is empty after processing');
+          this.articleContent.set('');
+        } else {
+          this.articleContent.set(safeHtml);
+        }
+
         this.sections.set(sections);
         this.isLoading.set(false);
+        // Reset scroll position when loading new article content in modal
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       },
       error: (err) => {
-        console.error('Failed to load article', err);
-        this.error.set('Failed to load article content.');
+        console.error('[ArticleViewer] Failed to load article API error:', err);
+        this.error.set('Failed to load article content. ' + (err.message || 'Unknown error'));
         this.isLoading.set(false);
       }
     });
@@ -111,13 +192,52 @@ export class ArticleViewerComponent implements OnInit {
 
   private cleanTitle(rawTitle: string): string {
     if (!rawTitle) return '';
-    const cleaned = rawTitle.replace(/ID:\s*[A-Z]:[\w\-:]+/i, '').trim();
-    const veryShort = cleaned.replace(/Section\s+\d{3}-\d{2}[\sA-Za-z-]*$/i, '').trim();
-    return veryShort || cleaned || rawTitle;
+    // Remove internal IDs like "ID: X:ABC-123"
+    let cleaned = rawTitle.replace(/ID:\s*[A-Z]:[\w\-:]+/i, '').trim();
+    // Remove section refs like "Section 303-01A"
+    cleaned = cleaned.replace(/Section\s+\d{3}-\d{2}[\sA-Za-z-]*$/i, '').trim();
+
+    // Handle pipe-delimited titles: "PART A | PART B; date range"
+    if (cleaned.includes('|') || cleaned.includes(';')) {
+      // Split on pipe first
+      const pipeParts = cleaned.split('|').map(s => s.trim()).filter(Boolean);
+      const primary = pipeParts[0] || cleaned;
+      const rest = pipeParts.slice(1).join(' — ');
+
+      // From the rest, strip date/year ranges like "2018 – 2020 MY Camry"
+      const subtitleParts = rest
+        .split(';')
+        .map(s => s.trim())
+        .filter(s => s && !/^\d{4}\s*[–\-]\s*\d{4}/i.test(s));
+
+      const subtitle = subtitleParts.join(' — ');
+      this.articleSubtitle.set(subtitle);
+
+      // Title-case the primary part: "AIR CONDITIONING SYSTEM" → "Air Conditioning System"
+      return this.toTitleCase(primary);
+    }
+
+    this.articleSubtitle.set('');
+    return cleaned || rawTitle;
   }
 
-  private processHtml(html: string, contentSource: string, vehicleId: string): { html: SafeHtml, sections: TableOfContents[] } {
-    if (!html) return { html: '', sections: [] };
+  private toTitleCase(str: string): string {
+    if (!str) return '';
+    // If it's all uppercase, convert to title case
+    if (str === str.toUpperCase() && str.length > 3) {
+      const minorWords = new Set(['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'in', 'of', 'on', 'or', 'the', 'to', 'with']);
+      return str.toLowerCase().split(/\s+/).map((word, i) => {
+        if (i === 0 || !minorWords.has(word)) {
+          return word.charAt(0).toUpperCase() + word.slice(1);
+        }
+        return word;
+      }).join(' ');
+    }
+    return str;
+  }
+
+  private processHtml(html: string, contentSource: string, vehicleId: string): { htmlString: string, safeHtml: SafeHtml, sections: TableOfContents[] } {
+    if (!html) return { htmlString: '', safeHtml: '', sections: [] };
 
     let processed = this.motorApi.processHtmlContent(html, contentSource, vehicleId);
 
@@ -150,16 +270,41 @@ export class ArticleViewerComponent implements OnInit {
     });
 
     return {
-      html: this.sanitizer.bypassSecurityTrustHtml(processed),
+      htmlString: processed,
+      safeHtml: this.sanitizer.bypassSecurityTrustHtml(processed),
       sections
     };
   }
 
   onContentClick(event: MouseEvent) {
     const target = event.target as HTMLElement;
+
+    // Handle image clicks
     if (target.tagName === 'IMG') {
       const img = target as HTMLImageElement;
       this.selectedImageUrl.set(img.src);
+      return;
+    }
+
+    // Handle link clicks (intercept for window mode)
+    const anchor = target.closest('a');
+    if (anchor) {
+      const href = anchor.getAttribute('href');
+      // Intercept if it's an internal article link (starts with #/vehicle/)
+      if (href && href.startsWith('#/vehicle/') && href.includes('/article/')) {
+        // If we have an articleId input, we are in a modal window
+        if (this.articleId) {
+          event.preventDefault();
+          const parts = href.split('/article/');
+          if (parts.length > 1) {
+            const newArticleId = parts[1];
+            console.log('[ArticleViewer] Intercepted link click in modal. Switching to article:', newArticleId);
+            this.internalArticleId.set(newArticleId);
+            this.articleTitleInput = undefined; // Clear existing title input to force reload
+            this.loadData();
+          }
+        }
+      }
     }
   }
 
