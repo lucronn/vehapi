@@ -1,240 +1,212 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test';
-import { Article, FilterTab, BucketArticles, Bucket } from '../models/motor.models';
+import '@angular/compiler'; // Load JIT compiler
+import { expect, test, describe, beforeEach, mock } from 'bun:test';
+import { resolve } from 'path';
 
-// Mock dependencies
-const mockMotorApiInstance = {
-  getSearchResultsByVehicleId: () => ({ pipe: () => ({ subscribe: () => {} }) })
+// Mocks must be defined before imports
+
+const mockSignal = (initialValue: any) => {
+    let _val = initialValue;
+    const s = () => _val;
+    s.set = (v: any) => { _val = v; };
+    return s;
 };
 
-// Mock rxjs
-mock.module('rxjs', () => {
-    return {
-        of: (val: any) => ({
-            pipe: () => ({ subscribe: (fn: any) => fn({ body: val }) })
-        }),
-        catchError: () => (source: any) => source
-    };
-});
+const mockComputed = (fn: () => any) => {
+    return () => fn();
+};
 
-mock.module('rxjs/operators', () => {
+const mockInject = (token: any) => {
     return {
-        catchError: (fn: any) => (source: any) => source,
-        map: (fn: any) => (source: any) => source,
-        tap: (fn: any) => (source: any) => source,
+        getSearchResultsByVehicleId: () => ({ pipe: () => ({ subscribe: () => { } }) })
     };
-});
+};
 
-// Mock MotorApiService module to prevent loading its dependencies
-mock.module('./motor-api.service', () => {
-    return {
-        MotorApiService: class DummyMotorApiService {}
-    };
-});
-
-// Mock @angular/core
-mock.module('@angular/core', () => {
-  return {
+// Mock Angular Core
+mock.module('@angular/core', () => ({
     Injectable: () => (target: any) => target,
-    inject: (token: any) => {
-        // checks against the token name or reference
-        // Since we mocked MotorApiService class, we check if token matches our dummy class
-        // or we just return the mock instance if it looks like MotorApiService
-        return mockMotorApiInstance;
-    },
-    signal: (initialValue: any) => {
-      let value = initialValue;
-      const s = (newValue?: any) => {
-        if (newValue !== undefined) {
-          value = newValue;
+    signal: mockSignal,
+    computed: mockComputed,
+    inject: mockInject,
+}));
+
+// Mock Angular Common (fixes JIT compilation error)
+mock.module('@angular/common', () => ({
+    PlatformLocation: class { },
+    APP_BASE_HREF: 'APP_BASE_HREF'
+}));
+
+// Mock Angular Common HTTP
+mock.module('@angular/common/http', () => ({
+    HttpClient: class { },
+    HttpParams: class { set() { return this; } },
+    HttpRequest: class { },
+    HttpEvent: class { }
+}));
+
+// Mock MotorApiService using absolute path
+const motorServicePath = resolve(import.meta.dir, 'motor-api.service.ts');
+mock.module(motorServicePath, () => {
+    return {
+        MotorApiService: class {
+            getSearchResultsByVehicleId() { return { pipe: () => ({ subscribe: () => { } }) }; }
         }
-        return value;
-      };
-      s.set = (v: any) => { value = v; };
-      return s;
-    },
-    computed: (fn: any) => {
-      const s = () => fn();
-      return s;
-    }
-  };
+    };
 });
 
-// Original implementation for baseline comparison
-function originalBucketsFilledWithArticles(
-    articles: Article[],
-    tabs: FilterTab[],
-    showProceduresInSilo: boolean
-): BucketArticles[] {
-    if (!showProceduresInSilo) {
-        // Flatten procedure silo logic
-        articles = articles.map((item) => {
-            if (item.parentBucket === 'Procedures') {
-                return {
-                    ...item,
-                    bucket: 'Procedures',
-                    parentBucket: undefined,
-                };
-            }
-            return item;
-        });
-        tabs = tabs.map((tab) => ({
-            ...tab,
-            buckets: tab.buckets?.map((bucket) => ({
-                ...bucket,
-                children: bucket.name === 'Procedures' ? [] : bucket.children,
-            })),
-        }));
-    }
+// Import the service under test
+import { SearchResultsState } from './search-results.state';
+import { Article, FilterTab } from '../models/motor.models';
 
-    let bucketList: BucketArticles[] = [];
+describe('SearchResultsState', () => {
+    let state: SearchResultsState;
 
-    tabs
-        .filter((item) => item.filterTabType !== 'All')
-        .forEach((tab) => {
-            tab.buckets?.forEach((bucket) => {
-                const childrenBucketList: BucketArticles[] = [];
-
-                bucket.children?.forEach((childBucket) => {
-                    childrenBucketList.push({
-                        bucketName: childBucket.name ?? '',
-                        bucketFilterCategory: tab.name ?? '',
-                        articles: articles.filter((item) => item.bucket === childBucket.name) ?? [],
-                        sort: bucket.sort ?? 0,
-                        bucketNameOverride: childBucket.nameOverride,
-                        bucketFilterTabType: tab.filterTabType,
-                    });
-                });
-
-                const nonParentedArticles = articles.filter((item) => !item.parentBucket);
-
-                bucketList.push({
-                    bucketName: bucket.name ?? '',
-                    bucketFilterCategory: tab.name ?? '',
-                    articles: nonParentedArticles.filter((item) => item.bucket === bucket.name) ?? [],
-                    sort: bucket.sort ?? 0,
-                    bucketNameOverride: bucket.nameOverride,
-                    bucketFilterTabType: tab.filterTabType,
-                    isParent: bucket.children && bucket.children.length > 0,
-                    children: childrenBucketList,
-                });
-            });
-        });
-
-    // Filter out empty buckets, BUT preserve important categories even if empty
-    const importantBuckets = ['Diagnostics', 'Diagnostic Trouble Codes', 'DTCs', 'Fault Codes'];
-
-    bucketList = bucketList.filter(
-        (bucketArticles) => {
-            const hasArticles = bucketArticles.articles.length > 0 ||
-                (bucketArticles.isParent === true && bucketArticles.children?.some((item) => item.articles.length > 0));
-
-            const isImportantCategory = importantBuckets.includes(bucketArticles.bucketName) ||
-                importantBuckets.includes(bucketArticles.bucketFilterCategory);
-
-            return hasArticles || isImportantCategory;
-        }
-    );
-
-    // Sort
-    bucketList.sort((a, b) => a.sort - b.sort);
-
-    return bucketList;
-}
-
-describe('SearchResultsState Performance', () => {
-    let SearchResultsStateClass: any;
-    let state: any;
-
-    beforeEach(async () => {
-        // Dynamic import to allow mocking to take effect
-        const module = await import('./search-results.state');
-        SearchResultsStateClass = module.SearchResultsState;
-        state = new SearchResultsStateClass();
+    beforeEach(() => {
+        state = new SearchResultsState();
     });
 
-    it('should be faster than the original implementation', () => {
-        // 1. Generate large dataset (reduced for quick testing, but large enough to measure)
-        // 5000 is good enough.
-        const ARTICLE_COUNT = 5000;
-        const TABS_COUNT = 5;
-        const BUCKETS_PER_TAB = 5;
-        const CHILDREN_PER_BUCKET = 3;
+    test('should initialize with default values', () => {
+        expect(state.articleDetails()).toEqual([]);
+        expect(state.filterTabs()).toEqual([]);
+        expect(state.isLoading()).toBe(false);
+        expect(state.error()).toBeNull();
+    });
 
-        const tabs: FilterTab[] = [];
-        const bucketNames: string[] = [];
+    describe('bucketsFilledWithArticles', () => {
+        const mockArticles: Article[] = [
+            { id: '1', title: 'Article 1', bucket: 'General', sort: 1 },
+            { id: '2', title: 'Article 2', bucket: 'Diagnostics', sort: 2 },
+            { id: '3', title: 'Procedure 1', bucket: 'Procedures', parentBucket: 'Procedures', sort: 3 },
+            { id: '4', title: 'DTC 1', bucket: 'DTCs', sort: 4 }
+        ];
 
-        for (let i = 0; i < TABS_COUNT; i++) {
-            const buckets: Bucket[] = [];
-            for (let j = 0; j < BUCKETS_PER_TAB; j++) {
-                const children: Bucket[] = [];
-                const bucketName = `Tab${i}_Bucket${j}`;
-                bucketNames.push(bucketName);
-
-                for (let k = 0; k < CHILDREN_PER_BUCKET; k++) {
-                    const childName = `Tab${i}_Bucket${j}_Child${k}`;
-                    bucketNames.push(childName);
-                    children.push({ name: childName, count: 0, sort: k });
-                }
-
-                buckets.push({
-                    name: bucketName,
-                    count: 0,
-                    sort: j,
-                    children: children
-                });
-            }
-            tabs.push({
-                name: `Tab${i}`,
+        const mockFilterTabs: FilterTab[] = [
+            {
+                name: 'Service',
                 filterTabType: 'Basic',
-                buckets: buckets
-            });
-        }
-
-        const articles: Article[] = [];
-        for (let i = 0; i < ARTICLE_COUNT; i++) {
-            const bucketIndex = Math.floor(Math.random() * bucketNames.length);
-            articles.push({
-                id: `art_${i}`,
-                title: `Article ${i}`,
-                bucket: bucketNames[bucketIndex],
-                // Randomly assign parentBucket for some articles
-                parentBucket: Math.random() > 0.8 ? 'Procedures' : undefined
-            });
-        }
-
-        // Set state
-        state.articleDetails.set(articles);
-        state.filterTabs.set(tabs);
-        state.showProcedureSilo.set(true); // Default behavior
-
-        // 2. Measure Original
-        const startOriginal = performance.now();
-        const resultOriginal = originalBucketsFilledWithArticles(articles, tabs, true);
-        const endOriginal = performance.now();
-        const timeOriginal = endOriginal - startOriginal;
-
-        console.log(`Original Implementation Time: ${timeOriginal.toFixed(2)}ms`);
-
-        // 3. Measure Current (State)
-        const startState = performance.now();
-        const resultState = state.bucketsFilledWithArticles();
-        const endState = performance.now();
-        const timeState = endState - startState;
-
-        console.log(`Current Implementation Time: ${timeState.toFixed(2)}ms`);
-        // If speedup is close to 1, that's expected for now.
-        console.log(`Speedup: ${(timeOriginal / timeState).toFixed(2)}x`);
-
-        // 4. Verify Correctness
-        expect(resultState.length).toBe(resultOriginal.length);
-
-        if (resultState.length > 0) {
-            // Check a few items
-            for(let i=0; i<Math.min(5, resultState.length); i++) {
-                 expect(resultState[i].bucketName).toBe(resultOriginal[i].bucketName);
-                 expect(resultState[i].articles.length).toBe(resultOriginal[i].articles.length);
-                 expect(resultState[i].children?.length).toBe(resultOriginal[i].children?.length);
+                buckets: [
+                    { name: 'General', count: 0, sort: 1 },
+                    { name: 'Diagnostics', count: 0, sort: 2 },
+                    {
+                        name: 'Procedures',
+                        count: 0,
+                        sort: 3,
+                        children: [
+                            { name: 'Procedures', count: 0, sort: 1 } // Child bucket same name as parent
+                        ]
+                    },
+                    { name: 'DTCs', count: 0, sort: 4 },
+                    { name: 'EmptyBucket', count: 0, sort: 5 }
+                ]
             }
-        }
+        ];
+
+        test('should filter out empty buckets but keep important ones', () => {
+            state.articleDetails.set([
+                { id: '1', title: 'Article 1', bucket: 'General', sort: 1 }
+            ]);
+            state.filterTabs.set(mockFilterTabs);
+
+            const buckets = state.bucketsFilledWithArticles();
+
+            // General has articles, should be present
+            expect(buckets.some(b => b.bucketName === 'General')).toBe(true);
+
+            // Diagnostics is empty but important, should be present
+            expect(buckets.some(b => b.bucketName === 'Diagnostics')).toBe(true);
+
+            // DTCs is empty but important, should be present
+            expect(buckets.some(b => b.bucketName === 'DTCs')).toBe(true);
+
+            // EmptyBucket is empty and not important, should be removed
+            expect(buckets.some(b => b.bucketName === 'EmptyBucket')).toBe(false);
+        });
+
+        test('should sort buckets correctly', () => {
+            state.articleDetails.set(mockArticles);
+
+            const unsortedTabs: FilterTab[] = [{
+                name: 'Service',
+                filterTabType: 'Basic',
+                buckets: [
+                    { name: 'DTCs', count: 0, sort: 10 },
+                    { name: 'General', count: 0, sort: 1 }
+                ]
+            }];
+
+            state.filterTabs.set(unsortedTabs);
+            const buckets = state.bucketsFilledWithArticles();
+
+            expect(buckets[0].bucketName).toBe('General');
+            expect(buckets[1].bucketName).toBe('DTCs');
+        });
+
+        test('should flatten procedures when showProcedureSilo is false', () => {
+            state.showProcedureSilo.set(false);
+
+            const articles = [
+                { id: 'p1', title: 'Proc 1', bucket: 'Procedures', parentBucket: 'Procedures' } as Article
+            ];
+
+            const tabs = [{
+                name: 'Service',
+                filterTabType: 'Basic',
+                buckets: [{
+                    name: 'Procedures',
+                    count: 0,
+                    sort: 1,
+                    children: [{ name: 'Procedures', count: 0, sort: 1 }]
+                }]
+            }] as FilterTab[];
+
+            state.articleDetails.set(articles);
+            state.filterTabs.set(tabs);
+
+            const buckets = state.bucketsFilledWithArticles();
+            const procBucket = buckets.find(b => b.bucketName === 'Procedures');
+
+            expect(procBucket).toBeDefined();
+            expect(procBucket?.articles.length).toBe(1);
+            expect(procBucket?.articles[0].id).toBe('p1');
+            expect(procBucket?.children?.length).toBe(0);
+        });
+
+        test('should keep procedures nested when showProcedureSilo is true', () => {
+            state.showProcedureSilo.set(true); // Default
+
+            const articles = [
+                { id: 'p1', title: 'Proc 1', bucket: 'Procedures', parentBucket: 'Procedures' } as Article
+            ];
+
+            const tabs = [{
+                name: 'Service',
+                filterTabType: 'Basic',
+                buckets: [{
+                    name: 'Procedures',
+                    count: 0,
+                    sort: 1,
+                    children: [{ name: 'Procedures', count: 0, sort: 1 }]
+                }]
+            }] as FilterTab[];
+
+            state.articleDetails.set(articles);
+            state.filterTabs.set(tabs);
+
+            const buckets = state.bucketsFilledWithArticles();
+            const procBucket = buckets.find(b => b.bucketName === 'Procedures');
+
+            expect(procBucket).toBeDefined();
+
+            // Logic check:
+            // articles still have parentBucket='Procedures'
+            // nonParentedArticles will NOT include 'p1'
+            // So procBucket.articles should be empty (direct articles)
+            expect(procBucket?.articles.length).toBe(0);
+
+            // But children buckets should be populated
+            expect(procBucket?.isParent).toBe(true);
+            expect(procBucket?.children?.length).toBe(1);
+            expect(procBucket?.children?.[0].articles.length).toBe(1);
+            expect(procBucket?.children?.[0].articles[0].id).toBe('p1');
+        });
     });
 });
