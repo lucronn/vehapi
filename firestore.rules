@@ -1,17 +1,35 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow public access to vehicle data, articles, and proxy config
-    // This is for the demo/dashboard functionality
+
+    // Check if the user is authenticated (even anonymously)
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Allow public read access to vehicle data and articles for the demo.
+    // Writes are restricted to authenticated users (including anonymous)
+    // and must strictly validate the data structure to prevent abuse.
+
     match /vehicles/{document=**} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAuthenticated()
+                   && request.resource.data.keys().hasAll(['data', 'timestamp', 'source', 'vehicleId'])
+                   && request.resource.data.timestamp is number;
     }
+
     match /articles/{document=**} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAuthenticated()
+                   && request.resource.data.keys().hasAll(['id', 'title', 'vehicleId', 'source', 'timestamp'])
+                   && request.resource.data.timestamp is number;
     }
+
     match /config/{document=**} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if false;
     }
+
     // Default deny for everything else
     match /{document=**} {
       allow read, write: if false;
