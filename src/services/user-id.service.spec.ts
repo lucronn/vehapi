@@ -4,9 +4,10 @@ import { expect, test, describe, beforeEach, mock } from 'bun:test';
 mock.module('@angular/core', () => ({
     Injectable: () => (target: any) => target,
     // Provide basic mocks for other Angular features to avoid conflicts with other tests
-    signal: (val: any) => ({ set: () => {}, update: () => {}, asReadonly: () => {} }),
+    signal: (val: any) => ({ set: () => { }, update: () => { }, asReadonly: () => { } }),
     computed: () => ({}),
-    inject: () => ({})
+    inject: () => ({}),
+    WritableSignal: class { }
 }));
 
 describe('UserIdService', () => {
