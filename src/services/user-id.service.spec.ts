@@ -3,6 +3,10 @@ import { expect, test, describe, beforeEach, mock } from 'bun:test';
 // Mock @angular/core before importing the service
 mock.module('@angular/core', () => ({
     Injectable: () => (target: any) => target,
+    // Provide basic mocks for other Angular features to avoid conflicts with other tests
+    signal: (val: any) => ({ set: () => {}, update: () => {}, asReadonly: () => {} }),
+    computed: () => ({}),
+    inject: () => ({})
 }));
 
 describe('UserIdService', () => {
@@ -47,9 +51,6 @@ describe('UserIdService', () => {
         const userId = service.getUserId();
 
         expect(userId).toBe(existingId);
-        // Ensure setItem was not called with a new ID (it would be called in the constructor,
-        // but since it's already there, it should just be set to the same value or not called)
-        // In the current implementation it doesn't call setItem if it exists.
     });
 
     test('should return the same ID on multiple calls to getUserId', () => {
