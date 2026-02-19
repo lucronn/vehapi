@@ -1,45 +1,132 @@
 import { expect, test, describe, beforeEach, mock } from 'bun:test';
+import { of, firstValueFrom } from 'rxjs';
 
-// Mock @angular/core before importing the service
+// Mocks
+const mockSearchArticles = mock(() => of({ body: { articleDetails: [], filterTabs: [] } }));
+const mockGetPartsForVehicle = mock(() => of({ body: { items: [] } }));
+const mockGetMaintenanceByIntervals = mock(() => of({ body: { schedules: [] } }));
+const mockGetFluids = mock(() => of({ body: { data: [] } }));
+const mockGetArticleContent = mock(() => of({ body: { html: '' } }));
+
+class MockMotorApiService {
+    searchArticles = mockSearchArticles;
+    getPartsForVehicle = mockGetPartsForVehicle;
+    getMaintenanceByIntervals = mockGetMaintenanceByIntervals;
+    getFluids = mockGetFluids;
+    getArticleContent = mockGetArticleContent;
+}
+
+// Mock @angular/core
 mock.module('@angular/core', () => ({
     Injectable: () => (target: any) => target,
     inject: (token: any) => {
-        // Return a dummy object for injected services
-        // Since we are only testing parseSpecTable which is a pure function
-        // relying on no external state, we don't need fully functional mocks.
+        // Simple check for class name
+        // Since we mocked MotorApiService, the token is likely MockMotorApiService
+        if (token && (token.name === 'MotorApiService' || token.name === 'MockMotorApiService')) {
+            return new MockMotorApiService();
+        }
         return {};
     },
     WritableSignal: class {},
 }));
 
-// Mock MotorApiService just in case it's imported and causes issues
+// Mock MotorApiService module
 mock.module('./motor-api.service', () => ({
-    MotorApiService: class {}
+    MotorApiService: MockMotorApiService
 }));
 
-// Mock FirebaseService just in case it's imported and causes issues
+// Mock FirebaseService
 mock.module('./firebase.service', () => ({
     FirebaseService: class {}
 }));
 
 describe('VehicleDataService', () => {
     let VehicleDataService: any;
+    let service: any;
 
     beforeEach(async () => {
+        // Reset mocks
+        mockSearchArticles.mockReset();
+        mockGetPartsForVehicle.mockReset();
+        mockGetMaintenanceByIntervals.mockReset();
+        mockGetFluids.mockReset();
+        mockGetArticleContent.mockReset();
+
+        // Default behavior
+        mockSearchArticles.mockReturnValue(of({ body: { articleDetails: [], filterTabs: [] } }));
+        mockGetPartsForVehicle.mockReturnValue(of({ body: { items: [] } }));
+
+        // Re-import service to ensure mocks are applied
+        // In bun test, modules are cached, so we might need a workaround if tests run in parallel or sequence
+        // But let's try direct import
         const module = await import('./vehicle-data.service');
         VehicleDataService = module.VehicleDataService;
+        service = new VehicleDataService();
+    });
+
+    describe('getAvailableSections', () => {
+        test('should return all false if no data found', async () => {
+             const obs = service.getAvailableSections('MOTOR', '123');
+             const result = await firstValueFrom(obs);
+             expect(result.hasDtcs).toBe(false);
+             expect(result.hasTsbs).toBe(false);
+             expect(result.hasDiagrams).toBe(false);
+             expect(result.hasProcedures).toBe(false);
+             expect(result.hasSpecs).toBe(false);
+             expect(result.hasComponentLocations).toBe(false);
+             expect(result.hasParts).toBe(false);
+             expect(result.hasMaintenance).toBe(false);
+        });
+
+        test('should detect sections from filter tabs', async () => {
+            mockSearchArticles.mockReturnValue(of({
+                body: {
+                    articleDetails: [],
+                    filterTabs: [
+                        { name: 'Diagnostic Trouble Codes', type: 'DTCs' },
+                        { name: 'Technical Service Bulletins', type: 'TSBs' },
+                        { name: 'Wiring Diagrams', type: 'Diagrams' },
+                        { name: 'Procedures', type: 'Procedures' },
+                        { name: 'Component Locations', type: 'Component Locations' },
+                        { name: 'Maintenance', type: 'Maintenance' },
+                        { name: 'Specifications', type: 'Specs' }
+                    ]
+                }
+            }));
+
+            const obs = service.getAvailableSections('MOTOR', '123');
+            const result = await firstValueFrom(obs);
+
+            expect(result.hasDtcs).toBe(true);
+            expect(result.hasTsbs).toBe(true);
+            expect(result.hasDiagrams).toBe(true);
+            expect(result.hasProcedures).toBe(true);
+            expect(result.hasComponentLocations).toBe(true);
+            expect(result.hasMaintenance).toBe(true);
+            expect(result.hasSpecs).toBe(true);
+        });
+
+         test('should detect parts from parts API', async () => {
+            mockGetPartsForVehicle.mockReturnValue(of({
+                body: {
+                    items: [{ partNumber: '123' }]
+                }
+            }));
+
+            const obs = service.getAvailableSections('MOTOR', '123');
+            const result = await firstValueFrom(obs);
+            expect(result.hasParts).toBe(true);
+        });
     });
 
     describe('parseSpecTable', () => {
         test('should return empty string for empty input', () => {
-            const service = new VehicleDataService();
             expect(service.parseSpecTable('')).toBe('');
             expect(service.parseSpecTable(null as any)).toBe('');
             expect(service.parseSpecTable(undefined as any)).toBe('');
         });
 
         test('should parse a simple table with one row', () => {
-            const service = new VehicleDataService();
             const html = `
                 <table>
                     <tr>
@@ -52,7 +139,6 @@ describe('VehicleDataService', () => {
         });
 
         test('should parse multiple rows and join them with " | "', () => {
-            const service = new VehicleDataService();
             const html = `
                 <table>
                     <tr><td>Make</td><td>Ford</td></tr>
@@ -63,7 +149,6 @@ describe('VehicleDataService', () => {
         });
 
         test('should limit to top 3 rows per table', () => {
-            const service = new VehicleDataService();
             const html = `
                 <table>
                     <tr><td>R1</td><td>V1</td></tr>
@@ -78,7 +163,6 @@ describe('VehicleDataService', () => {
         });
 
         test('should handle multiple tables separated by newline', () => {
-            const service = new VehicleDataService();
             const html = `
                 <table>
                     <tr><td>T1R1</td><td>V1</td></tr>
@@ -93,7 +177,6 @@ describe('VehicleDataService', () => {
         });
 
         test('should strip HTML tags from keys and values', () => {
-            const service = new VehicleDataService();
             const html = `
                 <table>
                     <tr>
@@ -106,7 +189,6 @@ describe('VehicleDataService', () => {
         });
 
         test('should decode HTML entities &nbsp; and &amp;', () => {
-            const service = new VehicleDataService();
             const html = `
                 <table>
                     <tr>
@@ -119,7 +201,6 @@ describe('VehicleDataService', () => {
         });
 
         test('should normalize whitespace', () => {
-            const service = new VehicleDataService();
             const html = `
                 <table>
                     <tr>
@@ -132,7 +213,6 @@ describe('VehicleDataService', () => {
         });
 
         test('should ignore rows with less than 2 cells', () => {
-            const service = new VehicleDataService();
             const html = `
                 <table>
                     <tr><td>Header Only</td></tr>
@@ -143,7 +223,6 @@ describe('VehicleDataService', () => {
         });
 
         test('should join extra cells into the value', () => {
-            const service = new VehicleDataService();
             const html = `
                 <table>
                     <tr>
@@ -158,7 +237,6 @@ describe('VehicleDataService', () => {
         });
 
         test('should handle th tags as cells', () => {
-            const service = new VehicleDataService();
             const html = `
                 <table>
                     <tr>
@@ -171,13 +249,10 @@ describe('VehicleDataService', () => {
                     </tr>
                 </table>
             `;
-            // Note: The logic treats th just like td, so it will include headers if they are in a tr
-            // Since th are usually headers, they might be included as the first "row"
             expect(service.parseSpecTable(html)).toBe('Parameter: Value | Speed: 100');
         });
 
         test('should remove trailing colon from keys', () => {
-             const service = new VehicleDataService();
              const html = `
                  <table>
                      <tr>
