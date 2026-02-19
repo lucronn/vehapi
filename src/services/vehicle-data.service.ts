@@ -26,6 +26,13 @@ export interface DataLoadOptions<T> {
     saveToCache: (data: T[]) => Promise<void>;
 }
 
+interface SectionStrategy {
+    type: string;
+    alwaysIncludeBuckets: string[];
+    mapper: (article: any) => any;
+    enableFallbackSearch?: boolean;
+}
+
 /**
  * Centralized service for vehicle data fetching with Firebase caching
  * Implements "Build-As-Used" caching pattern
@@ -36,6 +43,64 @@ export interface DataLoadOptions<T> {
 export class VehicleDataService {
     private motorApi = inject(MotorApiService);
     // private firebase = inject(FirebaseService); // DATABASE DISABLED
+
+    private readonly sectionStrategies: Record<string, SectionStrategy> = {
+        dtcs: {
+            type: 'DTCs',
+            alwaysIncludeBuckets: ['Diagnostic Trouble Codes', 'Diagnostic Codes', 'DTCs'],
+            mapper: (a: any) => ({
+                id: a.id,
+                code: a.code || a.title, // Fallback to title if code is missing
+                description: a.description || a.subtitle || a.title || '', // meaningful fallback order
+                bucket: a.bucket
+            } as Dtc),
+            enableFallbackSearch: true
+        },
+        tsbs: {
+            type: 'TSBs',
+            alwaysIncludeBuckets: [],
+            mapper: (a: any) => ({
+                id: a.id,
+                bulletinNumber: a.bulletinNumber || '',
+                title: a.title,
+                releaseDate: a.releaseDate || '',
+                description: a.description || a.subtitle || '', // Added description mapping
+                thumbnailHref: a.thumbnailHref
+            } as Tsb)
+        },
+        procedures: {
+            type: 'Procedures',
+            alwaysIncludeBuckets: ['Labor'],
+            mapper: (a: any) => ({
+                id: a.id,
+                bucket: a.bucket,
+                title: a.title,
+                subtitle: a.subtitle,
+                parentBucket: a.parentBucket
+            } as Procedure)
+        },
+        diagrams: {
+            type: 'Diagrams',
+            alwaysIncludeBuckets: ['Wiring Diagrams', 'Component Locations'],
+            mapper: (a: any) => ({
+                id: a.id,
+                bucket: a.bucket,
+                title: a.title,
+                subtitle: a.subtitle,
+                thumbnailHref: a.thumbnailHref || ''
+            } as WiringDiagram)
+        },
+        'component-locations': {
+            type: 'Component Locations',
+            alwaysIncludeBuckets: ['Component Locations'],
+            mapper: (a: any) => ({
+                id: a.id,
+                bucket: a.bucket,
+                title: a.title,
+                thumbnailHref: a.thumbnailHref || ''
+            } as ComponentLocation)
+        }
+    };
 
     /**
      * Helper to resolve params for Legacy Parity (Force Motor source for strict data)
@@ -214,6 +279,40 @@ export class VehicleDataService {
         });
     }
 
+    private getBucketNamesForType(type: string, data: any): string[] {
+        if (!data || !data.filterTabs) return [];
+
+        // Find the tab(s) that match the requested type or have a similar name for DTCs
+        const targetTabs = data.filterTabs.filter((t: any) => {
+            const matchesType = t.type === type;
+            const isDtcFallback = type === 'DTCs' && (t.name?.includes('Diagnostic') || t.type?.includes('DTC'));
+            return matchesType || isDtcFallback;
+        });
+
+        if (!targetTabs.length) {
+            // FALLBACKS if type is missing or mismatch
+            if (type === 'DTCs') return ['Diagnostic Trouble Codes', 'Diagnostic Codes', 'DTCs'];
+            if (type === 'TSBs') return ['Technical Service Bulletins', 'Bulletins', 'TSBs'];
+            if (type === 'Diagrams') return ['Wiring Diagrams', 'Diagrams', 'System Wiring Diagrams'];
+            if (type === 'Component Locations') return ['Component Locations', 'Locations', 'Component Location Diagrams'];
+            if (type === 'Procedures') return ['Procedures', 'Labor', 'Service Procedures'];
+            return [];
+        }
+
+        const names: string[] = [];
+
+        // Helper to collect names recursively
+        const collectNames = (tab: any) => {
+            if (tab.name) names.push(tab.name);
+            // Support both 'buckets' and 'children' for legacy/upstream parity
+            if (tab.buckets && Array.isArray(tab.buckets)) tab.buckets.forEach(collectNames);
+            if (tab.children && Array.isArray(tab.children)) tab.children.forEach(collectNames);
+        };
+
+        targetTabs.forEach(collectNames);
+        return names;
+    }
+
     /**
      * Load data for a specific dashboard section
      */
@@ -226,56 +325,10 @@ export class VehicleDataService {
         updateState: (data: any[]) => void,
         errorCallback?: (error: any) => void
     ): void {
-        // Skip if already have data check is removed here as it's often handled by caller or we want to refresh.
-        // But referencing original code, it had: if (getCurrentState().length > 0) return;
-        // Since we don't have access to getCurrentState direct value here easily without passing it, 
-        // we'll rely on the fact that standard usage usually checks before calling.
-
-        const getBucketNamesForType = (type: string, data: any): string[] => {
-            if (!data || !data.filterTabs) return [];
-
-            // Find the tab(s) that match the requested type or have a similar name for DTCs
-            const targetTabs = data.filterTabs.filter((t: any) => {
-                const matchesType = t.type === type;
-                const isDtcFallback = type === 'DTCs' && (t.name?.includes('Diagnostic') || t.type?.includes('DTC'));
-                return matchesType || isDtcFallback;
-            });
-
-            if (!targetTabs.length) {
-                // FALLBACKS if type is missing or mismatch
-                if (type === 'DTCs') return ['Diagnostic Trouble Codes', 'Diagnostic Codes', 'DTCs'];
-                if (type === 'TSBs') return ['Technical Service Bulletins', 'Bulletins', 'TSBs'];
-                if (type === 'Diagrams') return ['Wiring Diagrams', 'Diagrams', 'System Wiring Diagrams'];
-                if (type === 'Component Locations') return ['Component Locations', 'Locations', 'Component Location Diagrams'];
-                if (type === 'Procedures') return ['Procedures', 'Labor', 'Service Procedures'];
-                return [];
-            }
-
-            const names: string[] = [];
-
-            // Helper to collect names recursively
-            const collectNames = (tab: any) => {
-                if (tab.name) names.push(tab.name);
-                // Support both 'buckets' and 'children' for legacy/upstream parity
-                if (tab.buckets && Array.isArray(tab.buckets)) tab.buckets.forEach(collectNames);
-                if (tab.children && Array.isArray(tab.children)) tab.children.forEach(collectNames);
-            };
-
-            targetTabs.forEach(collectNames);
-            return names;
-        };
-
-        switch (section) {
-            case 'dtcs':
-                // We pass a TRANSFORM function that receives the FULL response (because we refactored loadFromSearch to pass the full body maybe? No, loadFromSearch calls transform(articles). We need to change that.)
-                // CORRECT FIX: We need access to `res.body.filterTabs`. 
-                // Since I cannot easily change loadFromSearch signature without breaking other things, I will modify loadFromSearch to pass the full body to transform?
-                // Actually, let's keep it simple. We will perform the logic inside the transform, but loadFromSearch needs to pass `res.body`.
-
-                // Wait, I can't change loadFromSearch here easily, it's a private method. I will assume I update it or inline it.
-                // Or I can use this.motorApi.searchArticles calls directly here if I want total control?
-                // No, better to update the signature of transform in loadFromSearch.
-                break;
+        const strategy = this.sectionStrategies[section];
+        if (!strategy) {
+            console.error(`[VehicleData] Unknown section: ${section}`);
+            return;
         }
 
         // RE-IMPLEMENTING loadSectionData with direct calls to ensure access to headers/tabs
@@ -285,112 +338,46 @@ export class VehicleDataService {
                 const articles = res.body?.articleDetails || [];
                 const fullData = res.body;
 
-                let filtered: any[] = [];
+                const validBuckets = this.getBucketNamesForType(strategy.type, fullData);
 
-                if (section === 'dtcs') {
-                    const standardDtcBuckets = ['Diagnostic Trouble Codes', 'Diagnostic Codes', 'DTCs'];
-                    const validBuckets = getBucketNamesForType('DTCs', fullData);
-
-                    // BUCKET PARITY: Always include standard names to catch misclassified articles
-                    standardDtcBuckets.forEach(b => {
+                // Add always include buckets
+                if (strategy.alwaysIncludeBuckets) {
+                     strategy.alwaysIncludeBuckets.forEach(b => {
                         if (!validBuckets.includes(b)) validBuckets.push(b);
                     });
+                }
 
-                    const mapDtcs = (arts: any[]) => arts.filter(a =>
-                        validBuckets.includes(a.bucket) ||
-                        (a.parentBucket && validBuckets.includes(a.parentBucket))
-                    ).map(a => ({
-                        id: a.id,
-                        code: a.code || a.title, // Fallback to title if code is missing
-                        description: a.description || a.subtitle || a.title || '', // meaningful fallback order
-                        bucket: a.bucket
-                    } as Dtc));
+                let filtered = articles.filter((a: any) =>
+                    validBuckets.includes(a.bucket) ||
+                    (a.parentBucket && validBuckets.includes(a.parentBucket))
+                ).map(strategy.mapper);
 
-                    filtered = mapDtcs(articles);
-
-                    // FALLBACK SEARCH: If no DTCs found with empty search, try searching for "DTC"
-                    if (filtered.length === 0) {
-                        console.log('[VehicleData] No DTCs found with empty search. Triggering fallback search for "DTC"...');
-                        this.motorApi.searchArticles(contentSource, vehicleId, 'DTC').subscribe({
+                // Handle Fallback Search (DTCs)
+                if (strategy.enableFallbackSearch && filtered.length === 0) {
+                     console.log(`[VehicleData] No ${strategy.type} found with empty search. Triggering fallback search...`);
+                     this.motorApi.searchArticles(contentSource, vehicleId, 'DTC').subscribe({
                             next: (fallbackRes) => {
                                 const fallbackArticles = fallbackRes.body?.articleDetails || [];
-                                const fallbackFiltered = mapDtcs(fallbackArticles);
+
+                                const fallbackFiltered = fallbackArticles.filter((a: any) =>
+                                    validBuckets.includes(a.bucket) ||
+                                    (a.parentBucket && validBuckets.includes(a.parentBucket))
+                                ).map(strategy.mapper);
+
                                 if (fallbackFiltered.length > 0) {
-                                    console.log(`[VehicleData] Fallback search found ${fallbackFiltered.length} DTCs.`);
+                                    console.log(`[VehicleData] Fallback search found ${fallbackFiltered.length} items.`);
                                     updateState(fallbackFiltered);
                                 } else {
-                                    updateState([]); // Still nothing
+                                    updateState([]);
                                 }
                             },
                             error: (err) => {
-                                console.error('[VehicleData] Fallback DTC search failed', err);
+                                console.error('[VehicleData] Fallback search failed', err);
                                 updateState([]);
                             }
                         });
-                        return; // Exit early as updateState will be called in subscribe
-                    }
+                        return;
                 }
-                else if (section === 'tsbs') {
-                    const validBuckets = getBucketNamesForType('TSBs', fullData);
-                    filtered = articles.filter(a =>
-                        validBuckets.includes(a.bucket) ||
-                        (a.parentBucket && validBuckets.includes(a.parentBucket))
-                    ).map(a => ({
-                        id: a.id,
-                        bulletinNumber: a.bulletinNumber || '',
-                        title: a.title,
-                        releaseDate: a.releaseDate || '',
-                        description: a.description || a.subtitle || '', // Added description mapping
-                        thumbnailHref: a.thumbnailHref
-                    } as Tsb));
-                } else if (section === 'procedures') {
-                    const validBuckets = getBucketNamesForType('Procedures', fullData);
-                    // Legacy parity: explicit check for 'Labor' sometimes
-                    if (!validBuckets.includes('Labor')) validBuckets.push('Labor');
-
-                    filtered = articles.filter(a =>
-                        validBuckets.includes(a.bucket) ||
-                        (a.parentBucket && validBuckets.includes(a.parentBucket))
-                    ).map(a => ({
-                        id: a.id,
-                        bucket: a.bucket,
-                        title: a.title,
-                        subtitle: a.subtitle,
-                        parentBucket: a.parentBucket
-                    } as Procedure));
-                } else if (section === 'diagrams') {
-                    const validBuckets = getBucketNamesForType('Diagrams', fullData);
-                    // Fallback/Legacy explicit
-                    if (!validBuckets.includes('Wiring Diagrams')) validBuckets.push('Wiring Diagrams');
-                    if (!validBuckets.includes('Component Locations')) validBuckets.push('Component Locations');
-
-                    filtered = articles.filter(a =>
-                        validBuckets.includes(a.bucket) ||
-                        (a.parentBucket && validBuckets.includes(a.parentBucket))
-                    ).map(a => ({
-                        id: a.id,
-                        bucket: a.bucket,
-                        title: a.title,
-                        subtitle: a.subtitle,
-                        thumbnailHref: a.thumbnailHref || ''
-                    } as WiringDiagram));
-                } else if (section === 'component-locations') {
-                    // Separate Component Locations
-                    const validBuckets = getBucketNamesForType('Component Locations', fullData);
-                    // Fallback
-                    if (!validBuckets.includes('Component Locations')) validBuckets.push('Component Locations');
-
-                    filtered = articles.filter(a =>
-                        validBuckets.includes(a.bucket) ||
-                        (a.parentBucket && validBuckets.includes(a.parentBucket))
-                    ).map(a => ({
-                        id: a.id,
-                        bucket: a.bucket,
-                        title: a.title,
-                        thumbnailHref: a.thumbnailHref || ''
-                    } as ComponentLocation));
-                }
-
 
                 updateState(filtered);
             },
