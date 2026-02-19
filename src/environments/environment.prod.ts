@@ -1,7 +1,6 @@
 export const environment = {
     production: true,
     apiUrl: 'https://vehapi-gx7nz7bkv-curtt.vercel.app/api',
-    geminiApiKey: 'AIzaSyAVdoLd1jjhWaisQzbNNf9NCIxROmS7Tj0',
     firebaseConfig: {
         projectId: "vehapi-torque",
         appId: "1:963068558024:web:bc34a196bff6fa5ccf43fd",
