@@ -350,23 +350,28 @@ export class VehicleDashboardComponent {
   }
 
   private loadOrientationOptions(articleId: string): void {
-    // In production this would call the Motor API to get orientations
-    // For now, we'll show a placeholder
-    // TODO: Implement Motor API call to /api/source/{}/vehicle/{}/article/{}/orientations
-
     const cs = this.contentSource();
     const vid = this.vehicleId();
 
-    // Mock orientation options (this should come from API)
-    this.orientationOptions.set([
-      { id: 'P:539447705', displayName: '3.5L V6 DOHC', qualifier: '290 HP' },
-      { id: 'P:539447706', displayName: '3.7L V6 Flexfuel', qualifier: '305 HP' },
-      { id: 'P:539447707', displayName: '3.5L V6 EcoBoost', qualifier: '365 HP - Police Package' },
-      { id: 'P:539447708', displayName: '2.0L I4 EcoBoost', qualifier: '240 HP' }
-    ]);
+    if (!cs || !vid) {
+      console.error('Missing contentSource or vehicleId');
+      return;
+    }
 
-    this.pendingArticleId.set(articleId);
-    this.showOrientationModal.set(true);
+    this.motorApi.getArticleOrientations(cs, vid, articleId).subscribe({
+      next: (res) => {
+        if (res.body && res.body.orientations) {
+          this.orientationOptions.set(res.body.orientations);
+          this.pendingArticleId.set(articleId);
+          this.showOrientationModal.set(true);
+        } else {
+          console.warn('No orientations found for article', articleId);
+        }
+      },
+      error: (err) => {
+        console.error('Failed to load orientations', err);
+      }
+    });
   }
 
   onOrientationSelected(option: OrientationOption): void {
