@@ -7,8 +7,9 @@ import { MotorApiService } from '../../../../../services/motor-api.service';
 import { Part } from '../../../../../models/motor.models';
 import { LoadingSkeletonComponent } from '../../../../../components/loading-skeleton/loading-skeleton.component';
 import { EmptyStateComponent } from '../../../../../components/empty-state/empty-state.component';
-import { LucideAngularModule, Package, Search } from 'lucide-angular';
+import { LucideAngularModule, Package, Search, Lock, Unlock, Sparkles } from 'lucide-angular';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { CreditsService } from '../../../../../services/credits.service';
 
 /**
  * Displays vehicle parts with search functionality
@@ -26,15 +27,17 @@ export class PartsSectionComponent implements OnInit {
 
     private motorApi = inject(MotorApiService);
     private destroyRef = inject(DestroyRef);
+    protected creditsService = inject(CreditsService);
 
     parts = signal<Part[]>([]);
     isLoading = signal(false);
+    isUnlocking = signal(false);
 
     // Search state
     searchTerm = signal('');
     private searchSubject = new Subject<string>();
 
-    readonly icons = { Package, Search };
+    readonly icons = { Package, Search, Lock, Unlock, Sparkles };
 
     ngOnInit() {
         // Initial load
@@ -68,5 +71,25 @@ export class PartsSectionComponent implements OnInit {
                 this.parts.set([]);
             }
         });
+    }
+
+    async unlockSection() {
+        if (this.isUnlocking()) return;
+
+        const cost = this.creditsService.COSTS.PARTS;
+        if (this.creditsService.balance() < cost) {
+            alert('Insufficient credits. Please purchase more.');
+            return;
+        }
+
+        if (confirm(`Unlock Parts & Catalog for ${cost} credits?`)) {
+            this.isUnlocking.set(true);
+            const success = await this.creditsService.unlockModule(this.vehicleId, 'parts', cost);
+            this.isUnlocking.set(false);
+
+            if (!success) {
+                alert('Unlock failed. Please try again.');
+            }
+        }
     }
 }

@@ -5,7 +5,7 @@ import { Spec, Fluid } from '../../../../../models/motor.models';
 import { LoadingSkeletonComponent } from '../../../../../components/loading-skeleton/loading-skeleton.component';
 import { EmptyStateComponent } from '../../../../../components/empty-state/empty-state.component';
 
-import { LucideAngularModule, Gauge, Droplets, Info, ChevronRight, FileText, ArrowRight } from 'lucide-angular';
+import { LucideAngularModule, Gauge, Droplets, Info, ChevronRight, FileText, ArrowRight, Lock, Unlock, Sparkles } from 'lucide-angular';
 
 import { RouterModule, Router } from '@angular/router';
 import { ArticleViewerComponent } from '../../../../article-viewer/article-viewer.component';
@@ -24,7 +24,7 @@ import { CreditsService } from '../../../../../services/credits.service';
     standalone: true
 })
 export class SpecsFluidsSectionComponent implements OnInit {
-    readonly icons = { Gauge, Droplets, Info, ChevronRight, FileText, ArrowRight };
+    readonly icons = { Gauge, Droplets, Info, ChevronRight, FileText, ArrowRight, Lock, Unlock, Sparkles };
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
     @Input() motorVehicleId?: string;
@@ -68,9 +68,6 @@ export class SpecsFluidsSectionComponent implements OnInit {
             },
             error: (err) => {
                 console.error('Failed to load specs/fluids', err);
-                // On error, we still want to stop loading. 
-                // We'll leave the signals as empty arrays, which triggers the empty state.
-                // In a future pass, we could add a specific error state UI.
                 this.isLoading.set(false);
             }
         });
@@ -83,14 +80,15 @@ export class SpecsFluidsSectionComponent implements OnInit {
     async unlockSection() {
         if (this.isUnlocking()) return;
 
-        if (this.creditsService.balance() < this.creditsService.COSTS.SPECS) {
+        const cost = this.creditsService.COSTS.SPECS;
+        if (this.creditsService.balance() < cost) {
             alert('Insufficient credits. Please purchase more.');
             return;
         }
 
-        if (confirm(`Unlock Specifications & Fluids for ${this.creditsService.COSTS.SPECS} credits?`)) {
+        if (confirm(`Unlock Specifications & Fluids for ${cost} credits?`)) {
             this.isUnlocking.set(true);
-            const success = await this.creditsService.unlockModule(this.vehicleId, 'specs', this.creditsService.COSTS.SPECS);
+            const success = await this.creditsService.unlockModule(this.vehicleId, 'specs', cost);
             this.isUnlocking.set(false);
 
             if (!success) {
@@ -100,6 +98,11 @@ export class SpecsFluidsSectionComponent implements OnInit {
     }
 
     viewArticle(item: Spec | Fluid) {
+        if (!this.creditsService.hasAccess(this.vehicleId, 'specs')) {
+            this.unlockSection();
+            return;
+        }
+
         if (this.windowManager.isDesktop()) {
             this.windowManager.openWindow(
                 item.title || 'Specification',
