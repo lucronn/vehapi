@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject, Input, signal, ViewEncapsulation, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, Input, signal, ViewEncapsulation, OnInit, OnChanges, SimpleChanges, SecurityContext } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { DomSanitizer } from '@angular/platform-browser';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map, switchMap, of, catchError, Subject, takeUntil } from 'rxjs';
 
@@ -44,7 +44,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   // State
   private internalArticleId = signal<string | null>(null);
   articleTitle = signal<string>('');
-  articleContent = signal<SafeHtml>('');
+  articleContent = signal<string>('');
   sections = signal<TableOfContents[]>([]);
   isMobileTocOpen = signal(false);
   isLoading = signal(false);
@@ -125,7 +125,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
     }
 
     if (this.htmlContentInput) {
-      this.articleContent.set(this.sanitizer.bypassSecurityTrustHtml(this.htmlContentInput));
+      this.articleContent.set(this.sanitizer.sanitize(SecurityContext.HTML, this.htmlContentInput) || '');
       this.isLoading.set(false);
       return;
     }
@@ -236,7 +236,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
     return str;
   }
 
-  private processHtml(html: string, contentSource: string, vehicleId: string): { htmlString: string, safeHtml: SafeHtml, sections: TableOfContents[] } {
+  private processHtml(html: string, contentSource: string, vehicleId: string): { htmlString: string, safeHtml: string, sections: TableOfContents[] } {
     if (!html) return { htmlString: '', safeHtml: '', sections: [] };
 
     let processed = this.motorApi.processHtmlContent(html, contentSource, vehicleId);
@@ -271,7 +271,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
 
     return {
       htmlString: processed,
-      safeHtml: this.sanitizer.bypassSecurityTrustHtml(processed),
+      safeHtml: this.sanitizer.sanitize(SecurityContext.HTML, processed) || '',
       sections
     };
   }

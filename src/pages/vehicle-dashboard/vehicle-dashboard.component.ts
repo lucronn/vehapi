@@ -282,19 +282,15 @@ export class VehicleDashboardComponent {
 
         // Flatten mappings to get all engine options
         // Each mapping has { model: string, engines: { id: string, name: string }[] }
-        const options: OrientationOption[] = [];
-
-        mappings.forEach(mapping => {
-          if (mapping.engines && Array.isArray(mapping.engines)) {
-            mapping.engines.forEach((engine: any) => {
-              options.push({
-                id: engine.id,
-                displayName: `${mapping.model} - ${engine.name}`,
-                qualifier: 'Select this configuration'
-              });
-            });
-          }
-        });
+        const options: OrientationOption[] = mappings.flatMap(mapping =>
+          (mapping.engines && Array.isArray(mapping.engines))
+            ? mapping.engines.map((engine: any) => ({
+              id: engine.id,
+              displayName: `${mapping.model} - ${engine.name}`,
+              qualifier: 'Select this configuration'
+            }))
+            : []
+        );
 
         if (options.length > 0) {
           // If only one option, could auto-select, but explicit is safer for now
