@@ -6,15 +6,15 @@
     style="background:var(--bg-surface);border-bottom:1px solid var(--border);padding-top:env(safe-area-inset-top, 0px);padding-left:env(safe-area-inset-left, 0px);padding-right:env(safe-area-inset-right, 0px);">
     <div class="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
       <a [routerLink]="['/vehicle', contentSource(), vehicleId()]"
-        class="group flex items-center gap-2 text-xs font-medium transition-all" style="color:var(--text-muted)">
+        class="group flex items-center gap-2 text-xs font-medium transition-all p-3 -ml-3 rounded-lg hover:bg-white/5 min-h-[44px] min-w-[44px] sm:min-w-0 sm:min-h-0 sm:p-2 sm:-ml-2" style="color:var(--text-muted)" aria-label="Back to Dashboard">
         <lucide-icon [img]="icons.ArrowLeft"
-          class="w-4 h-4 group-hover:-translate-x-1 transition-transform"></lucide-icon>
+          class="w-5 h-5 sm:w-4 sm:h-4 group-hover:-translate-x-1 transition-transform"></lucide-icon>
         <span class="hidden sm:inline">Dashboard</span>
       </a>
 
       <div class="flex items-center gap-3">
         @if (sections().length > 0) {
-        <button (click)="toggleMobileToc()" class="lg:hidden btn-ghost p-2 rounded-lg">
+        <button (click)="toggleMobileToc()" class="lg:hidden btn-ghost p-3 rounded-lg" aria-label="Toggle Table of Contents">
           <lucide-icon [img]="isMobileTocOpen() ? icons.X : icons.List" class="w-5 h-5"></lucide-icon>
         </button>
         }
@@ -34,7 +34,7 @@
     </h3>
     <nav class="flex flex-col space-y-0.5 pb-12">
       @for (section of sections(); track section.id) {
-      <button (click)="scrollToSection(section.id)" class="text-left py-2.5 px-3 text-sm rounded-lg transition-all"
+      <button (click)="scrollToSection(section.id)" class="text-left py-3.5 px-3 text-sm rounded-lg transition-all"
         style="color:var(--text-secondary)" [class.pl-3]="section.level === 1" [class.pl-6]="section.level === 2"
         [class.pl-9]="section.level === 3">
         {{ section.title }}
