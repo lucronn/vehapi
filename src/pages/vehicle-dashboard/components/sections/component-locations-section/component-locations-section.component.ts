@@ -6,7 +6,7 @@ import { ComponentLocation } from '../../../../../models/motor.models';
 import { LoadingSkeletonComponent } from '../../../../../components/loading-skeleton/loading-skeleton.component';
 import { EmptyStateComponent } from '../../../../../components/empty-state/empty-state.component';
 import { LucideAngularModule, TriangleAlert, MapPin, Image, Lock, Unlock, Sparkles } from 'lucide-angular';
-import { MotorApiService } from '../../../../../services/motor-api.service';
+import { MotorHtmlProcessorService } from '../../../../../services/motor-html-processor.service';
 import { ArticleViewerComponent } from '../../../../article-viewer/article-viewer.component';
 import { WindowManagerService } from '../../../../../services/window-manager.service';
 import { CreditsService } from '../../../../../services/credits.service';
@@ -27,7 +27,7 @@ export class ComponentLocationsSectionComponent implements OnInit {
     @Input() motorVehicleId?: string;
 
     private vehicleData = inject(VehicleDataService);
-    private motorApi = inject(MotorApiService); // For graphic URL if needed
+    private motorHtml = inject(MotorHtmlProcessorService); // For graphic URL if needed
     private windowManager = inject(WindowManagerService);
     private router = inject(Router);
     protected creditsService = inject(CreditsService);
@@ -65,7 +65,7 @@ export class ComponentLocationsSectionComponent implements OnInit {
     getThumbnailUrl(thumbnailHref: string | undefined): string {
         if (!thumbnailHref) return '';
         if (thumbnailHref.startsWith('http')) return thumbnailHref;
-        return this.motorApi.getGraphicUrl(thumbnailHref);
+        return this.motorHtml.getGraphicUrl(thumbnailHref);
     }
 
     async unlockSection() {

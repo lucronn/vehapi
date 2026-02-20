@@ -6,6 +6,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { map, switchMap, of, catchError, Subject, takeUntil } from 'rxjs';
 
 import { MotorApiService } from '../../services/motor-api.service';
+import { MotorHtmlProcessorService } from '../../services/motor-html-processor.service';
 import { LucideAngularModule, ArrowLeft, Maximize2, List, X } from 'lucide-angular';
 import { ImageViewerModalComponent } from './components/image-viewer-modal/image-viewer-modal.component';
 
@@ -46,6 +47,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
 
   private route = inject(ActivatedRoute);
   private motorApi = inject(MotorApiService);
+  private motorHtml = inject(MotorHtmlProcessorService);
   private sanitizer = inject(DomSanitizer);
 
   readonly icons = { ArrowLeft, Maximize2, List, X };
@@ -251,7 +253,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   private processHtml(html: string, contentSource: string, vehicleId: string): { htmlString: string, safeHtml: string, sections: TableOfContents[] } {
     if (!html) return { htmlString: '', safeHtml: '', sections: [] };
 
-    let processed = this.motorApi.processHtmlContent(html, contentSource, vehicleId);
+    let processed = this.motorHtml.processHtmlContent(html, contentSource, vehicleId);
 
     // Remove legacy attributes
     processed = processed.replace(LEGACY_ATTR_REGEX, '');

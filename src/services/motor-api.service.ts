@@ -44,12 +44,13 @@ import {
   AuthStatusResponse
 } from '../models/motor.models';
 import { parsePrice } from '../utils/price-parser';
+import { MOTOR_API_BASE_URL } from '../utils/motor-api.constants';
 
 @Injectable({ providedIn: 'root' })
 export class MotorApiService {
   private http = inject(HttpClient);
   // public readonly baseUrl = 'https://motorapiauthproxy-yonqvhjh7a-uc.a.run.app';
-  public readonly baseUrl = 'https://vehapiproxi.vercel.app';
+  public readonly baseUrl = MOTOR_API_BASE_URL;
 
   // Cache for article searches to prevent redundant API calls
   private articleCache = new Map<string, ApiResponse<ArticlesData>>();
