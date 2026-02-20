@@ -1,4 +1,4 @@
-import { expect, test, describe, beforeEach, mock } from 'bun:test';
+import { expect, test, describe, beforeEach, afterEach, mock } from 'bun:test';
 
 // Mock @angular/core before importing the service
 mock.module('@angular/core', () => ({
@@ -14,6 +14,11 @@ describe('UserIdService', () => {
     let UserIdService: any;
     let localStorageStore: Record<string, string> = {};
     const STORAGE_KEY = 'torque_user_id';
+    const originalCrypto = global.crypto;
+
+    afterEach(() => {
+        global.crypto = originalCrypto;
+    });
 
     beforeEach(async () => {
         const module = await import('./user-id.service');
