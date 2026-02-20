@@ -1,9 +1,26 @@
 import { expect, test, describe, beforeEach, mock } from 'bun:test';
 
+// Define MockHtmlProcessingService first
+const mockProcessHtmlContent = mock((html: string, baseUrl: string, contentSource?: string, vehicleId?: string) => 'MOCKED_RESULT');
+
+class MockHtmlProcessingService {
+  processHtmlContent = mockProcessHtmlContent;
+}
+
+// Mock HtmlProcessingService module
+mock.module('./html-processing.service', () => ({
+  HtmlProcessingService: MockHtmlProcessingService
+}));
+
 // Mock @angular/core
 mock.module('@angular/core', () => ({
   Injectable: () => (target: any) => target,
   inject: (token: any) => {
+    // If injecting HtmlProcessingService (which is mocked to MockHtmlProcessingService)
+    if (token === MockHtmlProcessingService || (token && token.name === 'MockHtmlProcessingService')) {
+      return new MockHtmlProcessingService();
+    }
+
     // Return a dummy object for injected dependencies (like HttpClient)
     return {
       get: () => ({ pipe: () => { } }),
@@ -35,6 +52,7 @@ describe('MotorApiService', () => {
   let service: any;
 
   beforeEach(async () => {
+    mockProcessHtmlContent.mockClear();
     // Import the service dynamically to ensure mocks are applied
     const module = await import('./motor-api.service');
     MotorApiService = module.MotorApiService;
