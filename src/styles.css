@@ -151,6 +151,62 @@
    Component Classes
    ============================================================ */
 @layer components {
+    /* App “design system” primitives */
+    .app-container {
+        @apply mx-auto w-full max-w-6xl;
+    }
+
+    .app-surface {
+        @apply bg-slate-900/50 backdrop-blur border border-slate-700/70 rounded-2xl shadow-lg shadow-black/30;
+    }
+
+    .app-surface-muted {
+        @apply bg-slate-900/30 backdrop-blur border border-slate-800/60 rounded-2xl;
+    }
+
+    .app-card {
+        @apply app-surface p-6 sm:p-7;
+    }
+
+    .app-card-tight {
+        @apply app-surface p-4 sm:p-5;
+    }
+
+    .app-title {
+        @apply text-2xl sm:text-3xl font-bold tracking-tight text-white;
+    }
+
+    .app-subtitle {
+        @apply text-slate-300;
+    }
+
+    .app-pill {
+        @apply inline-flex items-center gap-2 rounded-full border border-slate-700/70 bg-slate-900/40 px-3 py-1 text-sm text-slate-200;
+    }
+
+    .app-input {
+        @apply w-full bg-slate-900/40 border border-slate-700/70 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-500 shadow-sm;
+        @apply focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-400/50;
+        @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    }
+
+    .app-btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 font-semibold transition-colors;
+        @apply focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:ring-offset-2 focus:ring-offset-slate-950;
+        @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    }
+
+    .app-btn-primary {
+        @apply app-btn bg-cyan-500 text-slate-950 hover:bg-cyan-400;
+    }
+
+    .app-btn-secondary {
+        @apply app-btn bg-slate-800 text-white hover:bg-slate-700 border border-slate-700/70;
+    }
+
+    .app-btn-ghost {
+        @apply app-btn bg-transparent text-slate-200 hover:bg-slate-800/60 border border-slate-800/60;
+    }
 
   /* ---- Glass Card ---- */
   .glass-card {
