@@ -14,7 +14,7 @@
         [class.pointer-events-none]="!creditsService.hasAccess(vehicleId, 'dtcs')"
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 transition-all duration-300 select-none">
 
-        @for (dtc of dtcs(); track trackByCode($index, dtc)) {
+        @for (dtc of displayedDtcs(); track trackByCode($index, dtc)) {
         <div (click)="viewDtc(dtc)"
             class="card p-5 flex flex-col transition-all group animate-fade-in-up cursor-pointer hover:bg-white/5"
             [style.animation-delay]="$index * 50 + 'ms'">
@@ -36,6 +36,15 @@
         </div>
         }
     </div>
+
+    <!-- Load More Button -->
+    @if (creditsService.hasAccess(vehicleId, 'dtcs') && dtcs().length > displayedDtcs().length) {
+    <div class="pt-4 flex justify-center w-full">
+        <button (click)="loadMore()" class="btn-secondary px-6 py-2">
+            Load More Codes ({{ dtcs().length - displayedDtcs().length }} remaining)
+        </button>
+    </div>
+    }
 
     <!-- Lock Overlay -->
     @if (!creditsService.hasAccess(vehicleId, 'dtcs')) {

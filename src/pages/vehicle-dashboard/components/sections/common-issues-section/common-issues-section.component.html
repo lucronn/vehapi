@@ -13,7 +13,7 @@
         [class.pointer-events-none]="!creditsService.hasAccess(vehicleId, 'common_issues')"
         class="space-y-6 transition-all duration-300 select-none">
 
-        @for (issue of commonIssues(); track trackByTitle($index, issue)) {
+        @for (issue of displayedCommonIssues(); track trackByTitle($index, issue)) {
         <div class="card overflow-hidden transition-all animate-fade-in-up"
             [style.animation-delay]="$index * 100 + 'ms'">
             <div class="p-6">
@@ -78,6 +78,16 @@
         </div>
         }
     </div>
+
+    <!-- Load More Button -->
+    @if (creditsService.hasAccess(vehicleId, 'common_issues') && commonIssues().length > displayedCommonIssues().length)
+    {
+    <div class="pt-4 flex justify-center w-full">
+        <button (click)="loadMore()" class="btn-secondary px-6 py-2">
+            Load More Issues ({{ commonIssues().length - displayedCommonIssues().length }} remaining)
+        </button>
+    </div>
+    }
 
     <!-- Lock Overlay -->
     @if (!creditsService.hasAccess(vehicleId, 'common_issues')) {

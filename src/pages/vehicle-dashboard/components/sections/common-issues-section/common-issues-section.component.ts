@@ -41,6 +41,13 @@ export class CommonIssuesSectionComponent implements OnInit {
     hasAttemptedLoad = false;
     isUnlocking = signal(false);
 
+    // Pagination state
+    displayLimit = signal(50);
+
+    // Computed property to return only the items we should show right now
+    // If locked, we only show a tiny preview slice to save DOM/GPU memory for the blur effect
+    displayedCommonIssues = signal<CommonIssue[]>([]);
+
     readonly icons = { Lightbulb, AlertCircle, CheckCircle2, Wrench, ArrowRight, Lock, Unlock, Sparkles };
 
     ngOnInit() {
@@ -57,6 +64,7 @@ export class CommonIssuesSectionComponent implements OnInit {
             if (cached && cached.length > 0) {
                 console.log('[Cache Hit] Common Issues');
                 this.commonIssues.set(cached);
+                this.updateDisplayedCommonIssues();
                 this.isLoading.set(false);
             } else {
                 console.log('[Cache Miss] Common Issues (No Source)');
@@ -67,6 +75,17 @@ export class CommonIssuesSectionComponent implements OnInit {
             console.error('Failed to load common issues', err);
             this.isLoading.set(false);
         });
+    }
+
+    private updateDisplayedCommonIssues() {
+        const hasAccess = this.creditsService.hasAccess(this.vehicleId, 'common_issues');
+        const limit = hasAccess ? this.displayLimit() : 8; // Only 8 items if locked (preview)
+        this.displayedCommonIssues.set(this.commonIssues().slice(0, limit));
+    }
+
+    loadMore() {
+        this.displayLimit.update(v => v + 50);
+        this.updateDisplayedCommonIssues();
     }
 
     async unlockSection() {
@@ -85,6 +104,9 @@ export class CommonIssuesSectionComponent implements OnInit {
 
             if (!success) {
                 alert('Unlock failed. Please try again.');
+            } else {
+                // Update display since we are now unlocked
+                this.updateDisplayedCommonIssues();
             }
         }
     }

@@ -2,7 +2,7 @@ Node.js version v25.4.0 detected.
 Odd numbered Node.js versions will not enter LTS status and should not be used for production. For more information, please see https://nodejs.org/en/about/previous-releases/.
 [33m❯[39m Building...
 [32m✔[39m Building...
-Application bundle generation failed. [3.609 seconds] - 2026-02-20T13:05:34.479Z
+Application bundle generation failed. [5.602 seconds] - 2026-02-20T13:08:00.553Z
 
 [1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG5002: Parser Error: Conditional expression groupedProcedures().length > 0 ?
     groupedProcedures().reduce((acc, curr) => acc + curr.items.length, 0 requires all 3 expressions at column 183 in [creditsService.hasAccess(vehicleId, 'procedures') && procedures().length > (groupedProcedures().length > 0 ?
@@ -98,12 +98,5 @@ Application bundle generation failed. [3.609 seconds] - 2026-02-20T13:05:34.479Z
     src/pages/vehicle-dashboard/components/sections/procedures-section/procedures-section.component.ts:19:17:
 [37m      19 │     templateUrl: [32m'./procedures-section.component.html'[37m,
          ╵                  [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
-
-
-[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2304: Cannot find name 'HtmlProcessingService'.[0m [1m[35m[plugin angular-compiler][0m
-
-    src/services/motor-api.service.ts:52:41:
-[37m      52 │   private htmlProcessingService = inject([32mHtmlProcessingService[37m);
-         ╵                                          [32m~~~~~~~~~~~~~~~~~~~~~[0m
 
 [39m[22m

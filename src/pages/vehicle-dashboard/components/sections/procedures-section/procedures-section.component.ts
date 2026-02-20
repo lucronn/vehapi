@@ -34,9 +34,16 @@ export class ProceduresSectionComponent implements OnInit {
     procedures = signal<Procedure[]>([]);
     isUnlocking = signal(false);
 
-    // Grouped procedures logic
+    // Pagination state
+    displayLimit = signal(50);
+
+    // Grouped procedures logic (sliced to displayLimit or 8 if locked)
     groupedProcedures = computed(() => {
-        const all = this.procedures();
+        const hasAccess = this.creditsService.hasAccess(this.vehicleId, 'procedures');
+        const limit = hasAccess ? this.displayLimit() : 8; // Only 8 items if locked (preview)
+
+        // We slice the flat array before grouping to ensure we don't render thousands of nodes across groups
+        const all = this.procedures().slice(0, limit);
         const groups: { [key: string]: Procedure[] } = {};
 
         all.forEach(p => {
@@ -54,6 +61,20 @@ export class ProceduresSectionComponent implements OnInit {
             items: groups[category]
         }));
     });
+
+    totalGroupedItems() {
+        const groups = this.groupedProcedures();
+        if (!groups || groups.length === 0) return 0;
+        let total = 0;
+        for (const group of groups) {
+            total += group.items.length;
+        }
+        return total;
+    }
+
+    loadMore() {
+        this.displayLimit.update(v => v + 50);
+    }
 
     isLoading = signal(false);
     readonly icons = { Wrench, Lock, Unlock, Sparkles };

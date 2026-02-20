@@ -45,6 +45,7 @@ import {
 } from '../models/motor.models';
 import { parsePrice } from '../utils/price-parser';
 import { MOTOR_API_BASE_URL } from '../utils/motor-api.constants';
+import { HtmlProcessingService } from './html-processing.service';
 
 @Injectable({ providedIn: 'root' })
 export class MotorApiService {

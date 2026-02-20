@@ -33,6 +33,13 @@ export class PartsSectionComponent implements OnInit {
     isLoading = signal(false);
     isUnlocking = signal(false);
 
+    // Pagination state
+    displayLimit = signal(50);
+
+    // Computed property to return only the items we should show right now
+    // If locked, we only show a tiny preview slice to save DOM/GPU memory for the blur effect
+    displayedParts = signal<Part[]>([]);
+
     // Search state
     searchTerm = signal('');
     private searchSubject = new Subject<string>();
@@ -63,14 +70,27 @@ export class PartsSectionComponent implements OnInit {
         this.motorApi.getParts(this.contentSource, this.vehicleId, term).subscribe({
             next: (res) => {
                 this.parts.set(res.body?.data || []);
+                this.updateDisplayedParts();
                 this.isLoading.set(false);
             },
             error: (err) => {
                 console.error('Failed to load parts', err);
                 this.isLoading.set(false);
                 this.parts.set([]);
+                this.updateDisplayedParts();
             }
         });
+    }
+
+    private updateDisplayedParts() {
+        const hasAccess = this.creditsService.hasAccess(this.vehicleId, 'parts');
+        const limit = hasAccess ? this.displayLimit() : 8; // Only 8 items if locked (preview)
+        this.displayedParts.set(this.parts().slice(0, limit));
+    }
+
+    loadMore() {
+        this.displayLimit.update(v => v + 50);
+        this.updateDisplayedParts();
     }
 
     async unlockSection() {
@@ -89,6 +109,9 @@ export class PartsSectionComponent implements OnInit {
 
             if (!success) {
                 alert('Unlock failed. Please try again.');
+            } else {
+                // Update display since we are now unlocked
+                this.updateDisplayedParts();
             }
         }
     }

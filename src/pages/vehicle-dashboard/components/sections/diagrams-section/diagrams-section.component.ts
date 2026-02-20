@@ -35,6 +35,13 @@ export class DiagramsSectionComponent implements OnInit {
     diagrams = signal<(WiringDiagram | ComponentLocation)[]>([]);
     isLoading = signal(false);
     isUnlocking = signal(false);
+
+    // Pagination state
+    displayLimit = signal(50);
+
+    // Computed property to return only the items we should show right now
+    // If locked, we only show a tiny preview slice to save DOM/GPU memory for the blur effect
+    displayedDiagrams = signal<(WiringDiagram | ComponentLocation)[]>([]);
     readonly icons = { Cable, Lock, Unlock, Sparkles };
 
     ngOnInit() {
@@ -50,12 +57,26 @@ export class DiagramsSectionComponent implements OnInit {
             this.vehicleId,
             this.motorVehicleId,
             this.isLoading,
-            (data) => this.diagrams.set(data),
+            (data) => {
+                this.diagrams.set(data);
+                this.updateDisplayedDiagrams();
+            },
             (error) => {
                 console.error('Failed to load diagrams', error);
                 this.isLoading.set(false);
             }
         );
+    }
+
+    private updateDisplayedDiagrams() {
+        const hasAccess = this.creditsService.hasAccess(this.vehicleId, 'diagrams');
+        const limit = hasAccess ? this.displayLimit() : 8; // Only 8 items if locked (preview)
+        this.displayedDiagrams.set(this.diagrams().slice(0, limit));
+    }
+
+    loadMore() {
+        this.displayLimit.update(v => v + 50);
+        this.updateDisplayedDiagrams();
     }
 
     trackById(index: number, diagram: WiringDiagram | ComponentLocation): string {
@@ -87,6 +108,9 @@ export class DiagramsSectionComponent implements OnInit {
 
             if (!success) {
                 alert('Unlock failed. Please try again.');
+            } else {
+                // Update display since we are now unlocked
+                this.updateDisplayedDiagrams();
             }
         }
     }

@@ -38,7 +38,13 @@ export class TsbSectionComponent implements OnInit {
     isLoading = signal(false);
     isUnlocking = signal(false);
 
+    // Pagination state
+    displayLimit = signal(50);
     readonly icons = { FileText, X, ArrowUpRight, Lock, Unlock, Sparkles };
+
+    // Computed property to return only the items we should show right now
+    // If locked, we only show a tiny preview slice to save DOM/GPU memory for the blur effect
+    displayedTsbs = signal<Tsb[]>([]);
 
     ngOnInit() {
         this.loadData();
@@ -53,12 +59,26 @@ export class TsbSectionComponent implements OnInit {
             this.vehicleId,
             this.motorVehicleId,
             this.isLoading,
-            (data) => this.tsbs.set(data),
+            (data) => {
+                this.tsbs.set(data);
+                this.updateDisplayedTsbs();
+            },
             (error) => {
                 console.error('Failed to load TSBs', error);
                 this.isLoading.set(false);
             }
         );
+    }
+
+    private updateDisplayedTsbs() {
+        const hasAccess = this.creditsService.hasAccess(this.vehicleId, 'tsbs');
+        const limit = hasAccess ? this.displayLimit() : 8; // Only 8 items if locked (preview)
+        this.displayedTsbs.set(this.tsbs().slice(0, limit));
+    }
+
+    loadMore() {
+        this.displayLimit.update(v => v + 50);
+        this.updateDisplayedTsbs();
     }
 
     trackById(index: number, tsb: Tsb): string {
@@ -81,6 +101,9 @@ export class TsbSectionComponent implements OnInit {
 
             if (!success) {
                 alert('Unlock failed. Please try again.');
+            } else {
+                // Update display since we are now unlocked
+                this.updateDisplayedTsbs();
             }
         }
     }

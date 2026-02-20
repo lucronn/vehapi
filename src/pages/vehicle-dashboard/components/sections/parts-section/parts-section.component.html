@@ -28,7 +28,7 @@
             [class.pointer-events-none]="!creditsService.hasAccess(vehicleId, 'parts')"
             class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 transition-all duration-300 select-none">
 
-            @for (part of parts(); track part.partNumber) {
+            @for (part of displayedParts(); track part.partNumber) {
             <div class="card p-5 flex flex-col transition-all group animate-fade-in-up"
                 [style.animation-delay]="$index * 50 + 'ms'">
 
@@ -73,6 +73,15 @@
             </div>
             }
         </div>
+
+        <!-- Load More Button -->
+        @if (creditsService.hasAccess(vehicleId, 'parts') && parts().length > displayedParts().length) {
+        <div class="pt-4 flex justify-center w-full">
+            <button (click)="loadMore()" class="btn-secondary px-6 py-2">
+                Load More Parts ({{ parts().length - displayedParts().length }} remaining)
+            </button>
+        </div>
+        }
         }
 
         <!-- Lock Overlay -->

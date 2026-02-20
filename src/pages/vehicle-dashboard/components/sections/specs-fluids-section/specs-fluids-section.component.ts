@@ -42,6 +42,14 @@ export class SpecsFluidsSectionComponent implements OnInit {
     // Track unlocking state locally for UI feedback
     isUnlocking = signal(false);
 
+    // Pagination state (applies individually to each list)
+    displayLimit = signal(50);
+
+    // Computed property to return only the items we should show right now
+    // If locked, we only show a tiny preview slice to save DOM/GPU memory for the blur effect
+    displayedSpecs = signal<Spec[]>([]);
+    displayedFluids = signal<Fluid[]>([]);
+
     ngOnInit() {
         this.loadData();
     }
@@ -64,6 +72,7 @@ export class SpecsFluidsSectionComponent implements OnInit {
             next: (results) => {
                 this.fluids.set(results.fluids || []);
                 this.specs.set(results.specs || []);
+                this.updateDisplayedItems();
                 this.isLoading.set(false);
             },
             error: (err) => {
@@ -71,6 +80,18 @@ export class SpecsFluidsSectionComponent implements OnInit {
                 this.isLoading.set(false);
             }
         });
+    }
+
+    private updateDisplayedItems() {
+        const hasAccess = this.creditsService.hasAccess(this.vehicleId, 'specs');
+        const limit = hasAccess ? this.displayLimit() : 8; // Only 8 items if locked (preview)
+        this.displayedSpecs.set(this.specs().slice(0, limit));
+        this.displayedFluids.set(this.fluids().slice(0, limit));
+    }
+
+    loadMore() {
+        this.displayLimit.update(v => v + 50);
+        this.updateDisplayedItems();
     }
 
     trackByTitle(index: number, item: Spec | Fluid): string {
@@ -93,6 +114,9 @@ export class SpecsFluidsSectionComponent implements OnInit {
 
             if (!success) {
                 alert('Unlock failed. Please try again.');
+            } else {
+                // Update display since we are now unlocked
+                this.updateDisplayedItems();
             }
         }
     }

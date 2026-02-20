@@ -23,7 +23,7 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                @for (spec of specs(); track trackByTitle($index, spec)) {
+                @for (spec of displayedSpecs(); track trackByTitle($index, spec)) {
                 <div (click)="viewArticle(spec)"
                     class="card flex justify-between items-center px-4 py-4 transition-all group cursor-pointer hover:bg-white/5"
                     [style.animation-delay]="$index * 50 + 'ms'">
@@ -54,7 +54,7 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                @for (fluid of fluids(); track trackByTitle($index, fluid)) {
+                @for (fluid of displayedFluids(); track trackByTitle($index, fluid)) {
                 <div (click)="viewArticle(fluid)"
                     class="card flex justify-between items-center px-4 py-4 transition-all group cursor-pointer hover:bg-white/5"
                     [style.animation-delay]="$index * 50 + 'ms'">
@@ -70,6 +70,16 @@
                 </div>
                 }
             </div>
+        </div>
+        }
+
+        <!-- Load More Button -->
+        @if (creditsService.hasAccess(vehicleId, 'specs') && (specs().length > displayedSpecs().length ||
+        fluids().length > displayedFluids().length)) {
+        <div class="pt-8 flex justify-center w-full">
+            <button (click)="loadMore()" class="btn-secondary px-6 py-2">
+                Load More Items
+            </button>
         </div>
         }
     </div>

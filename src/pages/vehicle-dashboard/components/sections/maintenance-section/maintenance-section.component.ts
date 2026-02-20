@@ -29,6 +29,13 @@ export class MaintenanceSectionComponent implements OnInit {
     isLoading = signal(false);
     isUnlocking = signal(false);
 
+    // Pagination state
+    displayLimit = signal(50);
+
+    // Computed property to return only the items we should show right now
+    // If locked, we only show a tiny preview slice to save DOM/GPU memory for the blur effect
+    displayedSchedules = signal<MaintenanceSchedule[]>([]);
+
     // Interval selection
     selectedInterval = signal<number>(30000); // Default to 30k
     availableIntervals = [
@@ -55,13 +62,27 @@ export class MaintenanceSectionComponent implements OnInit {
             this.motorVehicleId,
             this.selectedInterval(),
             this.isLoading,
-            (data) => this.schedules.set(data),
+            (data) => {
+                this.schedules.set(data);
+                this.updateDisplayedSchedules();
+            },
             (error) => {
                 console.error('Failed to load maintenance schedules', error);
                 // Ensure loading state is cleared even if service didn't handle it
                 this.isLoading.set(false);
             }
         );
+    }
+
+    private updateDisplayedSchedules() {
+        const hasAccess = this.creditsService.hasAccess(this.vehicleId, 'maintenance');
+        const limit = hasAccess ? this.displayLimit() : 8; // Only 8 items if locked (preview)
+        this.displayedSchedules.set(this.schedules().slice(0, limit));
+    }
+
+    loadMore() {
+        this.displayLimit.update(v => v + 50);
+        this.updateDisplayedSchedules();
     }
 
     async unlockSection() {
@@ -80,6 +101,9 @@ export class MaintenanceSectionComponent implements OnInit {
 
             if (!success) {
                 alert('Unlock failed. Please try again.');
+            } else {
+                // Update display since we are now unlocked
+                this.updateDisplayedSchedules();
             }
         }
     }

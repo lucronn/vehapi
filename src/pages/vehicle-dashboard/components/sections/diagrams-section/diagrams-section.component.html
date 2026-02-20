@@ -13,7 +13,7 @@
         [class.pointer-events-none]="!creditsService.hasAccess(vehicleId, 'diagrams')"
         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 transition-all duration-300 select-none">
 
-        @for (diagram of diagrams(); track trackById($index, diagram)) {
+        @for (diagram of displayedDiagrams(); track trackById($index, diagram)) {
         <div (click)="viewDiagram(diagram)"
             class="card block transition-all group animate-fade-in-up overflow-hidden cursor-pointer hover:bg-white/5"
             [style.animation-delay]="$index * 50 + 'ms'">
@@ -50,6 +50,15 @@
         </div>
         }
     </div>
+
+    <!-- Load More Button -->
+    @if (creditsService.hasAccess(vehicleId, 'diagrams') && diagrams().length > displayedDiagrams().length) {
+    <div class="pt-4 flex justify-center w-full">
+        <button (click)="loadMore()" class="btn-secondary px-6 py-2">
+            Load More Diagrams ({{ diagrams().length - displayedDiagrams().length }} remaining)
+        </button>
+    </div>
+    }
 
     <!-- Lock Overlay -->
     @if (!creditsService.hasAccess(vehicleId, 'diagrams')) {

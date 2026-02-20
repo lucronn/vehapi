@@ -15,7 +15,7 @@
         [class.pointer-events-none]="!creditsService.hasAccess(vehicleId, 'tsbs')"
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 transition-all duration-300 select-none">
 
-        @for (tsb of tsbs(); track trackById($index, tsb)) {
+        @for (tsb of displayedTsbs(); track trackById($index, tsb)) {
         <div (click)="viewTsb(tsb)"
             class="cursor-pointer card p-5 flex flex-col justify-between transition-all group animate-fade-in-up"
             [style.animation-delay]="$index * 50 + 'ms'">
@@ -56,6 +56,15 @@
         </div>
         }
     </div>
+
+    <!-- Load More Button -->
+    @if (creditsService.hasAccess(vehicleId, 'tsbs') && tsbs().length > displayedTsbs().length) {
+    <div class="pt-4 flex justify-center w-full">
+        <button (click)="loadMore()" class="btn-secondary px-6 py-2">
+            Load More Bulletins ({{ tsbs().length - displayedTsbs().length }} remaining)
+        </button>
+    </div>
+    }
 
     <!-- Lock Overlay -->
     @if (!creditsService.hasAccess(vehicleId, 'tsbs')) {

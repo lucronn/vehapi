@@ -47,6 +47,15 @@
         }
     </div>
 
+    <!-- Load More Button -->
+    @if (creditsService.hasAccess(vehicleId, 'procedures') && procedures().length > totalGroupedItems()) {
+    <div class="pt-4 flex justify-center w-full">
+        <button (click)="loadMore()" class="btn-secondary px-6 py-2">
+            Load More Procedures ({{ procedures().length - totalGroupedItems() }} remaining)
+        </button>
+    </div>
+    }
+
     <!-- Lock Overlay -->
     @if (!creditsService.hasAccess(vehicleId, 'procedures')) {
     <div class="absolute inset-0 z-10 flex flex-col p-6 text-center rounded-xl overflow-hidden mt-0!"
