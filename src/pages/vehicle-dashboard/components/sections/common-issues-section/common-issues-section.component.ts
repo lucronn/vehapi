@@ -6,10 +6,11 @@ import { FirebaseService } from '../../../../../services/firebase.service';
 import { CommonIssue } from '../../../../../models/motor.models';
 import { LoadingSkeletonComponent } from '../../../../../components/loading-skeleton/loading-skeleton.component';
 import { EmptyStateComponent } from '../../../../../components/empty-state/empty-state.component';
-import { LucideAngularModule, Lightbulb, AlertCircle, CheckCircle2, Wrench, ArrowRight } from 'lucide-angular';
+import { LucideAngularModule, Lightbulb, AlertCircle, CheckCircle2, Wrench, ArrowRight, Lock, Unlock, Sparkles } from 'lucide-angular';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { WindowManagerService } from '../../../../../services/window-manager.service';
 import { ArticleViewerComponent } from '../../../../article-viewer/article-viewer.component';
+import { CreditsService } from '../../../../../services/credits.service';
 
 /**
  * Displays common vehicle issues with AI-generated solutions
@@ -31,14 +32,16 @@ export class CommonIssuesSectionComponent implements OnInit {
     private sanitizer = inject(DomSanitizer);
     private windowManager = inject(WindowManagerService);
     private router = inject(Router);
+    protected creditsService = inject(CreditsService);
 
     commonIssues = signal<CommonIssue[]>([]);
     isLoading = signal(false);
     isSolutionLoading = signal<Set<string>>(new Set());
     solutions = signal<Map<string, SafeHtml>>(new Map());
     hasAttemptedLoad = false;
+    isUnlocking = signal(false);
 
-    readonly icons = { Lightbulb, AlertCircle, CheckCircle2, Wrench, ArrowRight };
+    readonly icons = { Lightbulb, AlertCircle, CheckCircle2, Wrench, ArrowRight, Lock, Unlock, Sparkles };
 
     ngOnInit() {
         this.loadIssues();
@@ -66,7 +69,32 @@ export class CommonIssuesSectionComponent implements OnInit {
         });
     }
 
+    async unlockSection() {
+        if (this.isUnlocking()) return;
+
+        const cost = this.creditsService.COSTS.COMMON_ISSUES;
+        if (this.creditsService.balance() < cost) {
+            alert('Insufficient credits. Please purchase more.');
+            return;
+        }
+
+        if (confirm(`Unlock Common Issues & AI Solutions for ${cost} credits?`)) {
+            this.isUnlocking.set(true);
+            const success = await this.creditsService.unlockModule(this.vehicleId, 'common_issues', cost);
+            this.isUnlocking.set(false);
+
+            if (!success) {
+                alert('Unlock failed. Please try again.');
+            }
+        }
+    }
+
     generateSolution(issueTitle: string): void {
+        if (!this.creditsService.hasAccess(this.vehicleId, 'common_issues')) {
+            this.unlockSection();
+            return;
+        }
+
         // For now, we simulate a solution or use the description.
         // In a real scenario, we might fetch this from the API or AI.
         const issue = this.commonIssues().find(i => i.title === issueTitle);

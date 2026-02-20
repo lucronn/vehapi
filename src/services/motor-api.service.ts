@@ -43,6 +43,7 @@ import {
   ContentSource,
   AuthStatusResponse
 } from '../models/motor.models';
+import { parsePrice } from '../utils/price-parser';
 
 @Injectable({ providedIn: 'root' })
 export class MotorApiService {
@@ -242,7 +243,7 @@ export class MotorApiService {
               partNumber: item.partNumber,
               description: item.partDescription || item.description || '',
               manufacturer: item.manufacturer || '',
-              listPrice: item.price ? parseFloat(item.price.toString().replace(/[^0-9.]/g, '')) : 0,
+              listPrice: parsePrice(item.price),
               dealerPrice: 0,
               category: ''
             }))
@@ -505,7 +506,8 @@ export class MotorApiService {
         ? `${this.baseUrl}/api/source/${contentSource}/graphic/${id}`
         : `${this.baseUrl}/graphic/${id}`;
 
-      return `<img src="${graphicUrl}" class="article-image" ${attrs.replace(/id\s*=\s*[^"'\s]+/, '')}>`;
+      // Fix: Correctly remove id attribute even if quoted
+      return `<img src="${graphicUrl}" class="article-image" ${attrs.replace(/id\s*=\s*(?:("|')[^"']*\1|[^"'\s]+)/i, '')}>`;
     });
 
     // Process src attributes (images, iframes, videos, etc.)
