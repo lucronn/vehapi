@@ -1,167 +1,334 @@
-<div class="flex h-screen text-slate-100 overflow-hidden">
-
-  <!-- Sidebar Navigation -->
+<div class="min-h-screen flex flex-col md:flex-row relative">
+  <!-- Sidebar Navigation - Desktop -->
   <app-dashboard-sidebar [vehicleName]="vehicleName()" [activeSection]="activeSection()"
-    (sectionChange)="setSection($event)">
+    [availableSections]="availableSections()" (sectionChange)="setSection($event)">
   </app-dashboard-sidebar>
 
   <!-- Mobile Header -->
-  <div
-    class="md:hidden fixed top-0 w-full bg-slate-950/60 backdrop-blur-xl z-50 border-b border-slate-800/60 px-4 py-3 flex items-center justify-between">
-    <span class="font-semibold text-white truncate max-w-[220px]">{{ vehicleName() }}</span>
-    <button (click)="toggleMobileMenu()" class="text-cyan-300 p-2 hover:bg-slate-900/60 rounded-xl">
-      <span class="sr-only">Open menu</span>
-      @if (isMobileMenuOpen()) {
-      <lucide-icon [img]="icons.X" class="w-6 h-6"></lucide-icon>
-      } @else {
-      <lucide-icon [img]="icons.Menu" class="w-6 h-6"></lucide-icon>
-      }
-    </button>
+  <div class="md:hidden sticky top-0 w-full z-50 px-4 py-3 flex items-center justify-between
+    bg-[hsl(230,35%,9%)]/90 backdrop-blur-xl border-b border-white/5"
+    style="padding-top: calc(0.75rem + env(safe-area-inset-top, 0px)); padding-left: calc(1rem + env(safe-area-inset-left, 0px)); padding-right: calc(1rem + env(safe-area-inset-right, 0px));">
+    <div class="flex items-center gap-2">
+      <app-logo class="w-5 h-5"></app-logo>
+      <div>
+        <span class="text-[8px] font-mono uppercase tracking-[0.2em] text-torque-cyan block">Active</span>
+        <h1 class="text-sm font-heading font-bold tracking-tight truncate max-w-[200px] text-white">{{
+          vehicleName() || 'TORQUE' }}</h1>
+      </div>
+    </div>
+    <div class="flex items-center gap-1">
+      <app-theme-toggle></app-theme-toggle>
+      <button (click)="toggleMobileMenu()" class="btn-glass p-2 rounded-lg">
+        <lucide-icon [img]="isMobileMenuOpen() ? icons.X : icons.Menu" class="w-5 h-5"></lucide-icon>
+      </button>
+    </div>
   </div>
 
   <!-- Mobile Navigation Overlay -->
   @if (isMobileMenuOpen()) {
-  <div class="fixed inset-0 z-40 bg-slate-950/80 md:hidden pt-20 px-5 backdrop-blur-xl animate-fade-in">
-    <nav class="space-y-3">
-      <button (click)="setSection('overview')" [class.text-cyan-400]="activeSection() === 'overview'"
-        class="w-full flex items-center p-4 rounded-2xl bg-slate-900/50 border border-slate-800/60 hover:bg-slate-900/70 transition-all font-semibold text-lg">
-        Overview
+  <div class="fixed inset-0 z-40 md:hidden pt-16 px-4 animate-fade-in bg-[hsl(230,35%,7%)]/95 backdrop-blur-xl">
+    <div class="grid grid-cols-2 gap-3 mt-4">
+      <button (click)="setSection('overview')"
+        class="glass-card p-5 flex flex-col items-center gap-2 text-sm font-semibold"
+        [class.neon-border-cyan]="activeSection() === 'overview'">
+        <lucide-icon [img]="icons.House" class="w-5 h-5"></lucide-icon>
+        <span class="text-xs font-mono uppercase tracking-wider text-white">Overview</span>
       </button>
-      <button (click)="setSection('dtcs')" [class.text-cyan-400]="activeSection() === 'dtcs'"
-        class="w-full flex items-center p-4 rounded-2xl bg-slate-900/50 border border-slate-800/60 hover:bg-slate-900/70 transition-all font-semibold text-lg">
-        Diagnostic Codes
+      <button (click)="setSection('dtcs')" class="glass-card p-5 flex flex-col items-center gap-2 text-sm font-semibold"
+        [class.neon-border-cyan]="activeSection() === 'dtcs'">
+        <lucide-icon [img]="icons.TriangleAlert" class="w-5 h-5"></lucide-icon>
+        <span class="text-xs font-mono uppercase tracking-wider text-white">Fault Codes</span>
       </button>
-      <button (click)="setSection('tsbs')" [class.text-cyan-400]="activeSection() === 'tsbs'"
-        class="w-full flex items-center p-4 rounded-2xl bg-slate-900/50 border border-slate-800/60 hover:bg-slate-900/70 transition-all font-semibold text-lg">
-        Service Bulletins
+      <button (click)="setSection('tsbs')" class="glass-card p-5 flex flex-col items-center gap-2 text-sm font-semibold"
+        [class.neon-border-cyan]="activeSection() === 'tsbs'">
+        <lucide-icon [img]="icons.FileText" class="w-5 h-5"></lucide-icon>
+        <span class="text-xs font-mono uppercase tracking-wider text-white">Bulletins</span>
       </button>
-      <button (click)="setSection('diagrams')" [class.text-cyan-400]="activeSection() === 'diagrams'"
-        class="w-full flex items-center p-4 rounded-2xl bg-slate-900/50 border border-slate-800/60 hover:bg-slate-900/70 transition-all font-semibold text-lg">
-        Wiring & Components
+      <button (click)="setSection('procedures')"
+        class="glass-card p-5 flex flex-col items-center gap-2 text-sm font-semibold"
+        [class.neon-border-cyan]="activeSection() === 'procedures'">
+        <lucide-icon [img]="icons.Wrench" class="w-5 h-5"></lucide-icon>
+        <span class="text-xs font-mono uppercase tracking-wider text-white">Procedures</span>
       </button>
-      <button (click)="setSection('procedures')" [class.text-cyan-400]="activeSection() === 'procedures'"
-        class="w-full flex items-center p-4 rounded-2xl bg-slate-900/50 border border-slate-800/60 hover:bg-slate-900/70 transition-all font-semibold text-lg">
-        Procedures
-      </button>
-      <button (click)="setSection('component-locations')"
-        [class.text-cyan-400]="activeSection() === 'component-locations'"
-        class="w-full flex items-center p-4 rounded-2xl bg-slate-900/50 border border-slate-800/60 hover:bg-slate-900/70 transition-all font-semibold text-lg">
-        Component Locations
-      </button>
-      <button (click)="setSection('parts')" [class.text-cyan-400]="activeSection() === 'parts'"
-        class="w-full flex items-center p-4 rounded-2xl bg-slate-900/50 border border-slate-800/60 hover:bg-slate-900/70 transition-all font-semibold text-lg">
-        Parts
-      </button>
-      <button (click)="setSection('maintenance')" [class.text-cyan-400]="activeSection() === 'maintenance'"
-        class="w-full flex items-center p-4 rounded-2xl bg-slate-900/50 border border-slate-800/60 hover:bg-slate-900/70 transition-all font-semibold text-lg">
-        Maintenance
-      </button>
-      <hr class="border-slate-800/60 my-4" />
-      <a routerLink="/" class="block w-full text-center p-4 text-slate-300 hover:text-white">Exit Vehicle</a>
-    </nav>
+    </div>
+    <div class="mt-6 space-y-3">
+      <button (click)="setSection('browse-all')" class="w-full btn-secondary py-3 text-sm">All Data</button>
+      <a routerLink="/"
+        class="block w-full text-center py-3 text-sm text-torque-muted hover:text-white transition-colors">Exit</a>
+    </div>
   </div>
   }
 
-  <!-- Main Content -->
-  <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pt-16 md:pt-8 w-full">
+  <!-- Main Content Area -->
+  <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 relative pb-20 md:pb-8 z-10">
 
-    <!-- Global Search -->
-    <app-dashboard-search [searchTerm]="searchTerm()" (searchChange)="onSearch($event)">
-    </app-dashboard-search>
-
-    <!-- Search Results -->
-    @if (searchTerm() && filteredArticles().length > 0) {
-    <div class="app-container mb-8 app-surface p-5 sm:p-6 border-cyan-500/40">
-      <h3 class="text-cyan-200 font-semibold mb-4">Search Results ({{ filteredArticles().length }})</h3>
-      <div class="space-y-2">
-        @for (article of filteredArticles().slice(0, 10); track article.id) {
-        <a [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', article.id]"
-          class="block p-3 rounded-xl bg-slate-900/40 border border-slate-800/60 hover:bg-slate-900/60 transition-colors">
-          <span class="text-white font-medium">{{ article.title }}</span>
-        </a>
-        }
-      </div>
+    <!-- Decorative blur -->
+    <div
+      class="absolute top-0 right-0 w-[500px] h-[500px] bg-[hsl(191,97%,50%)] opacity-[0.02] rounded-full blur-[150px] pointer-events-none">
     </div>
+
+    <!-- Search Bar -->
+    <div class="max-w-5xl mx-auto mb-6">
+      <app-dashboard-search [searchTerm]="searchTerm()" (searchChange)="onSearch($event)">
+      </app-dashboard-search>
+
+      <!-- Search Results -->
+      @if (searchTerm() && filteredArticles().length > 0) {
+      <div class="mt-3 glass-card overflow-hidden animate-fade-in">
+        <div class="px-4 py-2.5 flex justify-between items-center border-b border-white/5 bg-white/[0.03]">
+          <h3 class="text-[10px] font-mono uppercase tracking-[0.2em] text-torque-cyan">Results ({{
+            filteredArticles().length }})</h3>
+          <button (click)="onSearch('')"
+            class="text-xs text-torque-muted hover:text-white transition-colors">Clear</button>
+        </div>
+        <div class="max-h-64 overflow-y-auto">
+          @for (article of filteredArticles().slice(0, 15); track article.id) {
+          <a href="javascript:void(0)" (click)="onArticleClick($event, article)"
+            class="flex items-center gap-3 px-4 py-3 transition-all group hover:bg-white/[0.03] border-b border-white/[0.03]">
+            <lucide-icon [img]="icons.FileText" class="w-4 h-4 flex-shrink-0 text-torque-muted"></lucide-icon>
+            <span class="text-sm font-medium text-white/80 group-hover:text-white">{{ article.title }}</span>
+          </a>
+          }
+        </div>
+      </div>
+      }
+    </div>
+
+    <!-- Orientation Selector Modal -->
+    @if (showOrientationModal()) {
+    <app-orientation-selector-modal [options]="orientationOptions()" (selectOrientation)="onOrientationSelected($event)"
+      (close)="closeOrientationModal()"></app-orientation-selector-modal>
     }
 
     <!-- Section Content -->
-    <div class="app-container">
+    <div class="max-w-[1600px] mx-auto space-y-8">
       @switch (activeSection()) {
       @case ('overview') {
-      <div class="space-y-8">
-        <div class="space-y-2">
-          <h2 class="app-title">Common Issues & Quick Access</h2>
-          <p class="app-subtitle">Fast paths to what technicians typically need first.</p>
+      <div class="space-y-6 animate-fade-in-up">
+        <div class="pb-4 border-b border-white/5">
+          <p class="section-label">Tactical Overview</p>
+          <p class="text-sm mt-1 text-torque-secondary">Primary systems and vital statistics</p>
         </div>
+
+        @if (availableSections()?.hasSpecs) {
+        <app-specs-fluids-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
+          [motorVehicleId]="motorVehicleId()">
+        </app-specs-fluids-section>
+        }
+
+        @if (availableSections()?.hasDtcs || availableSections()?.hasTsbs) {
         <app-common-issues-section [vehicleName]="vehicleName()" [contentSource]="contentSource()"
           [vehicleId]="vehicleId()">
         </app-common-issues-section>
+        }
       </div>
       }
       @case ('dtcs') {
-      <div class="space-y-6">
-        <h2 class="app-title">Diagnostic Trouble Codes</h2>
+      <div class="space-y-6 animate-fade-in-up">
+        <div class="pb-4 border-b border-white/5">
+          <p class="section-label">Diagnostics</p>
+          <h2 class="section-title">Diagnostic Trouble Codes</h2>
+        </div>
         <app-dtc-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
         </app-dtc-section>
       </div>
       }
       @case ('tsbs') {
-      <div class="space-y-6">
-        <h2 class="app-title">Technical Service Bulletins</h2>
+      <div class="space-y-6 animate-fade-in-up">
+        <div class="pb-4 border-b border-white/5">
+          <p class="section-label">Service Info</p>
+          <h2 class="section-title">Technical Service Bulletins</h2>
+        </div>
         <app-tsb-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
         </app-tsb-section>
       </div>
       }
       @case ('diagrams') {
-      <div class="space-y-6">
-        <h2 class="app-title">Wiring Diagrams & Component Locations</h2>
+      <div class="space-y-6 animate-fade-in-up">
+        <div class="pb-4 border-b border-white/5">
+          <p class="section-label">Wiring & Components</p>
+          <h2 class="section-title">Wiring Diagrams</h2>
+        </div>
         <app-diagrams-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
         </app-diagrams-section>
       </div>
       }
       @case ('procedures') {
-      <div class="space-y-6">
-        <h2 class="app-title">Repair Procedures</h2>
+      <div class="space-y-6 animate-fade-in-up">
+        <div class="pb-4 border-b border-white/5">
+          <p class="section-label">Service</p>
+          <h2 class="section-title">Repair & Service Procedures</h2>
+        </div>
         <app-procedures-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
         </app-procedures-section>
       </div>
       }
       @case ('parts') {
-      <div class="space-y-6">
-        <h2 class="app-title">Parts</h2>
+      <div class="space-y-6 animate-fade-in-up">
+        <div class="pb-4 border-b border-white/5">
+          <p class="section-label">Parts</p>
+          <h2 class="section-title">Component Inventory</h2>
+        </div>
         <app-parts-section [contentSource]="contentSource()" [vehicleId]="vehicleId()">
         </app-parts-section>
       </div>
       }
       @case ('specs') {
-      <div class="space-y-6">
-        <h2 class="app-title">Specifications & Fluid Capacities</h2>
+      <div class="space-y-6 animate-fade-in-up">
+        <div class="pb-4 border-b border-white/5">
+          <p class="section-label">Tech Specs</p>
+          <h2 class="section-title">Specifications & Fluids</h2>
+        </div>
         <app-specs-fluids-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
         </app-specs-fluids-section>
       </div>
       }
       @case ('component-locations') {
-      <div class="space-y-6">
-        <h2 class="app-title">Component Locations</h2>
+      <div class="space-y-6 animate-fade-in-up">
+        <div class="pb-4 border-b border-white/5">
+          <p class="section-label">Locations</p>
+          <h2 class="section-title">Component Locations</h2>
+        </div>
         <app-component-locations-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
         </app-component-locations-section>
       </div>
       }
       @case ('maintenance') {
-      <div class="space-y-6">
-        <h2 class="app-title">Maintenance Schedules</h2>
+      <div class="space-y-6 animate-fade-in-up">
+        <div class="pb-4 border-b border-white/5">
+          <p class="section-label">Maintenance</p>
+          <h2 class="section-title">Maintenance Schedules</h2>
+        </div>
         <app-maintenance-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
         </app-maintenance-section>
       </div>
       }
+      @case ('browse-all') {
+      <div class="space-y-6 animate-fade-in-up">
+        <div class="pb-4 border-b border-white/5">
+          <p class="section-label">All Data</p>
+          <h2 class="section-title">Reference Catalog</h2>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="flex flex-wrap gap-2 pb-4 border-b border-white/5">
+          <button (click)="setBrowseFilter(null)"
+            class="px-4 py-2 rounded-xl text-xs font-mono font-semibold tracking-wider transition-all border"
+            [class.bg-[hsl(191,97%,50%)]/10]="selectedBrowseFilter() === null"
+            [class.border-[hsl(191,97%,50%)]/30]="selectedBrowseFilter() === null"
+            [class.text-torque-cyan]="selectedBrowseFilter() === null"
+            [class.bg-white/[0.03]]="selectedBrowseFilter() !== null"
+            [class.border-white/5]="selectedBrowseFilter() !== null"
+            [class.text-torque-secondary]="selectedBrowseFilter() !== null">
+            All <span class="opacity-50 ml-1">({{ searchResultsState.filterTabsAndTheirFullBuckets().length }})</span>
+          </button>
+          @for (tab of searchResultsState.filterTabsAndTheirFullBuckets(); track tab.filterTab) {
+          <button (click)="setBrowseFilter(tab.filterTab)"
+            class="px-4 py-2 rounded-xl text-xs font-mono font-semibold tracking-wider transition-all border"
+            [class.bg-[hsl(191,97%,50%)]/10]="selectedBrowseFilter() === tab.filterTab"
+            [class.border-[hsl(191,97%,50%)]/30]="selectedBrowseFilter() === tab.filterTab"
+            [class.text-torque-cyan]="selectedBrowseFilter() === tab.filterTab"
+            [class.bg-white/[0.03]]="selectedBrowseFilter() !== tab.filterTab"
+            [class.border-white/5]="selectedBrowseFilter() !== tab.filterTab"
+            [class.text-torque-secondary]="selectedBrowseFilter() !== tab.filterTab">
+            {{ tab.filterTab }} <span class="opacity-50 ml-1">({{ tab.articlesCount }})</span>
+          </button>
+          }
+        </div>
+
+        <!-- Filtered Tabs Content -->
+        <div class="space-y-6">
+          @for (tab of filteredBrowseTabs(); track tab.filterTab) {
+          <div class="glass-card p-5">
+            <div class="flex items-center gap-3 mb-5">
+              <div class="w-9 h-9 rounded-lg flex items-center justify-center bg-[hsl(191,97%,50%)]/10">
+                <lucide-icon [img]="icons.Package" class="w-4 h-4 text-torque-cyan"></lucide-icon>
+              </div>
+              <h3 class="text-lg font-heading font-bold text-white">{{ tab.filterTab }}</h3>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              @for (bucket of tab.buckets; track bucket.bucketName) {
+              <div class="space-y-4">
+                <h4
+                  class="text-[10px] font-mono font-semibold uppercase tracking-[0.15em] pb-2 text-torque-muted border-b border-white/5">
+                  {{ bucket.bucketNameOverride || bucket.bucketName }}
+                </h4>
+
+                @if (bucket.articles.length > 0) {
+                <ul class="space-y-1.5">
+                  @for (article of bucket.articles; track article.id) {
+                  <li>
+                    <a [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', article.id]"
+                      class="block text-sm py-1 text-torque-secondary hover:text-white transition-colors">
+                      {{ article.title }}
+                    </a>
+                  </li>
+                  }
+                </ul>
+                }
+
+                @if (bucket.children && bucket.children.length > 0) {
+                <div class="p-3 rounded-xl space-y-4 bg-white/[0.02]">
+                  @for (child of bucket.children; track child.bucketName) {
+                  <div>
+                    <h5 class="text-[10px] font-mono font-semibold mb-2 text-torque-muted tracking-wider">
+                      {{ child.bucketNameOverride || child.bucketName }}
+                    </h5>
+                    <ul class="space-y-1 pl-2">
+                      @for (art of child.articles; track art.id) {
+                      <li>
+                        <a [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', art.id]"
+                          class="block text-xs py-0.5 text-torque-secondary hover:text-white transition-colors">
+                          {{ art.title }}
+                        </a>
+                      </li>
+                      }
+                    </ul>
+                  </div>
+                  }
+                </div>
+                }
+              </div>
+              }
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+      }
       }
     </div>
   </main>
+
+  <!-- Mobile Bottom Tab Bar -->
+  <nav class="bottom-tabs md:hidden">
+    <button (click)="setSection('overview')" class="bottom-tab" [class.active]="activeSection() === 'overview'">
+      <lucide-icon [img]="icons.House" class="w-5 h-5"></lucide-icon>
+      <span>Overview</span>
+    </button>
+    <button (click)="setSection('dtcs')" class="bottom-tab" [class.active]="activeSection() === 'dtcs'">
+      <lucide-icon [img]="icons.TriangleAlert" class="w-5 h-5"></lucide-icon>
+      <span>Codes</span>
+    </button>
+    <button (click)="setSection('tsbs')" class="bottom-tab" [class.active]="activeSection() === 'tsbs'">
+      <lucide-icon [img]="icons.FileText" class="w-5 h-5"></lucide-icon>
+      <span>Bulletins</span>
+    </button>
+    <button (click)="setSection('procedures')" class="bottom-tab" [class.active]="activeSection() === 'procedures'">
+      <lucide-icon [img]="icons.Wrench" class="w-5 h-5"></lucide-icon>
+      <span>Service</span>
+    </button>
+    <button (click)="setSection('browse-all')" class="bottom-tab" [class.active]="activeSection() === 'browse-all'">
+      <lucide-icon [img]="icons.Package" class="w-5 h-5"></lucide-icon>
+      <span>All</span>
+    </button>
+  </nav>
 </div>

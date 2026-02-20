@@ -1,11 +1,15 @@
 import { Component, Input, OnInit, signal, inject, ChangeDetectionStrategy, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { VehicleDataService } from '../../../../../services/vehicle-data.service';
 import { Procedure } from '../../../../../models/motor.models';
 import { LoadingSkeletonComponent } from '../../../../../components/loading-skeleton/loading-skeleton.component';
 import { EmptyStateComponent } from '../../../../../components/empty-state/empty-state.component';
-import { LucideAngularModule, Wrench } from 'lucide-angular';
+import { LucideAngularModule, Wrench, Lock, Unlock, Sparkles } from 'lucide-angular';
+import { CreditsService } from '../../../../../services/credits.service';
+
+import { ArticleViewerComponent } from '../../../../article-viewer/article-viewer.component';
+import { WindowManagerService } from '../../../../../services/window-manager.service';
 
 /**
  * Displays repair procedures
@@ -23,8 +27,12 @@ export class ProceduresSectionComponent implements OnInit {
     @Input() motorVehicleId?: string;
 
     private vehicleData = inject(VehicleDataService);
+    private windowManager = inject(WindowManagerService);
+    private router = inject(Router);
+    protected creditsService = inject(CreditsService);
 
     procedures = signal<Procedure[]>([]);
+    isUnlocking = signal(false);
 
     // Grouped procedures logic
     groupedProcedures = computed(() => {
@@ -48,7 +56,7 @@ export class ProceduresSectionComponent implements OnInit {
     });
 
     isLoading = signal(false);
-    readonly icons = { Wrench };
+    readonly icons = { Wrench, Lock, Unlock, Sparkles };
 
     ngOnInit() {
         this.loadData();
@@ -63,11 +71,59 @@ export class ProceduresSectionComponent implements OnInit {
             this.vehicleId,
             this.motorVehicleId,
             this.isLoading,
-            (data) => this.procedures.set(data)
+            (data) => this.procedures.set(data),
+            (error) => {
+                console.error('Failed to load procedures', error);
+                this.isLoading.set(false);
+            }
         );
     }
 
     trackById(index: number, procedure: Procedure): string {
         return procedure.id || index.toString();
+    }
+
+    async unlockSection() {
+        if (this.isUnlocking()) return;
+
+        const cost = this.creditsService.COSTS.PROCEDURES;
+        if (this.creditsService.balance() < cost) {
+            alert('Insufficient credits. Please purchase more.');
+            return;
+        }
+
+        if (confirm(`Unlock Repair Procedures for ${cost} credits?`)) {
+            this.isUnlocking.set(true);
+            const success = await this.creditsService.unlockModule(this.vehicleId, 'procedures', cost);
+            this.isUnlocking.set(false);
+
+            if (!success) {
+                alert('Unlock failed. Please try again.');
+            }
+        }
+    }
+
+    viewProcedure(procedure: Procedure) {
+        if (!this.creditsService.hasAccess(this.vehicleId, 'procedures')) {
+            this.unlockSection();
+            return;
+        }
+
+        if (this.windowManager.isDesktop()) {
+            this.windowManager.openWindow(
+                procedure.title || 'Procedure',
+                ArticleViewerComponent,
+                {
+                    contentSource: this.contentSource,
+                    vehicleId: this.vehicleId,
+                    articleId: procedure.id,
+                    articleTitleInput: procedure.title
+                }
+            );
+        } else {
+            this.router.navigate(['/vehicle', this.contentSource, this.vehicleId, 'article', procedure.id], {
+                queryParams: { title: procedure.title }
+            });
+        }
     }
 }

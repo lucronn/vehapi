@@ -1,187 +1,350 @@
-<div class="min-h-screen px-4 py-10 sm:py-14 text-slate-100">
-  <div class="app-container max-w-5xl">
-    <header class="text-center">
-      <div class="h-44 sm:h-56 md:h-72 mx-auto">
+<div class="min-h-screen flex flex-col relative">
+
+  <!-- Hero background image (subtle) -->
+  <div class="fixed inset-0 z-0 opacity-[0.06] bg-cover bg-center pointer-events-none"
+    style="background-image: url('https://d64gsuwffb70l.cloudfront.net/698d9bcdff02f190d5f3d224_1770888253924_9ff9e688.jpg')">
+  </div>
+
+  <!-- Ambient Orbs -->
+  <div
+    class="fixed top-[-100px] left-[-100px] w-[400px] h-[400px] bg-[hsl(191,97%,50%)] opacity-[0.04] rounded-full blur-[120px] animate-glow-pulse pointer-events-none z-0">
+  </div>
+  <div
+    class="fixed bottom-[-100px] right-[-100px] w-[400px] h-[400px] bg-[hsl(263,83%,58%)] opacity-[0.04] rounded-full blur-[120px] animate-glow-pulse pointer-events-none z-0"
+    style="animation-delay: 2s"></div>
+
+  <!-- Header -->
+  <header class="relative z-20 px-4 sm:px-6 py-4 flex items-center justify-between max-w-4xl mx-auto w-full"
+    [class.opacity-0]="isMobile() && showSuggestions() && !selectedVehicle()"
+    [class.pointer-events-none]="isMobile() && showSuggestions() && !selectedVehicle()">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8">
         <app-logo></app-logo>
       </div>
-      <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white">
-        <span class="bg-gradient-to-r from-cyan-300 via-cyan-200 to-violet-200 bg-clip-text text-transparent">TORQUE</span>
+      <h1 class="text-xl font-heading font-bold tracking-tight text-white">
+        TORQUE<span class="text-torque-cyan">.</span>AI
       </h1>
-      <p class="text-base sm:text-lg md:text-xl text-slate-300 mt-3 text-balance">
-        Fast vehicle lookup and repair info, in a clean dashboard.
-      </p>
-    </header>
+    </div>
+    <div class="flex items-center gap-2">
+      @if (persistedVehicle()) {
+      <button (click)="startNewSearch()" class="btn-glass text-xs flex items-center gap-1.5">
+        <lucide-icon [img]="icons.X" class="w-3.5 h-3.5"></lucide-icon>
+        Reset
+      </button>
+      }
+      <app-theme-toggle></app-theme-toggle>
+    </div>
+  </header>
 
-    <div class="mt-8 sm:mt-10 max-w-2xl mx-auto">
+  <!-- Content -->
+  <main class="flex-1 flex flex-col justify-center px-4 sm:px-6 py-8 max-w-[900px] mx-auto w-full relative z-10"
+    [class.hidden]="isMobile() && showSuggestions() && !selectedVehicle()">
+
     @if (persistedVehicle(); as vehicle) {
-    <div
-      class="app-card text-center">
-      <h2 class="text-2xl font-bold text-white mb-2">Welcome back</h2>
-      <p class="text-slate-300 mb-6">Continue with your previously selected vehicle:</p>
-      <div class="app-surface-muted p-4 rounded-xl mb-6 border border-slate-800/60">
-        <p class="font-semibold text-lg text-cyan-200">{{ vehicle.name }}</p>
+    <!-- Welcome Back -->
+    <div class="space-y-6 animate-fade-in-up" style="animation-fill-mode: both">
+      <div class="text-center space-y-2 mb-8">
+        <h2 class="text-3xl sm:text-4xl md:text-5xl font-heading font-bold tracking-tight text-white">System Ready<span
+            class="text-torque-cyan">.</span></h2>
+        <p class="text-torque-secondary text-lg">Welcome back. Your vehicle session is currently active and
+          synchronized.</p>
       </div>
-      <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <button (click)="continueToVehicle()" class="app-btn-primary">
-          Continue
+
+      <div class="glass-card neon-border-cyan p-6 space-y-5">
+        <div class="flex items-center justify-between">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <div class="w-1 h-3 bg-[hsl(191,97%,50%)] rounded-full"></div>
+              <p class="text-[10px] font-mono uppercase tracking-[0.2em] text-torque-cyan">Active Vehicle</p>
+            </div>
+            <h3 class="text-lg font-heading font-bold text-white">{{ vehicle.name }}</h3>
+          </div>
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center bg-[hsl(191,97%,50%)]/10">
+            <lucide-icon [img]="icons.ArrowUpRight" class="w-5 h-5 text-torque-cyan"></lucide-icon>
+          </div>
+        </div>
+        <button (click)="continueToVehicle()" class="w-full btn-primary py-3 font-semibold">
+          Initialize Dashboard
         </button>
-        <button (click)="startNewSearch()" class="app-btn-secondary">
-          Start New Search
+        <!-- Animated scan line -->
+        <div class="absolute bottom-0 left-0 right-0 h-[2px] overflow-hidden">
+          <div
+            class="h-full w-full bg-gradient-to-r from-transparent via-[hsl(191,97%,50%)]/60 to-transparent animate-scan">
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center">
+        <button (click)="startNewSearch()" class="text-sm text-torque-muted hover:text-white transition-colors">
+          Switch to another vehicle
         </button>
       </div>
     </div>
+
     } @else {
-    <div class="app-card">
-
-      <!-- Selection Pills -->
-      <div class="flex flex-wrap items-center gap-2 mb-4 min-h-[32px]">
-        @if (selectedYear(); as year) {
-        <span class="app-pill max-w-full bg-cyan-500/10 border-cyan-500/30 text-cyan-200">
-          <span class="truncate">{{ year }}</span>
-          <button (mousedown)="removeSelection($event, 'Year')"
-            class="text-cyan-200/70 hover:text-white flex items-center justify-center rounded-full p-1"><lucide-icon
-              [img]="icons.X" class="w-3 h-3"></lucide-icon></button>
-        </span>
-        }
-        @if (selectedMake(); as make) {
-        <span class="app-pill max-w-full bg-cyan-500/10 border-cyan-500/30 text-cyan-200">
-          <span class="truncate">{{ make.makeName }}</span>
-          <button (mousedown)="removeSelection($event, 'Make')"
-            class="text-cyan-200/70 hover:text-white flex items-center justify-center rounded-full p-1"><lucide-icon
-              [img]="icons.X" class="w-3 h-3"></lucide-icon></button>
-        </span>
-        }
-        @if (selectedModel(); as model) {
-        @if (!selectedVehicle()) {
-        <span class="app-pill max-w-full bg-cyan-500/10 border-cyan-500/30 text-cyan-200">
-          <span class="truncate">{{ model.model }}</span>
-          <button (mousedown)="removeSelection($event, 'Model')"
-            class="text-cyan-200/70 hover:text-white flex items-center justify-center rounded-full p-1"><lucide-icon
-              [img]="icons.X" class="w-3 h-3"></lucide-icon></button>
-        </span>
-        }
-        }
-        @if (selectedVehicle(); as vehicle) {
-        <span class="app-pill max-w-full bg-cyan-500/15 border-cyan-400/40 text-cyan-100">
-          <span class="truncate">{{ vehicle.displayName }}</span>
-          <!-- Passing 'Engine' allows us to just clear the vehicle but keep the model, effectively "going back" -->
-          <button (mousedown)="removeSelection($event, 'Engine')"
-            class="text-cyan-100/70 hover:text-white flex items-center justify-center rounded-full p-1"><lucide-icon
-              [img]="icons.X" class="w-3 h-3"></lucide-icon></button>
-        </span>
-        }
+    <!-- Search Experience -->
+    <div class="space-y-6">
+      <div class="text-center mb-10 animate-fade-in-up" style="animation-fill-mode: both">
+        <!-- Status Badge -->
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.03] border border-white/5 mb-6">
+          <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+          <span class="text-[10px] font-mono uppercase tracking-[0.2em] text-torque-secondary">Database Connected</span>
+        </div>
+        <h2
+          class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-heading font-bold tracking-tight leading-[1.1] text-white mb-4">
+          Professional <span
+            class="text-transparent bg-clip-text bg-gradient-to-r from-[hsl(191,97%,50%)] to-[hsl(263,83%,58%)]">Intelligence</span>
+          <br class="hidden sm:block" /> for your vehicle.
+        </h2>
+        <p class="text-torque-secondary text-base md:text-lg max-w-xl mx-auto leading-relaxed">
+          Access manufacturer specs, diagrams, and AI&#8209;powered troubleshooting instantly.
+        </p>
       </div>
 
-      <!-- Omnibox Search -->
-      <div class="relative">
-
-        <!-- Suggestions Dropdown -->
-        @if (showSuggestions() && !isVin() && !selectedVehicle() && !unsureModeActive()) {
-        <!-- Backdrop -->
-        <div class="fixed inset-0 z-40" (click)="showSuggestions.set(false)"></div>
-
-        <div #suggestionsContainer
-          class="absolute z-50 w-full top-full mt-2 bg-slate-950/85 backdrop-blur-xl border border-slate-800/60 rounded-2xl shadow-2xl max-h-[60vh] overflow-y-auto ring-1 ring-white/10">
-
-          @for (suggestion of suggestions(); track suggestion.display) {
-          <div (mousedown)="selectSuggestion($event, suggestion)" [class.bg-yellow-500]="suggestion.type === 'Unsure'"
-            [class.text-black]="suggestion.type === 'Unsure'"
-            class="px-5 py-4 hover:bg-cyan-500 hover:text-slate-950 cursor-pointer transition-colors duration-150 border-b border-slate-800/60 last:border-0 text-left text-base md:text-lg font-medium">
-            {{ suggestion.display }}
-          </div>
-          }
-          @if(suggestions().length === 0 && !isLoading()) { <div class="px-5 py-4 text-slate-400 text-center italic">No
-            results found.</div> }
-          @if(isLoading()) { <div class="px-5 py-4 text-slate-300 text-center animate-pulse">Loading...</div> }
-        </div>
-        }
-
-        @if (!unsureModeActive()) {
-        <div class="flex flex-col sm:flex-row gap-3">
-          <input #searchInputRef type="text" [placeholder]="currentPlaceholder()"
-            class="app-input flex-grow pl-12 text-base sm:text-lg"
-            [ngModel]="searchInput()" (ngModelChange)="onSearchInput($event)" (focus)="onSearchFocus()"
-            (keydown.enter)="handleEnterKey()" (keydown.space)="handleSpacebar($event)" [disabled]="!!selectedVehicle()"
-            autocomplete="off" />
-          <lucide-icon [img]="icons.Search"
-            class="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-6 h-6 pointer-events-none"></lucide-icon>
-          <button (click)="submitSearch()" [disabled]="isLoading() || (!isVin() && !selectedVehicle())"
-            class="app-btn-primary px-6">
-            @if (isLoading()) { <span>Loading...</span> } @else { <span>{{ isVin() ? 'Search' : 'Go' }}</span> }
+      <div class="space-y-4">
+        <!-- Selection Pills -->
+        @if (selectedYear() || selectedMake() || selectedModel() || selectedVehicle()) {
+        <div class="flex flex-wrap gap-2 justify-center">
+          @if (selectedYear(); as year) {
+          <button (click)="removeSelection($event, 'Year')" class="pill" [attr.aria-label]="'Remove year ' + year">
+            <span>{{ year }}</span>
+            <lucide-icon [img]="icons.X" class="w-3 h-3"></lucide-icon>
           </button>
-          @if (selectedVehicle() || selectedYear()) {
-          <button (click)="clearAllSelections()"
-            class="app-btn-ghost px-4">Clear</button>
+          }
+          @if (selectedMake(); as make) {
+          <button (click)="removeSelection($event, 'Make')" class="pill"
+            [attr.aria-label]="'Remove make ' + make.makeName">
+            <span>{{ make.makeName }}</span>
+            <lucide-icon [img]="icons.X" class="w-3 h-3"></lucide-icon>
+          </button>
+          }
+          @if (selectedModel(); as model) {
+          @if (!selectedVehicle()) {
+          <button (click)="removeSelection($event, 'Model')" class="pill"
+            [attr.aria-label]="'Remove model ' + model.model">
+            <span>{{ model.model }}</span>
+            <lucide-icon [img]="icons.X" class="w-3 h-3"></lucide-icon>
+          </button>
+          }
+          }
+          @if (selectedVehicle(); as vehicle) {
+          <button (click)="removeSelection($event, 'Engine')" class="pill"
+            style="border-color:var(--status-success);color:var(--status-success);background:var(--status-success-bg)"
+            [attr.aria-label]="'Remove engine ' + vehicle.displayName">
+            <span class="truncate max-w-[200px]">{{ vehicle.displayName }}</span>
+            <lucide-icon [img]="icons.X" class="w-3 h-3"></lucide-icon>
+          </button>
           }
         </div>
-        } @else {
-        <!-- "Unsure" AI Search UI -->
-        <div>
-          <p class="text-sm text-yellow-200 mb-2 flex items-center gap-2">
-            <lucide-icon [img]="icons.Sparkles" class="w-4 h-4"></lucide-icon> AI Assistant: What information are you
-            looking for across all models?
-          </p>
-          <div class="flex flex-col sm:flex-row gap-3">
-            <input type="text" [placeholder]="currentPlaceholder()"
-              class="app-input flex-grow border-yellow-500/40 focus:ring-yellow-500/30 focus:border-yellow-500/40"
-              [ngModel]="aiQuery()" (ngModelChange)="aiQuery.set($event)" (keydown.enter)="searchUnsure()"
-              autocomplete="off" />
-            <button (click)="searchUnsure()" [disabled]="isAiLoading() || aiQuery().length < 3"
-              class="app-btn px-6 bg-yellow-400 text-slate-950 hover:bg-yellow-300 disabled:bg-slate-800 disabled:text-slate-400">
-              @if (isAiLoading()) { <span>Thinking...</span> } @else { <span>Ask AI</span> }
+        }
+
+        <!-- Search Console -->
+        <div class="relative" style="animation-fill-mode: both">
+          <!-- Gradient glow border -->
+          <div
+            class="absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-[hsl(191,97%,50%)]/20 via-transparent to-[hsl(263,83%,58%)]/20 pointer-events-none z-0">
+          </div>
+
+          <div class="glass-card overflow-hidden relative z-[1]">
+            <!-- MOBILE: Trigger Button -->
+            <button *ngIf="isMobile() && !selectedVehicle()" (click)="onMobileSearchTrigger(); $event.stopPropagation()"
+              type="button"
+              class="w-full flex items-center px-4 py-4 text-left bg-transparent border-none outline-none active:opacity-70 transition-opacity">
+              <lucide-icon [img]="icons.Search" class="w-5 h-5 mr-3 flex-shrink-0 text-torque-muted"></lucide-icon>
+              <span class="text-torque-muted text-base flex-1">Tap to select vehicle...</span>
             </button>
+
+            <!-- DESKTOP / SELECTED STATE -->
+            <div *ngIf="!isMobile() || selectedVehicle()" class="flex items-center px-4"
+              (click)="searchInputRef.focus()" #searchContainer>
+              <lucide-icon [img]="icons.Search" class="w-5 h-5 mr-3 flex-shrink-0 text-torque-muted"></lucide-icon>
+
+              <input #searchInputRef type="text" [placeholder]="currentPlaceholder()"
+                class="hidden md:block flex-1 bg-transparent border-none py-4 focus:ring-0 text-base outline-none text-white placeholder:text-torque-muted"
+                [ngModel]="searchInput()" (ngModelChange)="onSearchInput($event)" (focus)="onSearchFocus()"
+                (click)="onSearchFocus(); $event.stopPropagation()" (keydown.enter)="handleEnterKey()"
+                (keydown.space)="handleSpacebar($event)" [disabled]="!!selectedVehicle()" autocomplete="off"
+                aria-label="Vehicle Search" />
+
+              <!-- Mobile placeholder for selected state -->
+              <span *ngIf="isMobile()" class="flex-1 text-base truncate text-torque-muted">
+                {{ selectedVehicle() ? selectedVehicle()?.displayName : 'Tap to select vehicle...' }}
+              </span>
+
+              <button (click)="submitSearch()"
+                [disabled]="isLoading() || (!isVin() && !selectedVehicle() && !selectedModel())"
+                class="btn-primary px-6 py-2.5 ml-3 hidden md:block disabled:opacity-40 disabled:cursor-not-allowed text-sm font-semibold">
+                @if (isLoading()) { <span class="animate-spin inline-block">◌</span> } @else { Continue }
+              </button>
+            </div>
+
+            <!-- Desktop Dropdown -->
+            <div *ngIf="showSuggestions() && !isVin() && !selectedVehicle()" #desktopSuggestionsContainer
+              class="hidden md:block max-h-[400px] overflow-y-auto animate-fade-in"
+              style="border-top:1px solid rgba(255,255,255,0.05)">
+              @if (searchStep() === 'Year' && suggestions().length > 10) {
+              <!-- Year Grid -->
+              <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 p-4 text-center">
+                @for (suggestion of suggestions(); track suggestion.display; let i = $index) {
+                <button (mousedown)="selectSuggestion($event, suggestion)"
+                  class="py-2.5 px-2 rounded-xl text-sm font-mono transition-all border"
+                  [class.bg-[hsl(191,97%,50%)]/10]="selectedSuggestionIndex() === i"
+                  [class.border-[hsl(191,97%,50%)]/30]="selectedSuggestionIndex() === i"
+                  [class.text-torque-cyan]="selectedSuggestionIndex() === i"
+                  [class.bg-white/[0.03]]="selectedSuggestionIndex() !== i"
+                  [class.border-white/5]="selectedSuggestionIndex() !== i"
+                  [class.text-white/80]="selectedSuggestionIndex() !== i"
+                  [class.font-bold]="selectedSuggestionIndex() === i">
+                  {{ suggestion.display }}
+                </button>
+                }
+              </div>
+              } @else {
+              <!-- List Items -->
+              <div class="py-1">
+                @for (suggestion of suggestions(); track suggestion.display; let i = $index) {
+                <button (mousedown)="selectSuggestion($event, suggestion)"
+                  class="w-full text-left px-5 py-3 flex items-center gap-3 hover:bg-white/[0.04] transition-all group/item"
+                  [style.background]="selectedSuggestionIndex() === i ? 'rgba(255,255,255,0.04)' : 'transparent'">
+                  <span
+                    class="w-8 h-8 rounded-lg bg-gradient-to-br from-white/5 to-white/[0.02] flex items-center justify-center text-xs font-mono text-torque-cyan border border-white/5">
+                    {{ suggestion.display.charAt(0) }}
+                  </span>
+                  <span class="flex-1 font-medium text-sm text-white/80 group-hover/item:text-white">{{
+                    suggestion.display
+                    }}</span>
+                  <lucide-icon [img]="icons.ArrowRight"
+                    class="w-4 h-4 text-white/10 group-hover/item:text-torque-cyan group-hover/item:translate-x-0.5 transition-all"></lucide-icon>
+                </button>
+                }
+              </div>
+              }
+
+              @if(isLoading()) {
+              <div class="p-6 text-center">
+                <div class="inline-block w-5 h-5 border-2 rounded-full animate-spin"
+                  style="border-color:rgba(255,255,255,0.1);border-top-color:hsl(191,97%,50%)"></div>
+                <p class="mt-2 text-xs text-torque-muted font-mono">Loading...</p>
+              </div>
+              } @else if(suggestions().length === 0) {
+              <div class="p-8 text-center text-sm text-torque-muted">No results found.</div>
+              }
+            </div>
           </div>
         </div>
-        }
+
+        <!-- VIN Hint -->
+        <p class="text-center text-xs text-torque-muted mt-4 font-mono opacity-0 animate-fade-in stagger-3"
+          style="animation-fill-mode: forwards">
+          TIP: Enter a 17-character VIN for instant vehicle identification
+        </p>
+
+        <!-- Mobile Go Button -->
+        <button (click)="submitSearch()"
+          [disabled]="isLoading() || (!isVin() && !selectedVehicle() && !selectedModel())"
+          class="md:hidden w-full btn-primary py-3.5 font-semibold disabled:opacity-40 disabled:cursor-not-allowed">
+          @if (isLoading()) { Loading... } @else { Continue }
+        </button>
       </div>
 
-      @if (errorMessage()) {
-      <div class="bg-red-950/40 border border-red-800/60 text-red-200 text-center p-3 rounded-xl mt-4">{{ errorMessage() }}
+      <!-- Feature Badges -->
+      <div class="flex flex-wrap justify-center gap-3 mt-8 opacity-0 animate-fade-in stagger-4"
+        style="animation-fill-mode: forwards">
+        <span
+          class="text-[10px] font-mono uppercase tracking-wider text-torque-muted px-3 py-1.5 rounded-full border border-white/5 bg-white/[0.02]">Specifications</span>
+        <span
+          class="text-[10px] font-mono uppercase tracking-wider text-torque-muted px-3 py-1.5 rounded-full border border-white/5 bg-white/[0.02]">Wiring
+          Diagrams</span>
+        <span
+          class="text-[10px] font-mono uppercase tracking-wider text-torque-muted px-3 py-1.5 rounded-full border border-white/5 bg-white/[0.02]">DTCs</span>
+        <span
+          class="text-[10px] font-mono uppercase tracking-wider text-torque-muted px-3 py-1.5 rounded-full border border-white/5 bg-white/[0.02]">Service
+          Bulletins</span>
+        <span
+          class="text-[10px] font-mono uppercase tracking-wider text-torque-muted px-3 py-1.5 rounded-full border border-white/5 bg-white/[0.02]">Procedures</span>
+        <span
+          class="text-[10px] font-mono uppercase tracking-wider text-torque-muted px-3 py-1.5 rounded-full border border-white/5 bg-white/[0.02]">Maintenance</span>
       </div>
-      }
-
-      @if (intentDescription()) {
-      <div class="mt-4 text-center text-cyan-200 font-medium animate-pulse">{{ intentDescription() }}</div>
-      }
-
-      @if (comparisonResults().length > 0) {
-      <div class="mt-6 border-t border-slate-800/60 pt-5">
-        <h3 class="text-xl font-semibold text-cyan-200 mb-4">Results</h3>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="bg-slate-900/50 text-slate-200 border-b border-slate-800/60">
-                <th class="p-4 font-medium">Model</th>
-                <th class="p-4 font-medium">Result</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (result of comparisonResults(); track result.modelName) {
-              <tr class="border-b border-slate-900/60 hover:bg-slate-900/30 transition-colors">
-                <td class="p-4 font-medium text-white">{{ result.modelName }}</td>
-                <td class="p-4">
-                  @if (result.foundArticle) {
-                  <a [routerLink]="['/vehicle', currentContentSource(), result.vehicleId, 'article', result.foundArticle.id]"
-                    class="text-cyan-200 hover:text-cyan-100 hover:underline font-medium flex items-center gap-2">
-                    {{ result.foundArticle.title }}
-                    <lucide-icon [img]="icons.ArrowUpRight" class="w-4 h-4"></lucide-icon>
-                  </a>
-                  } @else {
-                  <span class="text-slate-400 italic">Not found</span>
-                  }
-                </td>
-              </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      </div>
-      }
-      @if (isAiLoading()) {
-      <div class="mt-6 text-center text-slate-300">Generating comparison, please wait...</div>
-      }
     </div>
     }
+  </main>
+
+  <!-- Footer -->
+  <footer class="relative z-10 py-6 text-center">
+    <div class="flex items-center justify-center gap-3">
+      <div class="h-px w-16 bg-gradient-to-r from-transparent to-white/10"></div>
+      <span class="text-[10px] font-mono uppercase tracking-[0.2em] text-torque-muted">Powered by Gemini & MOTOR®
+        Data</span>
+      <div class="h-px w-16 bg-gradient-to-l from-transparent to-white/10"></div>
+    </div>
+  </footer>
+
+  <!-- Error Notification -->
+  @if (errorMessage()) {
+  <div class="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
+    <div class="glass-card px-5 py-3 flex items-center gap-2.5 text-sm font-medium"
+      style="border-left:3px solid var(--status-error);color:var(--status-error)">
+      <lucide-icon [img]="icons.X" class="w-4 h-4"></lucide-icon>
+      <span>{{ errorMessage() }}</span>
     </div>
   </div>
+  }
+
+  <!-- Mobile Selection Wizard -->
+  @if (isMobile() && showSuggestions() && !selectedVehicle()) {
+  <div class="fixed inset-0 z-[100] flex flex-col animate-fade-in bg-[hsl(230,35%,7%)]">
+    <!-- Wizard Header -->
+    <div class="px-4 py-4 flex items-center gap-3 border-b border-white/5 bg-[hsl(230,35%,9%)]/90 backdrop-blur-xl">
+      <button (click)="closeMobileWizard()" class="btn-glass p-2 -ml-1" aria-label="Go back">
+        <lucide-icon [img]="icons.ArrowLeft" class="w-5 h-5"></lucide-icon>
+      </button>
+      <div class="flex-1">
+        <h2 class="text-lg font-heading font-bold text-white">
+          @switch (searchStep()) {
+          @case ('Year') { Select Year }
+          @case ('Make') { Select Make }
+          @case ('Model') { Select Model }
+          @case ('Engine') { Select Engine }
+          }
+        </h2>
+        <p class="text-[10px] font-mono text-torque-muted tracking-wider">
+          @if (selectedYear()) { {{ selectedYear() }} }
+          @if (selectedMake()) { · {{ selectedMake()?.makeName }} }
+          @if (selectedModel()) { · {{ selectedModel()?.model }} }
+        </p>
+      </div>
+    </div>
+
+    <!-- Mobile List -->
+    <div class="flex-1 overflow-y-auto p-3">
+      @if (searchStep() === 'Year') {
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        @for (suggestion of suggestions(); track suggestion.display) {
+        <button (click)="selectSuggestion($event, suggestion)" class="py-3.5 rounded-xl text-base font-mono font-semibold transition-all active:scale-95
+          bg-white/[0.03] text-white/80 border border-white/5
+          hover:bg-[hsl(191,97%,50%)]/10 hover:border-[hsl(191,97%,50%)]/30 hover:text-white">
+          {{ suggestion.display }}
+        </button>
+        }
+      </div>
+      } @else {
+      <div class="space-y-1">
+        @for (suggestion of suggestions(); track suggestion.display) {
+        <button (click)="selectSuggestion($event, suggestion)" class="w-full text-left py-3.5 px-4 flex items-center gap-3 rounded-xl
+          hover:bg-white/[0.04] active:opacity-70 transition-all group">
+          <span
+            class="w-8 h-8 rounded-lg bg-gradient-to-br from-white/5 to-white/[0.02] flex items-center justify-center text-xs font-mono text-torque-cyan border border-white/5">
+            {{ suggestion.display.charAt(0) }}
+          </span>
+          <span class="flex-1 text-base font-medium text-white/80 group-hover:text-white">{{ suggestion.display
+            }}</span>
+          <lucide-icon [img]="icons.ArrowRight"
+            class="w-4 h-4 text-white/10 group-hover:text-torque-cyan transition-all"></lucide-icon>
+        </button>
+        }
+      </div>
+      }
+    </div>
+  </div>
+  }
 </div>

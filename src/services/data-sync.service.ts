@@ -3,7 +3,7 @@ import { forkJoin, from, lastValueFrom, of } from 'rxjs';
 import { catchError, concatMap, map, mergeMap, tap, toArray } from 'rxjs/operators';
 import { MotorApiService } from './motor-api.service';
 import { FirebaseService } from './firebase.service';
-import { GeminiService } from './gemini.service';
+// import { GeminiService } from './gemini.service'; // Removed
 
 @Injectable({
     providedIn: 'root'
@@ -11,7 +11,7 @@ import { GeminiService } from './gemini.service';
 export class DataSyncService {
     private motorApi = inject(MotorApiService);
     private firebase = inject(FirebaseService);
-    private geminiApi = inject(GeminiService);
+    // private geminiApi = inject(GeminiService); // Removed
 
     // Sync State
     isSyncing = signal(false);

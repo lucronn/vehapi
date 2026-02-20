@@ -1,108 +1,207 @@
-<aside
-    class="w-72 bg-slate-950/35 backdrop-blur-xl border-r border-slate-800/60 flex-shrink-0 flex flex-col hidden md:flex">
-    <div class="p-6">
+<aside class="w-64 flex-shrink-0 flex-col hidden md:flex relative z-20 h-screen sticky top-0
+    bg-[hsl(230,35%,9%)]/80 backdrop-blur-xl border-r border-white/5">
+    <!-- Header -->
+    <div class="p-5 border-b border-white/5 space-y-4">
         <a routerLink="/"
-            class="text-cyan-300 hover:text-cyan-200 mb-6 inline-flex items-center gap-2 text-sm font-medium">
-            <span aria-hidden="true">←</span> Change Vehicle
+            class="group flex items-center gap-2 text-xs font-mono tracking-wider transition-colors text-torque-muted hover:text-white">
+            <lucide-icon [img]="icons.LogOut"
+                class="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform"></lucide-icon>
+            EXIT SESSION
         </a>
 
-        @if (vehicleName) {
-        <div class="space-y-1">
-            <div class="text-xs tracking-wider text-slate-400">TORQUE</div>
-            <h1 class="text-xl font-bold tracking-tight text-white leading-tight">{{ vehicleName }}</h1>
-        </div>
-        } @else {
         <div class="space-y-2">
-            <div class="h-3 w-12 bg-slate-800/80 rounded-md animate-pulse"></div>
-            <div class="h-8 bg-slate-800/80 rounded-md animate-pulse w-3/4"></div>
+            <div class="flex items-center gap-2">
+                <div class="w-1 h-3 bg-[hsl(191,97%,50%)] rounded-full"></div>
+                <p class="text-[10px] font-mono uppercase tracking-[0.2em] text-torque-cyan">Active Vehicle</p>
+            </div>
+            @if (vehicleName) {
+            <h1 class="text-lg font-heading font-bold leading-tight text-white">{{ vehicleName }}</h1>
+            } @else {
+            <div class="space-y-2 animate-pulse">
+                <div class="h-5 rounded-md bg-white/5 w-full"></div>
+                <div class="h-5 rounded-md bg-white/5 w-2/3"></div>
+            </div>
+            }
         </div>
-        }
     </div>
 
-    <nav class="flex-1 px-4 space-y-1 overflow-y-auto">
+    <!-- Navigation -->
+    <nav class="flex-1 py-3 space-y-4 overflow-y-auto px-3">
         <button (click)="onSectionClick('overview')"
-            [ngClass]="activeSection === 'overview'
-                ? 'bg-cyan-500/10 text-cyan-200 border-cyan-400'
-                : 'text-slate-300 hover:bg-slate-900/60 hover:text-white border-transparent'"
-            class="w-full flex items-center px-4 py-3 text-sm font-semibold rounded-xl border-l-4 transition-colors">
-            <lucide-icon [img]="icons.House" class="w-5 h-5 mr-3"></lucide-icon> Overview
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
+            [class.border-[hsl(191,97%,50%)]]="activeSection === 'overview'"
+            [class.bg-gradient-to-r]="activeSection === 'overview'"
+            [class.from-[hsl(191,97%,50%)]/10]="activeSection === 'overview'"
+            [class.to-transparent]="activeSection === 'overview'" [class.text-white]="activeSection === 'overview'"
+            [class.border-transparent]="activeSection !== 'overview'"
+            [class.text-[hsl(215,20%,65%)]]="activeSection !== 'overview'"
+            [class.hover:text-white]="activeSection !== 'overview'"
+            [class.hover:bg-white/[0.03]]="activeSection !== 'overview'">
+            <lucide-icon [img]="icons.House" class="w-4 h-4"></lucide-icon>
+            <span class="text-[10px] font-bold tracking-[0.15em] uppercase">Dashboard</span>
         </button>
-        @if (!availableSections || availableSections.hasDtcs) {
+
+        <div class="px-3">
+            <p class="text-[9px] font-mono uppercase tracking-[0.2em] text-torque-muted mb-1">Diagnostics</p>
+        </div>
+
+        @if (availableSections?.hasDtcs) {
         <button (click)="onSectionClick('dtcs')"
-            [ngClass]="activeSection === 'dtcs'
-                ? 'bg-cyan-500/10 text-cyan-200 border-cyan-400'
-                : 'text-slate-300 hover:bg-slate-900/60 hover:text-white border-transparent'"
-            class="w-full flex items-center px-4 py-3 text-sm font-semibold rounded-xl border-l-4 transition-colors">
-            <lucide-icon [img]="icons.TriangleAlert" class="w-5 h-5 mr-3"></lucide-icon> Diagnostic Codes
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
+            [class.border-[hsl(191,97%,50%)]]="activeSection === 'dtcs'"
+            [class.bg-gradient-to-r]="activeSection === 'dtcs'"
+            [class.from-[hsl(191,97%,50%)]/10]="activeSection === 'dtcs'"
+            [class.to-transparent]="activeSection === 'dtcs'" [class.text-white]="activeSection === 'dtcs'"
+            [class.border-transparent]="activeSection !== 'dtcs'"
+            [class.text-[hsl(215,20%,65%)]]="activeSection !== 'dtcs'"
+            [class.hover:text-white]="activeSection !== 'dtcs'"
+            [class.hover:bg-white/[0.03]]="activeSection !== 'dtcs'">
+            <lucide-icon [img]="icons.TriangleAlert" class="w-4 h-4"></lucide-icon>
+            <span class="text-[10px] font-bold tracking-[0.15em] uppercase">Fault Codes</span>
         </button>
         }
 
-        @if (!availableSections || availableSections.hasTsbs) {
+        @if (availableSections?.hasTsbs) {
         <button (click)="onSectionClick('tsbs')"
-            [ngClass]="activeSection === 'tsbs'
-                ? 'bg-cyan-500/10 text-cyan-200 border-cyan-400'
-                : 'text-slate-300 hover:bg-slate-900/60 hover:text-white border-transparent'"
-            class="w-full flex items-center px-4 py-3 text-sm font-semibold rounded-xl border-l-4 transition-colors">
-            <lucide-icon [img]="icons.FileText" class="w-5 h-5 mr-3"></lucide-icon> Service Bulletins
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
+            [class.border-[hsl(191,97%,50%)]]="activeSection === 'tsbs'"
+            [class.bg-gradient-to-r]="activeSection === 'tsbs'"
+            [class.from-[hsl(191,97%,50%)]/10]="activeSection === 'tsbs'"
+            [class.to-transparent]="activeSection === 'tsbs'" [class.text-white]="activeSection === 'tsbs'"
+            [class.border-transparent]="activeSection !== 'tsbs'"
+            [class.text-[hsl(215,20%,65%)]]="activeSection !== 'tsbs'"
+            [class.hover:text-white]="activeSection !== 'tsbs'"
+            [class.hover:bg-white/[0.03]]="activeSection !== 'tsbs'">
+            <lucide-icon [img]="icons.FileText" class="w-4 h-4"></lucide-icon>
+            <span class="text-[10px] font-bold tracking-[0.15em] uppercase">Service Bulletins</span>
         </button>
         }
 
-        @if (!availableSections || availableSections.hasDiagrams) {
+        <div class="px-3">
+            <p class="text-[9px] font-mono uppercase tracking-[0.2em] text-torque-muted mb-1">Service Data</p>
+        </div>
+
+        @if (availableSections?.hasDiagrams) {
         <button (click)="onSectionClick('diagrams')"
-            [ngClass]="activeSection === 'diagrams'
-                ? 'bg-cyan-500/10 text-cyan-200 border-cyan-400'
-                : 'text-slate-300 hover:bg-slate-900/60 hover:text-white border-transparent'"
-            class="w-full flex items-center px-4 py-3 text-sm font-semibold rounded-xl border-l-4 transition-colors">
-            <lucide-icon [img]="icons.Cable" class="w-5 h-5 mr-3"></lucide-icon> Wiring Diagrams
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
+            [class.border-[hsl(191,97%,50%)]]="activeSection === 'diagrams'"
+            [class.bg-gradient-to-r]="activeSection === 'diagrams'"
+            [class.from-[hsl(191,97%,50%)]/10]="activeSection === 'diagrams'"
+            [class.to-transparent]="activeSection === 'diagrams'" [class.text-white]="activeSection === 'diagrams'"
+            [class.border-transparent]="activeSection !== 'diagrams'"
+            [class.text-[hsl(215,20%,65%)]]="activeSection !== 'diagrams'"
+            [class.hover:text-white]="activeSection !== 'diagrams'"
+            [class.hover:bg-white/[0.03]]="activeSection !== 'diagrams'">
+            <lucide-icon [img]="icons.Cable" class="w-4 h-4"></lucide-icon>
+            <span class="text-[10px] font-bold tracking-[0.15em] uppercase">Wiring Diagrams</span>
         </button>
         }
 
-        @if (!availableSections || availableSections.hasComponentLocations) {
-        <button (click)="onSectionClick('component-locations')"
-            [ngClass]="activeSection === 'component-locations'
-                ? 'bg-cyan-500/10 text-cyan-200 border-cyan-400'
-                : 'text-slate-300 hover:bg-slate-900/60 hover:text-white border-transparent'"
-            class="w-full flex items-center px-4 py-3 text-sm font-semibold rounded-xl border-l-4 transition-colors">
-            <lucide-icon [img]="icons.Cable" class="w-5 h-5 mr-3"></lucide-icon> Component Locations
-        </button>
-        }
-
-        @if (!availableSections || availableSections.hasProcedures) {
+        @if (availableSections?.hasProcedures) {
         <button (click)="onSectionClick('procedures')"
-            [ngClass]="activeSection === 'procedures'
-                ? 'bg-cyan-500/10 text-cyan-200 border-cyan-400'
-                : 'text-slate-300 hover:bg-slate-900/60 hover:text-white border-transparent'"
-            class="w-full flex items-center px-4 py-3 text-sm font-semibold rounded-xl border-l-4 transition-colors">
-            <lucide-icon [img]="icons.Wrench" class="w-5 h-5 mr-3"></lucide-icon> Procedures
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
+            [class.border-[hsl(191,97%,50%)]]="activeSection === 'procedures'"
+            [class.bg-gradient-to-r]="activeSection === 'procedures'"
+            [class.from-[hsl(191,97%,50%)]/10]="activeSection === 'procedures'"
+            [class.to-transparent]="activeSection === 'procedures'" [class.text-white]="activeSection === 'procedures'"
+            [class.border-transparent]="activeSection !== 'procedures'"
+            [class.text-[hsl(215,20%,65%)]]="activeSection !== 'procedures'"
+            [class.hover:text-white]="activeSection !== 'procedures'"
+            [class.hover:bg-white/[0.03]]="activeSection !== 'procedures'">
+            <lucide-icon [img]="icons.Wrench" class="w-4 h-4"></lucide-icon>
+            <span class="text-[10px] font-bold tracking-[0.15em] uppercase">Procedures</span>
         </button>
         }
 
-        <button (click)="onSectionClick('parts')"
-            [ngClass]="activeSection === 'parts'
-                ? 'bg-cyan-500/10 text-cyan-200 border-cyan-400'
-                : 'text-slate-300 hover:bg-slate-900/60 hover:text-white border-transparent'"
-            class="w-full flex items-center px-4 py-3 text-sm font-semibold rounded-xl border-l-4 transition-colors">
-            <lucide-icon [img]="icons.Package" class="w-5 h-5 mr-3"></lucide-icon> Parts
-        </button>
-
-        @if (!availableSections || availableSections.hasSpecs) {
+        @if (availableSections?.hasSpecs) {
         <button (click)="onSectionClick('specs')"
-            [ngClass]="activeSection === 'specs'
-                ? 'bg-cyan-500/10 text-cyan-200 border-cyan-400'
-                : 'text-slate-300 hover:bg-slate-900/60 hover:text-white border-transparent'"
-            class="w-full flex items-center px-4 py-3 text-sm font-semibold rounded-xl border-l-4 transition-colors">
-            <lucide-icon [img]="icons.ClipboardList" class="w-5 h-5 mr-3"></lucide-icon> Specs & Fluids
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
+            [class.border-[hsl(191,97%,50%)]]="activeSection === 'specs'"
+            [class.bg-gradient-to-r]="activeSection === 'specs'"
+            [class.from-[hsl(191,97%,50%)]/10]="activeSection === 'specs'"
+            [class.to-transparent]="activeSection === 'specs'" [class.text-white]="activeSection === 'specs'"
+            [class.border-transparent]="activeSection !== 'specs'"
+            [class.text-[hsl(215,20%,65%)]]="activeSection !== 'specs'"
+            [class.hover:text-white]="activeSection !== 'specs'"
+            [class.hover:bg-white/[0.03]]="activeSection !== 'specs'">
+            <lucide-icon [img]="icons.ClipboardList" class="w-4 h-4"></lucide-icon>
+            <span class="text-[10px] font-bold tracking-[0.15em] uppercase">Specifications</span>
         </button>
         }
 
-        @if (!availableSections || availableSections.hasMaintenance) {
-        <button (click)="onSectionClick('maintenance')"
-            [ngClass]="activeSection === 'maintenance'
-                ? 'bg-cyan-500/10 text-cyan-200 border-cyan-400'
-                : 'text-slate-300 hover:bg-slate-900/60 hover:text-white border-transparent'"
-            class="w-full flex items-center px-4 py-3 text-sm font-semibold rounded-xl border-l-4 transition-colors">
-            <lucide-icon [img]="icons.ClipboardList" class="w-5 h-5 mr-3"></lucide-icon> Maintenance
+        @if (availableSections?.hasComponentLocations) {
+        <button (click)="onSectionClick('component-locations')"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
+            [class.border-[hsl(191,97%,50%)]]="activeSection === 'component-locations'"
+            [class.bg-gradient-to-r]="activeSection === 'component-locations'"
+            [class.from-[hsl(191,97%,50%)]/10]="activeSection === 'component-locations'"
+            [class.to-transparent]="activeSection === 'component-locations'"
+            [class.text-white]="activeSection === 'component-locations'"
+            [class.border-transparent]="activeSection !== 'component-locations'"
+            [class.text-[hsl(215,20%,65%)]]="activeSection !== 'component-locations'"
+            [class.hover:text-white]="activeSection !== 'component-locations'"
+            [class.hover:bg-white/[0.03]]="activeSection !== 'component-locations'">
+            <lucide-icon [img]="icons.MapPin" class="w-4 h-4"></lucide-icon>
+            <span class="text-[10px] font-bold tracking-[0.15em] uppercase">Locations</span>
         </button>
         }
+
+        @if (availableSections?.hasMaintenance) {
+        <button (click)="onSectionClick('maintenance')"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
+            [class.border-[hsl(191,97%,50%)]]="activeSection === 'maintenance'"
+            [class.bg-gradient-to-r]="activeSection === 'maintenance'"
+            [class.from-[hsl(191,97%,50%)]/10]="activeSection === 'maintenance'"
+            [class.to-transparent]="activeSection === 'maintenance'"
+            [class.text-white]="activeSection === 'maintenance'"
+            [class.border-transparent]="activeSection !== 'maintenance'"
+            [class.text-[hsl(215,20%,65%)]]="activeSection !== 'maintenance'"
+            [class.hover:text-white]="activeSection !== 'maintenance'"
+            [class.hover:bg-white/[0.03]]="activeSection !== 'maintenance'">
+            <lucide-icon [img]="icons.Calendar" class="w-4 h-4"></lucide-icon>
+            <span class="text-[10px] font-bold tracking-[0.15em] uppercase">Maintenance</span>
+        </button>
+        }
+
+        <div class="px-3">
+            <p class="text-[9px] font-mono uppercase tracking-[0.2em] text-torque-muted mb-1">Reference</p>
+        </div>
+
+        @if (availableSections?.hasParts) {
+        <button (click)="onSectionClick('parts')"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
+            [class.border-[hsl(191,97%,50%)]]="activeSection === 'parts'"
+            [class.bg-gradient-to-r]="activeSection === 'parts'"
+            [class.from-[hsl(191,97%,50%)]/10]="activeSection === 'parts'"
+            [class.to-transparent]="activeSection === 'parts'" [class.text-white]="activeSection === 'parts'"
+            [class.border-transparent]="activeSection !== 'parts'"
+            [class.text-[hsl(215,20%,65%)]]="activeSection !== 'parts'"
+            [class.hover:text-white]="activeSection !== 'parts'"
+            [class.hover:bg-white/[0.03]]="activeSection !== 'parts'">
+            <lucide-icon [img]="icons.Package" class="w-4 h-4"></lucide-icon>
+            <span class="text-[10px] font-bold tracking-[0.15em] uppercase">Parts Catalog</span>
+        </button>
+        }
+
+        <button (click)="onSectionClick('browse-all')"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
+            [class.border-[hsl(191,97%,50%)]]="activeSection === 'browse-all'"
+            [class.bg-gradient-to-r]="activeSection === 'browse-all'"
+            [class.from-[hsl(191,97%,50%)]/10]="activeSection === 'browse-all'"
+            [class.to-transparent]="activeSection === 'browse-all'" [class.text-white]="activeSection === 'browse-all'"
+            [class.border-transparent]="activeSection !== 'browse-all'"
+            [class.text-[hsl(215,20%,65%)]]="activeSection !== 'browse-all'"
+            [class.hover:text-white]="activeSection !== 'browse-all'"
+            [class.hover:bg-white/[0.03]]="activeSection !== 'browse-all'">
+            <lucide-icon [img]="icons.Package" class="w-4 h-4"></lucide-icon>
+            <span class="text-[10px] font-bold tracking-[0.15em] uppercase">All Data</span>
+        </button>
     </nav>
+
+    <!-- Footer -->
+    <div class="p-4 border-t border-white/5 flex items-center gap-2">
+        <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+        <span class="text-[10px] font-mono text-torque-muted tracking-wider">Connected</span>
+        <span class="ml-auto text-[10px] font-mono text-torque-muted">V2.4.0</span>
+    </div>
 </aside>

@@ -1,40 +1,98 @@
-<div class="space-y-4">
+<div class="space-y-8 relative">
     @if (isLoading()) {
-    <app-loading-skeleton type="card" [count]="6"></app-loading-skeleton>
+    <app-loading-skeleton type="list" [count]="6"></app-loading-skeleton>
     }
     @else if (procedures().length === 0) {
-    <app-empty-state message="No procedures found" submessage="Repair procedures may not be available for this vehicle"
-        icon="package">
+    <app-empty-state icon="package" message="No Procedures"
+        submessage="No repair or service procedures are available for this vehicle.">
     </app-empty-state>
     }
     @else {
 
-    @for (group of groupedProcedures(); track group.name) {
-    <div class="mb-6 last:mb-0">
-        <h3 class="text-cyan-400 font-bold mb-3 uppercase text-sm tracking-wider border-b border-gray-700 pb-2">
-            {{ group.name }}
-        </h3>
-        <div class="space-y-3">
-            @for (procedure of group.items; track trackById($index, procedure)) {
-            <a [routerLink]="['/vehicle', contentSource, vehicleId, 'article', procedure.id]"
-                class="block bg-gray-800/50 border border-gray-700 hover:border-cyan-500 rounded-lg p-3 transition-all hover:shadow-lg hover:shadow-cyan-500/10 group">
-                <div class="flex items-center gap-3">
-                    <div class="flex-shrink-0">
-                        <lucide-icon [img]="icons.Wrench"
-                            class="w-4 h-4 text-gray-500 group-hover:text-cyan-400 transition-colors">
-                        </lucide-icon>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <h4 class="font-medium text-white group-hover:text-cyan-400 transition-colors line-clamp-1">
-                            {{ procedure.title || procedure.name || 'Repair Procedure' }}
-                        </h4>
-                        @if (procedure.subtitle) {
-                        <p class="text-xs text-gray-500 line-clamp-1 mt-0.5">{{ procedure.subtitle }}</p>
-                        }
+    <!-- Content Area (Blurred if locked) -->
+    <div [class.blur-sm]="!creditsService.hasAccess(vehicleId, 'procedures')"
+        [class.pointer-events-none]="!creditsService.hasAccess(vehicleId, 'procedures')"
+        class="space-y-8 transition-all duration-300 select-none">
+
+        @for (group of groupedProcedures(); track group.name) {
+        <div class="space-y-4">
+            <div class="flex items-center gap-3 pb-2" style="border-bottom:1px solid var(--border)">
+                <h3 class="text-xs font-semibold uppercase tracking-wide" style="color:var(--text-muted)">{{ group.name
+                    }}</h3>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                @for (procedure of group.items; track trackById($index, procedure)) {
+                <div (click)="viewProcedure(procedure)"
+                    class="card p-4 transition-all group cursor-pointer hover:bg-white/5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                            style="background:rgba(0,212,255,0.1);color:hsl(191,97%,50%)">
+                            <lucide-icon [img]="icons.Wrench" class="w-4 h-4"></lucide-icon>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-medium text-sm line-clamp-1" style="color:var(--text-primary)">
+                                {{ procedure.title || procedure.name || 'Procedure' }}
+                            </h4>
+                            @if (procedure.subtitle) {
+                            <p class="text-xs line-clamp-1 mt-0.5" style="color:var(--text-muted)">{{ procedure.subtitle
+                                }}</p>
+                            }
+                        </div>
                     </div>
                 </div>
-            </a>
-            }
+                }
+            </div>
+        </div>
+        }
+    </div>
+
+    <!-- Lock Overlay -->
+    @if (!creditsService.hasAccess(vehicleId, 'procedures')) {
+    <div class="absolute inset-0 z-10 flex flex-col p-6 text-center rounded-xl overflow-hidden mt-0!"
+        style="min-height: 350px;">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-[2px]"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-black/80"></div>
+
+        <div class="relative z-20 max-w-sm mx-auto space-y-4 animate-fade-in-up sticky top-[30vh]">
+            <div
+                class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-2 ring-1 ring-white/20">
+                <lucide-icon [img]="icons.Lock" class="w-6 h-6 text-white"></lucide-icon>
+            </div>
+
+            <h3 class="text-xl font-bold text-white">Unlock Procedures</h3>
+            <p class="text-sm text-gray-300">
+                Access step-by-step repair guides, removal & installation instructions, and professional service
+                procedures.
+            </p>
+
+            <div class="pt-2">
+                <button (click)="unlockSection()" [disabled]="isUnlocking()"
+                    class="w-full btn-primary py-3 font-semibold shadow-lg shadow-cyan-500/20 relative overflow-hidden group">
+
+                    @if (isUnlocking()) {
+                    <span class="flex items-center justify-center gap-2">
+                        <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                        Unlocking...
+                    </span>
+                    } @else {
+                    <span class="flex items-center justify-center gap-2">
+                        <lucide-icon [img]="icons.Sparkles" class="w-4 h-4"></lucide-icon>
+                        <span>Unlock Now</span>
+                        <span class="bg-white/20 px-1.5 py-0.5 rounded text-[10px] font-mono ml-1">
+                            {{ creditsService.COSTS.PROCEDURES }} CR
+                        </span>
+                    </span>
+                    }
+                </button>
+
+                @if (creditsService.balance() < creditsService.COSTS.PROCEDURES) { <p
+                    class="mt-3 text-xs text-red-400 flex items-center justify-center gap-1">
+                    <lucide-icon [img]="icons.Lock" class="w-3 h-3"></lucide-icon>
+                    Insufficient credits ({{ creditsService.balance() }} CR available)
+                    </p>
+                    }
+            </div>
         </div>
     </div>
     }

@@ -1,49 +1,153 @@
-<div class="min-h-screen p-4 sm:p-6 lg:p-8 text-slate-200">
-  <div class="app-container max-w-4xl">
-    <div class="flex justify-between items-center mb-6">
+<div class="min-h-screen flex flex-col" style="background:var(--bg);color:var(--text-primary)">
+  <!-- Header -->
+  <!-- Header (Only show if not in window mode) -->
+  @if (!articleId) {
+  <header class="sticky top-0 z-50"
+    style="background:var(--bg-surface);border-bottom:1px solid var(--border);padding-top:env(safe-area-inset-top, 0px);padding-left:env(safe-area-inset-left, 0px);padding-right:env(safe-area-inset-right, 0px);">
+    <div class="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
       <a [routerLink]="['/vehicle', contentSource(), vehicleId()]"
-        class="text-cyan-200 hover:text-cyan-100 inline-flex items-center gap-2 font-medium">
-        <span aria-hidden="true">←</span> Back to Dashboard
+        class="group flex items-center gap-2 text-xs font-medium transition-all" style="color:var(--text-muted)">
+        <lucide-icon [img]="icons.ArrowLeft"
+          class="w-4 h-4 group-hover:-translate-x-1 transition-transform"></lucide-icon>
+        <span class="hidden sm:inline">Dashboard</span>
       </a>
 
-      <!-- AI Toggle -->
-      <div class="flex items-center space-x-2" *ngIf="geminiApi.aiEnabled()">
-        <div class="flex flex-col items-end mr-2" *ngIf="isRewriting()">
-          <span class="text-xs text-cyan-400 animate-pulse">Enhancing...</span>
-        </div>
-        <span class="text-sm font-medium" [class.text-gray-400]="!showOriginal() && !isRewriting()"
-          [class.text-cyan-400]="isRewriting()">
-          {{ isRewriting() ? 'AI-Working' : 'AI-Rewritten' }}
-        </span>
-        <label for="toggle" class="relative inline-flex items-center cursor-pointer">
-          <input type="checkbox" id="toggle" class="sr-only peer" [checked]="showOriginal()"
-            (change)="showOriginal.set(!showOriginal())">
-          <div
-            class="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-4 peer-focus:ring-cyan-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600">
-          </div>
-        </label>
-        <span class="text-sm font-medium" [class.text-gray-400]="showOriginal()">Original</span>
+      <div class="flex items-center gap-3">
+        @if (sections().length > 0) {
+        <button (click)="toggleMobileToc()" class="lg:hidden btn-ghost p-2 rounded-lg">
+          <lucide-icon [img]="isMobileTocOpen() ? icons.X : icons.List" class="w-5 h-5"></lucide-icon>
+        </button>
+        }
       </div>
     </div>
+  </header>
+  }
 
-    <div class="app-surface p-6 sm:p-8 lg:p-10">
-      @if (articleData()) {
-      <div class="motor-content" [innerHTML]="displayContent()"></div>
-      } @else {
-      <!-- Loading Skeleton -->
-      <div class="space-y-4 animate-pulse">
-        <div class="text-center text-cyan-200 mb-4">
-          {{ isRewriting() ? 'Gemini is rewriting this article to be easier to read...' : 'Loading article...' }}
+  <!-- Mobile TOC Overlay -->
+  @if (isMobileTocOpen()) {
+  <div class="fixed inset-0 z-[60] lg:hidden pt-20 px-5 animate-fade-in overflow-y-auto"
+    style="background:var(--bg);padding-top:calc(5rem + env(safe-area-inset-top, 0px));padding-left:calc(1.25rem + env(safe-area-inset-left, 0px));padding-right:calc(1.25rem + env(safe-area-inset-right, 0px));">
+    <h3 class="text-sm font-bold uppercase tracking-wide mb-5 flex items-center gap-2 pb-3"
+      style="color:var(--text-primary);border-bottom:1px solid var(--border)">
+      <span class="w-1.5 h-1.5 rounded-full" style="background:var(--primary)"></span>
+      Contents
+    </h3>
+    <nav class="flex flex-col space-y-0.5 pb-12">
+      @for (section of sections(); track section.id) {
+      <button (click)="scrollToSection(section.id)" class="text-left py-2.5 px-3 text-sm rounded-lg transition-all"
+        style="color:var(--text-secondary)" [class.pl-3]="section.level === 1" [class.pl-6]="section.level === 2"
+        [class.pl-9]="section.level === 3">
+        {{ section.title }}
+      </button>
+      }
+    </nav>
+  </div>
+  }
+
+  <main class="flex-1 overflow-x-hidden">
+    <div class="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10"
+      style="padding-left:calc(1rem + env(safe-area-inset-left, 0px));padding-right:calc(1rem + env(safe-area-inset-right, 0px));padding-bottom:calc(2rem + env(safe-area-inset-bottom, 0px));">
+      @if (isLoading()) {
+      <!-- Loading State -->
+      <div class="max-w-3xl mx-auto space-y-8 animate-pulse">
+        <div class="space-y-3">
+          <div class="h-10 rounded-xl w-3/4" style="background:var(--bg-muted)"></div>
+          <div class="h-1 rounded-full w-16" style="background:var(--bg-muted)"></div>
         </div>
-        <div class="h-8 bg-slate-800/80 rounded w-3/4"></div>
-        <div class="h-4 bg-slate-800/80 rounded w-full"></div>
-        <div class="h-4 bg-slate-800/80 rounded w-5/6"></div>
-        <div class="h-4 bg-slate-800/80 rounded w-full"></div>
-        <div class="h-8 bg-slate-800/80 rounded w-1/2 mt-8"></div>
-        <div class="h-4 bg-slate-800/80 rounded w-full"></div>
-        <div class="h-4 bg-slate-800/80 rounded w-full"></div>
+        <div class="space-y-4">
+          <div class="h-4 rounded-full w-full" style="background:var(--bg-muted)"></div>
+          <div class="h-4 rounded-full w-5/6" style="background:var(--bg-muted)"></div>
+          <div class="h-4 rounded-full w-4/6" style="background:var(--bg-muted)"></div>
+          <div class="h-64 rounded-2xl mt-8" style="background:var(--bg-muted)"></div>
+        </div>
+      </div>
+      } @else if (error()) {
+      <!-- Error State -->
+      <div class="max-w-xl mx-auto text-center py-20">
+        <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6"
+          style="background:rgba(239,68,68,0.1);color:rgb(239,68,68)">
+          <lucide-icon [img]="icons.X" class="w-8 h-8"></lucide-icon>
+        </div>
+        <h3 class="text-xl font-bold mb-2" style="color:var(--text-primary)">Failed to load article</h3>
+        <p class="mb-6" style="color:var(--text-muted)">{{ error() }}</p>
+        <button (click)="loadData()" class="btn-primary px-6 py-2 rounded-lg font-medium"
+          style="background:var(--primary);color:var(--bg)">
+          Try Again
+        </button>
+      </div>
+      } @else if (!articleContent()) {
+      <!-- Empty State -->
+      <div class="max-w-xl mx-auto text-center py-20">
+        <h3 class="text-xl font-bold mb-2" style="color:var(--text-primary)">No Content Available</h3>
+        <p style="color:var(--text-muted)">This article usually contains only images or external references.</p>
+
+        <!-- DEBUG INFO -->
+        <div class="mt-8 text-left p-4 rounded bg-slate-900 overflow-auto max-h-96 border border-slate-700">
+          <p class="text-xs font-bold text-red-400 mb-2">DEBUG: RAW API RESPONSE</p>
+          <pre class="text-xs text-green-400 font-mono whitespace-pre-wrap">{{ rawResponse() | json }}</pre>
+        </div>
+      </div>
+      } @else {
+      <!-- Content -->
+      <div class="flex flex-col lg:flex-row gap-8 lg:gap-12 relative animate-fade-in">
+
+        <!-- Sidebar TOC (integrated) -->
+        @if (sections().length > 1) {
+        <aside class="md:w-64 lg:w-64 xl:w-72 flex-shrink-0 hidden md:block">
+          <div class="sticky top-20">
+            <h3 class="text-xs font-bold uppercase tracking-wider mb-6 flex items-center gap-2 opacity-60"
+              style="color:var(--text-primary)">
+              <span class="w-1.5 h-1.5 rounded-full" style="background:var(--primary)"></span>
+              Navigation
+            </h3>
+
+            <nav class="flex flex-col space-y-1 max-h-[calc(100vh-12rem)] overflow-y-auto pr-4 scrollbar-thin">
+              @for (section of sections(); track section.id) {
+              <button (click)="scrollToSection(section.id)"
+                class="text-left py-1.5 px-3 text-sm rounded-lg transition-all hover:bg-white/5 group border-l-2 border-transparent"
+                style="color:var(--text-muted)" [class.pl-3]="section.level === 1" [class.pl-6]="section.level === 2"
+                [class.pl-9]="section.level === 3">
+                <span class="truncate block group-hover:text-white transition-colors">{{ section.title }}</span>
+              </button>
+              }
+            </nav>
+          </div>
+        </aside>
+        }
+
+        <!-- Main Article -->
+        <div class="flex-1 min-w-0">
+          <!-- Only show title block if NOT in a modal (articleId param is null) -->
+          @if (!articleId) {
+          <div class="mb-6 pb-4" style="border-bottom:1px solid var(--border)">
+            <h1 class="text-2xl sm:text-3xl font-bold tracking-tight mb-2 leading-tight"
+              style="color:var(--text-primary)">
+              {{ articleTitle() }}
+            </h1>
+            @if (articleSubtitle()) {
+            <p class="text-sm mb-3" style="color:var(--text-muted)">{{ articleSubtitle() }}</p>
+            }
+            <div class="flex items-center gap-4">
+              <div class="h-0.5 w-12 rounded-full" style="background:var(--primary)"></div>
+              @if (params()?.get('articleId'); as id) {
+              <span class="text-xs font-mono uppercase tracking-widest opacity-40" style="color:var(--text-primary)">
+                Reference: {{ id }}
+              </span>
+              }
+            </div>
+          </div>
+          }
+
+          <article class="article-content" [innerHTML]="articleContent()" (click)="onContentClick($event)"></article>
+        </div>
       </div>
       }
     </div>
-  </div>
+  </main>
+
+  <!-- Image Viewer Modal -->
+  @if (selectedImageUrl()) {
+  <app-image-viewer-modal [imageUrl]="selectedImageUrl()!" (close)="closeImageViewer()">
+  </app-image-viewer-modal>
+  }
 </div>

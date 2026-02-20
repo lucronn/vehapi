@@ -1,12 +1,16 @@
 import { Component, Input, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { GeminiService } from '../../../../../services/gemini.service';
+import { Router } from '@angular/router';
+// import { GeminiService } from '../../../../../services/gemini.service'; // Removed
 import { FirebaseService } from '../../../../../services/firebase.service';
 import { CommonIssue } from '../../../../../models/motor.models';
 import { LoadingSkeletonComponent } from '../../../../../components/loading-skeleton/loading-skeleton.component';
 import { EmptyStateComponent } from '../../../../../components/empty-state/empty-state.component';
-import { LucideAngularModule, Lightbulb, AlertCircle, CheckCircle2 } from 'lucide-angular';
+import { LucideAngularModule, Lightbulb, AlertCircle, CheckCircle2, Wrench, ArrowRight, Lock, Unlock, Sparkles } from 'lucide-angular';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { WindowManagerService } from '../../../../../services/window-manager.service';
+import { ArticleViewerComponent } from '../../../../article-viewer/article-viewer.component';
+import { CreditsService } from '../../../../../services/credits.service';
 
 /**
  * Displays common vehicle issues with AI-generated solutions
@@ -23,91 +27,105 @@ export class CommonIssuesSectionComponent implements OnInit {
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
 
-    private geminiApi = inject(GeminiService);
+    // private geminiApi = inject(GeminiService); // Removed
     private firebase = inject(FirebaseService);
     private sanitizer = inject(DomSanitizer);
+    private windowManager = inject(WindowManagerService);
+    private router = inject(Router);
+    protected creditsService = inject(CreditsService);
 
     commonIssues = signal<CommonIssue[]>([]);
     isLoading = signal(false);
     isSolutionLoading = signal<Set<string>>(new Set());
     solutions = signal<Map<string, SafeHtml>>(new Map());
     hasAttemptedLoad = false;
+    isUnlocking = signal(false);
 
-    readonly icons = { Lightbulb, AlertCircle, CheckCircle2 };
+    readonly icons = { Lightbulb, AlertCircle, CheckCircle2, Wrench, ArrowRight, Lock, Unlock, Sparkles };
 
     ngOnInit() {
         this.loadIssues();
     }
 
     private loadIssues() {
-        // TEMPORARILY DISABLED: Common Issues feature requires AI (Gemini API)
-        // Skipping this feature when AI is disabled
+        if (this.commonIssues().length > 0 || this.hasAttemptedLoad) return;
 
-        // if (this.commonIssues().length > 0 || this.hasAttemptedLoad) return;
+        this.hasAttemptedLoad = true;
+        this.isLoading.set(true);
 
-        // this.hasAttemptedLoad = true;
-        // this.isLoading.set(true);
+        this.firebase.getCommonIssues(this.contentSource, this.vehicleId).then(cached => {
+            if (cached && cached.length > 0) {
+                console.log('[Cache Hit] Common Issues');
+                this.commonIssues.set(cached);
+                this.isLoading.set(false);
+            } else {
+                console.log('[Cache Miss] Common Issues (No Source)');
+                this.isLoading.set(false);
+                // AI fallback removed. User must rely on cache or manual entry if not in cache.
+            }
+        }).catch(err => {
+            console.error('Failed to load common issues', err);
+            this.isLoading.set(false);
+        });
+    }
 
-        // this.firebase.getCommonIssues(this.contentSource, this.vehicleId).then(cached => {
-        //   if (cached && cached.length > 0) {
-        //     console.log('[Cache Hit] Common Issues');
-        //     this.commonIssues.set(cached);
-        //     this.isLoading.set(false);
-        //   } else {
-        //     console.log('[Cache Miss] Common Issues (AI)');
-        //     this.geminiApi.findCommonIssues(this.vehicleName).subscribe({
-        //       next: (issues) => {
-        //         this.commonIssues.set(issues);
-        //         this.isLoading.set(false);
-        //         if (issues.length > 0) {
-        //           this.firebase.saveCommonIssues(this.contentSource, this.vehicleId, issues);
-        //         }
-        //       },
-        //       error: (err) => {
-        //         console.error('Failed to load common issues', err);
-        //         this.isLoading.set(false);
-        //       }
-        //     });
-        //   }
-        // });
+    async unlockSection() {
+        if (this.isUnlocking()) return;
 
-        // Set loading to false immediately
-        this.isLoading.set(false);
+        const cost = this.creditsService.COSTS.COMMON_ISSUES;
+        if (this.creditsService.balance() < cost) {
+            alert('Insufficient credits. Please purchase more.');
+            return;
+        }
+
+        if (confirm(`Unlock Common Issues & AI Solutions for ${cost} credits?`)) {
+            this.isUnlocking.set(true);
+            const success = await this.creditsService.unlockModule(this.vehicleId, 'common_issues', cost);
+            this.isUnlocking.set(false);
+
+            if (!success) {
+                alert('Unlock failed. Please try again.');
+            }
+        }
     }
 
     generateSolution(issueTitle: string): void {
-        // TEMPORARILY DISABLED: Solution generation requires AI (Gemini API)
-        // if (this.solutions().has(issueTitle)) return;
+        if (!this.creditsService.hasAccess(this.vehicleId, 'common_issues')) {
+            this.unlockSection();
+            return;
+        }
 
-        // this.isSolutionLoading.update(set => {
-        //   const newSet = new Set(set);
-        //   newSet.add(issueTitle);
-        //   return newSet;
-        // });
+        // For now, we simulate a solution or use the description.
+        // In a real scenario, we might fetch this from the API or AI.
+        const issue = this.commonIssues().find(i => i.title === issueTitle);
+        const description = issue?.description || 'No description available.';
+        const htmlContent = `
+            <div class="p-4">
+                <h3>${issueTitle}</h3>
+                <p>${description}</p>
+                <hr class="my-4"/>
+                <p><strong>Suggested Action:</strong> Please consult the service manual or a certified technician for detailed diagnostic procedures related to this issue.</p>
+            </div>
+        `;
 
-        // this.geminiApi.generateSolution(issueTitle, this.vehicleName).subscribe({
-        //   next: (solution) => {
-        //     this.solutions().update(map => {
-        //       const newMap = new Map(map);
-        //       newMap.set(issueTitle, this.sanitizer.bypassSecurityTrustHtml(solution));
-        //       return newMap;
-        //     });
-
-        //     this.isSolutionLoading.update(set => {
-        //       const newSet = new Set(set);
-        //       newSet.delete(issueTitle);
-        //       return newSet;
-        //     });
-        //   },
-        //   error: (err) => {
-        //     console.error('Failed to generate solution', err);
-        //     this.isSolutionLoading.update(set => {
-        //       const newSet = new Set(set);
-        //       newSet.delete(issueTitle);
-        //       return newSet;
-        //     });
-        //   }
-        // });
+        if (this.windowManager.isDesktop()) {
+            this.windowManager.openWindow(
+                `Issue: ${issueTitle}`,
+                ArticleViewerComponent,
+                {
+                    articleTitleInput: issueTitle,
+                    htmlContentInput: htmlContent
+                }
+            );
+        } else {
+            // For mobile, navigate and pass content via history state
+            this.router.navigate(['/vehicle', this.contentSource, this.vehicleId, 'article', 'issue-' + encodeURIComponent(issueTitle)], {
+                state: {
+                    title: issueTitle,
+                    content: htmlContent
+                }
+            });
+        }
     }
 
     getSeverityColor(severity: string): string {
@@ -116,7 +134,7 @@ export class CommonIssuesSectionComponent implements OnInit {
             'Medium': 'text-amber-500',
             'Low': 'text-green-500'
         };
-        return colors[severity] || 'text-gray-500';
+        return colors[severity] || 'text-[hsl(var(--text-muted))]';
     }
 
     trackByTitle(index: number, issue: CommonIssue): string {

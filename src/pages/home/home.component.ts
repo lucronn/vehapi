@@ -1,39 +1,40 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, ElementRef, HostListener, ViewChild, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal, ElementRef, HostListener, ViewChild, OnInit, DestroyRef, ChangeDetectorRef } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { forkJoin, map, of, switchMap, Subject, debounceTime, distinctUntilChanged, firstValueFrom } from 'rxjs';
+import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, debounceTime, distinctUntilChanged, firstValueFrom, catchError, of } from 'rxjs';
 
 import { MotorApiService } from '../../services/motor-api.service';
-import { GeminiService } from '../../services/gemini.service';
 import { VehiclePersistenceService } from '../../services/vehicle-persistence.service';
 import { LogoComponent } from '../../components/logo/logo.component';
-import { Make, Model, Engine, PersistedVehicle, Article, ComparisonResult } from '../../models/motor.models';
-import { LucideAngularModule, Search, Sparkles, Lightbulb, X, ArrowRight, ArrowUpRight } from 'lucide-angular';
+import { Make, Model, Engine, PersistedVehicle } from '../../models/motor.models';
+import { LucideAngularModule, Search, X, ArrowRight, ArrowUpRight, ArrowLeft } from 'lucide-angular';
+import { ThemeToggleComponent } from '../../components/theme-toggle/theme-toggle.component';
 
 type Suggestion =
   | { type: 'Year'; value: number; display: string }
   | { type: 'Make'; value: Make; display: string }
   | { type: 'Model'; value: Model; display: string }
-  | { type: 'Engine'; value: { vehicleId: string; displayName: string }; display: string }
-  | { type: 'Unsure'; value: 'unsure'; display: string };
+  | { type: 'Engine'; value: { vehicleId: string; displayName: string }; display: string };
 
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, LogoComponent, RouterModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LogoComponent, RouterModule, LucideAngularModule, ThemeToggleComponent],
 })
 export class HomeComponent implements OnInit {
-  readonly icons = { Search, Sparkles, Lightbulb, X, ArrowRight, ArrowUpRight };
+  readonly icons = { Search, X, ArrowRight, ArrowUpRight, ArrowLeft };
   private motorApi = inject(MotorApiService);
-  private geminiApi = inject(GeminiService);
   private persistence = inject(VehiclePersistenceService);
   private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
+  private cdr = inject(ChangeDetectorRef);
 
   @ViewChild('searchInputRef') searchInputRef!: ElementRef<HTMLInputElement>;
-  @ViewChild('suggestionsContainer') suggestionsContainerRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('desktopSuggestionsContainer') desktopSuggestionsContainerRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('searchContainer') searchContainerRef!: ElementRef<HTMLDivElement>;
 
   // Search State
   searchInput = signal(''); // Immediate input value
@@ -47,7 +48,19 @@ export class HomeComponent implements OnInit {
   selectedVehicle = signal<{ vehicleId: string; displayName: string } | null>(null);
 
   // Data
-  private years = toSignal(this.motorApi.getYears(), { initialValue: null });
+  private years = toSignal(
+    this.motorApi.getYears().pipe(
+      catchError((error) => {
+        console.error('Failed to load years:', error);
+        const errorMsg = error?.message || error?.toString() || 'Unknown error';
+        console.error('Error details:', { error, message: errorMsg, status: error?.status });
+        // Don't show error message immediately - let user try to use the app
+        // The suggestions will just be empty if years is null
+        return of(null as any);
+      })
+    ),
+    { initialValue: null }
+  );
   private makes = signal<Make[]>([]);
   private models = signal<Model[]>([]);
   private engines = signal<Engine[]>([]); // Available engines for selected model
@@ -57,32 +70,93 @@ export class HomeComponent implements OnInit {
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
   showSuggestions = signal(false);
-
-  // "Unsure" AI Mode State
-  unsureModeActive = signal(false);
-  aiQuery = signal('');
-  aiResponse = signal(''); // Keep for generic messages? Or deprecate?
-  comparisonResults = signal<ComparisonResult[]>([]); // New structured results
-  isAiLoading = signal(false);
-  intentDescription = signal<string>(''); // To show user "Searching for: [Optimized Term]"
+  viewportHeight = signal<number>(0);
+  private baseViewportHeight = signal<number>(0);
+  selectedSuggestionIndex = signal<number>(-1); // For keyboard navigation
 
   ngOnInit(): void {
     this.persistedVehicle.set(this.persistence.getVehicle());
 
     this.searchSubject.pipe(
       debounceTime(500),
-      distinctUntilChanged()
+      distinctUntilChanged(),
+      takeUntilDestroyed(this.destroyRef) // Prevents memory leak
     ).subscribe(term => {
       this.searchTerm.set(term);
     });
+
+    // Track viewport height for mobile keyboard detection
+    this.updateViewportHeight();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', () => {
+        this.updateViewportHeight();
+        if (this.showSuggestions()) {
+          this.calculateDropdownPosition();
+        }
+      });
+      window.addEventListener('scroll', () => {
+        if (this.showSuggestions()) {
+          this.calculateDropdownPosition();
+        }
+      }, true);
+      window.addEventListener('orientationchange', () => {
+        setTimeout(() => {
+          this.updateViewportHeight();
+          if (this.showSuggestions()) {
+            this.calculateDropdownPosition();
+          }
+        }, 100);
+      });
+      // Use visual viewport API if available (better for mobile keyboards)
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+          this.updateViewportHeight();
+          if (this.showSuggestions()) {
+            this.calculateDropdownPosition();
+          }
+        });
+        window.visualViewport.addEventListener('scroll', () => {
+          this.updateViewportHeight();
+          if (this.showSuggestions()) {
+            this.calculateDropdownPosition();
+          }
+        });
+      }
+    }
+
   }
+
+  isMobile = signal(false);
+
+  private updateViewportHeight(): void {
+    if (typeof window === 'undefined') return;
+
+    this.isMobile.set(window.innerWidth < 768);
+
+    // Store base viewport height (without keyboard)
+    if (this.baseViewportHeight() === 0) {
+      this.baseViewportHeight.set(window.innerHeight);
+    }
+
+    // Use visual viewport height if available (accounts for mobile keyboard)
+    const height = window.visualViewport?.height ?? window.innerHeight;
+    this.viewportHeight.set(height);
+  }
+
+
+
+  // Determine if dropdown should appear above or below input
+  dropdownPosition = signal<'above' | 'below'>('below');
+  dropdownMaxHeight = signal<number | null>(null);
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     if (this.showSuggestions()) {
       const clickedInsideInput = this.searchInputRef?.nativeElement.contains(event.target as Node);
-      const clickedInsideSuggestions = this.suggestionsContainerRef?.nativeElement.contains(event.target as Node);
-      if (!clickedInsideInput && !clickedInsideSuggestions) {
+      const clickedInsideSuggestions = this.desktopSuggestionsContainerRef?.nativeElement.contains(event.target as Node);
+      const clickedInsideContainer = this.searchContainerRef?.nativeElement.contains(event.target as Node);
+
+      if (!clickedInsideInput && !clickedInsideSuggestions && !clickedInsideContainer) {
         this.showSuggestions.set(false);
       }
     }
@@ -92,13 +166,19 @@ export class HomeComponent implements OnInit {
     if (!this.selectedYear()) return 'Year';
     if (!this.selectedMake()) return 'Make';
     if (!this.selectedModel()) return 'Model';
-    return 'Engine';
+    // Only show Engine step if there are actually engines available
+    // Check both the engines signal and the model's engines property
+    const model = this.selectedModel();
+    const hasEngines = (model?.engines && model.engines.length > 0) || this.engines().length > 0;
+    if (hasEngines) return 'Engine';
+    // If no engines, we're done - return Model to prevent showing engine step
+    return 'Model';
   });
 
   isVin = computed(() => this.searchTerm().length > 10 && /^[A-HJ-NPR-Z0-9]{17}$/i.test(this.searchTerm()));
 
   currentPlaceholder = computed(() => {
-    if (this.unsureModeActive()) return 'e.g., "brake pad part numbers" or "oil capacity"';
+    if (this.selectedVehicle()) return this.selectedVehicle()?.displayName;
     if (this.isVin()) return 'Searching by VIN...';
     switch (this.searchStep()) {
       case 'Year': return 'Enter VIN or Year...';
@@ -113,7 +193,11 @@ export class HomeComponent implements OnInit {
     const term = this.searchTerm().toLowerCase().trim();
 
     if (step === 'Year') {
-      const yearsData = this.years()?.body.sort((a, b) => b - a) ?? [];
+      const yearsResponse = this.years();
+      if (!yearsResponse || !yearsResponse.body) {
+        return [];
+      }
+      const yearsData = yearsResponse.body.sort((a, b) => b - a);
       if (!term) return yearsData.map(y => ({ type: 'Year', value: y, display: y.toString() }));
       return yearsData.filter(y => y.toString().startsWith(term)).map(y => ({ type: 'Year', value: y, display: y.toString() }));
     }
@@ -131,21 +215,19 @@ export class HomeComponent implements OnInit {
         filtered = modelsData.filter(m => m.model.toLowerCase().includes(term));
       }
 
-      const modelSuggestions: Suggestion[] = filtered.map(m => ({
+      return filtered.map(m => ({
         type: 'Model',
         value: m,
         display: m.model
       }));
-
-      // Add "Unsure" option if not searching
-      if (!term) {
-        modelSuggestions.unshift({ type: 'Unsure', value: 'unsure', display: 'Unsure of your exact model? Click here.' });
-      }
-      return modelSuggestions;
     }
 
     if (step === 'Engine') {
       const enginesData = this.engines();
+      // Only show engine suggestions if there are actually engines available
+      if (enginesData.length === 0) {
+        return [];
+      }
       let filtered = enginesData;
       if (term) {
         filtered = enginesData.filter(e => e.name.toLowerCase().includes(term));
@@ -163,6 +245,16 @@ export class HomeComponent implements OnInit {
   onSearchInput(value: string): void {
     this.searchInput.set(value);
     this.searchSubject.next(value);
+
+    // Show suggestions when user starts typing (if not already showing and conditions are met)
+    if (!this.showSuggestions() && !this.selectedVehicle() && !this.isVin()) {
+      this.showSuggestions.set(true);
+    }
+
+    // Recalculate position when typing
+    if (this.showSuggestions()) {
+      setTimeout(() => this.calculateDropdownPosition(), 50);
+    }
 
     // Smart Input Handling: If input starts with Year + Space (e.g. "2011 Ford"), try to auto-parse
     if (this.searchStep() === 'Year' && /^\d{4}\s+/.test(value)) {
@@ -268,17 +360,109 @@ export class HomeComponent implements OnInit {
   }
 
   onSearchFocus(): void {
-    if (this.unsureModeActive()) return;
+    if (this.selectedVehicle()) return;
     this.errorMessage.set(null);
+    // Always show suggestions on focus - they will populate as data loads
     this.showSuggestions.set(true);
+    // Update viewport height when input is focused (keyboard may appear)
+    setTimeout(() => {
+      this.updateViewportHeight();
+      this.calculateDropdownPosition();
+    }, 300);
+  }
+
+  private calculateDropdownPosition(): void {
+    if (typeof window === 'undefined') return;
+
+    const input = this.searchInputRef?.nativeElement;
+    if (!input) return;
+
+    const inputRect = input.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const spaceBelow = viewportHeight - inputRect.bottom;
+    const spaceAbove = inputRect.top;
+    const minSpaceNeeded = 300; // Minimum space for dropdown (adjust as needed)
+
+    // Calculate max height based on available space
+    if (spaceBelow >= minSpaceNeeded) {
+      // Enough space below, position below
+      this.dropdownPosition.set('below');
+      this.dropdownMaxHeight.set(Math.min(spaceBelow - 16, 400)); // 16px for margin
+    } else if (spaceAbove >= minSpaceNeeded) {
+      // Not enough space below, but enough above, position above
+      this.dropdownPosition.set('above');
+      this.dropdownMaxHeight.set(Math.min(spaceAbove - 16, 400));
+    } else {
+      // Limited space, use available space (prefer below)
+      this.dropdownPosition.set(spaceBelow > spaceAbove ? 'below' : 'above');
+      const availableSpace = Math.max(spaceBelow, spaceAbove) - 16;
+      this.dropdownMaxHeight.set(Math.max(availableSpace, 200)); // Minimum 200px
+    }
   }
 
   handleEnterKey(): void {
     if (this.isVin() || this.selectedVehicle()) { this.submitSearch(); return; }
-    // If we are at Engine step and user hits enter without selecting, maybe select the first one OR default to model base?
-    // For now, let's select first suggestion if available.
     const currentSuggestions = this.suggestions();
-    if (currentSuggestions.length > 0) { this.selectSuggestion(new MouseEvent('mousedown'), currentSuggestions[0]); }
+    const selectedIndex = this.selectedSuggestionIndex();
+
+    // If a suggestion is highlighted via keyboard, select it
+    if (selectedIndex >= 0 && selectedIndex < currentSuggestions.length) {
+      this.selectSuggestion(new MouseEvent('mousedown'), currentSuggestions[selectedIndex]);
+      this.selectedSuggestionIndex.set(-1);
+      return;
+    }
+
+    // Otherwise, select first suggestion if available
+    if (currentSuggestions.length > 0) {
+      this.selectSuggestion(new MouseEvent('mousedown'), currentSuggestions[0]);
+    }
+  }
+
+  @HostListener('keydown', ['$event'])
+  onKeyDown(event: KeyboardEvent): void {
+    // Only handle keyboard navigation when suggestions are visible and input is focused
+    if (!this.showSuggestions() || this.selectedVehicle() || this.isVin()) {
+      return;
+    }
+
+    const currentSuggestions = this.suggestions();
+    if (currentSuggestions.length === 0) return;
+
+    let newIndex = this.selectedSuggestionIndex();
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        newIndex = newIndex < currentSuggestions.length - 1 ? newIndex + 1 : 0;
+        this.selectedSuggestionIndex.set(newIndex);
+        this.scrollToSuggestion(newIndex);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        newIndex = newIndex > 0 ? newIndex - 1 : currentSuggestions.length - 1;
+        this.selectedSuggestionIndex.set(newIndex);
+        this.scrollToSuggestion(newIndex);
+        break;
+      case 'Escape':
+        event.preventDefault();
+        this.showSuggestions.set(false);
+        this.selectedSuggestionIndex.set(-1);
+        break;
+    }
+  }
+
+  private scrollToSuggestion(index: number): void {
+    // Scroll the selected suggestion into view
+    const container = this.desktopSuggestionsContainerRef?.nativeElement;
+    if (!container) return;
+
+    // Find the scrollable container (might be nested)
+    const scrollContainer = container.querySelector('.overflow-y-auto') || container;
+    const buttons = scrollContainer.querySelectorAll('button');
+    const targetButton = buttons[index];
+    if (targetButton) {
+      targetButton.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
   }
 
   handleSpacebar(event: Event): void {
@@ -291,42 +475,49 @@ export class HomeComponent implements OnInit {
 
   selectSuggestion(event: MouseEvent, suggestion: Suggestion): void {
     event.preventDefault();
+    event.stopPropagation();
     this.searchInput.set('');
     this.searchTerm.set('');
-
-    if (suggestion.type === 'Unsure') {
-      this.unsureModeActive.set(true);
-      this.showSuggestions.set(false);
-      return;
-    }
+    this.selectedSuggestionIndex.set(-1); // Reset keyboard selection
 
     switch (suggestion.type) {
       case 'Year':
         this.selectedYear.set(suggestion.value as number);
         this.isLoading.set(true);
+        this.showSuggestions.set(false); // Hide while loading
         this.motorApi.getMakes(suggestion.value as number).subscribe({
-          next: (res) => { this.makes.set(res.body); this.isLoading.set(false); this.showSuggestions.set(true); },
-          error: () => { this.isLoading.set(false); this.errorMessage.set('Could not load makes.'); this.showSuggestions.set(false); }
+          next: (res) => {
+            this.makes.set(res.body);
+            this.isLoading.set(false);
+            // Show suggestions after makes are loaded
+            if (res.body && res.body.length > 0) {
+              this.showSuggestions.set(true);
+            }
+          },
+          error: () => {
+            this.isLoading.set(false);
+            this.errorMessage.set('Could not load makes.');
+            this.showSuggestions.set(false);
+          }
         });
         break;
       case 'Make':
         this.selectedMake.set(suggestion.value as Make);
-        console.log('Selected Make:', suggestion.value);
         this.isLoading.set(true);
         const year = this.selectedYear();
         if (year) {
-          console.log(`Fetching models for Year: ${year}, Make: ${(suggestion.value as Make).makeName}`);
           this.motorApi.getModels(year, (suggestion.value as Make).makeName).subscribe({
             next: (res) => {
-              console.log('Models loaded:', res.body.models);
               this.models.set(res.body.models);
               // Capture the content source from the response
               if (res.body.contentSource) {
                 this.currentContentSource.set(res.body.contentSource);
-                console.log('Updated Content Source:', res.body.contentSource);
               }
               this.isLoading.set(false);
-              this.showSuggestions.set(true);
+              // Show suggestions after models are loaded
+              if (res.body.models && res.body.models.length > 0) {
+                this.showSuggestions.set(true);
+              }
             },
             error: (err) => {
               console.error('Error loading models:', err);
@@ -344,26 +535,37 @@ export class HomeComponent implements OnInit {
         // Check for engines
         if (model.engines && model.engines.length > 0) {
           this.engines.set(model.engines);
-          this.showSuggestions.set(true); // Show engines
+          // Show suggestions immediately since engines are already in the model
+          this.showSuggestions.set(true);
         } else {
           // No engines, auto-select the model
           this.selectedVehicle.set({ vehicleId: model.id, displayName: model.model });
           this.showSuggestions.set(false);
+          // Auto-advance if on mobile since there is no continue button in wizard
+          if (this.isMobile()) {
+            this.submitSearch();
+          }
         }
         break;
       case 'Engine':
-        this.selectedVehicle.set(suggestion.value as { vehicleId: string; displayName: string });
+        const selectedEngine = suggestion.value as { vehicleId: string; displayName: string };
+        this.selectedVehicle.set(selectedEngine);
         this.showSuggestions.set(false);
+        // Force change detection to update UI immediately
+        this.cdr.detectChanges();
+        // Auto-advance if on mobile since there is no continue button in wizard
+        if (this.isMobile()) {
+          this.submitSearch();
+        }
         break;
     }
   }
 
   removeSelection(event: MouseEvent, step: 'Year' | 'Make' | 'Model' | 'Engine'): void {
     event.preventDefault();
+    event.stopPropagation();
     this.errorMessage.set(null);
     this.selectedVehicle.set(null);
-    this.unsureModeActive.set(false);
-    this.aiResponse.set('');
 
     if (step === 'Year') {
       this.selectedYear.set(null);
@@ -387,6 +589,7 @@ export class HomeComponent implements OnInit {
     }
     // If step === 'Engine', we just cleared selectedVehicle (done above), so we stay at Model step with engines list open.
 
+    // Show suggestions after clearing selection
     this.showSuggestions.set(true);
   }
 
@@ -400,84 +603,11 @@ export class HomeComponent implements OnInit {
     this.models.set([]);
     this.errorMessage.set(null);
     this.showSuggestions.set(false);
-    this.unsureModeActive.set(false);
-    this.aiQuery.set('');
-    this.aiResponse.set('');
   }
 
   submitSearch(): void {
     if (this.isVin()) this.searchByVin();
     else this.selectVehicle();
-  }
-
-  searchUnsure(): void {
-    const year = this.selectedYear();
-    const make = this.selectedMake();
-    const query = this.aiQuery();
-    if (!year || !make || !query) return;
-
-    this.isAiLoading.set(true);
-    this.comparisonResults.set([]);
-    this.intentDescription.set('Analyzing request...');
-    this.errorMessage.set(null);
-
-    // 1. Identify distinct models
-    const allModels = this.models();
-    const distinctModels = new Map<string, { vehicleId: string; name: string }>();
-
-    for (const model of allModels) {
-      // ... (Same distinct model logic) ...
-      if (!distinctModels.has(model.model)) {
-        if (model.engines && model.engines.length > 0) {
-          distinctModels.set(model.model, { vehicleId: model.engines[0].id, name: `${model.model} (${model.engines[0].name})` });
-        } else {
-          distinctModels.set(model.model, { vehicleId: model.id, name: model.model });
-        }
-      }
-    }
-
-    const vehiclesToCompare = Array.from(distinctModels.values());
-    const modelNames = vehiclesToCompare.map(v => v.name).join(', ');
-
-    // 2. Analyze Intent (AI DISABLED)
-    /*
-    this.geminiApi.analyzeSearchIntent(query, modelNames).pipe(
-      switchMap(intent => {
-        console.log('Search Intent:', intent);
-        this.intentDescription.set(`Searching for: "${intent.optimizedTerm}"`);
-
-        // 3. Parallel Fetch for each distinct model
-        const requests$ = vehiclesToCompare.map(v =>
-          this.motorApi.searchArticles(this.currentContentSource(), v.vehicleId, intent.optimizedTerm).pipe(
-            map(response => {
-              const topArticle = response.body.articleDetails?.[0]; // Get the most relevant one
-              return {
-                modelName: v.name,
-                vehicleId: v.vehicleId,
-                foundArticle: topArticle,
-                searchError: (!topArticle) ? 'No direct match found.' : undefined
-              } as ComparisonResult;
-            })
-          )
-        );
-        return forkJoin(requests$);
-      })
-    ).subscribe({
-      next: (results) => {
-        this.comparisonResults.set(results);
-        this.isAiLoading.set(false);
-        this.intentDescription.set(''); // Clear "Searching..." status
-      },
-      error: (err) => {
-        console.error('Intent search failed:', err);
-        this.errorMessage.set('Search failed.');
-        this.isAiLoading.set(false);
-      }
-    });
-    */
-    console.warn('AI Search Intent is disabled.');
-    this.isAiLoading.set(false);
-    this.errorMessage.set('AI Search is disabled.');
   }
 
   private searchByVin(): void {
@@ -486,7 +616,8 @@ export class HomeComponent implements OnInit {
     this.motorApi.decodeVin(this.searchTerm()).subscribe({
       next: (res) => {
         this.isLoading.set(false);
-        const { contentSource, vehicleId } = res.body;
+        // OpenAPI spec returns: { vin, vehicleId, contentSource?, year?, make?, model? }
+        const { vehicleId, contentSource = 'MOTOR' } = res.body;
         this.router.navigate(['/vehicle', contentSource, vehicleId]);
       },
       error: () => { this.isLoading.set(false); this.errorMessage.set('Could not find a vehicle with that VIN.'); }
@@ -494,7 +625,14 @@ export class HomeComponent implements OnInit {
   }
 
   private selectVehicle(): void {
-    const vehicle = this.selectedVehicle();
+    let vehicle = this.selectedVehicle();
+
+    // If no vehicle selected but model is selected, use model as vehicle (implicit engine selection)
+    if (!vehicle && this.selectedModel()) {
+      const model = this.selectedModel()!;
+      vehicle = { vehicleId: model.id, displayName: model.model };
+    }
+
     if (vehicle) {
       this.isLoading.set(true);
       this.router.navigate(['/vehicle', this.currentContentSource(), vehicle.vehicleId]);
@@ -514,5 +652,27 @@ export class HomeComponent implements OnInit {
   startNewSearch(): void {
     this.persistence.clearVehicle();
     this.persistedVehicle.set(null);
+  }
+  onMobileSearchTrigger(): void {
+    // Unconditionally show suggestions - removed isMobile() check
+    this.showSuggestions.set(true);
+
+    // CRITICAL FIX: Force Angular to detect the change
+    // Signals should trigger change detection automatically, but seems to fail on mobile
+    this.cdr.detectChanges();
+  }
+
+  closeMobileWizard(): void {
+    // If we are deep in selection, maybe go back one step?
+    // For now, just close the wizard if they hit back on the top level
+    if (this.selectedModel()) {
+      this.removeSelection(new MouseEvent('click'), 'Model');
+    } else if (this.selectedMake()) {
+      this.removeSelection(new MouseEvent('click'), 'Make');
+    } else if (this.selectedYear()) {
+      this.removeSelection(new MouseEvent('click'), 'Year');
+    } else {
+      this.showSuggestions.set(false);
+    }
   }
 }

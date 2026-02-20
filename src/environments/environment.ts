@@ -1,6 +1,6 @@
 export const environment = {
     production: false,
-    geminiApiKey: '', // AI Disabled
+    apiUrl: '/api',
     firebaseConfig: {
         projectId: "vehapi-torque",
         appId: "1:963068558024:web:bc34a196bff6fa5ccf43fd",

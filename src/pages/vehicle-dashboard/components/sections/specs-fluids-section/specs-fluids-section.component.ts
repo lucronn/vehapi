@@ -5,6 +5,13 @@ import { Spec, Fluid } from '../../../../../models/motor.models';
 import { LoadingSkeletonComponent } from '../../../../../components/loading-skeleton/loading-skeleton.component';
 import { EmptyStateComponent } from '../../../../../components/empty-state/empty-state.component';
 
+import { LucideAngularModule, Gauge, Droplets, Info, ChevronRight, FileText, ArrowRight, Lock, Unlock, Sparkles } from 'lucide-angular';
+
+import { RouterModule, Router } from '@angular/router';
+import { ArticleViewerComponent } from '../../../../article-viewer/article-viewer.component';
+import { WindowManagerService } from '../../../../../services/window-manager.service';
+import { CreditsService } from '../../../../../services/credits.service';
+
 /**
  * Displays vehicle specifications and fluids
  * Handles data loading with cache management
@@ -13,20 +20,27 @@ import { EmptyStateComponent } from '../../../../../components/empty-state/empty
     selector: 'app-specs-fluids-section',
     templateUrl: './specs-fluids-section.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, LoadingSkeletonComponent, EmptyStateComponent],
+    imports: [CommonModule, RouterModule, LoadingSkeletonComponent, EmptyStateComponent, LucideAngularModule],
     standalone: true
 })
 export class SpecsFluidsSectionComponent implements OnInit {
+    readonly icons = { Gauge, Droplets, Info, ChevronRight, FileText, ArrowRight, Lock, Unlock, Sparkles };
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
     @Input() motorVehicleId?: string;
 
     private vehicleData = inject(VehicleDataService);
+    private windowManager = inject(WindowManagerService);
+    private router = inject(Router);
+    protected creditsService = inject(CreditsService); // Protected for template access
 
     specs = signal<Spec[]>([]);
     fluids = signal<Fluid[]>([]);
     isLoading = signal(true);
     hasAttemptedLoad = false;
+
+    // Track unlocking state locally for UI feedback
+    isUnlocking = signal(false);
 
     ngOnInit() {
         this.loadData();
@@ -61,5 +75,49 @@ export class SpecsFluidsSectionComponent implements OnInit {
 
     trackByTitle(index: number, item: Spec | Fluid): string {
         return item.title || index.toString();
+    }
+
+    async unlockSection() {
+        if (this.isUnlocking()) return;
+
+        const cost = this.creditsService.COSTS.SPECS;
+        if (this.creditsService.balance() < cost) {
+            alert('Insufficient credits. Please purchase more.');
+            return;
+        }
+
+        if (confirm(`Unlock Specifications & Fluids for ${cost} credits?`)) {
+            this.isUnlocking.set(true);
+            const success = await this.creditsService.unlockModule(this.vehicleId, 'specs', cost);
+            this.isUnlocking.set(false);
+
+            if (!success) {
+                alert('Unlock failed. Please try again.');
+            }
+        }
+    }
+
+    viewArticle(item: Spec | Fluid) {
+        if (!this.creditsService.hasAccess(this.vehicleId, 'specs')) {
+            this.unlockSection();
+            return;
+        }
+
+        if (this.windowManager.isDesktop()) {
+            this.windowManager.openWindow(
+                item.title || 'Specification',
+                ArticleViewerComponent,
+                {
+                    contentSource: this.contentSource,
+                    vehicleId: this.vehicleId,
+                    articleId: item.id,
+                    articleTitleInput: item.title
+                }
+            );
+        } else {
+            this.router.navigate(['/vehicle', this.contentSource, this.vehicleId, 'article', item.id], {
+                queryParams: { title: item.title }
+            });
+        }
     }
 }

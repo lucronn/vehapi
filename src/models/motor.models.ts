@@ -8,10 +8,27 @@ export interface ApiResponse<T> {
   body: T;
 }
 
+// Content Source Enum
+export type ContentSource = 'MOTOR' | 'GeneralMotors' | 'Honda' | 'Stellantis' | 'Toyota' | 'Nissan' | 'Ford';
+
+// Interval Type Enum
+export type IntervalType = 'Miles' | 'Kilometers' | 'Months';
+
+// Maintenance Schedule Severity Enum
+export type MaintenanceScheduleSeverity = 'All' | 'Severe' | 'Normal';
+
+// Filter Tab Type Enum
+export type FilterTabType = 'Basic' | 'All' | 'Other';
+
+// VIN Decode Response - Updated to match OpenAPI spec
 export interface VinDecodeData {
+  vin: string;
   vehicleId: string;
-  contentSource: string;
-  motorVehicleId: string;
+  contentSource?: string;
+  year?: number;
+  make?: string;
+  model?: string;
+  motorVehicleId?: string;
 }
 
 export interface Make {
@@ -51,9 +68,14 @@ export interface Article {
 
 export interface FilterTab {
   name: string;
-  count: number;
-  type: string;
-  buckets?: FilterTab[]; // Support nested buckets
+  count?: number; // Some APIs use count
+  articlesCount?: number; // MOTOR v2 uses articlesCount
+  type?: string;
+  filterTabType?: FilterTabType;
+  buckets?: Bucket[];
+  articleTrailId?: string;
+  isCountUnknown?: boolean;
+  sort?: number;
 }
 
 export interface ArticlesData {
@@ -61,8 +83,48 @@ export interface ArticlesData {
   filterTabs: FilterTab[];
 }
 
+// Article Response (matches OpenAPI ArticleResponse schema)
+export interface ArticleResponse {
+  id: string;
+  title: string;
+  content: string;
+  metadata?: Record<string, any>;
+}
+
+// Article Content Data (internal use - wraps HTML)
 export interface ArticleContentData {
   html: string;
+  content?: string;
+  html_content?: string;
+  id?: string;
+  title?: string;
+  metadata?: Record<string, any>;
+}
+
+// Labor Response (matches OpenAPI LaborResponse schema)
+export interface LaborResponseOpenApi {
+  id: string;
+  title: string;
+  content: string;
+  metadata?: Record<string, any>;
+}
+
+// String Response Wrapper
+export interface StringResponse {
+  value: string;
+}
+
+// Maintenance Schedules Response Types
+export interface MaintenanceSchedulesByFrequencyResponse {
+  schedules: any[];
+}
+
+export interface MaintenanceSchedulesByIntervalResponse {
+  schedules: any[];
+}
+
+export interface IndicatorsWithMaintenanceSchedulesResponse {
+  indicators: any[];
 }
 
 export interface PersistedVehicle {
@@ -106,6 +168,8 @@ export interface Tsb {
   bulletinNumber: string;
   title: string;
   releaseDate: string;
+  thumbnailHref?: string;
+  description?: string;
 }
 
 export interface TsbsResponse {
@@ -238,4 +302,126 @@ export interface MaintenanceSchedule {
 
 export interface MaintenanceResponse {
   data: MaintenanceSchedule[];
+}
+
+// Vehicle-related response types
+export interface ModelAndVehicleId {
+  model: string;
+  vehicleId: string;
+}
+
+export interface ModelAndVehicleIdListResponse {
+  items: ModelAndVehicleId[];
+}
+
+export interface GetVehiclesRequest {
+  vehicleIds: string[];
+}
+
+// Search Results Response
+export interface SearchResultsResponse {
+  articleDetails: Article[];
+  filterTabs: FilterTab[];
+  vehicleGeoBlockingDetails?: any;
+}
+
+export interface Bucket {
+  name: string;
+  nameOverride?: string;
+  count: number;
+  sort: number;
+  buckets?: Bucket[]; // Legacy API calls them buckets sometimes
+  children?: Bucket[]; // Normalized to children
+}
+
+// Normalized structure for View Model
+export interface BucketArticles {
+  bucketName: string;
+  bucketFilterCategory: string;
+  articles: Article[];
+  sort: number;
+  bucketNameOverride?: string;
+  bucketFilterTabType?: FilterTabType;
+  isParent?: boolean;
+  children?: BucketArticles[];
+}
+
+
+
+// Part Line Item
+export interface PartLineItem {
+  partNumber: string;
+  description: string;
+  quantity: number;
+}
+
+export interface PartLineItemListResponse {
+  items: PartLineItem[];
+}
+
+// Bookmark types
+export interface ArticleBookmarkResponse {
+  bookmarkId: number;
+  articleId: string;
+  vehicleId: string;
+}
+
+// UI Response Types
+export interface UiUserSettingsResponse {
+  settings: Record<string, any>;
+}
+
+export interface FeedbackConfiguration {
+  [key: string]: any;
+}
+
+export interface FeedbackConfigurationResponse {
+  configurations: FeedbackConfiguration[];
+}
+
+export interface Feedback {
+  message?: string;
+  type?: string;
+  metadata?: Record<string, any>;
+}
+
+// Track Change Types
+export interface StringListResponse {
+  items: string[];
+}
+
+export interface VehicleDeltaReport {
+  [key: string]: any;
+}
+
+export interface VehicleDeltaReportListResponse {
+  items: VehicleDeltaReport[];
+}
+
+// Error Logging
+export interface LogEntry {
+  message?: string;
+  level?: string;
+  timestamp?: string;
+  stackTrace?: string;
+  metadata?: Record<string, any>;
+}
+
+
+export interface EmptyResponse {
+  [key: string]: any;
+}
+
+export interface TutorialStep {
+  title: string;
+  content: string; // HTML content for this step
+  warning?: string; // Optional warning text
+  tool?: string;    // Optional tool required for this step
+  mediaPlaceholder?: string; // ID of media to show (extracted from original)
+}
+
+export interface AuthStatusResponse {
+  status: 'success' | 'error' | 'authenticating' | 'idle';
+  progress: number;
+  message: string;
 }

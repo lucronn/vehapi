@@ -1,9 +1,9 @@
 import { Injectable, inject, WritableSignal } from '@angular/core';
-import { Observable, from, of } from 'rxjs';
+import { Observable, from, of, forkJoin } from 'rxjs';
 import { map, switchMap, tap, catchError, timeout } from 'rxjs/operators';
 import { MotorApiService } from './motor-api.service';
 import { FirebaseService } from './firebase.service';
-import { ApiResponse, Dtc, Tsb, Procedure, WiringDiagram, ComponentLocation, Spec, Fluid, MaintenanceSchedule, FilterTab } from '../models/motor.models';
+import { ApiResponse, Dtc, Tsb, Procedure, WiringDiagram, ComponentLocation, Spec, Fluid, MaintenanceSchedule, FilterTab, ArticlesData } from '../models/motor.models';
 
 export interface SectionAvailability {
     hasDtcs: boolean;
@@ -13,6 +13,7 @@ export interface SectionAvailability {
     hasSpecs: boolean;
     hasMaintenance: boolean;
     hasComponentLocations: boolean;
+    hasParts: boolean;
 }
 
 
@@ -48,12 +49,12 @@ export class VehicleDataService {
         // Validation: If not Motor and no motorVehicleId, we might fail downstream if we force Motor.
         // Legacy Maintenance logic explicitly switches to Motor.
         if (forceMotorVal && motorVehicleId) {
-            return { contentSource: 'Motor', vehicleId: motorVehicleId };
+            return { contentSource: 'MOTOR', vehicleId: motorVehicleId };
         }
         // Implicit switch for known non-Motor sources if motorVehicleId exists?
         // For now, only switch if explicitly requested or if it's a known pattern.
         // Legacy Maintenance Facade: ALWAYS uses Motor.
-        return { contentSource, vehicleId };
+        return { contentSource: contentSource.toUpperCase(), vehicleId };
     }
 
     /**
@@ -100,88 +101,117 @@ export class VehicleDataService {
             // Using Motor ID if available to ensure data consistency.
             const params = this.resolveSourceParams(contentSource, vehicleId, motorVehicleId, true);
             return this.motorApi.getFluids(params.contentSource, params.vehicleId).pipe(
-                map(res => res.body.data || [])
-            );
-        };
-
-        const getSpecs = () => {
-            console.log('[Cache DISABLED] Specs fetching from Search API...');
-            return this.motorApi.searchArticles(contentSource, vehicleId, '').pipe(
-                map(res => {
-                    const articles = res.body?.articleDetails || [];
-                    return articles
-                        .filter(a => a.bucket === 'Specifications')
-                        .map(a => ({
-                            id: a.id,
-                            bucket: a.bucket,
-                            title: a.title,
-                            description: a.description,
-                            value: a.description // Fallback or mapping
-                        } as Spec));
+                map(res => (res.body as any)?.data || []),
+                catchError(err => {
+                    console.error('[VehicleDataService] Fluids fetch failed:', err);
+                    return of([]);
                 })
             );
         };
 
-        return from(Promise.all([getFluids(), getSpecs()])).pipe(
-            switchMap(([fluidsObs, specsObs]) =>
-                from(Promise.all([
-                    fluidsObs.toPromise ? fluidsObs.toPromise() : (fluidsObs as any as Promise<Fluid[]>),
-                    specsObs.toPromise ? specsObs.toPromise() : (specsObs as any as Promise<Spec[]>)
-                ]))
-            ),
-            map(([fluids, specs]) => ({ fluids, specs })),
-            timeout(8000),
+        const getSpecs = () => {
+            const params = this.resolveSourceParams(contentSource, vehicleId, motorVehicleId, true);
+            console.log(`[VehicleDataService-V4] Specs loading for ${params.contentSource}/${params.vehicleId}...`);
+
+            return this.motorApi.searchArticles(params.contentSource, params.vehicleId, '').pipe(
+                tap(res => console.log(`[VehicleDataService-V4] articles/v2 response received. Body: ${!!res?.body}, Count: ${res?.body?.articleDetails?.length || 0}`)),
+                switchMap(res => {
+                    const articles = res.body?.articleDetails || [];
+
+                    // Filter for anything that looks like a specification
+                    const specArticles = articles.filter(a => {
+                        const bucket = (a.bucket || '').toLowerCase();
+                        const title = (a.title || '').toLowerCase();
+                        return bucket.includes('specification') ||
+                            bucket.includes('specs') ||
+                            title.includes('specifications') ||
+                            title.includes('specs') ||
+                            title.includes('capacity');
+                    });
+
+                    console.log(`[VehicleDataService-V4] Found ${specArticles.length} matching articles.`);
+
+                    if (specArticles.length === 0) {
+                        return of([]);
+                    }
+
+                    // Map to Spec objects
+                    const initialSpecs = specArticles.map(a => ({
+                        id: a.id,
+                        bucket: a.bucket,
+                        title: a.title,
+                        value: a.description || ''
+                    } as Spec));
+
+                    // High value specs for content fetch
+                    const priorities = specArticles.filter(a => {
+                        const t = (a.title || '').toLowerCase();
+                        return t.includes('engine oil') || t.includes('fluid') || t.includes('alignment');
+                    }).slice(0, 10);
+
+                    if (priorities.length === 0) return of(initialSpecs);
+
+                    return forkJoin(priorities.map(pa =>
+                        this.motorApi.getArticleContent(params.contentSource, params.vehicleId, pa.id, motorVehicleId).pipe(
+                            map(contentRes => ({
+                                id: pa.id,
+                                bucket: pa.bucket,
+                                title: pa.title,
+                                value: this.parseSpecTable(contentRes.body?.html || '') || pa.description || ''
+                            } as Spec)),
+                            catchError(() => of({
+                                id: pa.id,
+                                bucket: pa.bucket,
+                                title: pa.title,
+                                value: pa.description || ''
+                            } as Spec))
+                        )
+                    )).pipe(
+                        map(processed => {
+                            const ids = new Set(processed.map(p => p.id));
+                            return [...processed, ...initialSpecs.filter(s => !ids.has(s.id))];
+                        })
+                    );
+                }),
+                catchError(err => {
+                    console.error('[VehicleDataService-V4] getSpecs failed:', err);
+                    return of([]);
+                })
+            );
+        };
+
+        return forkJoin({
+            fluids: getFluids().pipe(catchError(() => of([]))),
+            specs: getSpecs().pipe(catchError(() => of([])))
+        }).pipe(
+            timeout(20000),
             catchError(err => {
-                console.warn('Specs/Fluids failed or timed out:', err);
-                return of({ fluids: [], specs: [] });
+                console.warn('[VehicleDataService-V4] loadSpecs FATAL:', err);
+                return of({ specs: [], fluids: [] });
             })
         );
     }
 
     /**
-     * Parse filter tabs to determine available sections
+     * Parse filter tabs and check Parts API to determine available sections
+     * TEMPORARY: Forcing all sections to show for debugging
      */
     getAvailableSections(
         contentSource: string,
         vehicleId: string,
         motorVehicleId?: string
     ): Observable<SectionAvailability> {
-        // Use empty search to get filter headers
-        return this.motorApi.searchArticles(contentSource, vehicleId, '').pipe(
-            map(res => {
-                const tabs = res.body?.filterTabs || [];
-
-                const hasTypeOrName = (type: string, keywords: string[]) => {
-                    return tabs.some(t =>
-                        t.type === type ||
-                        keywords.some(k => t.name.toLowerCase().includes(k.toLowerCase()))
-                    );
-                };
-
-                // Check counts if available, otherwise just existence
-                const hasItems = (type: string, keywords: string[]) => {
-                    const tab = tabs.find(t =>
-                        t.type === type ||
-                        keywords.some(k => t.name.toLowerCase().includes(k.toLowerCase()))
-                    );
-                    return tab ? (tab.count > 0) : false;
-                };
-
-                return {
-                    hasDtcs: hasItems('DTCs', ['Diagnostic', 'DTC']),
-                    hasTsbs: hasItems('TSBs', ['Bulletin', 'TSB']),
-                    hasDiagrams: hasItems('Diagrams', ['Wiring']),
-                    hasComponentLocations: hasItems('Diagrams', ['Component Location', 'Location']), // Often under Diagrams
-                    hasProcedures: hasItems('Procedures', ['Procedure', 'Labor']),
-                    hasSpecs: hasItems('Specifications', ['Specification', 'Fluid']), // Specs & Fluids often grouped
-                    hasMaintenance: true // Maintenance is usually available via separate endpoint, assume true for now or check
-                };
-            }),
-            catchError(() => of({
-                hasDtcs: false, hasTsbs: false, hasDiagrams: false,
-                hasProcedures: false, hasSpecs: false, hasMaintenance: false, hasComponentLocations: false
-            }))
-        );
+        // TEMPORARY FIX: Just return all sections as available
+        return of({
+            hasDtcs: true,
+            hasTsbs: true,
+            hasDiagrams: true,
+            hasComponentLocations: true,
+            hasProcedures: true,
+            hasSpecs: true,
+            hasMaintenance: true,
+            hasParts: true
+        });
     }
 
     /**
@@ -193,7 +223,8 @@ export class VehicleDataService {
         vehicleId: string,
         motorVehicleId: string | undefined,
         loadingSignal: WritableSignal<boolean>,
-        updateState: (data: any[]) => void
+        updateState: (data: any[]) => void,
+        errorCallback?: (error: any) => void
     ): void {
         // Skip if already have data check is removed here as it's often handled by caller or we want to refresh.
         // But referencing original code, it had: if (getCurrentState().length > 0) return;
@@ -271,7 +302,7 @@ export class VehicleDataService {
                     ).map(a => ({
                         id: a.id,
                         code: a.code || a.title, // Fallback to title if code is missing
-                        description: a.title,
+                        description: a.description || a.subtitle || a.title || '', // meaningful fallback order
                         bucket: a.bucket
                     } as Dtc));
 
@@ -298,7 +329,8 @@ export class VehicleDataService {
                         });
                         return; // Exit early as updateState will be called in subscribe
                     }
-                } else if (section === 'tsbs') {
+                }
+                else if (section === 'tsbs') {
                     const validBuckets = getBucketNamesForType('TSBs', fullData);
                     filtered = articles.filter(a =>
                         validBuckets.includes(a.bucket) ||
@@ -307,7 +339,9 @@ export class VehicleDataService {
                         id: a.id,
                         bulletinNumber: a.bulletinNumber || '',
                         title: a.title,
-                        releaseDate: a.releaseDate || ''
+                        releaseDate: a.releaseDate || '',
+                        description: a.description || a.subtitle || '', // Added description mapping
+                        thumbnailHref: a.thumbnailHref
                     } as Tsb));
                 } else if (section === 'procedures') {
                     const validBuckets = getBucketNamesForType('Procedures', fullData);
@@ -363,6 +397,7 @@ export class VehicleDataService {
             error: (err) => {
                 console.error(`[VehicleData] Failed to load ${section}`, err);
                 loadingSignal.set(false);
+                if (errorCallback) errorCallback(err);
             }
         });
     }
@@ -377,7 +412,8 @@ export class VehicleDataService {
         motorVehicleId: string | undefined,
         interval: number,
         loadingSignal: WritableSignal<boolean>,
-        updateState: (data: any[]) => void
+        updateState: (data: any[]) => void,
+        errorCallback?: (error: any) => void
     ): void {
         loadingSignal.set(true);
         const params = this.resolveSourceParams(contentSource, vehicleId, motorVehicleId, true);
@@ -389,13 +425,57 @@ export class VehicleDataService {
                     loadingSignal.set(false);
                     // Map response to simple MaintenanceSchedule[]
                     // Handle potential variations in API response structure
-                    const schedules = (res.body as any)?.data || (res.body as any)?.items || [];
+                    const schedules = (res.body as any)?.schedules || (res.body as any)?.items || (res.body as any)?.data || [];
                     updateState(schedules);
                 },
                 error: (err) => {
-                    console.error('[VehicleData] Maintenance load failed', err);
+                    console.error('[VehicleDataService] Maintenance fetch failed:', err);
                     loadingSignal.set(false);
+                    updateState([]);
+                    if (errorCallback) errorCallback(err);
                 }
             });
+    }
+
+    /**
+     * Parse HTML table content into a summary string for quick dashboard viewing
+     */
+    public parseSpecTable(html: string): string {
+        if (!html) return '';
+
+        // Basic Regex-based parser for HTML tables
+        const tableRegex = /<table[^>]*>([\s\S]*?)<\/table>/gi;
+        let tableMatch;
+        const summaries: string[] = [];
+
+        while ((tableMatch = tableRegex.exec(html)) !== null) {
+            const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+            let rowMatch;
+            const rows: string[] = [];
+
+            while ((rowMatch = rowRegex.exec(tableMatch[1])) !== null) {
+                const cellRegex = /<(?:td|th)[^>]*>([\s\S]*?)<\/(?:td|th)>/gi;
+                let cellMatch;
+                const cells: string[] = [];
+                while ((cellMatch = cellRegex.exec(rowMatch[1])) !== null) {
+                    // Strip tags and normalize whitespace
+                    let text = cellMatch[1].replace(/<[^>]*>/g, '').trim();
+                    text = text.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ');
+                    if (text) cells.push(text);
+                }
+                if (cells.length >= 2) {
+                    // Limit length of individual values to prevent UI bloat
+                    const key = cells[0].replace(/:$/, '').trim();
+                    const value = cells.slice(1).join(' ');
+                    rows.push(`${key}: ${value}`);
+                }
+            }
+            if (rows.length > 0) {
+                // Return top 3 rows to keep it concise
+                summaries.push(rows.slice(0, 3).join(' | '));
+            }
+        }
+
+        return summaries.join('\n');
     }
 }

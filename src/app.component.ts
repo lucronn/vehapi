@@ -1,38 +1,23 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { GeminiService } from './services/gemini.service';
-import { CommonModule } from '@angular/common';
-import { LucideAngularModule, Sparkles, Brain } from 'lucide-angular';
+import { AuthLoadingComponent } from './components/auth-loading/auth-loading.component';
+import { ThemeService } from './services/theme.service';
+import { WindowContainerComponent } from './components/window-container/window-container.component';
 
 @Component({
   selector: 'app-root',
   template: `
-    <main class="min-h-screen">
+    <app-auth-loading></app-auth-loading>
+    <div class="mesh-gradient"></div>
+    <div class="scanline-overlay"></div>
+    <main class="min-h-screen relative z-10" style="color:var(--text-primary)">
       <router-outlet></router-outlet>
-      
-      <!-- TEMPORARILY DISABLED: AI Toggle (AI features disabled) -->
-      <!-- <button 
-        (click)="toggleAi()"
-        class="fixed bottom-4 left-4 z-50 flex items-center gap-2 px-4 py-2 rounded-full font-bold shadow-lg transition-all duration-300 transform hover:scale-105"
-        [ngClass]="{
-          'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-cyan-500/50': aiEnabled(),
-          'bg-gray-800 text-gray-400 border border-gray-700': !aiEnabled()
-        }">
-        <lucide-icon [img]="aiEnabled() ? icons.Sparkles : icons.Brain" class="w-4 h-4"></lucide-icon>
-        <span>AI: {{ aiEnabled() ? 'ON' : 'OFF' }}</span>
-      </button> -->
     </main>
+    <app-window-container></app-window-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, CommonModule, LucideAngularModule],
+  imports: [RouterOutlet, AuthLoadingComponent, WindowContainerComponent],
 })
 export class AppComponent {
-  private gemini = inject(GeminiService);
-  readonly icons = { Sparkles, Brain };
-
-  aiEnabled = this.gemini.aiEnabled;
-
-  toggleAi() {
-    this.gemini.toggleAi();
-  }
+  private themeService = inject(ThemeService);
 }

@@ -1,50 +1,126 @@
-<div class="space-y-6">
-    <!-- Loading State -->
-    @if (isLoading()) {
-    <app-loading-skeleton type="card" [count]="4"></app-loading-skeleton>
-    }
+@if (isLoading()) {
+<app-loading-skeleton type="grid" [count]="6"></app-loading-skeleton>
+} @else if (specs().length === 0 && fluids().length === 0) {
+<app-empty-state icon="package" message="No Specifications"
+    submessage="Specifications and fluids data is not available for this vehicle.">
+</app-empty-state>
+} @else {
+<div class="relative min-h-[400px]">
+    <!-- Content Container (Blurred if locked) -->
+    <div [class.blur-sm]="!creditsService.hasAccess(vehicleId, 'specs')"
+        [class.pointer-events-none]="!creditsService.hasAccess(vehicleId, 'specs')"
+        class="transition-all duration-300 select-none">
 
-    <!-- Empty State -->
-    @else if (specs().length === 0 && fluids().length === 0) {
-    <app-empty-state message="No specifications available" submessage="Spec data may not be available for this vehicle"
-        icon="info">
-    </app-empty-state>
-    }
-
-    <!-- Data Display -->
-    @else {
-    <!-- Key Specifications -->
-    @if (specs().length > 0) {
-    <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
-        <h3 class="text-lg font-bold text-cyan-400 mb-4 flex items-center">
-            <span class="mr-2">📊</span> Key Specifications
-        </h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            @for (spec of specs(); track trackByTitle($index, spec)) {
-            <div class="flex justify-between items-center py-2 border-b border-gray-700 last:border-0">
-                <span class="text-gray-400 text-sm">{{ spec.title }}</span>
-                <span class="text-white font-medium">{{ spec.value || '-' }}</span>
+        @if (specs().length > 0) {
+        <div class="space-y-6 mb-8">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                    style="background:rgba(0,212,255,0.1);color:hsl(191,97%,50%)">
+                    <lucide-icon [img]="icons.Gauge" class="w-4 h-4"></lucide-icon>
+                </div>
+                <h3 class="text-xs uppercase font-bold tracking-wide" style="color:var(--text-muted)">Specifications
+                </h3>
             </div>
-            }
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                @for (spec of specs(); track trackByTitle($index, spec)) {
+                <div (click)="viewArticle(spec)"
+                    class="card flex justify-between items-center px-4 py-4 transition-all group cursor-pointer hover:bg-white/5"
+                    [style.animation-delay]="$index * 50 + 'ms'">
+                    <div class="flex items-center gap-3 min-w-0 flex-1">
+                        <lucide-icon [img]="icons.FileText" class="w-4 h-4 flex-shrink-0"
+                            style="color:var(--text-muted)"></lucide-icon>
+                        <span class="text-sm font-medium truncate" style="color:var(--text-primary)">{{ spec.title
+                            }}</span>
+                    </div>
+                    <lucide-icon [img]="icons.ArrowRight"
+                        class="w-4 h-4 flex-shrink-0 opacity-0 group-hover:opacity-60 transition-opacity"
+                        style="color:var(--text-muted)"></lucide-icon>
+                </div>
+                }
+            </div>
+        </div>
+        }
+
+        @if (fluids().length > 0) {
+        <div class="space-y-6">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                    style="background:rgba(0,212,255,0.1);color:hsl(191,97%,50%)">
+                    <lucide-icon [img]="icons.Droplets" class="w-4 h-4"></lucide-icon>
+                </div>
+                <h3 class="text-xs uppercase font-bold tracking-wide" style="color:var(--text-muted)">Fluids &
+                    Capacities</h3>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                @for (fluid of fluids(); track trackByTitle($index, fluid)) {
+                <div (click)="viewArticle(fluid)"
+                    class="card flex justify-between items-center px-4 py-4 transition-all group cursor-pointer hover:bg-white/5"
+                    [style.animation-delay]="$index * 50 + 'ms'">
+                    <div class="flex items-center gap-3 min-w-0 flex-1">
+                        <lucide-icon [img]="icons.FileText" class="w-4 h-4 flex-shrink-0"
+                            style="color:var(--text-muted)"></lucide-icon>
+                        <span class="text-sm font-medium truncate" style="color:var(--text-primary)">{{ fluid.title
+                            }}</span>
+                    </div>
+                    <lucide-icon [img]="icons.ArrowRight"
+                        class="w-4 h-4 flex-shrink-0 opacity-0 group-hover:opacity-60 transition-opacity"
+                        style="color:var(--text-muted)"></lucide-icon>
+                </div>
+                }
+            </div>
+        </div>
+        }
+    </div>
+
+    <!-- Lock Overlay -->
+    @if (!creditsService.hasAccess(vehicleId, 'specs')) {
+    <div class="absolute inset-0 z-10 flex flex-col p-6 text-center rounded-xl overflow-hidden mt-0!"
+        style="min-height: 350px;">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-[2px]"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-black/80"></div>
+
+        <div class="relative z-20 max-w-sm mx-auto space-y-4 animate-fade-in-up sticky top-[30vh]">
+            <div
+                class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-2 ring-1 ring-white/20">
+                <lucide-icon [img]="icons.Lock" class="w-6 h-6 text-white"></lucide-icon>
+            </div>
+
+            <h3 class="text-xl font-bold text-white">Unlock Specifications</h3>
+            <p class="text-sm text-gray-300">
+                Get instant access to detailed torque specs, fluid capacities, and reset procedures for this vehicle.
+            </p>
+
+            <div class="pt-2">
+                <button (click)="unlockSection()" [disabled]="isUnlocking()"
+                    class="w-full btn-primary py-3 font-semibold shadow-lg shadow-cyan-500/20 relative overflow-hidden group">
+
+                    @if (isUnlocking()) {
+                    <span class="flex items-center justify-center gap-2">
+                        <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                        Unlocking...
+                    </span>
+                    } @else {
+                    <span class="flex items-center justify-center gap-2">
+                        <lucide-icon [img]="icons.Sparkles" class="w-4 h-4"></lucide-icon>
+                        <span>Unlock Now</span>
+                        <span class="bg-white/20 px-1.5 py-0.5 rounded text-[10px] font-mono ml-1">
+                            {{ creditsService.COSTS.SPECS }} CR
+                        </span>
+                    </span>
+                    }
+                </button>
+
+                @if (creditsService.balance() < creditsService.COSTS.SPECS) { <p
+                    class="mt-3 text-xs text-red-400 flex items-center justify-center gap-1">
+                    <lucide-icon [img]="icons.Lock" class="w-3 h-3"></lucide-icon>
+                    Insufficient credits ({{ creditsService.balance() }} CR available)
+                    </p>
+                    }
+            </div>
         </div>
     </div>
-    }
-
-    <!-- Fluid Capacities -->
-    @if (fluids().length > 0) {
-    <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
-        <h3 class="text-lg font-bold text-cyan-400 mb-4 flex items-center">
-            <span class="mr-2">🛢️</span> Fluid Capacities
-        </h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            @for (fluid of fluids(); track trackByTitle($index, fluid)) {
-            <div class="flex justify-between items-center py-2 border-b border-gray-700 last:border-0">
-                <span class="text-gray-400 text-sm">{{ fluid.title }}</span>
-                <span class="text-white font-medium">{{ fluid.value || '-' }}</span>
-            </div>
-            }
-        </div>
-    </div>
-    }
     }
 </div>
+}

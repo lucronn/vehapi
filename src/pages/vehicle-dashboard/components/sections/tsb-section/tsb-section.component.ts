@@ -1,13 +1,16 @@
 import { Component, Input, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { VehicleDataService } from '../../../../../services/vehicle-data.service';
 import { Tsb } from '../../../../../models/motor.models';
 import { LoadingSkeletonComponent } from '../../../../../components/loading-skeleton/loading-skeleton.component';
 import { EmptyStateComponent } from '../../../../../components/empty-state/empty-state.component';
-import { LucideAngularModule, FileText, X } from 'lucide-angular';
+import { LucideAngularModule, FileText, X, ArrowUpRight, Lock, Unlock, Sparkles } from 'lucide-angular';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { MotorApiService } from '../../../../../services/motor-api.service';
+import { WindowManagerService } from '../../../../../services/window-manager.service';
+import { ArticleViewerComponent } from '../../../../article-viewer/article-viewer.component';
+import { CreditsService } from '../../../../../services/credits.service';
 
 /**
  * Displays technical service bulletins (TSBs)
@@ -15,6 +18,7 @@ import { MotorApiService } from '../../../../../services/motor-api.service';
 @Component({
     selector: 'app-tsb-section',
     templateUrl: './tsb-section.component.html',
+    styleUrls: ['./tsb-section.component.css'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [CommonModule, RouterModule, LoadingSkeletonComponent, EmptyStateComponent, LucideAngularModule],
     standalone: true
@@ -26,19 +30,15 @@ export class TsbSectionComponent implements OnInit {
 
     private vehicleData = inject(VehicleDataService);
     private motorApi = inject(MotorApiService);
-    private sanitizer = inject(DomSanitizer);
+    private windowManager = inject(WindowManagerService);
+    private router = inject(Router);
+    protected creditsService = inject(CreditsService);
 
     tsbs = signal<Tsb[]>([]);
     isLoading = signal(false);
+    isUnlocking = signal(false);
 
-    // Viewer State
-    selectedTsb = signal<Tsb | null>(null);
-    tsbContent = signal<SafeHtml | null>(null);
-    isLoadingContent = signal(false);
-
-    readonly icons = { FileText, X };
-
-
+    readonly icons = { FileText, X, ArrowUpRight, Lock, Unlock, Sparkles };
 
     ngOnInit() {
         this.loadData();
@@ -53,7 +53,11 @@ export class TsbSectionComponent implements OnInit {
             this.vehicleId,
             this.motorVehicleId,
             this.isLoading,
-            (data) => this.tsbs.set(data)
+            (data) => this.tsbs.set(data),
+            (error) => {
+                console.error('Failed to load TSBs', error);
+                this.isLoading.set(false);
+            }
         );
     }
 
@@ -61,27 +65,65 @@ export class TsbSectionComponent implements OnInit {
         return tsb.id || index.toString();
     }
 
-    viewTsb(tsb: Tsb) {
-        this.selectedTsb.set(tsb);
-        this.isLoadingContent.set(true);
+    async unlockSection() {
+        if (this.isUnlocking()) return;
 
-        this.motorApi.getArticleContent(this.contentSource, this.vehicleId, tsb.id).subscribe({
-            next: (res) => {
-                const rawHtml = res.body?.html || '<p>No content available.</p>';
-                const processedHtml = this.motorApi.processHtmlContent(rawHtml);
-                this.tsbContent.set(this.sanitizer.bypassSecurityTrustHtml(processedHtml));
-                this.isLoadingContent.set(false);
-            },
-            error: (err) => {
-                console.error('Failed to load TSB content', err);
-                this.tsbContent.set(this.sanitizer.bypassSecurityTrustHtml('<p class="text-red-400">Failed to load content.</p>'));
-                this.isLoadingContent.set(false);
+        const cost = this.creditsService.COSTS.TSB;
+        if (this.creditsService.balance() < cost) {
+            alert('Insufficient credits. Please purchase more.');
+            return;
+        }
+
+        if (confirm(`Unlock Technical Service Bulletins for ${cost} credits?`)) {
+            this.isUnlocking.set(true);
+            const success = await this.creditsService.unlockModule(this.vehicleId, 'tsbs', cost);
+            this.isUnlocking.set(false);
+
+            if (!success) {
+                alert('Unlock failed. Please try again.');
             }
-        });
+        }
     }
 
-    closeViewer() {
-        this.selectedTsb.set(null);
-        this.tsbContent.set(null);
+    viewTsb(tsb: Tsb) {
+        if (!this.creditsService.hasAccess(this.vehicleId, 'tsbs')) {
+            this.unlockSection();
+            return;
+        }
+
+        if (this.windowManager.isDesktop()) {
+            this.windowManager.openWindow(
+                `TSB: ${tsb.bulletinNumber || 'View'}`,
+                ArticleViewerComponent,
+                {
+                    contentSource: this.contentSource,
+                    vehicleId: this.vehicleId,
+                    articleId: tsb.id,
+                    articleTitleInput: tsb.title
+                }
+            );
+        } else {
+            this.router.navigate(['/vehicle', this.contentSource, this.vehicleId, 'article', tsb.id], {
+                queryParams: { title: tsb.title }
+            });
+        }
+    }
+
+    getThumbnailUrl(thumbnailHref: string | undefined): string {
+        if (!thumbnailHref) return '';
+        // If it's already a full URL, return as is
+        if (thumbnailHref.startsWith('http')) return thumbnailHref;
+        // Otherwise, prepend the base URL
+        return this.motorApi.getGraphicUrl(thumbnailHref);
+    }
+
+    formatDate(dateString: string): string {
+        if (!dateString) return '';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        } catch {
+            return dateString;
+        }
     }
 }
