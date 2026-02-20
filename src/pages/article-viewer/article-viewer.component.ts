@@ -15,6 +15,18 @@ export interface TableOfContents {
   level: number;
 }
 
+// Optimized Regex Constants
+const LEGACY_ATTR_REGEX = /\s(?:style|text|align|valign|b(?:gcolor|order)|c(?:olor|ell(?:padding|spacing)))=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi;
+const FONT_TAG_REGEX = /<\/?font[^>]*>/gi;
+const SPECIFIC_TAG_REGEX = /<(?:table|tr|td|div|p|span)\s+[^>]*>/gi;
+const WIDTH_HEIGHT_REGEX = /\s(?:width|height)=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi;
+
+// Helper to remove width/height from specific tags
+function cleanSpecificTag(match: string): string {
+  // Rely on regex replacement which is efficient and handles case-insensitivity correctly
+  return match.replace(WIDTH_HEIGHT_REGEX, '');
+}
+
 @Component({
   selector: 'app-article-viewer',
   templateUrl: './article-viewer.component.html',
@@ -242,11 +254,9 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
     let processed = this.motorApi.processHtmlContent(html, contentSource, vehicleId);
 
     // Remove legacy attributes
-    processed = processed.replace(/\s(style|bgcolor|text|color|border|cellpadding|cellspacing|align|valign)=("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
-    processed = processed.replace(/<font[^>]*>/gi, '').replace(/<\/font>/gi, '');
-    processed = processed.replace(/<(table|tr|td|div|p|span)\s+[^>]*>/gi, (match) => {
-      return match.replace(/\s(width|height)=("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
-    });
+    processed = processed.replace(LEGACY_ATTR_REGEX, '');
+    processed = processed.replace(FONT_TAG_REGEX, '');
+    processed = processed.replace(SPECIFIC_TAG_REGEX, cleanSpecificTag);
 
     const sections: TableOfContents[] = [];
     let headerCount = 0;
