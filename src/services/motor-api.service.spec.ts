@@ -50,7 +50,6 @@ mock.module('../components/orientation-selector-modal/orientation-selector-modal
 describe('MotorApiService', () => {
   let MotorApiService: any;
   let service: any;
-  const baseUrl = 'https://vehapiproxi.vercel.app';
 
   beforeEach(async () => {
     mockProcessHtmlContent.mockClear();
@@ -62,16 +61,7 @@ describe('MotorApiService', () => {
     }
   });
 
-  describe('processHtmlContent', () => {
-    test('should delegate to HtmlProcessingService', () => {
-      const html = '<div>test</div>';
-      const contentSource = 'source';
-      const vehicleId = 'vid';
-
-      const result = service.processHtmlContent(html, contentSource, vehicleId);
-
-      expect(result).toBe('MOCKED_RESULT');
-      expect(mockProcessHtmlContent).toHaveBeenCalledWith(html, baseUrl, contentSource, vehicleId);
-    });
+  test('should be created', () => {
+    expect(service).toBeTruthy();
   });
 });

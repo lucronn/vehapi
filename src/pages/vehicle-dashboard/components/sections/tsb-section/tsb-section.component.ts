@@ -7,7 +7,7 @@ import { LoadingSkeletonComponent } from '../../../../../components/loading-skel
 import { EmptyStateComponent } from '../../../../../components/empty-state/empty-state.component';
 import { LucideAngularModule, FileText, X, ArrowUpRight, Lock, Unlock, Sparkles } from 'lucide-angular';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { MotorApiService } from '../../../../../services/motor-api.service';
+import { MotorHtmlProcessorService } from '../../../../../services/motor-html-processor.service';
 import { WindowManagerService } from '../../../../../services/window-manager.service';
 import { ArticleViewerComponent } from '../../../../article-viewer/article-viewer.component';
 import { CreditsService } from '../../../../../services/credits.service';
@@ -29,7 +29,7 @@ export class TsbSectionComponent implements OnInit {
     @Input() motorVehicleId?: string;
 
     private vehicleData = inject(VehicleDataService);
-    private motorApi = inject(MotorApiService);
+    private motorHtml = inject(MotorHtmlProcessorService);
     private windowManager = inject(WindowManagerService);
     private router = inject(Router);
     protected creditsService = inject(CreditsService);
@@ -114,7 +114,7 @@ export class TsbSectionComponent implements OnInit {
         // If it's already a full URL, return as is
         if (thumbnailHref.startsWith('http')) return thumbnailHref;
         // Otherwise, prepend the base URL
-        return this.motorApi.getGraphicUrl(thumbnailHref);
+        return this.motorHtml.getGraphicUrl(thumbnailHref);
     }
 
     formatDate(dateString: string): string {

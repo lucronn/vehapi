@@ -6,6 +6,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { map, switchMap, of, catchError, Subject, takeUntil } from 'rxjs';
 
 import { MotorApiService } from '../../services/motor-api.service';
+import { MotorHtmlProcessorService } from '../../services/motor-html-processor.service';
 import { LucideAngularModule, ArrowLeft, Maximize2, List, X } from 'lucide-angular';
 import { ImageViewerModalComponent } from './components/image-viewer-modal/image-viewer-modal.component';
 
@@ -13,6 +14,18 @@ export interface TableOfContents {
   id: string;
   title: string;
   level: number;
+}
+
+// Optimized Regex Constants
+const LEGACY_ATTR_REGEX = /\s(?:style|text|align|valign|b(?:gcolor|order)|c(?:olor|ell(?:padding|spacing)))=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi;
+const FONT_TAG_REGEX = /<\/?font[^>]*>/gi;
+const SPECIFIC_TAG_REGEX = /<(?:table|tr|td|div|p|span)\s+[^>]*>/gi;
+const WIDTH_HEIGHT_REGEX = /\s(?:width|height)=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi;
+
+// Helper to remove width/height from specific tags
+function cleanSpecificTag(match: string): string {
+  // Rely on regex replacement which is efficient and handles case-insensitivity correctly
+  return match.replace(WIDTH_HEIGHT_REGEX, '');
 }
 
 @Component({
@@ -34,6 +47,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
 
   private route = inject(ActivatedRoute);
   private motorApi = inject(MotorApiService);
+  private motorHtml = inject(MotorHtmlProcessorService);
   private sanitizer = inject(DomSanitizer);
 
   readonly icons = { ArrowLeft, Maximize2, List, X };
@@ -239,14 +253,12 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   private processHtml(html: string, contentSource: string, vehicleId: string): { htmlString: string, safeHtml: string, sections: TableOfContents[] } {
     if (!html) return { htmlString: '', safeHtml: '', sections: [] };
 
-    let processed = this.motorApi.processHtmlContent(html, contentSource, vehicleId);
+    let processed = this.motorHtml.processHtmlContent(html, contentSource, vehicleId);
 
     // Remove legacy attributes
-    processed = processed.replace(/\s(style|bgcolor|text|color|border|cellpadding|cellspacing|align|valign)=("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
-    processed = processed.replace(/<font[^>]*>/gi, '').replace(/<\/font>/gi, '');
-    processed = processed.replace(/<(table|tr|td|div|p|span)\s+[^>]*>/gi, (match) => {
-      return match.replace(/\s(width|height)=("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
-    });
+    processed = processed.replace(LEGACY_ATTR_REGEX, '');
+    processed = processed.replace(FONT_TAG_REGEX, '');
+    processed = processed.replace(SPECIFIC_TAG_REGEX, cleanSpecificTag);
 
     const sections: TableOfContents[] = [];
     let headerCount = 0;
