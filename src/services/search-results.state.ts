@@ -51,6 +51,21 @@ export class SearchResultsState {
 
         let bucketList: BucketArticles[] = [];
 
+        // Optimization: Group articles by bucket for O(1) lookup
+        const articlesByBucket = new Map<string, Article[]>();
+        for (const article of articles) {
+            const bucketName = article.bucket;
+            // Handle null/undefined but allow empty string
+            if (bucketName === null || bucketName === undefined) continue;
+
+            let list = articlesByBucket.get(bucketName);
+            if (!list) {
+                list = [];
+                articlesByBucket.set(bucketName, list);
+            }
+            list.push(article);
+        }
+
         tabs
             .filter((item) => item.filterTabType !== 'All')
             .forEach((tab) => {
@@ -58,22 +73,26 @@ export class SearchResultsState {
                     const childrenBucketList: BucketArticles[] = [];
 
                     bucket.children?.forEach((childBucket) => {
+                        // Use slice() to create a copy, ensuring immutability like .filter()
+                        const childArticles = (articlesByBucket.get(childBucket.name ?? '') ?? []).slice();
                         childrenBucketList.push({
                             bucketName: childBucket.name ?? '',
                             bucketFilterCategory: tab.name ?? '',
-                            articles: articles.filter((item) => item.bucket === childBucket.name) ?? [],
+                            articles: childArticles,
                             sort: bucket.sort ?? 0,
                             bucketNameOverride: childBucket.nameOverride,
                             bucketFilterTabType: tab.filterTabType,
                         });
                     });
 
-                    const nonParentedArticles = articles.filter((item) => !item.parentBucket);
+                    // Parent bucket articles: must have bucket == bucket.name AND !parentBucket
+                    const allBucketArticles = articlesByBucket.get(bucket.name ?? '') ?? [];
+                    const parentArticles = allBucketArticles.filter(a => !a.parentBucket);
 
                     bucketList.push({
                         bucketName: bucket.name ?? '',
                         bucketFilterCategory: tab.name ?? '',
-                        articles: nonParentedArticles.filter((item) => item.bucket === bucket.name) ?? [],
+                        articles: parentArticles,
                         sort: bucket.sort ?? 0,
                         bucketNameOverride: bucket.nameOverride,
                         bucketFilterTabType: tab.filterTabType,

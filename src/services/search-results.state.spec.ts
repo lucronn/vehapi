@@ -1,246 +1,212 @@
-import { describe, expect, test, beforeEach, mock } from 'bun:test';
-import { Article, FilterTab, FilterTabType, Bucket, BucketArticles } from '../models/motor.models';
+import '@angular/compiler'; // Load JIT compiler
+import { expect, test, describe, beforeEach, mock } from 'bun:test';
+import { resolve } from 'path';
 
-// --- Mocks Setup ---
+// Mocks must be defined before imports
 
-// Mock Signal
-function signal<T>(initialValue: T) {
-    let value = initialValue;
-    const s: any = () => value;
-    s.set = (v: T) => { value = v; };
+const mockSignal = (initialValue: any) => {
+    let _val = initialValue;
+    const s = () => _val;
+    s.set = (v: any) => { _val = v; };
     return s;
-}
-
-// Mock Computed
-function computed<T>(fn: () => T) {
-    return () => fn();
-}
-
-// Mock Injectable
-function Injectable(config?: any) {
-    return (target: any) => target;
-}
-
-// Mock MotorApiService instance
-const mockMotorApiInstance = {
-    getSearchResultsByVehicleId: mock(() => ({ pipe: () => ({ subscribe: () => {} }) }))
 };
 
-// Mock inject
-function inject(token: any) {
-    return mockMotorApiInstance;
-}
+const mockComputed = (fn: () => any) => {
+    return () => fn();
+};
 
-// Apply mocks to @angular/core
+const mockInject = (token: any) => {
+    return {
+        getSearchResultsByVehicleId: () => ({ pipe: () => ({ subscribe: () => { } }) })
+    };
+};
+
+// Mock Angular Core
 mock.module('@angular/core', () => ({
-    Injectable,
-    signal,
-    computed,
-    inject
+    Injectable: () => (target: any) => target,
+    signal: mockSignal,
+    computed: mockComputed,
+    inject: mockInject,
 }));
 
-// Mock rxjs
-mock.module('rxjs', () => ({
-    of: (val: any) => ({ pipe: () => ({ subscribe: (cb: any) => cb({ body: val }) }) }),
+// Mock Angular Common (fixes JIT compilation error)
+mock.module('@angular/common', () => ({
+    PlatformLocation: class { },
+    APP_BASE_HREF: 'APP_BASE_HREF'
 }));
 
-// Mock rxjs/operators
-mock.module('rxjs/operators', () => ({
-    catchError: (fn: any) => (source: any) => source,
+// Mock Angular Common HTTP
+mock.module('@angular/common/http', () => ({
+    HttpClient: class { },
+    HttpParams: class { set() { return this; } },
+    HttpRequest: class { },
+    HttpEvent: class { }
 }));
 
-// Mock MotorApiService (the class itself)
-class MockMotorApiService {}
-mock.module('./motor-api.service', () => ({
-    MotorApiService: MockMotorApiService
-}));
+// Mock MotorApiService using absolute path
+const motorServicePath = resolve(import.meta.dir, 'motor-api.service.ts');
+mock.module(motorServicePath, () => {
+    return {
+        MotorApiService: class {
+            getSearchResultsByVehicleId() { return { pipe: () => ({ subscribe: () => { } }) }; }
+        }
+    };
+});
+
+// Import the service under test
+import { SearchResultsState } from './search-results.state';
+import { Article, FilterTab } from '../models/motor.models';
 
 describe('SearchResultsState', () => {
-    let SearchResultsStateClass: any;
-    let state: any;
+    let state: SearchResultsState;
 
-    beforeEach(async () => {
-        // Reset mocks
-        mockMotorApiInstance.getSearchResultsByVehicleId.mockClear();
-
-        // Dynamic import to allow mocks to take effect
-        const module = await import('./search-results.state');
-        SearchResultsStateClass = module.SearchResultsState;
-
-        state = new SearchResultsStateClass();
+    beforeEach(() => {
+        state = new SearchResultsState();
     });
 
     test('should initialize with default values', () => {
         expect(state.articleDetails()).toEqual([]);
         expect(state.filterTabs()).toEqual([]);
         expect(state.isLoading()).toBe(false);
-        expect(state.error()).toBe(null);
-        expect(state.showProcedureSilo()).toBe(true);
+        expect(state.error()).toBeNull();
     });
 
-    test('should bucket articles correctly (Standard Scenario)', () => {
-        const articles: Article[] = [
-            { id: '1', title: 'Oil Change', bucket: 'Maintenance', sort: 1 },
-            { id: '2', title: 'Brake Pad Replacement', bucket: 'Repairs', sort: 2 }
-        ];
-        const tabs: FilterTab[] = [
-            {
-                name: 'Maintenance',
-                filterTabType: 'Basic',
-                buckets: [
-                    { name: 'Maintenance', count: 0, sort: 1 }
-                ]
-            },
-            {
-                name: 'Repairs',
-                filterTabType: 'Basic',
-                buckets: [
-                    { name: 'Repairs', count: 0, sort: 2 }
-                ]
-            }
+    describe('bucketsFilledWithArticles', () => {
+        const mockArticles: Article[] = [
+            { id: '1', title: 'Article 1', bucket: 'General', sort: 1 },
+            { id: '2', title: 'Article 2', bucket: 'Diagnostics', sort: 2 },
+            { id: '3', title: 'Procedure 1', bucket: 'Procedures', parentBucket: 'Procedures', sort: 3 },
+            { id: '4', title: 'DTC 1', bucket: 'DTCs', sort: 4 }
         ];
 
-        state.articleDetails.set(articles);
-        state.filterTabs.set(tabs);
-
-        const buckets = state.bucketsFilledWithArticles();
-
-        expect(buckets.length).toBe(2);
-        expect(buckets[0].bucketName).toBe('Maintenance');
-        expect(buckets[0].articles.length).toBe(1);
-        expect(buckets[0].articles[0].id).toBe('1');
-        expect(buckets[1].bucketName).toBe('Repairs');
-        expect(buckets[1].articles.length).toBe(1);
-        expect(buckets[1].articles[0].id).toBe('2');
-    });
-
-    test('should handle showProcedureSilo = true (Nested Procedures)', () => {
-        const articles: Article[] = [
-            { id: 'p1', title: 'Remove Engine', bucket: 'Removal', parentBucket: 'Procedures', sort: 1 }
-        ];
-        const tabs: FilterTab[] = [
+        const mockFilterTabs: FilterTab[] = [
             {
-                name: 'Procedures',
+                name: 'Service',
                 filterTabType: 'Basic',
                 buckets: [
+                    { name: 'General', count: 0, sort: 1 },
+                    { name: 'Diagnostics', count: 0, sort: 2 },
                     {
-                        name: 'Procedures', count: 0, sort: 1, children: [
-                            { name: 'Removal', count: 0, sort: 1 }
+                        name: 'Procedures',
+                        count: 0,
+                        sort: 3,
+                        children: [
+                            { name: 'Procedures', count: 0, sort: 1 } // Child bucket same name as parent
                         ]
-                    }
+                    },
+                    { name: 'DTCs', count: 0, sort: 4 },
+                    { name: 'EmptyBucket', count: 0, sort: 5 }
                 ]
             }
         ];
 
-        state.articleDetails.set(articles);
-        state.filterTabs.set(tabs);
-        state.showProcedureSilo.set(true);
+        test('should filter out empty buckets but keep important ones', () => {
+            state.articleDetails.set([
+                { id: '1', title: 'Article 1', bucket: 'General', sort: 1 }
+            ]);
+            state.filterTabs.set(mockFilterTabs);
 
-        const buckets = state.bucketsFilledWithArticles();
+            const buckets = state.bucketsFilledWithArticles();
 
-        const procBucket = buckets.find((b: any) => b.bucketName === 'Procedures');
-        expect(procBucket).toBeDefined();
-        expect(procBucket?.isParent).toBe(true);
-        expect(procBucket?.children?.length).toBe(1);
-        expect(procBucket?.children?.[0].bucketName).toBe('Removal');
-        expect(procBucket?.children?.[0].articles.length).toBe(1);
-        expect(procBucket?.children?.[0].articles[0].id).toBe('p1');
-    });
+            // General has articles, should be present
+            expect(buckets.some(b => b.bucketName === 'General')).toBe(true);
 
-    test('should handle showProcedureSilo = false (Flattened Procedures)', () => {
-        const articles: Article[] = [
-            { id: 'p1', title: 'Remove Engine', bucket: 'Removal', parentBucket: 'Procedures', sort: 1 }
-        ];
-        const tabs: FilterTab[] = [
-            {
-                name: 'Procedures',
+            // Diagnostics is empty but important, should be present
+            expect(buckets.some(b => b.bucketName === 'Diagnostics')).toBe(true);
+
+            // DTCs is empty but important, should be present
+            expect(buckets.some(b => b.bucketName === 'DTCs')).toBe(true);
+
+            // EmptyBucket is empty and not important, should be removed
+            expect(buckets.some(b => b.bucketName === 'EmptyBucket')).toBe(false);
+        });
+
+        test('should sort buckets correctly', () => {
+            state.articleDetails.set(mockArticles);
+
+            const unsortedTabs: FilterTab[] = [{
+                name: 'Service',
                 filterTabType: 'Basic',
                 buckets: [
-                    {
-                        name: 'Procedures', count: 0, sort: 1, children: [
-                            { name: 'Removal', count: 0, sort: 1 }
-                        ]
-                    }
+                    { name: 'DTCs', count: 0, sort: 10 },
+                    { name: 'General', count: 0, sort: 1 }
                 ]
-            }
-        ];
+            }];
 
-        state.articleDetails.set(articles);
-        state.filterTabs.set(tabs);
-        state.showProcedureSilo.set(false);
+            state.filterTabs.set(unsortedTabs);
+            const buckets = state.bucketsFilledWithArticles();
 
-        const buckets = state.bucketsFilledWithArticles();
+            expect(buckets[0].bucketName).toBe('General');
+            expect(buckets[1].bucketName).toBe('DTCs');
+        });
 
-        const procBucket = buckets.find((b: any) => b.bucketName === 'Procedures');
-        expect(procBucket).toBeDefined();
+        test('should flatten procedures when showProcedureSilo is false', () => {
+            state.showProcedureSilo.set(false);
 
-        expect(procBucket?.isParent).toBeFalsy();
-        expect(procBucket?.articles.length).toBe(1);
-        expect(procBucket?.articles[0].id).toBe('p1');
-        expect(procBucket?.articles[0].bucket).toBe('Procedures');
-    });
+            const articles = [
+                { id: 'p1', title: 'Proc 1', bucket: 'Procedures', parentBucket: 'Procedures' } as Article
+            ];
 
-    test('should filter out empty buckets', () => {
-        const articles: Article[] = [];
-        const tabs: FilterTab[] = [
-            {
-                name: 'EmptyCategory',
+            const tabs = [{
+                name: 'Service',
                 filterTabType: 'Basic',
-                buckets: [
-                    { name: 'EmptyBucket', count: 0, sort: 1 }
-                ]
-            }
-        ];
+                buckets: [{
+                    name: 'Procedures',
+                    count: 0,
+                    sort: 1,
+                    children: [{ name: 'Procedures', count: 0, sort: 1 }]
+                }]
+            }] as FilterTab[];
 
-        state.articleDetails.set(articles);
-        state.filterTabs.set(tabs);
+            state.articleDetails.set(articles);
+            state.filterTabs.set(tabs);
 
-        const buckets = state.bucketsFilledWithArticles();
-        expect(buckets.length).toBe(0);
-    });
+            const buckets = state.bucketsFilledWithArticles();
+            const procBucket = buckets.find(b => b.bucketName === 'Procedures');
 
-    test('should preserve important buckets even if empty', () => {
-        const articles: Article[] = [];
-        const tabs: FilterTab[] = [
-            {
-                name: 'Diagnostics',
+            expect(procBucket).toBeDefined();
+            expect(procBucket?.articles.length).toBe(1);
+            expect(procBucket?.articles[0].id).toBe('p1');
+            expect(procBucket?.children?.length).toBe(0);
+        });
+
+        test('should keep procedures nested when showProcedureSilo is true', () => {
+            state.showProcedureSilo.set(true); // Default
+
+            const articles = [
+                { id: 'p1', title: 'Proc 1', bucket: 'Procedures', parentBucket: 'Procedures' } as Article
+            ];
+
+            const tabs = [{
+                name: 'Service',
                 filterTabType: 'Basic',
-                buckets: [
-                    { name: 'Diagnostics', count: 0, sort: 1 }
-                ]
-            }
-        ];
+                buckets: [{
+                    name: 'Procedures',
+                    count: 0,
+                    sort: 1,
+                    children: [{ name: 'Procedures', count: 0, sort: 1 }]
+                }]
+            }] as FilterTab[];
 
-        state.articleDetails.set(articles);
-        state.filterTabs.set(tabs);
+            state.articleDetails.set(articles);
+            state.filterTabs.set(tabs);
 
-        const buckets = state.bucketsFilledWithArticles();
-        expect(buckets.length).toBe(1);
-        expect(buckets[0].bucketName).toBe('Diagnostics');
-    });
+            const buckets = state.bucketsFilledWithArticles();
+            const procBucket = buckets.find(b => b.bucketName === 'Procedures');
 
-    test('should sort buckets correctly', () => {
-         const articles: Article[] = [
-            { id: '1', title: 'A', bucket: 'B1', sort: 1 },
-            { id: '2', title: 'B', bucket: 'B2', sort: 1 }
-        ];
-        const tabs: FilterTab[] = [
-            {
-                name: 'Cat',
-                filterTabType: 'Basic',
-                buckets: [
-                    { name: 'B2', count: 0, sort: 20 },
-                    { name: 'B1', count: 0, sort: 10 }
-                ]
-            }
-        ];
+            expect(procBucket).toBeDefined();
 
-        state.articleDetails.set(articles);
-        state.filterTabs.set(tabs);
+            // Logic check:
+            // articles still have parentBucket='Procedures'
+            // nonParentedArticles will NOT include 'p1'
+            // So procBucket.articles should be empty (direct articles)
+            expect(procBucket?.articles.length).toBe(0);
 
-        const buckets = state.bucketsFilledWithArticles();
-        expect(buckets.length).toBe(2);
-        expect(buckets[0].bucketName).toBe('B1');
-        expect(buckets[1].bucketName).toBe('B2');
+            // But children buckets should be populated
+            expect(procBucket?.isParent).toBe(true);
+            expect(procBucket?.children?.length).toBe(1);
+            expect(procBucket?.children?.[0].articles.length).toBe(1);
+            expect(procBucket?.children?.[0].articles[0].id).toBe('p1');
+        });
     });
 });

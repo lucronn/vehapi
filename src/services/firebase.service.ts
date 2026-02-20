@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { initializeApp, getApp, getApps, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { getAuth, signInAnonymously } from 'firebase/auth';
 import { environment } from '../environments/environment';
 
 export interface StoredArticle {
@@ -31,6 +32,11 @@ export class FirebaseService {
             this.app = getApp();
         }
         this.db = getFirestore(this.app);
+
+        const auth = getAuth(this.app);
+        signInAnonymously(auth).catch(error => {
+            console.error('Anonymous auth failed', error);
+        });
     }
 
     async getArticle(articleId: string): Promise<StoredArticle | null> {

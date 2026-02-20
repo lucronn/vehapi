@@ -124,10 +124,6 @@ export class HomeComponent implements OnInit {
       }
     }
 
-    // Debug: Log when years data loads
-    if (this.years()) {
-      console.log('Years data available:', this.years()?.body?.length);
-    }
   }
 
   isMobile = signal(false);
@@ -507,19 +503,15 @@ export class HomeComponent implements OnInit {
         break;
       case 'Make':
         this.selectedMake.set(suggestion.value as Make);
-        console.log('Selected Make:', suggestion.value);
         this.isLoading.set(true);
         const year = this.selectedYear();
         if (year) {
-          console.log(`Fetching models for Year: ${year}, Make: ${(suggestion.value as Make).makeName}`);
           this.motorApi.getModels(year, (suggestion.value as Make).makeName).subscribe({
             next: (res) => {
-              console.log('Models loaded:', res.body.models);
               this.models.set(res.body.models);
               // Capture the content source from the response
               if (res.body.contentSource) {
                 this.currentContentSource.set(res.body.contentSource);
-                console.log('Updated Content Source:', res.body.contentSource);
               }
               this.isLoading.set(false);
               // Show suggestions after models are loaded
@@ -549,15 +541,22 @@ export class HomeComponent implements OnInit {
           // No engines, auto-select the model
           this.selectedVehicle.set({ vehicleId: model.id, displayName: model.model });
           this.showSuggestions.set(false);
+          // Auto-advance if on mobile since there is no continue button in wizard
+          if (this.isMobile()) {
+            this.submitSearch();
+          }
         }
         break;
       case 'Engine':
         const selectedEngine = suggestion.value as { vehicleId: string; displayName: string };
-        console.log('Selected Engine:', selectedEngine);
         this.selectedVehicle.set(selectedEngine);
         this.showSuggestions.set(false);
         // Force change detection to update UI immediately
         this.cdr.detectChanges();
+        // Auto-advance if on mobile since there is no continue button in wizard
+        if (this.isMobile()) {
+          this.submitSearch();
+        }
         break;
     }
   }
@@ -655,27 +654,12 @@ export class HomeComponent implements OnInit {
     this.persistedVehicle.set(null);
   }
   onMobileSearchTrigger(): void {
-    console.log('🔵 Mobile Search Trigger Tapped', {
-      isMobile: this.isMobile(),
-      showSuggestions: this.showSuggestions(),
-      selectedVehicle: this.selectedVehicle()
-    });
-
     // Unconditionally show suggestions - removed isMobile() check
     this.showSuggestions.set(true);
-
-    console.log('🟢 Suggestions state set to TRUE');
-    console.log('🟡 Wizard Render Conditions:', {
-      isMobile: this.isMobile(),
-      showSuggestions: this.showSuggestions(),
-      selectedVehicle: this.selectedVehicle(),
-      shouldRender: this.isMobile() && this.showSuggestions() && !this.selectedVehicle()
-    });
 
     // CRITICAL FIX: Force Angular to detect the change
     // Signals should trigger change detection automatically, but seems to fail on mobile
     this.cdr.detectChanges();
-    console.log('🟣 Change detection triggered manually');
   }
 
   closeMobileWizard(): void {
