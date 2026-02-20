@@ -1,70 +1,70 @@
 import { expect, test, describe, beforeEach, mock } from 'bun:test';
 
-// Mock @angular/core
+// Mock @angular/core before importing the service
 mock.module('@angular/core', () => ({
     Injectable: () => (target: any) => target,
     inject: (token: any) => {
-        // Simple mock returning an empty object for any injection
+        // Return a dummy object for injected services
+        // Since we are only testing parseSpecTable which is a pure function
+        // relying on no external state, we don't need fully functional mocks.
         return {};
     },
     WritableSignal: class {},
 }));
 
-// Mock MotorApiService
+// Mock MotorApiService just in case it's imported and causes issues
 mock.module('./motor-api.service', () => ({
     MotorApiService: class {}
 }));
 
-// Mock FirebaseService
+// Mock FirebaseService just in case it's imported and causes issues
 mock.module('./firebase.service', () => ({
     FirebaseService: class {}
 }));
 
 describe('VehicleDataService', () => {
     let VehicleDataService: any;
-    let service: any;
 
     beforeEach(async () => {
-        // Re-import to ensure fresh mocks if needed, though usually module cache might persist.
-        // In bun test, mocks should be applied if defined before import.
         const module = await import('./vehicle-data.service');
         VehicleDataService = module.VehicleDataService;
-        service = new VehicleDataService();
     });
 
     describe('parseSpecTable', () => {
         test('should return empty string for empty input', () => {
+            const service = new VehicleDataService();
             expect(service.parseSpecTable('')).toBe('');
-            expect(service.parseSpecTable(null)).toBe('');
-            expect(service.parseSpecTable(undefined)).toBe('');
+            expect(service.parseSpecTable(null as any)).toBe('');
+            expect(service.parseSpecTable(undefined as any)).toBe('');
         });
 
-        test('should parse a simple table', () => {
+        test('should parse a simple table with one row', () => {
+            const service = new VehicleDataService();
             const html = `
                 <table>
                     <tr>
-                        <td>Capacity</td>
-                        <td>5.0L</td>
-                    </tr>
-                </table>
-            `;
-            expect(service.parseSpecTable(html)).toBe('Capacity: 5.0L');
-        });
-
-        test('should handle th tags', () => {
-            const html = `
-                <table>
-                    <tr>
-                        <th>Type</th>
+                        <td>Engine Type</td>
                         <td>V8</td>
                     </tr>
                 </table>
             `;
-            expect(service.parseSpecTable(html)).toBe('Type: V8');
+            expect(service.parseSpecTable(html)).toBe('Engine Type: V8');
         });
 
-        test('should limit output to top 3 rows', () => {
-             const html = `
+        test('should parse multiple rows and join them with " | "', () => {
+            const service = new VehicleDataService();
+            const html = `
+                <table>
+                    <tr><td>Make</td><td>Ford</td></tr>
+                    <tr><td>Model</td><td>Mustang</td></tr>
+                </table>
+            `;
+            expect(service.parseSpecTable(html)).toBe('Make: Ford | Model: Mustang');
+        });
+
+        test('should limit to top 3 rows per table', () => {
+            const service = new VehicleDataService();
+            const html = `
                 <table>
                     <tr><td>R1</td><td>V1</td></tr>
                     <tr><td>R2</td><td>V2</td></tr>
@@ -73,88 +73,120 @@ describe('VehicleDataService', () => {
                 </table>
             `;
             const result = service.parseSpecTable(html);
-            // It uses " | " as separator
             expect(result).toBe('R1: V1 | R2: V2 | R3: V3');
+            expect(result).not.toContain('R4');
         });
 
-        test('should join multiple tables with newline', () => {
+        test('should handle multiple tables separated by newline', () => {
+            const service = new VehicleDataService();
             const html = `
-                <table><tr><td>T1</td><td>V1</td></tr></table>
-                <div>Separator</div>
-                <table><tr><td>T2</td><td>V2</td></tr></table>
+                <table>
+                    <tr><td>T1R1</td><td>V1</td></tr>
+                </table>
+                <div>Some text</div>
+                <table>
+                    <tr><td>T2R1</td><td>V2</td></tr>
+                </table>
             `;
             const result = service.parseSpecTable(html);
-            expect(result).toBe('T1: V1\nT2: V2');
+            expect(result).toBe('T1R1: V1\nT2R1: V2');
         });
 
-        test('should strip HTML tags from content', () => {
+        test('should strip HTML tags from keys and values', () => {
+            const service = new VehicleDataService();
             const html = `
                 <table>
                     <tr>
                         <td><b>Weight</b></td>
-                        <td><span>2000</span> lbs</td>
+                        <td><span>1500 kg</span></td>
                     </tr>
                 </table>
             `;
-            expect(service.parseSpecTable(html)).toBe('Weight: 2000 lbs');
+            expect(service.parseSpecTable(html)).toBe('Weight: 1500 kg');
         });
 
-        test('should handle HTML entities', () => {
-             const html = `
+        test('should decode HTML entities &nbsp; and &amp;', () => {
+            const service = new VehicleDataService();
+            const html = `
                 <table>
                     <tr>
-                        <td>Name&nbsp;1</td>
-                        <td>Value&amp;2</td>
+                        <td>Make&nbsp;Name</td>
+                        <td>Ford&amp;Co</td>
                     </tr>
                 </table>
             `;
-            expect(service.parseSpecTable(html)).toBe('Name 1: Value&2');
+            expect(service.parseSpecTable(html)).toBe('Make Name: Ford&Co');
+        });
+
+        test('should normalize whitespace', () => {
+            const service = new VehicleDataService();
+            const html = `
+                <table>
+                    <tr>
+                        <td>  Key   One  </td>
+                        <td>  Value   One  </td>
+                    </tr>
+                </table>
+            `;
+            expect(service.parseSpecTable(html)).toBe('Key One: Value One');
         });
 
         test('should ignore rows with less than 2 cells', () => {
-             const html = `
+            const service = new VehicleDataService();
+            const html = `
                 <table>
-                    <tr><td>HeaderOnly</td></tr>
+                    <tr><td>Header Only</td></tr>
                     <tr><td>Key</td><td>Value</td></tr>
                 </table>
             `;
             expect(service.parseSpecTable(html)).toBe('Key: Value');
         });
 
-        test('should join extra cells', () => {
+        test('should join extra cells into the value', () => {
+            const service = new VehicleDataService();
             const html = `
                 <table>
                     <tr>
-                        <td>Dimensions</td>
-                        <td>10x10</td>
-                        <td>inches</td>
+                        <td>Dimension</td>
+                        <td>10</td>
+                        <td>20</td>
+                        <td>30</td>
                     </tr>
                 </table>
             `;
-            expect(service.parseSpecTable(html)).toBe('Dimensions: 10x10 inches');
+            expect(service.parseSpecTable(html)).toBe('Dimension: 10 20 30');
         });
 
-         test('should normalize whitespace', () => {
+        test('should handle th tags as cells', () => {
+            const service = new VehicleDataService();
             const html = `
                 <table>
                     <tr>
-                        <td>  Spaced   Key  </td>
-                        <td>  Value  </td>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>Speed</td>
+                        <td>100</td>
                     </tr>
                 </table>
             `;
-            expect(service.parseSpecTable(html)).toBe('Spaced Key: Value');
+            // Note: The logic treats th just like td, so it will include headers if they are in a tr
+            // Since th are usually headers, they might be included as the first "row"
+            expect(service.parseSpecTable(html)).toBe('Parameter: Value | Speed: 100');
         });
 
-        test('should handle partial table tags if regex is robust enough or fail gracefully', () => {
-             // The regex is /<table[^>]*>([\s\S]*?)<\/table>/gi
-             // If table tag is broken, it shouldn't match
+        test('should remove trailing colon from keys', () => {
+             const service = new VehicleDataService();
              const html = `
-                <table
-                    <tr><td>K</td><td>V</td></tr>
+                 <table>
+                     <tr>
+                         <td>Engine:</td>
+                         <td>V6</td>
+                     </tr>
+                 </table>
              `;
-             // Missing closing > of table or closing tag
-             expect(service.parseSpecTable(html)).toBe('');
+             expect(service.parseSpecTable(html)).toBe('Engine: V6');
         });
     });
 });

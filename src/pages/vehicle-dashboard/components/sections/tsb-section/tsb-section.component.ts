@@ -5,11 +5,12 @@ import { VehicleDataService } from '../../../../../services/vehicle-data.service
 import { Tsb } from '../../../../../models/motor.models';
 import { LoadingSkeletonComponent } from '../../../../../components/loading-skeleton/loading-skeleton.component';
 import { EmptyStateComponent } from '../../../../../components/empty-state/empty-state.component';
-import { LucideAngularModule, FileText, X, ArrowUpRight } from 'lucide-angular';
+import { LucideAngularModule, FileText, X, ArrowUpRight, Lock, Unlock, Sparkles } from 'lucide-angular';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { MotorApiService } from '../../../../../services/motor-api.service';
 import { WindowManagerService } from '../../../../../services/window-manager.service';
 import { ArticleViewerComponent } from '../../../../article-viewer/article-viewer.component';
+import { CreditsService } from '../../../../../services/credits.service';
 
 /**
  * Displays technical service bulletins (TSBs)
@@ -31,13 +32,13 @@ export class TsbSectionComponent implements OnInit {
     private motorApi = inject(MotorApiService);
     private windowManager = inject(WindowManagerService);
     private router = inject(Router);
+    protected creditsService = inject(CreditsService);
 
     tsbs = signal<Tsb[]>([]);
     isLoading = signal(false);
+    isUnlocking = signal(false);
 
-    readonly icons = { FileText, X, ArrowUpRight };
-
-
+    readonly icons = { FileText, X, ArrowUpRight, Lock, Unlock, Sparkles };
 
     ngOnInit() {
         this.loadData();
@@ -64,7 +65,32 @@ export class TsbSectionComponent implements OnInit {
         return tsb.id || index.toString();
     }
 
+    async unlockSection() {
+        if (this.isUnlocking()) return;
+
+        const cost = this.creditsService.COSTS.TSB;
+        if (this.creditsService.balance() < cost) {
+            alert('Insufficient credits. Please purchase more.');
+            return;
+        }
+
+        if (confirm(`Unlock Technical Service Bulletins for ${cost} credits?`)) {
+            this.isUnlocking.set(true);
+            const success = await this.creditsService.unlockModule(this.vehicleId, 'tsbs', cost);
+            this.isUnlocking.set(false);
+
+            if (!success) {
+                alert('Unlock failed. Please try again.');
+            }
+        }
+    }
+
     viewTsb(tsb: Tsb) {
+        if (!this.creditsService.hasAccess(this.vehicleId, 'tsbs')) {
+            this.unlockSection();
+            return;
+        }
+
         if (this.windowManager.isDesktop()) {
             this.windowManager.openWindow(
                 `TSB: ${tsb.bulletinNumber || 'View'}`,

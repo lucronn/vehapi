@@ -6,9 +6,10 @@ import { MotorApiService } from '../../../../../services/motor-api.service';
 import { WiringDiagram, ComponentLocation } from '../../../../../models/motor.models';
 import { LoadingSkeletonComponent } from '../../../../../components/loading-skeleton/loading-skeleton.component';
 import { EmptyStateComponent } from '../../../../../components/empty-state/empty-state.component';
-import { LucideAngularModule, Cable } from 'lucide-angular';
+import { LucideAngularModule, Cable, Lock, Unlock, Sparkles } from 'lucide-angular';
 import { ArticleViewerComponent } from '../../../../article-viewer/article-viewer.component';
 import { WindowManagerService } from '../../../../../services/window-manager.service';
+import { CreditsService } from '../../../../../services/credits.service';
 
 /**
  * Displays wiring diagrams and component locations
@@ -29,10 +30,12 @@ export class DiagramsSectionComponent implements OnInit {
     private motorApi = inject(MotorApiService);
     private windowManager = inject(WindowManagerService);
     private router = inject(Router);
+    protected creditsService = inject(CreditsService);
 
     diagrams = signal<(WiringDiagram | ComponentLocation)[]>([]);
     isLoading = signal(false);
-    readonly icons = { Cable };
+    isUnlocking = signal(false);
+    readonly icons = { Cable, Lock, Unlock, Sparkles };
 
     ngOnInit() {
         this.loadData();
@@ -68,7 +71,32 @@ export class DiagramsSectionComponent implements OnInit {
         return this.motorApi.getGraphicUrl(thumbnailHref);
     }
 
+    async unlockSection() {
+        if (this.isUnlocking()) return;
+
+        const cost = this.creditsService.COSTS.DIAGRAMS;
+        if (this.creditsService.balance() < cost) {
+            alert('Insufficient credits. Please purchase more.');
+            return;
+        }
+
+        if (confirm(`Unlock Wiring Diagrams for ${cost} credits?`)) {
+            this.isUnlocking.set(true);
+            const success = await this.creditsService.unlockModule(this.vehicleId, 'diagrams', cost);
+            this.isUnlocking.set(false);
+
+            if (!success) {
+                alert('Unlock failed. Please try again.');
+            }
+        }
+    }
+
     viewDiagram(diagram: WiringDiagram | ComponentLocation) {
+        if (!this.creditsService.hasAccess(this.vehicleId, 'diagrams')) {
+            this.unlockSection();
+            return;
+        }
+
         if (this.windowManager.isDesktop()) {
             this.windowManager.openWindow(
                 diagram.title || 'Diagram',
