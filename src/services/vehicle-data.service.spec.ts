@@ -1,33 +1,129 @@
-import { expect, test, describe, beforeEach, mock } from 'bun:test';
+import { expect, test, describe, beforeEach, mock, afterEach } from 'bun:test';
+import { of } from 'rxjs';
 
-// Mock @angular/core before importing the service
+// Mock dependencies
+const mockSearchArticles = mock(() => of({ body: { articleDetails: [], filterTabs: [] } }));
+
+const MockMotorApiService = class {
+    searchArticles = mockSearchArticles;
+};
+
+mock.module('./motor-api.service', () => ({
+    MotorApiService: MockMotorApiService
+}));
+
+mock.module('./firebase.service', () => ({
+    FirebaseService: class {}
+}));
+
 mock.module('@angular/core', () => ({
     Injectable: () => (target: any) => target,
     inject: (token: any) => {
-        // Return a dummy object for injected services
-        // Since we are only testing parseSpecTable which is a pure function
-        // relying on no external state, we don't need fully functional mocks.
+        // Handle MotorApiService injection
+        if (token && token.name === 'MotorApiService') {
+            return new MockMotorApiService();
+        }
+        // Return dummy object for other services
         return {};
     },
     WritableSignal: class {},
 }));
 
-// Mock MotorApiService just in case it's imported and causes issues
-mock.module('./motor-api.service', () => ({
-    MotorApiService: class {}
-}));
-
-// Mock FirebaseService just in case it's imported and causes issues
-mock.module('./firebase.service', () => ({
-    FirebaseService: class {}
-}));
-
 describe('VehicleDataService', () => {
     let VehicleDataService: any;
+    let service: any;
 
     beforeEach(async () => {
+        mockSearchArticles.mockClear();
         const module = await import('./vehicle-data.service');
         VehicleDataService = module.VehicleDataService;
+        service = new VehicleDataService();
+        // Manually assign the mock service to ensure it's available
+        // This bypasses potential issues with the mocked inject function and class names
+        (service as any).motorApi = new MockMotorApiService();
+    });
+
+    describe('loadSectionData', () => {
+        test('should load DTCs correctly', () => {
+            mockSearchArticles.mockReturnValue(of({
+                body: {
+                    articleDetails: [
+                        { id: '1', bucket: 'Diagnostic Trouble Codes', code: 'P0101', title: 'MAF Sensor', description: 'Mass Air Flow' }
+                    ],
+                    filterTabs: [{ type: 'DTCs', name: 'Diagnostic Trouble Codes' }]
+                }
+            }));
+
+            const loadingSignal = { set: mock(() => {}) };
+            const updateState = mock(() => {});
+
+            service.loadSectionData('dtcs', 'MOTOR', '123', undefined, loadingSignal, updateState);
+
+            expect(updateState).toHaveBeenCalled();
+            const calledArg = updateState.mock.calls[0][0];
+            expect(calledArg).toHaveLength(1);
+            expect(calledArg[0]).toEqual({
+                id: '1',
+                code: 'P0101',
+                description: 'Mass Air Flow',
+                bucket: 'Diagnostic Trouble Codes'
+            });
+        });
+
+        test('should load TSBs correctly', () => {
+            mockSearchArticles.mockReturnValue(of({
+                body: {
+                    articleDetails: [
+                        { id: '2', bucket: 'Technical Service Bulletins', bulletinNumber: 'TSB-001', title: 'Engine Noise', releaseDate: '2023-01-01' }
+                    ],
+                    filterTabs: [{ type: 'TSBs', name: 'Technical Service Bulletins' }]
+                }
+            }));
+
+            const loadingSignal = { set: mock(() => {}) };
+            const updateState = mock(() => {});
+
+            service.loadSectionData('tsbs', 'MOTOR', '123', undefined, loadingSignal, updateState);
+
+            expect(updateState).toHaveBeenCalled();
+            const calledArg = updateState.mock.calls[0][0];
+            expect(calledArg).toHaveLength(1);
+            expect(calledArg[0]).toEqual({
+                id: '2',
+                bulletinNumber: 'TSB-001',
+                title: 'Engine Noise',
+                releaseDate: '2023-01-01',
+                description: '',
+                thumbnailHref: undefined
+            });
+        });
+
+        test('should load Procedures correctly', () => {
+            mockSearchArticles.mockReturnValue(of({
+                body: {
+                    articleDetails: [
+                        { id: '3', bucket: 'Procedures', title: 'Replace Oil', subtitle: 'Step by step' }
+                    ],
+                    filterTabs: [{ type: 'Procedures', name: 'Procedures' }]
+                }
+            }));
+
+            const loadingSignal = { set: mock(() => {}) };
+            const updateState = mock(() => {});
+
+            service.loadSectionData('procedures', 'MOTOR', '123', undefined, loadingSignal, updateState);
+
+            expect(updateState).toHaveBeenCalled();
+            const calledArg = updateState.mock.calls[0][0];
+            expect(calledArg).toHaveLength(1);
+            expect(calledArg[0]).toEqual({
+                id: '3',
+                bucket: 'Procedures',
+                title: 'Replace Oil',
+                subtitle: 'Step by step',
+                parentBucket: undefined
+            });
+        });
     });
 
     describe('parseSpecTable', () => {
@@ -171,8 +267,6 @@ describe('VehicleDataService', () => {
                     </tr>
                 </table>
             `;
-            // Note: The logic treats th just like td, so it will include headers if they are in a tr
-            // Since th are usually headers, they might be included as the first "row"
             expect(service.parseSpecTable(html)).toBe('Parameter: Value | Speed: 100');
         });
 
