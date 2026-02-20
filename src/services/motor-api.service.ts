@@ -374,18 +374,26 @@ export class MotorApiService {
             // Handle PDF content - check if it's base64 data or HTML content
             const pdfContent = body.pdf;
             if (typeof pdfContent === 'string') {
-              if (pdfContent.startsWith('data:application/pdf;base64,') ||
-                pdfContent.startsWith('JVBERi') || // PDF magic bytes in base64
-                pdfContent.match(/^[A-Za-z0-9+/=]+$/)) {
-                // It's a base64 PDF - create an embed
-                const base64Data = pdfContent.startsWith('data:') ? pdfContent :
-                  `data:application/pdf;base64,${pdfContent}`;
-                res.body.html = `<iframe src="${base64Data}" width="100%" height="800px" style="border: none;"></iframe>`;
+              const cleanBase64 = pdfContent.replace(/\s/g, '');
+              const isBase64Pdf = cleanBase64.startsWith('JVBERi') ||
+                cleanBase64.startsWith('data:application/pdf;base64,');
+
+              if (isBase64Pdf) {
+                const dataUri = cleanBase64.startsWith('data:')
+                  ? cleanBase64
+                  : `data:application/pdf;base64,${cleanBase64}`;
+                res.body.html = `
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:40px 20px;text-align:center;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:#60a5fa;opacity:0.8"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                      <p style="color:var(--text-secondary);font-size:0.9rem;max-width:300px;">This document is only available in PDF format.</p>
+                      <a href="${dataUri}" download="document.pdf"
+                        style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:var(--primary);color:white;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none;">
+                        Download PDF
+                      </a>
+                    </div>`;
               } else if (pdfContent.startsWith('<')) {
-                // It's actually HTML content labeled as pdf
                 res.body.html = pdfContent;
               } else {
-                // It might be a URL or plain text
                 res.body.html = pdfContent;
               }
             }
