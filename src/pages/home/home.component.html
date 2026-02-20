@@ -112,14 +112,16 @@
           </button>
           }
           @if (selectedMake(); as make) {
-          <button (click)="removeSelection($event, 'Make')" class="pill" [attr.aria-label]="'Remove make ' + make.makeName">
+          <button (click)="removeSelection($event, 'Make')" class="pill"
+            [attr.aria-label]="'Remove make ' + make.makeName">
             <span>{{ make.makeName }}</span>
             <lucide-icon [img]="icons.X" class="w-3 h-3"></lucide-icon>
           </button>
           }
           @if (selectedModel(); as model) {
           @if (!selectedVehicle()) {
-          <button (click)="removeSelection($event, 'Model')" class="pill" [attr.aria-label]="'Remove model ' + model.model">
+          <button (click)="removeSelection($event, 'Model')" class="pill"
+            [attr.aria-label]="'Remove model ' + model.model">
             <span>{{ model.model }}</span>
             <lucide-icon [img]="icons.X" class="w-3 h-3"></lucide-icon>
           </button>
@@ -316,7 +318,7 @@
     <!-- Mobile List -->
     <div class="flex-1 overflow-y-auto p-3">
       @if (searchStep() === 'Year') {
-      <div class="grid grid-cols-3 gap-2">
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
         @for (suggestion of suggestions(); track suggestion.display) {
         <button (click)="selectSuggestion($event, suggestion)" class="py-3.5 rounded-xl text-base font-mono font-semibold transition-all active:scale-95
           bg-white/[0.03] text-white/80 border border-white/5

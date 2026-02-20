@@ -541,6 +541,10 @@ export class HomeComponent implements OnInit {
           // No engines, auto-select the model
           this.selectedVehicle.set({ vehicleId: model.id, displayName: model.model });
           this.showSuggestions.set(false);
+          // Auto-advance if on mobile since there is no continue button in wizard
+          if (this.isMobile()) {
+            this.submitSearch();
+          }
         }
         break;
       case 'Engine':
@@ -549,6 +553,10 @@ export class HomeComponent implements OnInit {
         this.showSuggestions.set(false);
         // Force change detection to update UI immediately
         this.cdr.detectChanges();
+        // Auto-advance if on mobile since there is no continue button in wizard
+        if (this.isMobile()) {
+          this.submitSearch();
+        }
         break;
     }
   }
