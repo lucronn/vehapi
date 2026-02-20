@@ -159,7 +159,7 @@
               (click)="searchInputRef.focus()" #searchContainer>
               <lucide-icon [img]="icons.Search" class="w-5 h-5 mr-3 flex-shrink-0 text-torque-muted"></lucide-icon>
 
-              <input #searchInputRef type="text" [placeholder]="currentPlaceholder()"
+              <input #searchInputRef type="text" [placeholder]="currentPlaceholder()" aria-label="Vehicle Search"
                 class="hidden md:block flex-1 bg-transparent border-none py-4 focus:ring-0 text-base outline-none text-white placeholder:text-torque-muted"
                 [ngModel]="searchInput()" (ngModelChange)="onSearchInput($event)" (focus)="onSearchFocus()"
                 (click)="onSearchFocus(); $event.stopPropagation()" (keydown.enter)="handleEnterKey()"
