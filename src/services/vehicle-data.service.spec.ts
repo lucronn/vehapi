@@ -128,14 +128,12 @@ describe('VehicleDataService', () => {
 
     describe('parseSpecTable', () => {
         test('should return empty string for empty input', () => {
-            const service = new VehicleDataService();
             expect(service.parseSpecTable('')).toBe('');
             expect(service.parseSpecTable(null as any)).toBe('');
             expect(service.parseSpecTable(undefined as any)).toBe('');
         });
 
         test('should parse a simple table with one row', () => {
-            const service = new VehicleDataService();
             const html = `
                 <table>
                     <tr>
@@ -148,7 +146,6 @@ describe('VehicleDataService', () => {
         });
 
         test('should parse multiple rows and join them with " | "', () => {
-            const service = new VehicleDataService();
             const html = `
                 <table>
                     <tr><td>Make</td><td>Ford</td></tr>
@@ -159,7 +156,6 @@ describe('VehicleDataService', () => {
         });
 
         test('should limit to top 3 rows per table', () => {
-            const service = new VehicleDataService();
             const html = `
                 <table>
                     <tr><td>R1</td><td>V1</td></tr>
@@ -174,7 +170,6 @@ describe('VehicleDataService', () => {
         });
 
         test('should handle multiple tables separated by newline', () => {
-            const service = new VehicleDataService();
             const html = `
                 <table>
                     <tr><td>T1R1</td><td>V1</td></tr>
@@ -189,7 +184,6 @@ describe('VehicleDataService', () => {
         });
 
         test('should strip HTML tags from keys and values', () => {
-            const service = new VehicleDataService();
             const html = `
                 <table>
                     <tr>
@@ -202,7 +196,6 @@ describe('VehicleDataService', () => {
         });
 
         test('should decode HTML entities &nbsp; and &amp;', () => {
-            const service = new VehicleDataService();
             const html = `
                 <table>
                     <tr>
@@ -215,7 +208,6 @@ describe('VehicleDataService', () => {
         });
 
         test('should normalize whitespace', () => {
-            const service = new VehicleDataService();
             const html = `
                 <table>
                     <tr>
@@ -228,7 +220,6 @@ describe('VehicleDataService', () => {
         });
 
         test('should ignore rows with less than 2 cells', () => {
-            const service = new VehicleDataService();
             const html = `
                 <table>
                     <tr><td>Header Only</td></tr>
@@ -239,7 +230,6 @@ describe('VehicleDataService', () => {
         });
 
         test('should join extra cells into the value', () => {
-            const service = new VehicleDataService();
             const html = `
                 <table>
                     <tr>
@@ -254,7 +244,6 @@ describe('VehicleDataService', () => {
         });
 
         test('should handle th tags as cells', () => {
-            const service = new VehicleDataService();
             const html = `
                 <table>
                     <tr>
@@ -271,7 +260,6 @@ describe('VehicleDataService', () => {
         });
 
         test('should remove trailing colon from keys', () => {
-             const service = new VehicleDataService();
              const html = `
                  <table>
                      <tr>

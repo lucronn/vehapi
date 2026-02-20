@@ -258,25 +258,124 @@ export class VehicleDataService {
     }
 
     /**
+     * Helper to get bucket names for a specific type from API response data
+     */
+    private _getBucketNamesForType(type: string, data: any): string[] {
+        if (!data || !data.filterTabs) return [];
+
+        // Find the tab(s) that match the requested type or have a similar name for DTCs
+        const targetTabs = data.filterTabs.filter((t: any) => {
+            const matchesType = t.type === type;
+            const isDtcFallback = type === 'DTCs' && (t.name?.includes('Diagnostic') || t.type?.includes('DTC'));
+            return matchesType || isDtcFallback;
+        });
+
+        if (!targetTabs.length) {
+            // FALLBACKS if type is missing or mismatch
+            if (type === 'DTCs') return ['Diagnostic Trouble Codes', 'Diagnostic Codes', 'DTCs'];
+            if (type === 'TSBs') return ['Technical Service Bulletins', 'Bulletins', 'TSBs'];
+            if (type === 'Diagrams') return ['Wiring Diagrams', 'Diagrams', 'System Wiring Diagrams'];
+            if (type === 'Component Locations') return ['Component Locations', 'Locations', 'Component Location Diagrams'];
+            if (type === 'Procedures') return ['Procedures', 'Labor', 'Service Procedures'];
+            // Maintenance fallback
+            if (type === 'Maintenance') return ['Maintenance', 'Scheduled Maintenance', 'Schedules'];
+            // Specs fallback
+            if (type === 'Specs') return ['Specifications', 'Specs'];
+            return [];
+        }
+
+        const names: string[] = [];
+
+        // Helper to collect names recursively
+        const collectNames = (tab: any) => {
+            if (tab.name) names.push(tab.name);
+            // Support both 'buckets' and 'children' for legacy/upstream parity
+            if (tab.buckets && Array.isArray(tab.buckets)) tab.buckets.forEach(collectNames);
+            if (tab.children && Array.isArray(tab.children)) tab.children.forEach(collectNames);
+        };
+
+        targetTabs.forEach(collectNames);
+        return names;
+    }
+
+    /**
      * Parse filter tabs and check Parts API to determine available sections
-     * TEMPORARY: Forcing all sections to show for debugging
      */
     getAvailableSections(
         contentSource: string,
         vehicleId: string,
         motorVehicleId?: string
     ): Observable<SectionAvailability> {
-        // TEMPORARY FIX: Just return all sections as available
-        return of({
-            hasDtcs: true,
-            hasTsbs: true,
-            hasDiagrams: true,
-            hasComponentLocations: true,
-            hasProcedures: true,
-            hasSpecs: true,
-            hasMaintenance: true,
-            hasParts: true
-        });
+        // Fetch Search Articles (Filter Tabs)
+        const search$ = this.motorApi.searchArticles(contentSource, vehicleId, '').pipe(
+            map(res => res.body || { articleDetails: [], filterTabs: [] }),
+            catchError(() => of({ articleDetails: [], filterTabs: [] }))
+        );
+
+        // Fetch Parts (Check existence)
+        const parts$ = this.motorApi.getPartsForVehicle(contentSource, vehicleId, motorVehicleId).pipe(
+            map(res => (res.body as any)?.items || []),
+            catchError(() => of([]))
+        );
+
+        return forkJoin({
+            search: search$,
+            parts: parts$
+        }).pipe(
+            map(({ search, parts }) => {
+                const tabs = search.filterTabs || [];
+                const articles = search.articleDetails || [];
+
+                const hasParts = parts.length > 0;
+
+                // Check sections based on tabs/buckets presence
+                // Note: _getBucketNamesForType returns bucket names IF the tab exists or falls back to defaults.
+                // We need to check if the tab actually exists in the response.
+                // However, _getBucketNamesForType has logic: if (!targetTabs.length) return fallbacks.
+                // This implies that it ALWAYS returns something for standard types.
+                // So checking `_getBucketNamesForType(...).length > 0` is not enough to verify existence if fallbacks are always returned.
+                // We need to verify if the tab exists in `filterTabs`.
+
+                const checkTabExists = (type: string, fallbackNames: string[] = []) => {
+                     return tabs.some((t: any) => {
+                        const matchesType = t.type === type;
+                        const matchesName = fallbackNames.some(n => (t.name || '').includes(n));
+                        return matchesType || matchesName;
+                     });
+                };
+
+                const hasDtcs = checkTabExists('DTCs', ['Diagnostic', 'DTC']);
+                const hasTsbs = checkTabExists('TSBs', ['Bulletins', 'TSB']);
+                const hasDiagrams = checkTabExists('Diagrams', ['Wiring Diagrams', 'Diagrams']);
+                const hasProcedures = checkTabExists('Procedures', ['Procedures', 'Labor']);
+                const hasComponentLocations = checkTabExists('Component Locations', ['Component Locations', 'Locations']);
+                const hasMaintenance = checkTabExists('Maintenance', ['Maintenance', 'Schedules']);
+
+                // Specs: Check tabs OR articles
+                const hasSpecsInTabs = checkTabExists('Specs', ['Specifications', 'Specs']);
+                const hasSpecsInArticles = articles.some(a => {
+                        const bucket = (a.bucket || '').toLowerCase();
+                        const title = (a.title || '').toLowerCase();
+                        return bucket.includes('specification') ||
+                            bucket.includes('specs') ||
+                            title.includes('specifications') ||
+                            title.includes('specs') ||
+                            title.includes('capacity');
+                });
+                const hasSpecs = hasSpecsInTabs || hasSpecsInArticles;
+
+                return {
+                    hasDtcs,
+                    hasTsbs,
+                    hasDiagrams,
+                    hasProcedures,
+                    hasSpecs,
+                    hasMaintenance,
+                    hasComponentLocations,
+                    hasParts
+                };
+            })
+        );
     }
 
     private getBucketNamesForType(type: string, data: any): string[] {
