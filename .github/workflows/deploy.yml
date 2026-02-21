@@ -1,15 +1,10 @@
-name: Deploy to GitHub Pages
+name: Deploy to Firebase and Vercel
 
 on:
   push:
     branches:
       - main
   workflow_dispatch:
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
 
 jobs:
   deploy:
@@ -23,20 +18,40 @@ jobs:
           node-version: '20'
           cache: 'npm'
       
-      - name: Install dependencies
+      - name: Install dependencies (Root)
         run: npm ci
+      
+      - name: Install dependencies (Proxy)
+        run: |
+          cd vehapiproxi
+          npm ci
       
       - name: Build
         run: npm run build
       
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-      
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy to Firebase
+        uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          path: './dist'
-      
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
+          channelId: live
+          projectId: vehapi-torque
+        env:
+          FIREBASE_CLI_PREVIEWS: hostingchannels
+
+      - name: Deploy Firebase Functions
+        run: |
+          npx firebase deploy --only functions --project vehapi-torque --token "${{ secrets.FIREBASE_TOKEN }}"
+        if: env.FIREBASE_TOKEN != ''
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: ./
+
