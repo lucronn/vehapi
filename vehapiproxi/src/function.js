@@ -630,6 +630,46 @@ app.use('/', authMiddleware, createProxyMiddleware({
                 normalizedData = normalizedData.replace(/&nbsp;/g, ' ');
                 logger.info('Normalized HTML content in proxy (Whitespace only)');
             } else if (contentType.includes('application/json')) {
+                // =============== IOS / SERVERLESS CRASH PROTECTION ===============
+                // Massive arrays (like 5,000+ DTCs or TSBs) will crash Vercel due to memory limits 
+                // and iOS Safari due to massive Javascript Array heap allocations upon JSON.parse.
+                // We truncate any deeply nested array to 500 items max at the Proxy level.
+                try {
+                    let parsedJson = JSON.parse(normalizedData);
+                    let didTruncate = false;
+                    let truncatedList = [];
+
+                    const truncateArrays = (obj) => {
+                        if (!obj || typeof obj !== 'object') return;
+                        if (Array.isArray(obj)) {
+                            if (obj.length > 500) {
+                                obj.length = 500;
+                                didTruncate = true;
+                                truncatedList.push(`Array truncated to 500 elements`);
+                            }
+                            // Process valid array elements
+                            for (let i = 0; i < obj.length; i++) {
+                                truncateArrays(obj[i]);
+                            }
+                        } else {
+                            // Recursively traverse objects
+                            for (const key of Object.keys(obj)) {
+                                truncateArrays(obj[key]);
+                            }
+                        }
+                    };
+
+                    truncateArrays(parsedJson);
+
+                    if (didTruncate) {
+                        normalizedData = JSON.stringify(parsedJson);
+                        logger.info(`Truncated massive JSON arrays to prevent iOS/Vercel OOM crashes on ${req.path}`);
+                    }
+                } catch (e) {
+                    logger.warn('Failed to parse or truncate JSON for performance protections:', e);
+                }
+                // =================================================================
+
                 // Enqueue for background AI parsing and caching to Supabase
                 // Done via lazy dynamic import to prevent cold-start crashes on serverless
                 getEnqueue().then(enqueue => {
