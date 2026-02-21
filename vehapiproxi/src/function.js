@@ -631,42 +631,48 @@ app.use('/', authMiddleware, createProxyMiddleware({
                 logger.info('Normalized HTML content in proxy (Whitespace only)');
             } else if (contentType.includes('application/json')) {
                 // =============== IOS / SERVERLESS CRASH PROTECTION ===============
-                // Massive arrays (like 5,000+ DTCs or TSBs) will crash Vercel due to memory limits 
-                // and iOS Safari due to massive Javascript Array heap allocations upon JSON.parse.
+                // Massive arrays (like 5,000+ items) will crash iOS Safari due to massive
+                // Javascript Array heap allocations upon JSON.parse.
                 // We truncate any deeply nested array to 500 items max at the Proxy level.
-                try {
-                    let parsedJson = JSON.parse(normalizedData);
-                    let didTruncate = false;
-                    let truncatedList = [];
+                //
+                // EXCEPTION: /articles/v2 is the master article CATALOG endpoint. It returns
+                // lightweight metadata (id, title, bucket) for ALL article types (DTCs, TSBs,
+                // Procedures, etc.). Truncating this array breaks section filtering because
+                // DTCs/TSBs may appear past index 500. Since each item is ~200 bytes,
+                // even 5000 items is only ~1MB — safe for iOS.
+                const isArticleCatalog = req.path.includes('/articles/v2');
 
-                    const truncateArrays = (obj) => {
-                        if (!obj || typeof obj !== 'object') return;
-                        if (Array.isArray(obj)) {
-                            if (obj.length > 500) {
-                                obj.length = 500;
-                                didTruncate = true;
-                                truncatedList.push(`Array truncated to 500 elements`);
+                if (!isArticleCatalog) {
+                    try {
+                        let parsedJson = JSON.parse(normalizedData);
+                        let didTruncate = false;
+
+                        const truncateArrays = (obj) => {
+                            if (!obj || typeof obj !== 'object') return;
+                            if (Array.isArray(obj)) {
+                                if (obj.length > 500) {
+                                    obj.length = 500;
+                                    didTruncate = true;
+                                }
+                                for (let i = 0; i < obj.length; i++) {
+                                    truncateArrays(obj[i]);
+                                }
+                            } else {
+                                for (const key of Object.keys(obj)) {
+                                    truncateArrays(obj[key]);
+                                }
                             }
-                            // Process valid array elements
-                            for (let i = 0; i < obj.length; i++) {
-                                truncateArrays(obj[i]);
-                            }
-                        } else {
-                            // Recursively traverse objects
-                            for (const key of Object.keys(obj)) {
-                                truncateArrays(obj[key]);
-                            }
+                        };
+
+                        truncateArrays(parsedJson);
+
+                        if (didTruncate) {
+                            normalizedData = JSON.stringify(parsedJson);
+                            logger.info(`Truncated massive JSON arrays to prevent iOS/Vercel OOM crashes on ${req.path}`);
                         }
-                    };
-
-                    truncateArrays(parsedJson);
-
-                    if (didTruncate) {
-                        normalizedData = JSON.stringify(parsedJson);
-                        logger.info(`Truncated massive JSON arrays to prevent iOS/Vercel OOM crashes on ${req.path}`);
+                    } catch (e) {
+                        logger.warn('Failed to parse or truncate JSON for performance protections:', e);
                     }
-                } catch (e) {
-                    logger.warn('Failed to parse or truncate JSON for performance protections:', e);
                 }
                 // =================================================================
 
