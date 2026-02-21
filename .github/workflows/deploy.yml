@@ -7,30 +7,38 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      
-      - name: Install dependencies (Root)
+      - name: Install dependencies
         run: npm ci
-      
-      - name: Install dependencies (Proxy)
-        run: |
-          cd vehapiproxi
-          npm ci
-      
       - name: Build
         run: npm run build
-      
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  deploy-firebase:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download dist
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
       - name: Deploy to Firebase
         uses: FirebaseExtended/action-hosting-deploy@v0
+        if: github.event_name != 'pull_request' && secrets.FIREBASE_SERVICE_ACCOUNT != ''
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
@@ -39,13 +47,16 @@ jobs:
         env:
           FIREBASE_CLI_PREVIEWS: hostingchannels
 
-      - name: Deploy Firebase Functions
-        run: |
-          npx firebase deploy --only functions --project vehapi-torque --token "${{ secrets.FIREBASE_TOKEN }}"
-        if: env.FIREBASE_TOKEN != ''
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-
+  deploy-vercel:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download dist
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v20
         with:
@@ -54,4 +65,5 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod'
           working-directory: ./
+
 
