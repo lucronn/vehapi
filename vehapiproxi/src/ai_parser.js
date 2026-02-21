@@ -7,40 +7,46 @@ const MODEL = 'gemini-2.5-flash';
 // The schema definitions to enforce structured output
 const SCHEMAS = {
     dtcs: {
-        type: 'OBJECT',
-        properties: {
-            code: { type: 'STRING' },
-            description: { type: 'STRING' },
-            possible_causes: { type: 'ARRAY', items: { type: 'STRING' } },
-            symptoms: { type: 'ARRAY', items: { type: 'STRING' } },
-            monitor_strategy: { type: 'STRING' },
-            malfunction_criteria: { type: 'STRING' },
-            diagnostic_steps: {
-                type: 'ARRAY',
-                items: {
-                    type: 'OBJECT',
-                    properties: {
-                        order: { type: 'INTEGER' },
-                        text: { type: 'STRING' },
-                        warning: { type: 'STRING' }
+        type: 'ARRAY',
+        items: {
+            type: 'OBJECT',
+            properties: {
+                code: { type: 'STRING' },
+                description: { type: 'STRING' },
+                possible_causes: { type: 'ARRAY', items: { type: 'STRING' } },
+                symptoms: { type: 'ARRAY', items: { type: 'STRING' } },
+                monitor_strategy: { type: 'STRING' },
+                malfunction_criteria: { type: 'STRING' },
+                diagnostic_steps: {
+                    type: 'ARRAY',
+                    items: {
+                        type: 'OBJECT',
+                        properties: {
+                            order: { type: 'INTEGER' },
+                            text: { type: 'STRING' },
+                            warning: { type: 'STRING' }
+                        }
                     }
                 }
-            }
-        },
-        required: ['code', 'description']
+            },
+            required: ['code', 'description']
+        }
     },
     tsbs: {
-        type: 'OBJECT',
-        properties: {
-            bulletin_number: { type: 'STRING' },
-            issue_date: { type: 'STRING' },
-            title: { type: 'STRING' },
-            summary: { type: 'STRING' },
-            content: { type: 'STRING' },
-            affected_components: { type: 'ARRAY', items: { type: 'STRING' } },
-            models_affected: { type: 'ARRAY', items: { type: 'STRING' } }
-        },
-        required: ['bulletin_number', 'title']
+        type: 'ARRAY',
+        items: {
+            type: 'OBJECT',
+            properties: {
+                bulletin_number: { type: 'STRING' },
+                issue_date: { type: 'STRING' },
+                title: { type: 'STRING' },
+                summary: { type: 'STRING' },
+                content: { type: 'STRING' },
+                affected_components: { type: 'ARRAY', items: { type: 'STRING' } },
+                models_affected: { type: 'ARRAY', items: { type: 'STRING' } }
+            },
+            required: ['bulletin_number', 'title']
+        }
     },
     procedures: {
         type: 'OBJECT',
@@ -64,15 +70,18 @@ const SCHEMAS = {
         required: ['title']
     },
     specifications: {
-        type: 'OBJECT',
-        properties: {
-            category: { type: 'STRING' },
-            name: { type: 'STRING' },
-            value: { type: 'STRING' },
-            unit: { type: 'STRING' },
-            display_text: { type: 'STRING' }
-        },
-        required: ['name', 'value', 'category']
+        type: 'ARRAY',
+        items: {
+            type: 'OBJECT',
+            properties: {
+                category: { type: 'STRING' },
+                name: { type: 'STRING' },
+                value: { type: 'STRING' },
+                unit: { type: 'STRING' },
+                display_text: { type: 'STRING' }
+            },
+            required: ['name', 'value', 'category']
+        }
     }
 };
 
