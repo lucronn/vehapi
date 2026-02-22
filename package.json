@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "ng serve",
-    "build": "ng build",
+    "build": "ng build && node scripts/inject-eruda.cjs",
     "preview": "ng serve --configuration=production",
     "firebase:init": "firebase init hosting",
     "firebase:login": "firebase login",
