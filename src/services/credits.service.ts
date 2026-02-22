@@ -48,7 +48,7 @@ export class CreditsService {
 
     private get apiUrl() {
         return environment.production
-            ? 'https://vehapi-gx7nz7bkv-curtt.vercel.app/api/credits'
+            ? 'https://vehapiproxi.vercel.app/api/credits'
             : '/api/credits';
     }
 

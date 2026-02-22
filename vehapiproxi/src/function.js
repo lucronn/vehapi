@@ -439,6 +439,11 @@ app.get('/api/source/:source/vehicle/:vehicleId/article/:articleId/orientations'
 
 // Middleware to extract user ID from header
 const userIdMiddleware = (req, res, next) => {
+    // Allow OPTIONS requests to pass through for CORS preflight
+    if (req.method === 'OPTIONS') {
+        return next();
+    }
+
     const userId = req.headers['x-user-id'];
     if (!userId) {
         return res.status(401).json({ error: 'User ID required' });

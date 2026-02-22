@@ -8,10 +8,13 @@ let stripe;
 
 function getStripe() {
     if (!stripe) {
-        if (!process.env.STRIPE_SECRET_KEY) {
-            throw new Error('STRIPE_SECRET_KEY is not set');
+        // Use Sandbox Key if available, otherwise fallback to main Secret Key
+        const secretKey = process.env.STRIPE_SANDBOX_SKEY || process.env.STRIPE_SECRET_KEY;
+
+        if (!secretKey) {
+            throw new Error('Neither STRIPE_SANDBOX_SKEY nor STRIPE_SECRET_KEY is set');
         }
-        stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+        stripe = new Stripe(secretKey);
     }
     return stripe;
 }
@@ -57,7 +60,8 @@ export async function createCheckoutSession(userId, amount, origin) {
 
 export async function handleWebhook(req, res) {
     const sig = req.headers['stripe-signature'];
-    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    // Note: User named it STRIKE_WEBHOOK_SECRET in Vercel
+    const endpointSecret = process.env.STRIKE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
 
     let event;
 
