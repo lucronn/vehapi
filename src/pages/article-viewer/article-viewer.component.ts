@@ -69,6 +69,10 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   rawResponse = signal<any>(null); // For debugging
   params = toSignal(this.route.paramMap);
 
+  // Signal-safe accessors for template — fall back to route params when inputs are undefined
+  contentSourceSig = computed(() => this.contentSource || this.params()?.get('contentSource') || '');
+  vehicleIdSig = computed(() => this.vehicleId || this.params()?.get('vehicleId') || '');
+
   ngOnChanges(changes: SimpleChanges) {
     if (changes['articleId']) {
       this.internalArticleId.set(this.articleId!);
@@ -194,7 +198,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
         this.sections.set(sections);
         this.isLoading.set(false);
         // Reset scroll position when loading new article content in modal
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) { }
       },
       error: (err) => {
         console.error('[ArticleViewer] Failed to load article API error:', err);

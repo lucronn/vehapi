@@ -98,21 +98,15 @@ export class PartsSectionComponent implements OnInit {
 
         const cost = this.creditsService.COSTS.PARTS;
         if (this.creditsService.balance() < cost) {
-            alert('Insufficient credits. Please purchase more.');
-            return;
+            return; // Button shows insufficient credits already
         }
 
-        if (confirm(`Unlock Parts & Catalog for ${cost} credits?`)) {
-            this.isUnlocking.set(true);
-            const success = await this.creditsService.unlockModule(this.vehicleId, 'parts', cost);
-            this.isUnlocking.set(false);
+        this.isUnlocking.set(true);
+        const success = await this.creditsService.unlockModule(this.vehicleId, 'parts', cost);
+        this.isUnlocking.set(false);
 
-            if (!success) {
-                alert('Unlock failed. Please try again.');
-            } else {
-                // Update display since we are now unlocked
-                this.updateDisplayedParts();
-            }
+        if (success) {
+            this.updateDisplayedParts();
         }
     }
 }

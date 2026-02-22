@@ -5,7 +5,7 @@
   <header class="sticky top-0 z-50"
     style="background:var(--bg-surface);border-bottom:1px solid var(--border);padding-top:env(safe-area-inset-top, 0px);padding-left:env(safe-area-inset-left, 0px);padding-right:env(safe-area-inset-right, 0px);">
     <div class="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
-      <a [routerLink]="['/vehicle', contentSource(), vehicleId()]"
+      <a [routerLink]="['/vehicle', contentSourceSig(), vehicleIdSig()]"
         class="group flex items-center gap-2 text-xs font-medium transition-all" style="color:var(--text-muted)">
         <lucide-icon [img]="icons.ArrowLeft"
           class="w-4 h-4 group-hover:-translate-x-1 transition-transform"></lucide-icon>

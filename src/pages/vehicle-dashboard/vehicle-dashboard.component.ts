@@ -330,22 +330,28 @@ export class VehicleDashboardComponent {
       return;
     }
 
-    // Open in Window
+    // Open in Window or Navigate on Mobile
     const contentSource = this.contentSource();
     const vehicleId = this.vehicleId();
     const title = article.title || 'Article Viewer';
 
     if (contentSource && vehicleId && articleId) {
-      this.windowManager.openWindow(
-        title,
-        ArticleViewerComponent,
-        {
-          articleId: articleId,
-          contentSource: contentSource,
-          vehicleId: vehicleId,
-          articleTitleInput: title
-        }
-      );
+      if (this.windowManager.isDesktop()) {
+        this.windowManager.openWindow(
+          title,
+          ArticleViewerComponent,
+          {
+            articleId: articleId,
+            contentSource: contentSource,
+            vehicleId: vehicleId,
+            articleTitleInput: title
+          }
+        );
+      } else {
+        this.router.navigate(['/vehicle', contentSource, vehicleId, 'article', articleId], {
+          queryParams: { title }
+        });
+      }
     }
   }
 
