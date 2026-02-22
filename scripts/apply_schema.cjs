@@ -5,7 +5,10 @@ const dns = require('dns').promises;
 
 const HOST = 'db.jzwhcoivwzumqrfscnlw.supabase.co';
 const USER = 'postgres';
-const PASS = 'Fucker900*lol!';
+// Password WITH curly braces, URL encoded to be safe in connection string parsing
+// { -> %7B, } -> %7D
+// Raw: {Fucker900*lol!}
+const PASS = '{Fucker900*lol!}';
 const DB = 'postgres';
 const PORT = 5432;
 
@@ -28,9 +31,10 @@ async function applySchema() {
     host: ip,
     port: PORT,
     user: USER,
-    password: PASS,
+    password: PASS, // pg client handles raw strings fine, no need to URL encode if passing as object property
     database: DB,
-    ssl: { rejectUnauthorized: false, servername: HOST } // servername required for SSL with IP
+    ssl: { rejectUnauthorized: false, servername: HOST },
+    connectionTimeoutMillis: 10000
   });
 
   try {
