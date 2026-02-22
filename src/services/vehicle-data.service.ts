@@ -337,11 +337,11 @@ export class VehicleDataService {
                 // We need to verify if the tab exists in `filterTabs`.
 
                 const checkTabExists = (type: string, fallbackNames: string[] = []) => {
-                     return tabs.some((t: any) => {
+                    return tabs.some((t: any) => {
                         const matchesType = t.type === type;
                         const matchesName = fallbackNames.some(n => (t.name || '').includes(n));
                         return matchesType || matchesName;
-                     });
+                    });
                 };
 
                 const hasDtcs = checkTabExists('DTCs', ['Diagnostic', 'DTC']);
@@ -354,13 +354,13 @@ export class VehicleDataService {
                 // Specs: Check tabs OR articles
                 const hasSpecsInTabs = checkTabExists('Specs', ['Specifications', 'Specs']);
                 const hasSpecsInArticles = articles.some(a => {
-                        const bucket = (a.bucket || '').toLowerCase();
-                        const title = (a.title || '').toLowerCase();
-                        return bucket.includes('specification') ||
-                            bucket.includes('specs') ||
-                            title.includes('specifications') ||
-                            title.includes('specs') ||
-                            title.includes('capacity');
+                    const bucket = (a.bucket || '').toLowerCase();
+                    const title = (a.title || '').toLowerCase();
+                    return bucket.includes('specification') ||
+                        bucket.includes('specs') ||
+                        title.includes('specifications') ||
+                        title.includes('specs') ||
+                        title.includes('capacity');
                 });
                 const hasSpecs = hasSpecsInTabs || hasSpecsInArticles;
 
@@ -441,41 +441,48 @@ export class VehicleDataService {
 
                 // Add always include buckets
                 if (strategy.alwaysIncludeBuckets) {
-                     strategy.alwaysIncludeBuckets.forEach(b => {
+                    strategy.alwaysIncludeBuckets.forEach(b => {
                         if (!validBuckets.includes(b)) validBuckets.push(b);
                     });
                 }
+
+                // DEBUG: Log bucket names and article sample for diagnostics
+                const uniqueBuckets = [...new Set(articles.map((a: any) => a.bucket))];
+                console.log(`[VehicleData] Section=${section}, Total articles=${articles.length}, Valid buckets=[${validBuckets.join(', ')}], All unique buckets in response=[${uniqueBuckets.join(', ')}]`);
 
                 let filtered = articles.filter((a: any) =>
                     validBuckets.includes(a.bucket) ||
                     (a.parentBucket && validBuckets.includes(a.parentBucket))
                 ).map(strategy.mapper);
 
+                console.log(`[VehicleData] Section=${section}, Filtered count=${filtered.length}`);
+
                 // Handle Fallback Search (DTCs)
                 if (strategy.enableFallbackSearch && filtered.length === 0) {
-                     console.log(`[VehicleData] No ${strategy.type} found with empty search. Triggering fallback search...`);
-                     this.motorApi.searchArticles(contentSource, vehicleId, 'DTC').subscribe({
-                            next: (fallbackRes) => {
-                                const fallbackArticles = fallbackRes.body?.articleDetails || [];
+                    console.log(`[VehicleData] No ${strategy.type} found with empty search. Triggering fallback search...`);
+                    this.motorApi.searchArticles(contentSource, vehicleId, 'DTC').subscribe({
+                        next: (fallbackRes) => {
+                            const fallbackArticles = fallbackRes.body?.articleDetails || [];
+                            console.log(`[VehicleData] Fallback search returned ${fallbackArticles.length} articles`);
 
-                                const fallbackFiltered = fallbackArticles.filter((a: any) =>
-                                    validBuckets.includes(a.bucket) ||
-                                    (a.parentBucket && validBuckets.includes(a.parentBucket))
-                                ).map(strategy.mapper);
+                            const fallbackFiltered = fallbackArticles.filter((a: any) =>
+                                validBuckets.includes(a.bucket) ||
+                                (a.parentBucket && validBuckets.includes(a.parentBucket))
+                            ).map(strategy.mapper);
 
-                                if (fallbackFiltered.length > 0) {
-                                    console.log(`[VehicleData] Fallback search found ${fallbackFiltered.length} items.`);
-                                    updateState(fallbackFiltered);
-                                } else {
-                                    updateState([]);
-                                }
-                            },
-                            error: (err) => {
-                                console.error('[VehicleData] Fallback search failed', err);
+                            if (fallbackFiltered.length > 0) {
+                                console.log(`[VehicleData] Fallback search found ${fallbackFiltered.length} items.`);
+                                updateState(fallbackFiltered);
+                            } else {
                                 updateState([]);
                             }
-                        });
-                        return;
+                        },
+                        error: (err) => {
+                            console.error('[VehicleData] Fallback search failed', err);
+                            updateState([]);
+                        }
+                    });
+                    return;
                 }
 
                 updateState(filtered);
