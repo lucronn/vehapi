@@ -49,24 +49,24 @@ import { LucideAngularModule, CreditCard, ArrowLeft, Plus } from 'lucide-angular
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <!-- Starter Pack -->
           <button
-            (click)="purchase(50)"
+            (click)="purchase(1000)"
             [disabled]="creditsService.isLoading()"
             class="group relative overflow-hidden bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 hover:border-torque-cyan/50 rounded-xl p-6 transition-all duration-300 text-left">
             <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <lucide-icon [img]="Plus" class="w-12 h-12"></lucide-icon>
             </div>
             <h3 class="text-lg font-bold mb-2">Starter Pack</h3>
-            <div class="text-3xl font-mono font-bold text-torque-cyan mb-4">50 CR</div>
-            <div class="text-sm text-gray-400 mb-6">Good for unlocking specific modules for a few vehicles.</div>
+            <div class="text-3xl font-mono font-bold text-torque-cyan mb-4">1,000 CR</div>
+            <div class="text-sm text-gray-400 mb-6">Good for unlocking full specs on multiple vehicles.</div>
             <div class="flex items-center justify-between mt-auto">
-              <span class="text-lg font-bold">$5.00</span>
+              <span class="text-lg font-bold">$10.00</span>
               <span class="text-xs uppercase tracking-wider font-bold bg-white/10 px-3 py-1 rounded-full group-hover:bg-torque-cyan group-hover:text-black transition-colors">Buy Now</span>
             </div>
           </button>
 
           <!-- Standard Pack -->
           <button
-            (click)="purchase(100)"
+            (click)="purchase(2500)"
             [disabled]="creditsService.isLoading()"
             class="group relative overflow-hidden bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 hover:border-torque-cyan/50 rounded-xl p-6 transition-all duration-300 text-left">
             <div class="absolute inset-0 bg-gradient-to-tr from-torque-cyan/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -75,10 +75,10 @@ import { LucideAngularModule, CreditCard, ArrowLeft, Plus } from 'lucide-angular
             </div>
             <div class="relative z-10">
               <h3 class="text-lg font-bold mb-2">Standard Pack</h3>
-              <div class="text-3xl font-mono font-bold text-torque-cyan mb-4">100 CR</div>
-              <div class="text-sm text-gray-400 mb-6">Best value for enthusiasts working on multiple cars.</div>
+              <div class="text-3xl font-mono font-bold text-torque-cyan mb-4">2,500 CR</div>
+              <div class="text-sm text-gray-400 mb-6">Best value for enthusiasts working on complex diagnostics.</div>
               <div class="flex items-center justify-between mt-auto">
-                <span class="text-lg font-bold">$9.00</span>
+                <span class="text-lg font-bold">$25.00</span>
                 <span class="text-xs uppercase tracking-wider font-bold bg-white/10 px-3 py-1 rounded-full group-hover:bg-torque-cyan group-hover:text-black transition-colors">Buy Now</span>
               </div>
             </div>
@@ -86,7 +86,7 @@ import { LucideAngularModule, CreditCard, ArrowLeft, Plus } from 'lucide-angular
 
           <!-- Pro Pack -->
           <button
-            (click)="purchase(250)"
+            (click)="purchase(5000)"
             [disabled]="creditsService.isLoading()"
             class="group relative overflow-hidden bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 hover:border-torque-purple/50 rounded-xl p-6 transition-all duration-300 text-left">
              <div class="absolute inset-0 bg-gradient-to-tr from-torque-purple/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -95,10 +95,10 @@ import { LucideAngularModule, CreditCard, ArrowLeft, Plus } from 'lucide-angular
             </div>
             <div class="relative z-10">
               <h3 class="text-lg font-bold mb-2">Pro Pack</h3>
-              <div class="text-3xl font-mono font-bold text-torque-purple mb-4">250 CR</div>
+              <div class="text-3xl font-mono font-bold text-torque-purple mb-4">5,000 CR</div>
               <div class="text-sm text-gray-400 mb-6">For professionals who need full access to many vehicles.</div>
               <div class="flex items-center justify-between mt-auto">
-                <span class="text-lg font-bold">$20.00</span>
+                <span class="text-lg font-bold">$50.00</span>
                 <span class="text-xs uppercase tracking-wider font-bold bg-white/10 px-3 py-1 rounded-full group-hover:bg-torque-purple group-hover:text-white transition-colors">Buy Now</span>
               </div>
             </div>
@@ -107,7 +107,7 @@ import { LucideAngularModule, CreditCard, ArrowLeft, Plus } from 'lucide-angular
 
         <!-- Usage Info -->
         <div class="mt-12 pt-12 border-t border-white/10 text-center text-gray-500 text-sm">
-          <p>Mock Credit System Active. Purchases are simulated.</p>
+          <p>Secure payments processed via Stripe. All purchases are final.</p>
         </div>
       </div>
     </div>

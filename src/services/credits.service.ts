@@ -17,7 +17,7 @@ export class CreditsService {
     private userIdService = inject(UserIdService);
 
     // Set this to true to use local storage instead of backend
-    private readonly USE_MOCK = true;
+    private readonly USE_MOCK = false;
     private readonly STORAGE_KEYS = {
         BALANCE: 'torque_mock_balance',
         UNLOCKS: 'torque_mock_unlocks'
@@ -89,14 +89,11 @@ export class CreditsService {
         }
 
         this.isLoading.set(true);
-        // MOCK: Commented out HTTP call
-        /*
         try {
-            const priceId = 'price_1Q...';
             const res = await firstValueFrom(
                 this.http.post<{ url: string }>(
                     `${this.apiUrl}/checkout`,
-                    { amount, priceId },
+                    { amount },
                     { headers: this.headers }
                 )
             );
@@ -106,18 +103,10 @@ export class CreditsService {
             }
         } catch (error) {
             console.error('Checkout failed:', error);
-            alert('Failed to start checkout. Please try again.');
+            // Fallback gracefully without alert on mobile
         } finally {
             this.isLoading.set(false);
         }
-        */
-
-        // MOCK Implementation
-        setTimeout(() => {
-            this.balance.update(b => b + amount);
-            alert(`Mock Checkout: Successfully added ${amount} credits!`);
-            this.isLoading.set(false);
-        }, 1000); // Simulate network delay
     }
 
     async unlockModule(vehicleId: string, moduleType: string, cost: number): Promise<boolean> {
@@ -147,8 +136,6 @@ export class CreditsService {
 
         this.isLoading.set(true);
 
-        // MOCK: Commented out HTTP call
-        /*
         try {
             const res = await firstValueFrom(
                 this.http.post<{ success: true, credits: number, unlocks: UnlockMap }>(
@@ -170,23 +157,6 @@ export class CreditsService {
         } finally {
             this.isLoading.set(false);
         }
-        */
-
-        // MOCK Implementation
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                this.balance.update(b => b - cost);
-                this.unlocks.update(u => {
-                    const vehicleUnlocks = u[vehicleId] || [];
-                    if (!vehicleUnlocks.includes(moduleType)) {
-                        vehicleUnlocks.push(moduleType);
-                    }
-                    return { ...u, [vehicleId]: vehicleUnlocks };
-                });
-                this.isLoading.set(false);
-                resolve(true);
-            }, 500);
-        });
     }
 
     hasAccess(vehicleId: string, moduleType: string): boolean {

@@ -464,12 +464,12 @@ app.get('/api/credits/balance', userIdMiddleware, async (req, res) => {
 // Create Checkout Session
 app.post('/api/credits/checkout', express.json(), userIdMiddleware, async (req, res) => {
     try {
-        const { amount, priceId, origin } = req.body;
-        const sessionUrl = await createCheckoutSession(req.userId, amount, priceId, origin || req.headers.origin);
+        const { amount, origin } = req.body;
+        const sessionUrl = await createCheckoutSession(req.userId, amount, origin || req.headers.origin);
         res.json({ url: sessionUrl });
     } catch (error) {
         logger.error('Error creating checkout session:', error);
-        res.status(500).json({ error: 'Failed to create checkout session' });
+        res.status(500).json({ error: error.message || 'Failed to create checkout session' });
     }
 });
 

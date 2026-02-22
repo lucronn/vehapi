@@ -16,20 +16,31 @@ function getStripe() {
     return stripe;
 }
 
-export async function createCheckoutSession(userId, amount, priceId, origin) {
+export async function createCheckoutSession(userId, amount, origin) {
+    if (amount < 1000) {
+        throw new Error('Minimum purchase is 1000 credits ($10)');
+    }
+
     try {
         const stripe = getStripe();
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             line_items: [
                 {
-                    price: priceId, // e.g., 'price_12345...'
+                    price_data: {
+                        currency: 'usd',
+                        product_data: {
+                            name: 'Torque Credits',
+                            description: 'Credits for unlocking premium vehicle data modules.',
+                        },
+                        unit_amount: 1, // 1 credit = 1 cent ($0.01)
+                    },
                     quantity: amount,
                 },
             ],
             mode: 'payment',
-            success_url: `${origin}/?purchase=success`,
-            cancel_url: `${origin}/?purchase=cancel`,
+            success_url: `${origin}/#/credits?purchase=success`,
+            cancel_url: `${origin}/#/credits?purchase=cancel`,
             client_reference_id: userId,
             metadata: {
                 userId: userId,
