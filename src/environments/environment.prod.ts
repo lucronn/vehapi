@@ -11,7 +11,7 @@ export const environment = {
         messagingSenderId: "963068558024"
     },
     supabase: {
-        url: 'https://PLACEHOLDER_PROJECT_ID.supabase.co', // TODO: Update with actual Supabase URL
+        url: 'https://jzwhcoivwzumqrfscnlw.supabase.co',
         key: 'AQ.Ab8RN6JY95_lrW2Eb2poFjmO2CtoGdVU8oNXS_UnPSGmVWZjoQ'
     }
 };
