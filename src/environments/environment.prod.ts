@@ -9,5 +9,9 @@ export const environment = {
         apiKey: "AIzaSyAsS2U7n5tJhITB3enYdSYwIq9801hG2Rk",
         authDomain: "vehapi-torque.firebaseapp.com",
         messagingSenderId: "963068558024"
+    },
+    supabase: {
+        url: 'https://PLACEHOLDER_PROJECT_ID.supabase.co', // TODO: Update with actual Supabase URL
+        key: 'AQ.Ab8RN6JY95_lrW2Eb2poFjmO2CtoGdVU8oNXS_UnPSGmVWZjoQ'
     }
 };

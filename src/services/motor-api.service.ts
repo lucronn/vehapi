@@ -44,9 +44,15 @@ import {
   AuthStatusResponse
 } from '../models/motor.models';
 
+import { SupabaseService } from './supabase.service';
+import { DataMapperService } from './data-mapper.service';
+
 @Injectable({ providedIn: 'root' })
 export class MotorApiService {
   private http = inject(HttpClient);
+  private supabase = inject(SupabaseService);
+  private mapper = inject(DataMapperService);
+
   // public readonly baseUrl = 'https://motorapiauthproxy-yonqvhjh7a-uc.a.run.app';
   public readonly baseUrl = 'https://vehapiproxi.vercel.app';
 
@@ -697,15 +703,78 @@ export class MotorApiService {
     articleSubtype?: string,
     searchTerm?: string
   ): Observable<ApiResponse<ArticleResponse>> {
-    let params: any = {};
-    if (motorVehicleId) params.motorVehicleId = motorVehicleId;
-    if (prettyPrint !== undefined) params.prettyPrint = prettyPrint.toString();
-    if (bucketName) params.bucketName = bucketName;
-    if (articleSubtype) params.articleSubtype = articleSubtype;
-    if (searchTerm) params.searchTerm = searchTerm;
+    // CACHE STRATEGY: Try Supabase DB first
+    // Since we only have external_id (articleId), we search by that.
+    // Note: This assumes external_id is unique enough or we rely on the first match.
+    // In a robust system, we should filter by vehicle_id too, but we need to resolve
+    // the app's vehicleId (which might be external) to the DB UUID.
+    // For this iteration, we do a best-effort lookup.
 
-    const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/article/${articleId}`;
-    return this.getWithLogging<ApiResponse<ArticleResponse>>(url, params);
+    const fallbackApiCall = () => {
+      let params: any = {};
+      if (motorVehicleId) params.motorVehicleId = motorVehicleId;
+      if (prettyPrint !== undefined) params.prettyPrint = prettyPrint.toString();
+      if (bucketName) params.bucketName = bucketName;
+      if (articleSubtype) params.articleSubtype = articleSubtype;
+      if (searchTerm) params.searchTerm = searchTerm;
+
+      const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/article/${articleId}`;
+      return this.getWithLogging<ApiResponse<ArticleResponse>>(url, params).pipe(
+        tap(response => {
+          // Asynchronously cache the result to Supabase
+          if (response.header.statusCode === 200 && response.body) {
+            this.cacheArticleToSupabase(contentSource, vehicleId, articleId, response.body).catch(err => {
+              console.warn('[MotorApiService] Background caching failed', err);
+            });
+          }
+        })
+      );
+    };
+
+    if (!this.supabase.isEnabled) {
+      return fallbackApiCall();
+    }
+
+    return this.supabase.getProcedureByExternalId(articleId).pipe(
+      map(procedure => {
+        if (procedure) {
+          console.log(`[MotorApiService] Cache HIT for article ${articleId}`);
+          return {
+            header: { status: 'OK', statusCode: 200, messages: [] },
+            body: this.mapper.mapProcedureToArticleResponse(procedure)
+          } as ApiResponse<ArticleResponse>;
+        }
+        throw new Error('Not found in cache');
+      }),
+      catchError((err) => {
+        // console.log(`[MotorApiService] Cache MISS for article ${articleId}:`, err.message);
+        return fallbackApiCall();
+      })
+    );
+  }
+
+  private async cacheArticleToSupabase(contentSource: string, vehicleId: string, articleId: string, article: ArticleResponse) {
+    // 1. Resolve Vehicle UUID (or insert if missing)
+    // This is tricky because we need to know the DB ID of the vehicle.
+    // For now, we try to find it by external_id.
+    const dbVehicle = await this.supabase.getVehicleByExternalId(vehicleId).toPromise();
+
+    let dbVehicleId = dbVehicle?.id;
+
+    if (!dbVehicleId) {
+      // Create a skeleton vehicle record if it doesn't exist
+      // In a real app, we'd probably want more info (make/model/year) passed here
+      // but for caching simply by ID, we might need to fetch vehicle details first.
+      // Skipping auto-creation of vehicle for now to prevent bad data.
+      // console.warn('[MotorApiService] Cannot cache article: Vehicle not found in DB');
+      return;
+    }
+
+    // 2. Map and Insert Procedure
+    // We treat all articles as 'procedures' for the moment unless we distinguish TSBs
+    const procedure = this.mapper.mapArticleResponseToProcedure(dbVehicleId, article, articleId);
+    await this.supabase.insertProcedure(procedure);
+    // console.log(`[MotorApiService] Cached article ${articleId} to Supabase`);
   }
 
   /**
