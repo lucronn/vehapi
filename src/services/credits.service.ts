@@ -192,6 +192,8 @@ export class CreditsService {
     }
 
     hasAccess(vehicleId: string, moduleType: string): boolean {
+        // While in mock/development mode, grant full access to all sections
+        if (this.USE_MOCK) return true;
         const vehicleUnlocks = this.unlocks()[vehicleId] || [];
         return vehicleUnlocks.includes('full') || vehicleUnlocks.includes(moduleType);
     }
