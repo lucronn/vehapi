@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, Input, signal, ViewEncapsulation, OnInit, OnChanges, SimpleChanges, SecurityContext } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { DomSanitizer } from '@angular/platform-browser';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map, switchMap, of, catchError, Subject, takeUntil } from 'rxjs';
 
@@ -67,6 +67,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
 
   selectedImageUrl = signal<string | null>(null);
   rawResponse = signal<any>(null); // For debugging
+  pdfDataUri = signal<SafeResourceUrl | null>(null); // Set when article is a PDF
   params = toSignal(this.route.paramMap);
 
   // Signal-safe accessors for template — fall back to route params when inputs are undefined
@@ -183,6 +184,18 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
         }
 
         const rawHtml = (content.body as any)?.html || '';
+        const pdfUri = (content.body as any)?.pdfDataUri || null;
+
+        if (pdfUri) {
+          // PDF content — set safe URI for inline viewer, clear HTML
+          this.pdfDataUri.set(this.sanitizer.bypassSecurityTrustResourceUrl(pdfUri));
+          this.articleContent.set('');
+          this.sections.set([]);
+          this.isLoading.set(false);
+          return;
+        }
+
+        this.pdfDataUri.set(null);
         const { htmlString, safeHtml, sections } = this.processHtml(rawHtml, this.contentSource!, this.vehicleId!);
 
         console.log('[ArticleViewer] Processed HTML length:', htmlString?.length);

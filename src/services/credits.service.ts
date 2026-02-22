@@ -24,7 +24,7 @@ export class CreditsService {
     };
 
     // State
-    balance = signal<number>(100); // Mock initial balance
+    balance = signal<number>(10); // Starting credits - enough for one unlock
     unlocks = signal<UnlockMap>({});
     isLoading = signal<boolean>(false);
 
@@ -79,13 +79,11 @@ export class CreditsService {
 
     async startCheckout(amount: number) {
         if (this.USE_MOCK) {
-            // In mock mode, just give them the credits
             this.isLoading.set(true);
             setTimeout(() => {
                 this.balance.update(b => b + amount);
                 this.saveMockData();
                 this.isLoading.set(false);
-                alert(`SUCCESS (Mock): Added ${amount} credits to your account.`);
             }, 800);
             return;
         }
@@ -192,8 +190,6 @@ export class CreditsService {
     }
 
     hasAccess(vehicleId: string, moduleType: string): boolean {
-        // While in mock/development mode, grant full access to all sections
-        if (this.USE_MOCK) return true;
         const vehicleUnlocks = this.unlocks()[vehicleId] || [];
         return vehicleUnlocks.includes('full') || vehicleUnlocks.includes(moduleType);
     }
