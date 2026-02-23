@@ -6,7 +6,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ==========================================
 
 -- Vehicles Table
-CREATE TABLE vehicles (
+CREATE TABLE IF NOT EXISTS vehicles (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     year INTEGER NOT NULL,
     make TEXT NOT NULL,
@@ -20,11 +20,11 @@ CREATE TABLE vehicles (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX idx_vehicles_external_id ON vehicles(external_id);
-CREATE INDEX idx_vehicles_ymm ON vehicles(year, make, model);
+CREATE INDEX IF NOT EXISTS idx_vehicles_external_id ON vehicles(external_id);
+CREATE INDEX IF NOT EXISTS idx_vehicles_ymm ON vehicles(year, make, model);
 
 -- Categories Table (Hierarchical)
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     parent_id UUID REFERENCES categories(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
@@ -34,7 +34,7 @@ CREATE TABLE categories (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX idx_categories_parent_id ON categories(parent_id);
+CREATE INDEX IF NOT EXISTS idx_categories_parent_id ON categories(parent_id);
 
 -- ==========================================
 -- 2. Technical Data Tables (Standardized)
@@ -42,7 +42,7 @@ CREATE INDEX idx_categories_parent_id ON categories(parent_id);
 
 -- Procedures Table
 -- Standardized format for repair instructions
-CREATE TABLE procedures (
+CREATE TABLE IF NOT EXISTS procedures (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
     category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
@@ -58,10 +58,10 @@ CREATE TABLE procedures (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX idx_procedures_vehicle_id ON procedures(vehicle_id);
+CREATE INDEX IF NOT EXISTS idx_procedures_vehicle_id ON procedures(vehicle_id);
 
 -- Technical Service Bulletins (TSBs) Table
-CREATE TABLE tsbs (
+CREATE TABLE IF NOT EXISTS tsbs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
     bulletin_number TEXT NOT NULL,
@@ -75,11 +75,11 @@ CREATE TABLE tsbs (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX idx_tsbs_vehicle_id ON tsbs(vehicle_id);
-CREATE INDEX idx_tsbs_bulletin_number ON tsbs(bulletin_number);
+CREATE INDEX IF NOT EXISTS idx_tsbs_vehicle_id ON tsbs(vehicle_id);
+CREATE INDEX IF NOT EXISTS idx_tsbs_bulletin_number ON tsbs(bulletin_number);
 
 -- Diagnostic Trouble Codes (DTCs) Table
-CREATE TABLE dtcs (
+CREATE TABLE IF NOT EXISTS dtcs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
     code TEXT NOT NULL, -- e.g., "P0300"
@@ -93,11 +93,11 @@ CREATE TABLE dtcs (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX idx_dtcs_vehicle_id ON dtcs(vehicle_id);
-CREATE INDEX idx_dtcs_code ON dtcs(code);
+CREATE INDEX IF NOT EXISTS idx_dtcs_vehicle_id ON dtcs(vehicle_id);
+CREATE INDEX IF NOT EXISTS idx_dtcs_code ON dtcs(code);
 
 -- Specifications Table
-CREATE TABLE specifications (
+CREATE TABLE IF NOT EXISTS specifications (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
     category TEXT NOT NULL, -- e.g., "Torque", "Fluids", "Engine"
@@ -110,10 +110,10 @@ CREATE TABLE specifications (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX idx_specifications_vehicle_id ON specifications(vehicle_id);
+CREATE INDEX IF NOT EXISTS idx_specifications_vehicle_id ON specifications(vehicle_id);
 
 -- Maintenance Schedules Table
-CREATE TABLE maintenance_schedules (
+CREATE TABLE IF NOT EXISTS maintenance_schedules (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
     interval_value INTEGER, -- The numeric interval (e.g., 10000)
@@ -128,10 +128,10 @@ CREATE TABLE maintenance_schedules (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX idx_maintenance_vehicle_id ON maintenance_schedules(vehicle_id);
+CREATE INDEX IF NOT EXISTS idx_maintenance_vehicle_id ON maintenance_schedules(vehicle_id);
 
 -- Labor Estimates Table
-CREATE TABLE labor (
+CREATE TABLE IF NOT EXISTS labor (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
     operation_code TEXT,
@@ -143,10 +143,10 @@ CREATE TABLE labor (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX idx_labor_vehicle_id ON labor(vehicle_id);
+CREATE INDEX IF NOT EXISTS idx_labor_vehicle_id ON labor(vehicle_id);
 
 -- Parts Table
-CREATE TABLE parts (
+CREATE TABLE IF NOT EXISTS parts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
     part_number TEXT NOT NULL,
@@ -160,11 +160,11 @@ CREATE TABLE parts (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX idx_parts_vehicle_id ON parts(vehicle_id);
-CREATE INDEX idx_parts_part_number ON parts(part_number);
+CREATE INDEX IF NOT EXISTS idx_parts_vehicle_id ON parts(vehicle_id);
+CREATE INDEX IF NOT EXISTS idx_parts_part_number ON parts(part_number);
 
 -- Wiring Diagrams & Component Locations
-CREATE TABLE diagrams (
+CREATE TABLE IF NOT EXISTS diagrams (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
     category_id UUID REFERENCES categories(id),
@@ -178,13 +178,13 @@ CREATE TABLE diagrams (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX idx_diagrams_vehicle_id ON diagrams(vehicle_id);
+CREATE INDEX IF NOT EXISTS idx_diagrams_vehicle_id ON diagrams(vehicle_id);
 
 -- ==========================================
 -- 3. Processing Logs
 -- ==========================================
 
-CREATE TABLE ai_processing_logs (
+CREATE TABLE IF NOT EXISTS ai_processing_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
     source_file TEXT,

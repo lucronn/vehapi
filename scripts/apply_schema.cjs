@@ -3,16 +3,29 @@ const fs = require('fs');
 const path = require('path');
 const dns = require('dns').promises;
 
-const HOST = 'db.jzwhcoivwzumqrfscnlw.supabase.co';
-const USER = 'postgres';
-// Password WITH curly braces, URL encoded to be safe in connection string parsing
-// { -> %7B, } -> %7D
-// Raw: {Fucker900*lol!}
+// Connection Pooler Configuration
+// Host: aws-0-us-west-2.pooler.supabase.com
+// User: postgres.jzwhcoivwzumqrfscnlw
+// Pass: {Fucker900*lol!} (Exactly as provided, with braces)
+const HOST = 'aws-0-us-west-2.pooler.supabase.com';
+const USER = 'postgres.jzwhcoivwzumqrfscnlw';
 const PASS = '{Fucker900*lol!}';
 const DB = 'postgres';
-const PORT = 5432;
+const PORT = 5432; // Pooler port
 
-async function applySchema() {
+async function runSqlFile(client, filename) {
+  console.log(`Reading ${filename}...`);
+  const filePath = path.join(__dirname, '..', filename);
+  const sql = fs.readFileSync(filePath, 'utf8');
+
+  console.log(`Executing ${filename}...`);
+  // Split by semicolon? No, pg client can mostly handle it, but large files might need streaming.
+  // Ideally we assume standard SQL script. 'query' method usually handles multiple statements in pg.
+  await client.query(sql);
+  console.log(`✅ ${filename} executed successfully!`);
+}
+
+async function apply() {
   let ip = HOST;
   try {
     console.log(`Resolving IPv4 for ${HOST}...`);
@@ -28,33 +41,31 @@ async function applySchema() {
   }
 
   const client = new Client({
-    host: ip,
+    host: ip, // Try resolved IP to bypass potential IPv6 issues
     port: PORT,
     user: USER,
-    password: PASS, // pg client handles raw strings fine, no need to URL encode if passing as object property
+    password: PASS,
     database: DB,
-    ssl: { rejectUnauthorized: false, servername: HOST },
-    connectionTimeoutMillis: 10000
+    ssl: { rejectUnauthorized: false, servername: HOST }, // servername is critical when connecting via IP
+    connectionTimeoutMillis: 15000
   });
 
   try {
-    console.log('Connecting to PostgreSQL database...');
+    console.log('Connecting to PostgreSQL Pooler...');
     await client.connect();
     console.log('Connected!');
 
-    console.log('Reading schema file...');
-    const schemaPath = path.join(__dirname, '..', 'supabase_schema.sql');
-    const sql = fs.readFileSync(schemaPath, 'utf8');
+    // 1. Apply Schema
+    await runSqlFile(client, 'supabase_schema.sql');
 
-    console.log('Applying schema...');
-    await client.query(sql);
-    console.log('✅ Schema applied successfully!');
+    // 2. Apply Seed Data
+    await runSqlFile(client, 'seed_data_2009.sql');
 
   } catch (err) {
-    console.error('❌ Failed to apply schema:', err);
+    console.error('❌ Failed to execute SQL:', err);
   } finally {
     await client.end();
   }
 }
 
-applySchema();
+apply();
