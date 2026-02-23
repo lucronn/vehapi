@@ -3,7 +3,8 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CreditsService } from '../../services/credits.service';
-import { LucideAngularModule, CreditCard, ArrowLeft, Plus } from 'lucide-angular';
+import { AuthService } from '../../services/auth.service';
+import { LucideAngularModule, CreditCard, ArrowLeft, Plus, LogOut, LogIn, User } from 'lucide-angular';
 
 @Component({
   selector: 'app-credits-dashboard',
@@ -19,13 +20,43 @@ import { LucideAngularModule, CreditCard, ArrowLeft, Plus } from 'lucide-angular
 
       <div class="relative z-10 max-w-4xl mx-auto px-6 py-12">
         <!-- Header -->
-        <header class="mb-12">
-          <a routerLink="/" class="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors mb-6 group">
-            <lucide-icon [img]="ArrowLeft" class="w-4 h-4 group-hover:-translate-x-1 transition-transform"></lucide-icon>
-            Back to Home
-          </a>
-          <h1 class="text-4xl font-bold mb-2">Credits Dashboard</h1>
-          <p class="text-gray-400">Manage your credits and unlock premium vehicle data.</p>
+        <header class="mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div>
+            <a routerLink="/" class="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors mb-6 group">
+              <lucide-icon [img]="ArrowLeft" class="w-4 h-4 group-hover:-translate-x-1 transition-transform"></lucide-icon>
+              Back to Home
+            </a>
+            <h1 class="text-4xl font-bold mb-2">Credits Dashboard</h1>
+            <p class="text-gray-400">Manage your credits and unlock premium vehicle data.</p>
+          </div>
+
+          <!-- User Profile / Auth Actions -->
+          <div class="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-4 backdrop-blur-md">
+            @if (authService.user(); as user) {
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full border border-white/20 bg-white/10 flex items-center justify-center overflow-hidden">
+                    @if (user.photoURL) {
+                        <img [src]="user.photoURL" alt="Profile" class="w-full h-full object-cover">
+                    } @else {
+                        <lucide-icon [img]="User" class="w-6 h-6 text-gray-400"></lucide-icon>
+                    }
+                </div>
+                <div class="hidden sm:block">
+                  <div class="font-bold text-sm">{{ user.displayName || 'User' }}</div>
+                  <div class="text-xs text-gray-400">{{ user.email }}</div>
+                </div>
+              </div>
+              <button (click)="authService.signOut()" class="p-2 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-white" title="Sign Out">
+                <lucide-icon [img]="LogOut" class="w-5 h-5"></lucide-icon>
+              </button>
+            } @else {
+              <div class="text-sm text-gray-400 mr-2 hidden sm:block">Sign in to sync credits</div>
+              <button (click)="authService.signInWithGoogle()" class="flex items-center gap-2 bg-white text-black px-4 py-2 rounded-lg font-bold hover:bg-gray-200 transition-colors">
+                <lucide-icon [img]="LogIn" class="w-4 h-4"></lucide-icon>
+                Sign In
+              </button>
+            }
+          </div>
         </header>
 
         <!-- Balance Card -->
@@ -115,9 +146,13 @@ import { LucideAngularModule, CreditCard, ArrowLeft, Plus } from 'lucide-angular
 })
 export class CreditsDashboardComponent {
   readonly creditsService = inject(CreditsService);
+  readonly authService = inject(AuthService);
   readonly CreditCard = CreditCard;
   readonly ArrowLeft = ArrowLeft;
   readonly Plus = Plus;
+  readonly LogOut = LogOut;
+  readonly LogIn = LogIn;
+  readonly User = User;
 
   purchase(amount: number) {
     this.creditsService.startCheckout(amount);

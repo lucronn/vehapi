@@ -1,8 +1,9 @@
 
-import { Injectable, signal, inject } from '@angular/core';
+import { Injectable, signal, inject, effect } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { UserIdService } from './user-id.service';
+import { AuthService } from './auth.service';
 import { environment } from '../environments/environment';
 
 export interface UnlockMap {
@@ -15,6 +16,7 @@ export interface UnlockMap {
 export class CreditsService {
     private http = inject(HttpClient);
     private userIdService = inject(UserIdService);
+    private authService = inject(AuthService);
 
     // Set this to true to use local storage instead of backend
     private readonly USE_MOCK = false;
@@ -24,7 +26,7 @@ export class CreditsService {
     };
 
     // State
-    balance = signal<number>(10); // Starting credits - enough for one unlock
+    balance = signal<number>(0);
     unlocks = signal<UnlockMap>({});
     isLoading = signal<boolean>(false);
 
@@ -42,10 +44,6 @@ export class CreditsService {
         FULL_ACCESS: 25 // Per vehicle
     };
 
-    private get headers() {
-        return new HttpHeaders().set('x-user-id', this.userIdService.getUserId());
-    }
-
     private get apiUrl() {
         return environment.production
             ? 'https://vehapiproxi.vercel.app/api/credits'
@@ -53,7 +51,36 @@ export class CreditsService {
     }
 
     constructor() {
-        this.refreshBalance();
+        // Automatically refresh balance when user logs in
+        effect(() => {
+            const user = this.authService.user();
+            if (user) {
+                this.refreshBalance();
+            } else {
+                // Reset state on logout
+                this.balance.set(0);
+                this.unlocks.set({});
+            }
+        });
+    }
+
+    private async getHeaders(): Promise<HttpHeaders> {
+        let headers = new HttpHeaders();
+        const user = this.authService.user();
+
+        if (user) {
+            try {
+                const token = await user.getIdToken();
+                headers = headers.set('Authorization', `Bearer ${token}`);
+                headers = headers.set('x-user-id', user.uid);
+            } catch (e) {
+                console.error('Failed to get ID token', e);
+            }
+        } else {
+             // Fallback for guest (if supported) or unauthenticated requests
+             headers = headers.set('x-user-id', this.userIdService.getUserId());
+        }
+        return headers;
     }
 
     async refreshBalance() {
@@ -63,10 +90,11 @@ export class CreditsService {
         }
 
         try {
+            const headers = await this.getHeaders();
             const data = await firstValueFrom(
                 this.http.get<{ credits: number, unlocks: UnlockMap }>(
                     `${this.apiUrl}/balance`,
-                    { headers: this.headers }
+                    { headers }
                 )
             );
             this.balance.set(data.credits);
@@ -78,6 +106,20 @@ export class CreditsService {
     }
 
     async startCheckout(amount: number) {
+        if (!this.authService.user()) {
+            // Prompt for login if not logged in
+            try {
+                await this.authService.signInWithGoogle();
+                // After login, effect will trigger refreshBalance.
+                // We should probably wait or continue?
+                // For now, let's just return and let user click again or continue.
+                // But better to just proceed if login successful.
+                if (!this.authService.user()) return;
+            } catch (e) {
+                return; // Login failed/cancelled
+            }
+        }
+
         if (this.USE_MOCK) {
             this.isLoading.set(true);
             setTimeout(() => {
@@ -90,11 +132,12 @@ export class CreditsService {
 
         this.isLoading.set(true);
         try {
+            const headers = await this.getHeaders();
             const res = await firstValueFrom(
                 this.http.post<{ url: string }>(
                     `${this.apiUrl}/checkout`,
                     { amount },
-                    { headers: this.headers }
+                    { headers }
                 )
             );
 
@@ -137,11 +180,12 @@ export class CreditsService {
         this.isLoading.set(true);
 
         try {
+            const headers = await this.getHeaders();
             const res = await firstValueFrom(
                 this.http.post<{ success: true, credits: number, unlocks: UnlockMap }>(
                     `${this.apiUrl}/unlock`,
                     { vehicleId, moduleType, cost },
-                    { headers: this.headers }
+                    { headers }
                 )
             );
 
