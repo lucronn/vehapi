@@ -15,7 +15,7 @@ import { LucideAngularModule, X, ZoomIn, ZoomOut, RotateCw } from 'lucide-angula
       <!-- Toolbar -->
       <div class="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-50 bg-gradient-to-b from-black/80 to-transparent">
         <div class="text-white/70 text-xs uppercase tracking-widest font-bold">Image Viewer</div>
-        <button (click)="close.emit()" class="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
+        <button (click)="close.emit()" aria-label="Close image viewer" class="p-3 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
           <lucide-icon [img]="icons.X" class="w-6 h-6 text-white"></lucide-icon>
         </button>
       </div>
@@ -32,15 +32,15 @@ import { LucideAngularModule, X, ZoomIn, ZoomOut, RotateCw } from 'lucide-angula
 
       <!-- Controls (Visible on Desktop mostly) -->
       <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-4 bg-white/10 backdrop-blur-md px-6 py-3 rounded-full border border-white/5">
-        <button (click)="zoomOut()" class="p-2 hover:bg-white/10 rounded-lg transition-colors">
+        <button (click)="zoomOut()" aria-label="Zoom out" class="p-3 hover:bg-white/10 rounded-lg transition-colors">
             <lucide-icon [img]="icons.ZoomOut" class="w-5 h-5 text-white"></lucide-icon>
         </button>
         <span class="text-white font-mono text-sm w-12 text-center">{{ (scale() * 100).toFixed(0) }}%</span>
-        <button (click)="zoomIn()" class="p-2 hover:bg-white/10 rounded-lg transition-colors">
+        <button (click)="zoomIn()" aria-label="Zoom in" class="p-3 hover:bg-white/10 rounded-lg transition-colors">
             <lucide-icon [img]="icons.ZoomIn" class="w-5 h-5 text-white"></lucide-icon>
         </button>
         <div class="w-px h-6 bg-white/20 mx-2"></div>
-         <button (click)="rotate()" class="p-2 hover:bg-white/10 rounded-lg transition-colors">
+         <button (click)="rotate()" aria-label="Rotate image" class="p-3 hover:bg-white/10 rounded-lg transition-colors">
             <lucide-icon [img]="icons.RotateCw" class="w-5 h-5 text-white"></lucide-icon>
         </button>
       </div>
