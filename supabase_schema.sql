@@ -44,7 +44,7 @@ CREATE INDEX idx_categories_parent_id ON categories(parent_id);
 -- Standardized format for repair instructions
 CREATE TABLE procedures (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
+    vehicle_id TEXT NOT NULL, -- external_id from Motor (e.g., "66966:2600")
     category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
     external_id TEXT,
     title TEXT NOT NULL,
@@ -63,7 +63,7 @@ CREATE INDEX idx_procedures_vehicle_id ON procedures(vehicle_id);
 -- Technical Service Bulletins (TSBs) Table
 CREATE TABLE tsbs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
+    vehicle_id TEXT NOT NULL,
     bulletin_number TEXT NOT NULL,
     issue_date DATE,
     title TEXT NOT NULL,
@@ -81,7 +81,7 @@ CREATE INDEX idx_tsbs_bulletin_number ON tsbs(bulletin_number);
 -- Diagnostic Trouble Codes (DTCs) Table
 CREATE TABLE dtcs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
+    vehicle_id TEXT NOT NULL,
     code TEXT NOT NULL, -- e.g., "P0300"
     description TEXT NOT NULL,
     possible_causes JSONB, -- Array of strings
@@ -99,7 +99,7 @@ CREATE INDEX idx_dtcs_code ON dtcs(code);
 -- Specifications Table
 CREATE TABLE specifications (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
+    vehicle_id TEXT NOT NULL,
     category TEXT NOT NULL, -- e.g., "Torque", "Fluids", "Engine"
     name TEXT NOT NULL, -- e.g., "Cylinder Head Torque"
     value TEXT NOT NULL, -- e.g., "50"
@@ -115,7 +115,7 @@ CREATE INDEX idx_specifications_vehicle_id ON specifications(vehicle_id);
 -- Maintenance Schedules Table
 CREATE TABLE maintenance_schedules (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
+    vehicle_id TEXT NOT NULL,
     interval_value INTEGER, -- The numeric interval (e.g., 10000)
     interval_unit TEXT, -- "Miles", "Kilometers", "Months", "Hours"
     action TEXT NOT NULL, -- "Inspect", "Replace", "Change", "Rotate"
@@ -133,7 +133,7 @@ CREATE INDEX idx_maintenance_vehicle_id ON maintenance_schedules(vehicle_id);
 -- Labor Estimates Table
 CREATE TABLE labor (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
+    vehicle_id TEXT NOT NULL,
     operation_code TEXT,
     description TEXT NOT NULL,
     hours NUMERIC(5, 2),
@@ -148,7 +148,7 @@ CREATE INDEX idx_labor_vehicle_id ON labor(vehicle_id);
 -- Parts Table
 CREATE TABLE parts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
+    vehicle_id TEXT NOT NULL,
     part_number TEXT NOT NULL,
     description TEXT NOT NULL,
     manufacturer TEXT,
@@ -166,7 +166,7 @@ CREATE INDEX idx_parts_part_number ON parts(part_number);
 -- Wiring Diagrams & Component Locations
 CREATE TABLE diagrams (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
+    vehicle_id TEXT NOT NULL,
     category_id UUID REFERENCES categories(id),
     title TEXT NOT NULL,
     description TEXT,
@@ -186,7 +186,7 @@ CREATE INDEX idx_diagrams_vehicle_id ON diagrams(vehicle_id);
 
 CREATE TABLE ai_processing_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
+    vehicle_id TEXT,
     source_file TEXT,
     category TEXT, -- "Procedures", "TSBs", etc.
     status TEXT, -- "PENDING", "PROCESSING", "COMPLETED", "FAILED"
@@ -201,7 +201,6 @@ CREATE TABLE ai_processing_logs (
 -- ==========================================
 
 -- Enable Row Level Security on all tables
-ALTER TABLE vehicles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE procedures ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tsbs ENABLE ROW LEVEL SECURITY;
@@ -215,3 +214,37 @@ ALTER TABLE ai_processing_logs ENABLE ROW LEVEL SECURITY;
 
 -- Create simple read-only policy for authenticated users (example)
 -- CREATE POLICY "Enable read access for all users" ON vehicles FOR SELECT USING (true);
+
+-- Enable Row Level Security (RLS) for AI logs
+-- Policy to allow the service role (backend) to perform operations on logs
+CREATE POLICY "Allow full access to service_role"
+    ON ai_processing_logs
+    FOR ALL
+    TO service_role
+    USING (true)
+    WITH CHECK (true);
+
+-- Policy to allow authenticated users to view logs (if needed)
+CREATE POLICY "Allow read access to authenticated users"
+    ON ai_processing_logs
+    FOR SELECT
+    TO authenticated
+    USING (true);
+
+-- -----------------------------------------------------------------------------
+-- USERS TABLE (Stripe Credits & Unlocks)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.users (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    credits INTEGER DEFAULT 0,
+    unlocks JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Turn on Row Level Security
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Users can view their own profile
+CREATE POLICY "Users can view own profile" 
+ON public.users FOR SELECT 
+USING (auth.uid() = id);

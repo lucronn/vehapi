@@ -2,11 +2,6 @@
     @if (isLoading()) {
     <app-loading-skeleton type="card" [count]="3"></app-loading-skeleton>
     }
-    @else if (commonIssues().length === 0) {
-    <app-empty-state icon="alert" message="No Known Issues"
-        submessage="No commonly reported issues found for this vehicle.">
-    </app-empty-state>
-    }
     @else {
     <!-- Content Area (Blurred if locked) -->
     <div [class.blur-sm]="!creditsService.hasAccess(vehicleId, 'common_issues')"

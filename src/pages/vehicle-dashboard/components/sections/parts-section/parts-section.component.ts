@@ -24,6 +24,7 @@ import { CreditsService } from '../../../../../services/credits.service';
 export class PartsSectionComponent implements OnInit {
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
+    @Input() vehicleName: string = '';
 
     private motorApi = inject(MotorApiService);
     private destroyRef = inject(DestroyRef);
@@ -102,7 +103,7 @@ export class PartsSectionComponent implements OnInit {
         }
 
         this.isUnlocking.set(true);
-        const success = await this.creditsService.unlockModule(this.vehicleId, 'parts', cost);
+        const success = await this.creditsService.unlockModule(this.vehicleId, this.vehicleName, 'parts', cost);
         this.isUnlocking.set(false);
 
         if (success) {

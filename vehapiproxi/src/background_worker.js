@@ -50,12 +50,29 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
             vehicleIdStr = pMatch[1];
         }
 
+        // We also need an external_id for articles (procedures) so the proxy can look them up later
+        let articleIdStr = null;
+        if (targetSchema === 'procedures') {
+            const aMatch = urlPath.match(/\/article\/([^?]+)/);
+            if (aMatch && aMatch[1]) {
+                articleIdStr = aMatch[1];
+            }
+        }
+
         // Attach external context to structured object so Supabase doesn't reject it for missing keys
         if (vehicleIdStr) {
             if (Array.isArray(parsedData)) {
-                parsedData.forEach(item => item.vehicle_id = vehicleIdStr);
+                parsedData.forEach(item => {
+                    item.vehicle_id = vehicleIdStr;
+                    if (articleIdStr && targetSchema === 'procedures') {
+                        item.external_id = articleIdStr;
+                    }
+                });
             } else if (parsedData && typeof parsedData === 'object') {
                 parsedData.vehicle_id = vehicleIdStr;
+                if (articleIdStr && targetSchema === 'procedures') {
+                    parsedData.external_id = articleIdStr;
+                }
             }
         }
 

@@ -1,4 +1,4 @@
-name: Deploy to Firebase and Vercel
+name: Deploy to Vercel
 
 on:
   push:
@@ -30,26 +30,6 @@ jobs:
           name: dist
           path: dist/
 
-  deploy-firebase:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Download dist
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist
-      - name: Deploy to Firebase
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
-          channelId: live
-          projectId: vehapi-torque
-        env:
-          FIREBASE_CLI_PREVIEWS: hostingchannels
-
   deploy-vercel:
     needs: build
     runs-on: ubuntu-latest
@@ -70,5 +50,3 @@ jobs:
           working-directory: ./
         env:
           VERCEL_FORCE_NO_BUILD: 1
-
-

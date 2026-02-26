@@ -1,18 +1,22 @@
 
 import { onRequest } from 'firebase-functions/v2/https';
 import express from 'express';
+import crypto from 'crypto';
 import cors from 'cors';
 import { createProxyMiddleware, responseInterceptor } from 'http-proxy-middleware';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { config, validateConfig } from './config.js';
-import { authManager, verifyFirebaseIdToken } from './auth.js';
+import { authManager } from './auth.js';
 import logger, { logBuffer, logRequest, logResponse } from './logger.js';
 import swaggerUi from 'swagger-ui-express';
 import { createRequire } from 'module';
 import { createCheckoutSession, handleWebhook } from './stripe.js';
-import { getUserData, unlockModule } from './credits.js';
+import { getUserData, unlockModule, getTransactions } from './credits.js';
+import { checkParsedArticle } from './supabase.js';
+import { getAuth } from 'firebase-admin/auth';
+
 // background_worker is loaded lazily to prevent cold-start crashes on serverless
 let _enqueueParsingTask = null;
 async function getEnqueue() {
@@ -86,6 +90,45 @@ app.post('/auth/start', async (req, res) => {
 });
 
 // ============ DEBUG ENDPOINTS ============
+
+// Debug Authentication Middleware
+const debugAuthMiddleware = (req, res, next) => {
+    const { debugApiKey } = config;
+
+    // Fail closed if no key is configured
+    if (!debugApiKey) {
+        logger.warn('Debug access attempted but DEBUG_API_KEY is not configured');
+        return res.status(403).json({ error: 'Debug access disabled' });
+    }
+
+    const requestKey = req.headers['x-debug-key'];
+
+    // Constant-time comparison
+    if (!requestKey || typeof requestKey !== 'string') {
+        logger.warn(`Unauthorized debug access attempt from ${req.ip}`);
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Ensure lengths are equal first to avoid timing attacks on length
+    if (requestKey.length !== debugApiKey.length) {
+        logger.warn(`Unauthorized debug access attempt from ${req.ip}`);
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const requestKeyBuf = Buffer.from(requestKey);
+    const debugApiKeyBuf = Buffer.from(debugApiKey);
+
+    if (!crypto.timingSafeEqual(requestKeyBuf, debugApiKeyBuf)) {
+        logger.warn(`Unauthorized debug access attempt from ${req.ip}`);
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    next();
+};
+
+// Apply auth middleware to all debug endpoints
+app.use('/debug', debugAuthMiddleware);
+
 // Get all logs with optional filtering
 app.get('/debug/logs', (req, res) => {
     try {
@@ -154,7 +197,7 @@ app.post('/debug/clear', (req, res) => {
     }
 });
 
-// Async Authentication Middleware
+// Async Authentication Middleware (Upstream Proxy)
 const authMiddleware = async (req, res, next) => {
     // Skip auth for preflight requests
     if (req.method === 'OPTIONS') {
@@ -437,40 +480,36 @@ app.get('/api/source/:source/vehicle/:vehicleId/article/:articleId/orientations'
 
 // --- CREDIT SYSTEM ENDPOINTS ---
 
-// Middleware to extract user ID from header (Securely verifies Firebase ID Token)
-const userIdMiddleware = async (req, res, next) => {
+// Secure Auth Middleware: require Bearer token only (reject x-user-id for security)
+const secureAuthMiddleware = async (req, res, next) => {
     // Allow OPTIONS requests to pass through for CORS preflight
     if (req.method === 'OPTIONS') {
         return next();
     }
 
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        if (req.headers['x-user-id']) {
+            logger.warn('Legacy x-user-id header detected and rejected. Client must use Bearer token.');
+        }
+        return res.status(401).json({ error: 'Authorization header with Bearer token required' });
+    }
+
+    const token = authHeader.split('Bearer ')[1];
     try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            // Check for legacy x-user-id header but REJECT it to force upgrade
-            if (req.headers['x-user-id']) {
-                logger.warn('Legacy x-user-id header detected and rejected. Client must use Bearer token.');
-            }
-            return res.status(401).json({ error: 'Authorization header with Bearer token required' });
-        }
-
-        const token = authHeader.split('Bearer ')[1];
-        const decodedToken = await verifyFirebaseIdToken(token);
-
-        if (!decodedToken) {
-            return res.status(401).json({ error: 'Invalid or expired authentication token' });
-        }
-
+        const decodedToken = await getAuth().verifyIdToken(token);
         req.userId = decodedToken.uid;
-        next();
+        req.user = decodedToken;
+        req.isVerified = true;
+        return next();
     } catch (error) {
-        logger.error('Error in userIdMiddleware:', error);
-        return res.status(500).json({ error: 'Authentication processing failed' });
+        logger.warn('Invalid token provided:', error.message);
+        return res.status(401).json({ error: 'Invalid or expired authentication token' });
     }
 };
 
 // Get User Balance & Unlocks
-app.get('/api/credits/balance', userIdMiddleware, async (req, res) => {
+app.get('/api/credits/balance', secureAuthMiddleware, async (req, res) => {
     try {
         const userData = await getUserData(req.userId);
         res.json({
@@ -484,7 +523,7 @@ app.get('/api/credits/balance', userIdMiddleware, async (req, res) => {
 });
 
 // Create Checkout Session
-app.post('/api/credits/checkout', express.json(), userIdMiddleware, async (req, res) => {
+app.post('/api/credits/checkout', express.json(), secureAuthMiddleware, async (req, res) => {
     try {
         const { amount, origin } = req.body;
         const sessionUrl = await createCheckoutSession(req.userId, amount, origin || req.headers.origin);
@@ -496,10 +535,10 @@ app.post('/api/credits/checkout', express.json(), userIdMiddleware, async (req, 
 });
 
 // Unlock Module
-app.post('/api/credits/unlock', express.json(), userIdMiddleware, async (req, res) => {
+app.post('/api/credits/unlock', express.json(), secureAuthMiddleware, async (req, res) => {
     try {
-        const { vehicleId, moduleType, cost } = req.body;
-        const userData = await unlockModule(req.userId, vehicleId, moduleType, cost);
+        const { vehicleId, vehicleName, moduleType, cost } = req.body;
+        const userData = await unlockModule(req.userId, vehicleId, vehicleName || vehicleId, moduleType, cost);
         res.json({
             success: true,
             credits: userData.credits,
@@ -511,9 +550,23 @@ app.post('/api/credits/unlock', express.json(), userIdMiddleware, async (req, re
     }
 });
 
+// Get Transaction History
+app.get('/api/credits/transactions', secureAuthMiddleware, async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 50;
+        const txns = await getTransactions(req.userId, limit);
+        res.json({ transactions: txns });
+    } catch (error) {
+        logger.error('Error fetching transactions:', error);
+        res.status(500).json({ error: 'Failed to fetch transaction history' });
+    }
+});
+
 // Stripe Webhook (No auth middleware, validates signature)
 // Using express.raw to preserve the raw body for signature verification
 app.post('/api/credits/webhook', express.raw({ type: 'application/json' }), handleWebhook);
+
+
 
 // Unified Proxy Middleware
 // Mount at root '/' to handle ALL requests (api, graphic, assets, v1, etc.)
