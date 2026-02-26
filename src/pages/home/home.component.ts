@@ -663,8 +663,7 @@ export class HomeComponent implements OnInit {
   }
 
   closeMobileWizard(): void {
-    // If we are deep in selection, maybe go back one step?
-    // For now, just close the wizard if they hit back on the top level
+    // Go back one step in the selection hierarchy, or close wizard if at top level
     if (this.selectedModel()) {
       this.removeSelection(new MouseEvent('click'), 'Model');
     } else if (this.selectedMake()) {
