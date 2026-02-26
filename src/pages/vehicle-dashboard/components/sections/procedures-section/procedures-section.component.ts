@@ -24,6 +24,7 @@ import { WindowManagerService } from '../../../../../services/window-manager.ser
 export class ProceduresSectionComponent implements OnInit {
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
+    @Input() vehicleName: string = '';
     @Input() motorVehicleId?: string;
 
     private vehicleData = inject(VehicleDataService);
@@ -113,7 +114,7 @@ export class ProceduresSectionComponent implements OnInit {
         }
 
         this.isUnlocking.set(true);
-        await this.creditsService.unlockModule(this.vehicleId, 'procedures', cost);
+        await this.creditsService.unlockModule(this.vehicleId, this.vehicleName, 'procedures', cost);
         this.isUnlocking.set(false);
     }
 

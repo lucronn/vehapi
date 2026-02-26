@@ -2,7 +2,6 @@ import { Injectable, inject, signal } from '@angular/core';
 import { forkJoin, from, lastValueFrom, of } from 'rxjs';
 import { catchError, concatMap, map, mergeMap, tap, toArray } from 'rxjs/operators';
 import { MotorApiService } from './motor-api.service';
-import { FirebaseService } from './firebase.service';
 // import { GeminiService } from './gemini.service'; // Removed
 
 @Injectable({
@@ -10,7 +9,6 @@ import { FirebaseService } from './firebase.service';
 })
 export class DataSyncService {
     private motorApi = inject(MotorApiService);
-    private firebase = inject(FirebaseService);
     // private geminiApi = inject(GeminiService); // Removed
 
     // Sync State
@@ -111,29 +109,9 @@ export class DataSyncService {
     }
 
     private fetchAndSaveContent(cs: string, vid: string, item: any) {
-        // If it's already cached, skip? 
-        // Ideally yes, but checking cache for 1000 items is also 1000 reads. 
-        // Maybe just write-over? Or check `firebase.getArticle`?
-        // Let's blindly fetch & save for now, ensuring we have latest.
-        // Actually, `motorApi.getArticleContent` is what we need.
-
-        // Construct Article ID properly. 
-        // DTCs IDs are usually "DTC:..." in the list.
-        // TSBs IDs are "TSB:..."
-        // Procedures are "P:..."
-
+        // Firebase save removed - database sync is fully disabled
         return this.motorApi.getArticleContent(cs, vid, item.id).pipe(
-            concatMap(contentRes => {
-                return from(this.firebase.saveArticle({
-                    id: item.id,
-                    title: item.title || item.code || '',
-                    originalContent: contentRes.body.html,
-                    enhancedContent: '',
-                    vehicleId: vid,
-                    source: cs,
-                    timestamp: Date.now()
-                }));
-            })
+            map(contentRes => contentRes)
         );
     }
 }

@@ -107,6 +107,12 @@ export class MotorApiService {
    * Verbose logging helper for API errors
    */
   private logApiError(url: string, error: any, duration?: number): void {
+    // Suppress AbortError from Angular switchMap / HTTP client cancellation
+    if (error?.name === 'AbortError' || error?.name === 'HttpErrorResponse' && error?.error?.name === 'AbortError') {
+      console.log(`[API REQUEST CANCELLED] Frontend intentionally cancelled HTTP request to ${url} ( likely due to fast route navigation )`);
+      return;
+    }
+
     const timestamp = new Date().toISOString();
     console.group(`[API ERROR] ${timestamp}`);
     console.error('❌ Request Failed');
@@ -185,7 +191,20 @@ export class MotorApiService {
 
   getVehicleName(contentSource: string, vehicleId: string): Observable<ApiResponse<string>> {
     const url = `${this.baseUrl}/api/source/${contentSource}/${vehicleId}/name`;
-    return this.getWithLogging<ApiResponse<string>>(url);
+    return this.getWithLogging<ApiResponse<string>>(url).pipe(
+      map(res => {
+        // Proxy sometimes returns empty strings, 500s or incomplete objects.
+        // Ensure we never return "undefined undefined" parsing by providing an explicit string map.
+        if (!res || !res.body) {
+          return { ...res, body: 'Unknown Vehicle' } as ApiResponse<string>;
+        }
+        // In an edge case where the name comes back literally as undefined undefined
+        if (typeof res.body === 'string' && (res.body.includes('undefined undefined') || res.body.trim() === '')) {
+          return { ...res, body: 'Unknown Vehicle' } as ApiResponse<string>;
+        }
+        return res;
+      })
+    );
   }
 
   searchArticles(contentSource: string, vehicleId: string, searchTerm: string = ''): Observable<ApiResponse<ArticlesData>> {

@@ -12,7 +12,9 @@ import logger, { logBuffer, logRequest, logResponse } from './logger.js';
 import swaggerUi from 'swagger-ui-express';
 import { createRequire } from 'module';
 import { createCheckoutSession, handleWebhook } from './stripe.js';
-import { getUserData, unlockModule } from './credits.js';
+import { getUserData, unlockModule, getTransactions } from './credits.js';
+import { checkParsedArticle } from './supabase.js';
+
 // background_worker is loaded lazily to prevent cold-start crashes on serverless
 let _enqueueParsingTask = null;
 async function getEnqueue() {
@@ -481,8 +483,8 @@ app.post('/api/credits/checkout', express.json(), userIdMiddleware, async (req, 
 // Unlock Module
 app.post('/api/credits/unlock', express.json(), userIdMiddleware, async (req, res) => {
     try {
-        const { vehicleId, moduleType, cost } = req.body;
-        const userData = await unlockModule(req.userId, vehicleId, moduleType, cost);
+        const { vehicleId, vehicleName, moduleType, cost } = req.body;
+        const userData = await unlockModule(req.userId, vehicleId, vehicleName || vehicleId, moduleType, cost);
         res.json({
             success: true,
             credits: userData.credits,
@@ -494,9 +496,23 @@ app.post('/api/credits/unlock', express.json(), userIdMiddleware, async (req, re
     }
 });
 
+// Get Transaction History
+app.get('/api/credits/transactions', userIdMiddleware, async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 50;
+        const txns = await getTransactions(req.userId, limit);
+        res.json({ transactions: txns });
+    } catch (error) {
+        logger.error('Error fetching transactions:', error);
+        res.status(500).json({ error: 'Failed to fetch transaction history' });
+    }
+});
+
 // Stripe Webhook (No auth middleware, validates signature)
 // Using express.raw to preserve the raw body for signature verification
 app.post('/api/credits/webhook', express.raw({ type: 'application/json' }), handleWebhook);
+
+
 
 // Unified Proxy Middleware
 // Mount at root '/' to handle ALL requests (api, graphic, assets, v1, etc.)
