@@ -1,25 +1,46 @@
-import { initializeApp, getApps } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
 import https from 'https';
 import { URL } from 'url';
 import { config } from './config.js';
 import logger from './logger.js';
 
-// Initialize Firebase Admin (Optional on Render/Local if configured)
-let db = null;
-let firebaseInitialized = false;
+function getSupabaseConfig() {
+    const url = process.env.SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) return null;
+    return { url, key };
+}
 
-try {
-    if (!getApps().length) {
-        // If GOOGLE_APPLICATION_CREDENTIALS is not set, this might fail or warn
-        // depending on environment. We catch it to allow fallback.
-        initializeApp();
+async function fetchSupabase(endpoint, options = {}) {
+    const cfg = getSupabaseConfig();
+    if (!cfg) return null;
+
+    const headers = {
+        'Content-Type': 'application/json',
+        'apikey': cfg.key,
+        'Authorization': `Bearer ${cfg.key}`,
+        'Prefer': 'return=representation',
+        ...(options.headers || {})
+    };
+
+    try {
+        const response = await fetch(`${cfg.url}/rest/v1/${endpoint}`, {
+            ...options,
+            headers
+        });
+
+        if (!response.ok && response.status !== 406) {
+            let errorText = await response.text();
+            throw new Error(`Supabase API Error [${response.status}]: ${errorText}`);
+        }
+
+        if (response.status !== 204) {
+            return response.json();
+        }
+    } catch (err) {
+        logger.error(`Supabase Fetch Error on ${endpoint}:`, err);
+        return null; // Fail gracefully
     }
-    db = getFirestore();
-    firebaseInitialized = true;
-    logger.info('Firebase Admin initialized successfully');
-} catch (error) {
-    logger.warn('Firebase Admin initialization failed or credentials missing. Running without persistent session storage.', error.message);
+    return null;
 }
 
 const SESSION_DOC_ID = 'motor_proxy_v3'; // Bump version to invalidate old sessions
@@ -153,40 +174,36 @@ class AuthManager {
     }
 
     /**
-     * Load saved session cookies from Firestore
+     * Load saved session cookies from Supabase
      */
     async loadSession() {
-        if (!db) {
-            logger.info('Firestore not initialized, skipping persistent session load');
-            return false;
-        }
         try {
-            const doc = await db.collection('sessions').doc(SESSION_DOC_ID).get();
+            const data = await fetchSupabase(`system_sessions?id=eq.${SESSION_DOC_ID}&select=*`);
 
-            if (!doc.exists) {
-                logger.info('No saved session found in Firestore, will authenticate');
+            if (!data || data.length === 0) {
+                logger.info('No saved session found in Supabase, will authenticate');
                 return false;
             }
 
-            const session = doc.data();
+            const session = data[0].data; // We stored cookies inside 'data' JSONB col
             this.cookies = session.cookies;
             this.lastAuthTime = session.timestamp;
 
             if (this.isSessionValid()) {
-                logger.info('✓ Loaded valid session from Firestore');
+                logger.info('✓ Loaded valid session from Supabase');
                 return true;
             } else {
                 logger.info('Session expired, re-authenticating...');
                 return false;
             }
         } catch (error) {
-            logger.error('Error loading session from Firestore:', error);
+            logger.error('Error loading session from Supabase:', error);
             return false;
         }
     }
 
     /**
-     * Save session cookies to Firestore
+     * Save session cookies to Supabase
      */
     async saveSession() {
         const session = {
@@ -196,27 +213,33 @@ class AuthManager {
         };
 
         try {
-            if (!db) {
-                // logger.debug('Firestore not initialized, skipping session save');
-                return;
-            }
-            await db.collection('sessions').doc(SESSION_DOC_ID).set(session);
-            logger.info('✓ Session saved to Firestore');
+            // Upsert session
+            await fetchSupabase('system_sessions', {
+                method: 'POST',
+                headers: { 'Prefer': 'resolution=merge-duplicates' }, // Upsert
+                body: JSON.stringify({
+                    id: SESSION_DOC_ID,
+                    data: session,
+                    updated_at: new Date().toISOString()
+                })
+            });
+            logger.info('✓ Session saved to Supabase');
         } catch (e) {
-            logger.error('Could not save session to Firestore', e);
+            logger.error('Could not save session to Supabase', e);
         }
     }
 
     /**
-     * Delete session from Firestore (called when session is invalid)
+     * Delete session from Supabase (called when session is invalid)
      */
     async deleteSession() {
         try {
-            if (!db) return;
-            await db.collection('sessions').doc(SESSION_DOC_ID).delete();
-            logger.info('✓ Session deleted from Firestore');
+            await fetchSupabase(`system_sessions?id=eq.${SESSION_DOC_ID}`, {
+                method: 'DELETE'
+            });
+            logger.info('✓ Session deleted from Supabase');
         } catch (e) {
-            logger.error('Could not delete session from Firestore', e);
+            logger.error('Could not delete session from Supabase', e);
         }
     }
 

@@ -24,6 +24,7 @@ import { CreditsService } from '../../../../../services/credits.service';
 export class DiagramsSectionComponent implements OnInit {
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
+    @Input() vehicleName: string = '';
     @Input() motorVehicleId?: string;
 
     private vehicleData = inject(VehicleDataService);
@@ -103,7 +104,7 @@ export class DiagramsSectionComponent implements OnInit {
 
         if (confirm(`Unlock Wiring Diagrams for ${cost} credits?`)) {
             this.isUnlocking.set(true);
-            const success = await this.creditsService.unlockModule(this.vehicleId, 'diagrams', cost);
+            const success = await this.creditsService.unlockModule(this.vehicleId, this.vehicleName, 'diagrams', cost);
             this.isUnlocking.set(false);
 
             if (!success) {

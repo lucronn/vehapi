@@ -19,8 +19,8 @@ const Overview: React.FC<OverviewProps> = ({ contentSource, vehicleId, articlesD
       try {
         const data = await getFluids(contentSource, vehicleId);
         setFluids(data?.data || []);
-      } catch (e) {
-        // Fluids not available
+      } catch {
+        // Fluid data unavailable, UI will show empty state
       } finally {
         setFluidsLoading(false);
       }
