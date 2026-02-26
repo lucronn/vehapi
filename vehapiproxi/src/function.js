@@ -15,6 +15,7 @@ import { createRequire } from 'module';
 import { createCheckoutSession, handleWebhook } from './stripe.js';
 import { getUserData, unlockModule, getTransactions } from './credits.js';
 import { checkParsedArticle } from './supabase.js';
+import { getAuth } from 'firebase-admin/auth';
 
 // background_worker is loaded lazily to prevent cold-start crashes on serverless
 let _enqueueParsingTask = null;
@@ -196,7 +197,7 @@ app.post('/debug/clear', (req, res) => {
     }
 });
 
-// Async Authentication Middleware
+// Async Authentication Middleware (Upstream Proxy)
 const authMiddleware = async (req, res, next) => {
     // Skip auth for preflight requests
     if (req.method === 'OPTIONS') {
@@ -479,23 +480,44 @@ app.get('/api/source/:source/vehicle/:vehicleId/article/:articleId/orientations'
 
 // --- CREDIT SYSTEM ENDPOINTS ---
 
-// Middleware to extract user ID from header
-const userIdMiddleware = (req, res, next) => {
+// Secure Auth Middleware for User Identification
+const secureAuthMiddleware = async (req, res, next) => {
     // Allow OPTIONS requests to pass through for CORS preflight
     if (req.method === 'OPTIONS') {
         return next();
     }
 
-    const userId = req.headers['x-user-id'];
-    if (!userId) {
-        return res.status(401).json({ error: 'User ID required' });
+    const authHeader = req.headers.authorization;
+
+    // 1. Try Firebase Token (Preferred for secure operations)
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split('Bearer ')[1];
+        try {
+            const decodedToken = await getAuth().verifyIdToken(token);
+            req.userId = decodedToken.uid;
+            req.user = decodedToken;
+            req.isVerified = true;
+            return next();
+        } catch (error) {
+            logger.warn('Invalid token provided:', error.message);
+            // If token provided but invalid, fail
+            return res.status(401).json({ error: 'Invalid authentication token' });
+        }
     }
-    req.userId = userId;
-    next();
+
+    // 2. Fallback to x-user-id for backward compatibility or guest access
+    const userId = req.headers['x-user-id'];
+    if (userId) {
+        req.userId = userId;
+        req.isVerified = false;
+        return next();
+    }
+
+    return res.status(401).json({ error: 'Authentication required' });
 };
 
 // Get User Balance & Unlocks
-app.get('/api/credits/balance', userIdMiddleware, async (req, res) => {
+app.get('/api/credits/balance', secureAuthMiddleware, async (req, res) => {
     try {
         const userData = await getUserData(req.userId);
         res.json({
@@ -509,7 +531,7 @@ app.get('/api/credits/balance', userIdMiddleware, async (req, res) => {
 });
 
 // Create Checkout Session
-app.post('/api/credits/checkout', express.json(), userIdMiddleware, async (req, res) => {
+app.post('/api/credits/checkout', express.json(), secureAuthMiddleware, async (req, res) => {
     try {
         const { amount, origin } = req.body;
         const sessionUrl = await createCheckoutSession(req.userId, amount, origin || req.headers.origin);
@@ -521,7 +543,7 @@ app.post('/api/credits/checkout', express.json(), userIdMiddleware, async (req, 
 });
 
 // Unlock Module
-app.post('/api/credits/unlock', express.json(), userIdMiddleware, async (req, res) => {
+app.post('/api/credits/unlock', express.json(), secureAuthMiddleware, async (req, res) => {
     try {
         const { vehicleId, vehicleName, moduleType, cost } = req.body;
         const userData = await unlockModule(req.userId, vehicleId, vehicleName || vehicleId, moduleType, cost);
@@ -537,7 +559,7 @@ app.post('/api/credits/unlock', express.json(), userIdMiddleware, async (req, re
 });
 
 // Get Transaction History
-app.get('/api/credits/transactions', userIdMiddleware, async (req, res) => {
+app.get('/api/credits/transactions', secureAuthMiddleware, async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 50;
         const txns = await getTransactions(req.userId, limit);

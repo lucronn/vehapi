@@ -63,4 +63,10 @@ export class AuthService {
         const { error } = await this.supabase.resetPassword(email);
         if (error) throw error;
     }
+
+    /** For CreditsService: return access token for API auth (Supabase session) */
+    async getIdToken(): Promise<string | null> {
+        const session = this._session();
+        return session?.access_token ?? null;
+    }
 }
