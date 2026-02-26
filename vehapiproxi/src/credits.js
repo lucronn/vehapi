@@ -36,11 +36,21 @@ async function fetchSupabase(endpoint, options = {}) {
     return null;
 }
 
+// Simple in-memory cache
+const userCache = new Map();
+const CACHE_TTL_MS = 60 * 1000; // 1 minute cache
+
 /**
  * Get user data or create if not exists
  */
 export async function getUserData(userId) {
     try {
+        // Check cache first
+        const cached = userCache.get(userId);
+        if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
+            return cached.data;
+        }
+
         const users = await fetchSupabase(`users?id=eq.${userId}&select=*`);
 
         if (!users || users.length === 0) {
@@ -55,10 +65,14 @@ export async function getUserData(userId) {
                 body: JSON.stringify(newUser)
             });
 
-            return inserted[0];
+            const result = inserted[0];
+            userCache.set(userId, { data: result, timestamp: Date.now() });
+            return result;
         }
 
-        return users[0];
+        const result = users[0];
+        userCache.set(userId, { data: result, timestamp: Date.now() });
+        return result;
     } catch (error) {
         logger.error('Error fetching user data from Supabase:', error);
         throw error;
@@ -146,7 +160,9 @@ export async function unlockModule(userId, vehicleId, vehicleName, moduleType, c
             moduleType
         });
 
-        return updated[0];
+        const result = updated[0];
+        userCache.set(userId, { data: result, timestamp: Date.now() });
+        return result;
     } catch (error) {
         logger.error('Error unlocking module:', error);
         throw error;
@@ -177,7 +193,9 @@ export async function addCredits(userId, amount, { stripeSessionId, stripePaymen
             usdCents
         });
 
-        return updated[0];
+        const result = updated[0];
+        userCache.set(userId, { data: result, timestamp: Date.now() });
+        return result;
     } catch (error) {
         logger.error('Error adding credits:', error);
         throw error;

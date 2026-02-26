@@ -1,6 +1,7 @@
 
 import { onRequest } from 'firebase-functions/v2/https';
 import express from 'express';
+import crypto from 'crypto';
 import cors from 'cors';
 import { createProxyMiddleware, responseInterceptor } from 'http-proxy-middleware';
 import fs from 'fs';
@@ -88,6 +89,45 @@ app.post('/auth/start', async (req, res) => {
 });
 
 // ============ DEBUG ENDPOINTS ============
+
+// Debug Authentication Middleware
+const debugAuthMiddleware = (req, res, next) => {
+    const { debugApiKey } = config;
+
+    // Fail closed if no key is configured
+    if (!debugApiKey) {
+        logger.warn('Debug access attempted but DEBUG_API_KEY is not configured');
+        return res.status(403).json({ error: 'Debug access disabled' });
+    }
+
+    const requestKey = req.headers['x-debug-key'];
+
+    // Constant-time comparison
+    if (!requestKey || typeof requestKey !== 'string') {
+        logger.warn(`Unauthorized debug access attempt from ${req.ip}`);
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Ensure lengths are equal first to avoid timing attacks on length
+    if (requestKey.length !== debugApiKey.length) {
+        logger.warn(`Unauthorized debug access attempt from ${req.ip}`);
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const requestKeyBuf = Buffer.from(requestKey);
+    const debugApiKeyBuf = Buffer.from(debugApiKey);
+
+    if (!crypto.timingSafeEqual(requestKeyBuf, debugApiKeyBuf)) {
+        logger.warn(`Unauthorized debug access attempt from ${req.ip}`);
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    next();
+};
+
+// Apply auth middleware to all debug endpoints
+app.use('/debug', debugAuthMiddleware);
+
 // Get all logs with optional filtering
 app.get('/debug/logs', (req, res) => {
     try {
