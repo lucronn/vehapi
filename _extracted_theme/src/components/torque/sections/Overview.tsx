@@ -20,7 +20,7 @@ const Overview: React.FC<OverviewProps> = ({ contentSource, vehicleId, articlesD
         const data = await getFluids(contentSource, vehicleId);
         setFluids(data?.data || []);
       } catch (e) {
-        console.warn('Fluids not available');
+        // Fluids not available
       } finally {
         setFluidsLoading(false);
       }
