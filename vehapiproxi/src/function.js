@@ -480,7 +480,7 @@ app.get('/api/source/:source/vehicle/:vehicleId/article/:articleId/orientations'
 
 // --- CREDIT SYSTEM ENDPOINTS ---
 
-// Secure Auth Middleware for User Identification
+// Secure Auth Middleware: require Bearer token only (reject x-user-id for security)
 const secureAuthMiddleware = async (req, res, next) => {
     // Allow OPTIONS requests to pass through for CORS preflight
     if (req.method === 'OPTIONS') {
@@ -488,32 +488,24 @@ const secureAuthMiddleware = async (req, res, next) => {
     }
 
     const authHeader = req.headers.authorization;
-
-    // 1. Try Firebase Token (Preferred for secure operations)
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.split('Bearer ')[1];
-        try {
-            const decodedToken = await getAuth().verifyIdToken(token);
-            req.userId = decodedToken.uid;
-            req.user = decodedToken;
-            req.isVerified = true;
-            return next();
-        } catch (error) {
-            logger.warn('Invalid token provided:', error.message);
-            // If token provided but invalid, fail
-            return res.status(401).json({ error: 'Invalid authentication token' });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        if (req.headers['x-user-id']) {
+            logger.warn('Legacy x-user-id header detected and rejected. Client must use Bearer token.');
         }
+        return res.status(401).json({ error: 'Authorization header with Bearer token required' });
     }
 
-    // 2. Fallback to x-user-id for backward compatibility or guest access
-    const userId = req.headers['x-user-id'];
-    if (userId) {
-        req.userId = userId;
-        req.isVerified = false;
+    const token = authHeader.split('Bearer ')[1];
+    try {
+        const decodedToken = await getAuth().verifyIdToken(token);
+        req.userId = decodedToken.uid;
+        req.user = decodedToken;
+        req.isVerified = true;
         return next();
+    } catch (error) {
+        logger.warn('Invalid token provided:', error.message);
+        return res.status(401).json({ error: 'Invalid or expired authentication token' });
     }
-
-    return res.status(401).json({ error: 'Authentication required' });
 };
 
 // Get User Balance & Unlocks

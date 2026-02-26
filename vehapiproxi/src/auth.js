@@ -1,3 +1,4 @@
+import { getAuth } from 'firebase-admin/auth';
 import https from 'https';
 import { URL } from 'url';
 import { config } from './config.js';
@@ -421,3 +422,19 @@ class AuthManager {
 
 // Singleton instance
 export const authManager = new AuthManager();
+
+/**
+ * Verify Firebase ID Token
+ * @param {string} token
+ * @returns {Promise<import('firebase-admin/auth').DecodedIdToken | null>}
+ */
+export async function verifyFirebaseIdToken(token) {
+    try {
+        const auth = getAuth();
+        const decodedToken = await auth.verifyIdToken(token);
+        return decodedToken;
+    } catch (error) {
+        logger.error('Error verifying Firebase ID token:', error);
+        return null;
+    }
+}

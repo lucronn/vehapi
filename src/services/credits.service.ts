@@ -170,7 +170,11 @@ export class CreditsService {
             const res = await firstValueFrom(
                 this.http.post<{ url: string }>(
                     `${this.apiUrl}/checkout`,
+<<<<<<< HEAD
+                    { amount },
+=======
                     { amount, origin: window.location.origin },
+>>>>>>> origin/main
                     { headers }
                 )
             );
