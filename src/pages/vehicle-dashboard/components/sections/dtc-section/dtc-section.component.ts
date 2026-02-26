@@ -23,6 +23,7 @@ import { CreditsService } from '../../../../../services/credits.service';
 export class DtcSectionComponent implements OnInit {
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
+    @Input() vehicleName: string = '';
     @Input() motorVehicleId?: string;
 
     private vehicleData = inject(VehicleDataService);
@@ -90,7 +91,7 @@ export class DtcSectionComponent implements OnInit {
         }
 
         this.isUnlocking.set(true);
-        const success = await this.creditsService.unlockModule(this.vehicleId, 'dtcs', cost);
+        const success = await this.creditsService.unlockModule(this.vehicleId, this.vehicleName, 'dtcs', cost);
         this.isUnlocking.set(false);
 
         if (success) {

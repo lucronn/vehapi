@@ -2,7 +2,6 @@ import { Injectable, inject, WritableSignal } from '@angular/core';
 import { Observable, from, of, forkJoin } from 'rxjs';
 import { map, switchMap, tap, catchError, timeout } from 'rxjs/operators';
 import { MotorApiService } from './motor-api.service';
-import { FirebaseService } from './firebase.service';
 import { ApiResponse, Dtc, Tsb, Procedure, WiringDiagram, ComponentLocation, Spec, Fluid, MaintenanceSchedule, FilterTab, ArticlesData } from '../models/motor.models';
 
 export interface SectionAvailability {
@@ -42,7 +41,6 @@ interface SectionStrategy {
 })
 export class VehicleDataService {
     private motorApi = inject(MotorApiService);
-    // private firebase = inject(FirebaseService); // DATABASE DISABLED
 
     private readonly sectionStrategies: Record<string, SectionStrategy> = {
         dtcs: {
@@ -135,7 +133,7 @@ export class VehicleDataService {
         transform: (articles: any[]) => T[]
     ): void {
         loadingSignal.set(true);
-        console.log(`[VehicleData] Fetching from Search API (term: "${searchTerm}")...`);
+        console.log(`[VehicleData] Fetching from Search API(term: "${searchTerm}")...`);
 
         this.motorApi.searchArticles(contentSource, vehicleId, searchTerm).subscribe({
             next: (res) => {
@@ -176,10 +174,10 @@ export class VehicleDataService {
 
         const getSpecs = () => {
             const params = this.resolveSourceParams(contentSource, vehicleId, motorVehicleId, true);
-            console.log(`[VehicleDataService-V4] Specs loading for ${params.contentSource}/${params.vehicleId}...`);
+            console.log(`[VehicleDataService - V4] Specs loading for ${params.contentSource} / ${params.vehicleId}...`);
 
             return this.motorApi.searchArticles(params.contentSource, params.vehicleId, '').pipe(
-                tap(res => console.log(`[VehicleDataService-V4] articles/v2 response received. Body: ${!!res?.body}, Count: ${res?.body?.articleDetails?.length || 0}`)),
+                tap(res => console.log(`[VehicleDataService - V4] articles / v2 response received.Body: ${!!res?.body}, Count: ${res?.body?.articleDetails?.length || 0} `)),
                 switchMap(res => {
                     const articles = res.body?.articleDetails || [];
 
@@ -194,7 +192,7 @@ export class VehicleDataService {
                             title.includes('capacity');
                     });
 
-                    console.log(`[VehicleDataService-V4] Found ${specArticles.length} matching articles.`);
+                    console.log(`[VehicleDataService - V4] Found ${specArticles.length} matching articles.`);
 
                     if (specArticles.length === 0) {
                         return of([]);
@@ -426,7 +424,7 @@ export class VehicleDataService {
     ): void {
         const strategy = this.sectionStrategies[section];
         if (!strategy) {
-            console.error(`[VehicleData] Unknown section: ${section}`);
+            console.error(`[VehicleData] Unknown section: ${section} `);
             return;
         }
 
@@ -448,18 +446,18 @@ export class VehicleDataService {
 
                 // DEBUG: Log bucket names and article sample for diagnostics
                 const uniqueBuckets = [...new Set(articles.map((a: any) => a.bucket))];
-                console.log(`[VehicleData] Section=${section}, Total articles=${articles.length}, Valid buckets=[${validBuckets.join(', ')}], All unique buckets in response=[${uniqueBuckets.join(', ')}]`);
+                console.log(`[VehicleData] Section = ${section}, Total articles = ${articles.length}, Valid buckets = [${validBuckets.join(', ')}], All unique buckets in response=[${uniqueBuckets.join(', ')}]`);
 
                 let filtered = articles.filter((a: any) =>
                     validBuckets.includes(a.bucket) ||
                     (a.parentBucket && validBuckets.includes(a.parentBucket))
                 ).map(strategy.mapper);
 
-                console.log(`[VehicleData] Section=${section}, Filtered count=${filtered.length}`);
+                console.log(`[VehicleData] Section = ${section}, Filtered count = ${filtered.length} `);
 
                 // Handle Fallback Search (DTCs)
                 if (strategy.enableFallbackSearch && filtered.length === 0) {
-                    console.log(`[VehicleData] No ${strategy.type} found with empty search. Triggering fallback search...`);
+                    console.log(`[VehicleData] No ${strategy.type} found with empty search.Triggering fallback search...`);
                     this.motorApi.searchArticles(contentSource, vehicleId, 'DTC').subscribe({
                         next: (fallbackRes) => {
                             const fallbackArticles = fallbackRes.body?.articleDetails || [];
@@ -488,7 +486,7 @@ export class VehicleDataService {
                 updateState(filtered);
             },
             error: (err) => {
-                console.error(`[VehicleData] Failed to load ${section}`, err);
+                console.error(`[VehicleData] Failed to load ${section} `, err);
                 loadingSignal.set(false);
                 if (errorCallback) errorCallback(err);
             }
@@ -567,7 +565,7 @@ export class VehicleDataService {
                     // Limit length of individual values to prevent UI bloat
                     const key = cells[0].replace(/:$/, '').trim();
                     const value = cells.slice(1).join(' ');
-                    rows.push(`${key}: ${value}`);
+                    rows.push(`${key}: ${value} `);
                 }
             }
 
