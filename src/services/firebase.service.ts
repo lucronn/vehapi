@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { initializeApp, getApp, getApps, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore, doc, getDoc, setDoc } from 'firebase/firestore';
-import { getAuth, signInAnonymously } from 'firebase/auth';
+import { getAuth, signInAnonymously, Auth, onAuthStateChanged } from 'firebase/auth';
 import { environment } from '../environments/environment';
 
 export interface StoredArticle {
@@ -20,6 +20,7 @@ export interface StoredArticle {
 export class FirebaseService {
     private app: FirebaseApp;
     private db: Firestore;
+    private auth: Auth;
     // Global circuit breaker: if we hit a timeout once, assume offline for the session
     // to avoid penalizing every subsequent request with a 2s delay.
     private static isOffline = false;
@@ -33,9 +34,25 @@ export class FirebaseService {
         }
         this.db = getFirestore(this.app);
 
-        const auth = getAuth(this.app);
-        signInAnonymously(auth).catch(error => {
+        this.auth = getAuth(this.app);
+        signInAnonymously(this.auth).catch(error => {
             console.error('Anonymous auth failed', error);
+        });
+    }
+
+    async getIdToken(): Promise<string> {
+        if (this.auth.currentUser) {
+            return this.auth.currentUser.getIdToken();
+        }
+        return new Promise((resolve, reject) => {
+            const unsubscribe = onAuthStateChanged(this.auth, (user) => {
+                unsubscribe();
+                if (user) {
+                    user.getIdToken().then(resolve).catch(reject);
+                } else {
+                    reject(new Error('User not authenticated'));
+                }
+            });
         });
     }
 

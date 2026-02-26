@@ -2,7 +2,7 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { UserIdService } from './user-id.service';
+import { FirebaseService } from './firebase.service';
 import { environment } from '../environments/environment';
 
 export interface UnlockMap {
@@ -14,7 +14,7 @@ export interface UnlockMap {
 })
 export class CreditsService {
     private http = inject(HttpClient);
-    private userIdService = inject(UserIdService);
+    private firebaseService = inject(FirebaseService);
 
     // Set this to true to use local storage instead of backend
     private readonly USE_MOCK = false;
@@ -42,8 +42,14 @@ export class CreditsService {
         FULL_ACCESS: 25 // Per vehicle
     };
 
-    private get headers() {
-        return new HttpHeaders().set('x-user-id', this.userIdService.getUserId());
+    private async getHeaders() {
+        try {
+            const token = await this.firebaseService.getIdToken();
+            return new HttpHeaders().set('Authorization', `Bearer ${token}`);
+        } catch (e) {
+            console.warn('Authentication failed, requests may be rejected', e);
+            return new HttpHeaders();
+        }
     }
 
     private get apiUrl() {
@@ -63,10 +69,11 @@ export class CreditsService {
         }
 
         try {
+            const headers = await this.getHeaders();
             const data = await firstValueFrom(
                 this.http.get<{ credits: number, unlocks: UnlockMap }>(
                     `${this.apiUrl}/balance`,
-                    { headers: this.headers }
+                    { headers }
                 )
             );
             this.balance.set(data.credits);
@@ -90,11 +97,12 @@ export class CreditsService {
 
         this.isLoading.set(true);
         try {
+            const headers = await this.getHeaders();
             const res = await firstValueFrom(
                 this.http.post<{ url: string }>(
                     `${this.apiUrl}/checkout`,
                     { amount },
-                    { headers: this.headers }
+                    { headers }
                 )
             );
 
@@ -137,11 +145,12 @@ export class CreditsService {
         this.isLoading.set(true);
 
         try {
+            const headers = await this.getHeaders();
             const res = await firstValueFrom(
                 this.http.post<{ success: true, credits: number, unlocks: UnlockMap }>(
                     `${this.apiUrl}/unlock`,
                     { vehicleId, moduleType, cost },
-                    { headers: this.headers }
+                    { headers }
                 )
             );
 

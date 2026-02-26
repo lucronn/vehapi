@@ -7,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { config, validateConfig } from './config.js';
-import { authManager } from './auth.js';
+import { authManager, verifyFirebaseIdToken } from './auth.js';
 import logger, { logBuffer, logRequest, logResponse } from './logger.js';
 import swaggerUi from 'swagger-ui-express';
 import { createRequire } from 'module';
@@ -437,19 +437,36 @@ app.get('/api/source/:source/vehicle/:vehicleId/article/:articleId/orientations'
 
 // --- CREDIT SYSTEM ENDPOINTS ---
 
-// Middleware to extract user ID from header
-const userIdMiddleware = (req, res, next) => {
+// Middleware to extract user ID from header (Securely verifies Firebase ID Token)
+const userIdMiddleware = async (req, res, next) => {
     // Allow OPTIONS requests to pass through for CORS preflight
     if (req.method === 'OPTIONS') {
         return next();
     }
 
-    const userId = req.headers['x-user-id'];
-    if (!userId) {
-        return res.status(401).json({ error: 'User ID required' });
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            // Check for legacy x-user-id header but REJECT it to force upgrade
+            if (req.headers['x-user-id']) {
+                logger.warn('Legacy x-user-id header detected and rejected. Client must use Bearer token.');
+            }
+            return res.status(401).json({ error: 'Authorization header with Bearer token required' });
+        }
+
+        const token = authHeader.split('Bearer ')[1];
+        const decodedToken = await verifyFirebaseIdToken(token);
+
+        if (!decodedToken) {
+            return res.status(401).json({ error: 'Invalid or expired authentication token' });
+        }
+
+        req.userId = decodedToken.uid;
+        next();
+    } catch (error) {
+        logger.error('Error in userIdMiddleware:', error);
+        return res.status(500).json({ error: 'Authentication processing failed' });
     }
-    req.userId = userId;
-    next();
 };
 
 // Get User Balance & Unlocks
