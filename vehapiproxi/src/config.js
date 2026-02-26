@@ -1,4 +1,6 @@
 import dotenv from 'dotenv';
+import logger from './logger.js';
+
 dotenv.config();
 
 export const config = {
@@ -37,7 +39,7 @@ export function validateConfig() {
     if (missing.length > 0) {
         const errorMsg = `Missing required configuration: ${missing.join(', ')}. ` +
             `Please set these as environment variables: ${missing.map(k => k.toUpperCase()).join(', ')}`;
-        console.error(errorMsg);
+        logger.error(errorMsg);
         // Don't throw for now, just log error. 
         // This allows the function to start even if config is impartial.
         // throw new Error(errorMsg); 
