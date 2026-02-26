@@ -199,9 +199,42 @@
     </nav>
 
     <!-- Footer -->
-    <div class="p-4 border-t border-white/5 flex items-center gap-2">
-        <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-        <span class="text-[10px] font-mono text-torque-muted tracking-wider">Connected</span>
-        <span class="ml-auto text-[10px] font-mono text-torque-muted">V2.4.0</span>
+    <div class="p-4 border-t border-white/5 space-y-3">
+
+        <!-- Auth Section -->
+        @if (authService.isLoggedIn()) {
+        <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-full bg-[hsl(217,91%,55%)] flex items-center justify-center flex-shrink-0">
+                <lucide-icon [img]="icons.User" class="w-3.5 h-3.5 text-white"></lucide-icon>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-[10px] font-semibold text-white truncate">{{ authService.user()?.email }}</p>
+                <p class="text-[9px] font-mono text-torque-muted">Signed In</p>
+            </div>
+            <button (click)="signOut()" title="Sign Out"
+                class="p-1.5 rounded-lg text-torque-muted hover:text-red-400 hover:bg-red-400/10 transition-colors">
+                <lucide-icon [img]="icons.LogOut" class="w-3.5 h-3.5"></lucide-icon>
+            </button>
+        </div>
+        } @else {
+        <button (click)="showAuthModal.set(true)" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl
+                       bg-[hsl(217,91%,55%)]/10 border border-[hsl(217,91%,55%)]/20
+                       text-[hsl(217,91%,70%)] hover:bg-[hsl(217,91%,55%)]/20
+                       transition-colors text-xs font-semibold">
+            <lucide-icon [img]="icons.LogIn" class="w-4 h-4"></lucide-icon>
+            Sign In / Create Account
+        </button>
+        }
+
+        <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+            <span class="text-[10px] font-mono text-torque-muted tracking-wider">Connected</span>
+            <span class="ml-auto text-[10px] font-mono text-torque-muted">V2.4.0</span>
+        </div>
     </div>
+
+    <!-- Auth Modal -->
+    @if (showAuthModal()) {
+    <app-auth-modal (close)="showAuthModal.set(false)" />
+    }
 </aside>

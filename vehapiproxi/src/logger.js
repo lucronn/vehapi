@@ -102,12 +102,25 @@ const logger = winston.createLogger({
 // Helper to sanitize sensitive data
 function sanitize(obj) {
     if (!obj) return obj;
+    if (typeof obj !== 'object') return obj;
+
+    if (Array.isArray(obj)) {
+        return obj.map(item => sanitize(item));
+    }
+
     const sanitized = { ...obj };
-    const sensitiveKeys = ['authorization', 'cookie', 'set-cookie', 'password', 'token', 'api-key'];
+    const sensitiveKeys = [
+        'authorization', 'cookie', 'set-cookie', 'password', 'token', 'api-key', 'api_key',
+        'access_token', 'secret', 'client_secret', 'user_id', 'email', 'ssn',
+        'credit_card', 'phone'
+    ];
 
     for (const key of Object.keys(sanitized)) {
-        if (sensitiveKeys.some(sk => key.toLowerCase().includes(sk))) {
+        const lowerKey = key.toLowerCase();
+        if (sensitiveKeys.some(sk => lowerKey.includes(sk))) {
             sanitized[key] = '[REDACTED]';
+        } else if (typeof sanitized[key] === 'object' && sanitized[key] !== null) {
+            sanitized[key] = sanitize(sanitized[key]);
         }
     }
     return sanitized;
@@ -132,7 +145,7 @@ export function logRequest(req, metadata = {}) {
         method: req.method,
         url: req.url,
         headers: sanitize(req.headers),
-        query: req.query,
+        query: sanitize(req.query),
         ...metadata
     };
 
@@ -152,12 +165,12 @@ export function logResponse(req, res, responseData = null, error = null) {
         duration,
         request: {
             headers: sanitize(req.headers),
-            query: req.query,
-            body: truncateBody(req.body)
+            query: sanitize(req.query),
+            body: truncateBody(sanitize(req.body))
         },
         response: {
             headers: sanitize(res.getHeaders()),
-            body: truncateBody(responseData)
+            body: truncateBody(sanitize(responseData))
         },
         error: error ? {
             message: error.message,

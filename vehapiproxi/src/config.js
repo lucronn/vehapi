@@ -14,6 +14,7 @@ export const config = {
     // API configuration
     motorApiBase: process.env.MOTOR_API_BASE || 'https://sites.motor.com/m1',
     proxyPort: parseInt(process.env.PORT || process.env.PROXY_PORT || '3001', 10),
+    debugApiKey: process.env.DEBUG_API_KEY,
 
     // Session management
     maxSessionAge: 24 * 60 * 60 * 1000, // 24 hours in milliseconds

@@ -26,6 +26,7 @@ import { CreditsService } from '../../../../../services/credits.service';
 export class TsbSectionComponent implements OnInit {
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
+    @Input() vehicleName: string = '';
     @Input() motorVehicleId?: string;
 
     private vehicleData = inject(VehicleDataService);
@@ -94,7 +95,7 @@ export class TsbSectionComponent implements OnInit {
         }
 
         this.isUnlocking.set(true);
-        const success = await this.creditsService.unlockModule(this.vehicleId, 'tsbs', cost);
+        const success = await this.creditsService.unlockModule(this.vehicleId, this.vehicleName, 'tsbs', cost);
         this.isUnlocking.set(false);
 
         if (success) {
