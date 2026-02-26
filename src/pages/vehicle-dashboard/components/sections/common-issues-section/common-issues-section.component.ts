@@ -2,7 +2,6 @@ import { Component, Input, OnInit, signal, inject, ChangeDetectionStrategy } fro
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 // import { GeminiService } from '../../../../../services/gemini.service'; // Removed
-import { FirebaseService } from '../../../../../services/firebase.service';
 import { CommonIssue } from '../../../../../models/motor.models';
 import { LoadingSkeletonComponent } from '../../../../../components/loading-skeleton/loading-skeleton.component';
 import { EmptyStateComponent } from '../../../../../components/empty-state/empty-state.component';
@@ -28,7 +27,6 @@ export class CommonIssuesSectionComponent implements OnInit {
     @Input({ required: true }) vehicleId!: string;
 
     // private geminiApi = inject(GeminiService); // Removed
-    private firebase = inject(FirebaseService);
     private sanitizer = inject(DomSanitizer);
     private windowManager = inject(WindowManagerService);
     private router = inject(Router);
@@ -56,25 +54,9 @@ export class CommonIssuesSectionComponent implements OnInit {
 
     private loadIssues() {
         if (this.commonIssues().length > 0 || this.hasAttemptedLoad) return;
-
         this.hasAttemptedLoad = true;
-        this.isLoading.set(true);
-
-        this.firebase.getCommonIssues(this.contentSource, this.vehicleId).then(cached => {
-            if (cached && cached.length > 0) {
-                console.log('[Cache Hit] Common Issues');
-                this.commonIssues.set(cached);
-                this.updateDisplayedCommonIssues();
-                this.isLoading.set(false);
-            } else {
-                console.log('[Cache Miss] Common Issues (No Source)');
-                this.isLoading.set(false);
-                // AI fallback removed. User must rely on cache or manual entry if not in cache.
-            }
-        }).catch(err => {
-            console.error('Failed to load common issues', err);
-            this.isLoading.set(false);
-        });
+        // Common issues are AI-generated and no longer cached. Section left empty.
+        this.isLoading.set(false);
     }
 
     private updateDisplayedCommonIssues() {

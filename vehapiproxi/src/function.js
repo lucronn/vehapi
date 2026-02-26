@@ -1,6 +1,7 @@
 
 import { onRequest } from 'firebase-functions/v2/https';
 import express from 'express';
+import crypto from 'crypto';
 import cors from 'cors';
 import { createProxyMiddleware, responseInterceptor } from 'http-proxy-middleware';
 import fs from 'fs';
@@ -12,7 +13,8 @@ import logger, { logBuffer, logRequest, logResponse } from './logger.js';
 import swaggerUi from 'swagger-ui-express';
 import { createRequire } from 'module';
 import { createCheckoutSession, handleWebhook } from './stripe.js';
-import { getUserData, unlockModule } from './credits.js';
+import { getUserData, unlockModule, getTransactions } from './credits.js';
+import { checkParsedArticle } from './supabase.js';
 import { getAuth } from 'firebase-admin/auth';
 
 // background_worker is loaded lazily to prevent cold-start crashes on serverless
@@ -88,6 +90,45 @@ app.post('/auth/start', async (req, res) => {
 });
 
 // ============ DEBUG ENDPOINTS ============
+
+// Debug Authentication Middleware
+const debugAuthMiddleware = (req, res, next) => {
+    const { debugApiKey } = config;
+
+    // Fail closed if no key is configured
+    if (!debugApiKey) {
+        logger.warn('Debug access attempted but DEBUG_API_KEY is not configured');
+        return res.status(403).json({ error: 'Debug access disabled' });
+    }
+
+    const requestKey = req.headers['x-debug-key'];
+
+    // Constant-time comparison
+    if (!requestKey || typeof requestKey !== 'string') {
+        logger.warn(`Unauthorized debug access attempt from ${req.ip}`);
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Ensure lengths are equal first to avoid timing attacks on length
+    if (requestKey.length !== debugApiKey.length) {
+        logger.warn(`Unauthorized debug access attempt from ${req.ip}`);
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const requestKeyBuf = Buffer.from(requestKey);
+    const debugApiKeyBuf = Buffer.from(debugApiKey);
+
+    if (!crypto.timingSafeEqual(requestKeyBuf, debugApiKeyBuf)) {
+        logger.warn(`Unauthorized debug access attempt from ${req.ip}`);
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    next();
+};
+
+// Apply auth middleware to all debug endpoints
+app.use('/debug', debugAuthMiddleware);
+
 // Get all logs with optional filtering
 app.get('/debug/logs', (req, res) => {
     try {
@@ -504,8 +545,8 @@ app.post('/api/credits/checkout', express.json(), secureAuthMiddleware, async (r
 // Unlock Module
 app.post('/api/credits/unlock', express.json(), secureAuthMiddleware, async (req, res) => {
     try {
-        const { vehicleId, moduleType, cost } = req.body;
-        const userData = await unlockModule(req.userId, vehicleId, moduleType, cost);
+        const { vehicleId, vehicleName, moduleType, cost } = req.body;
+        const userData = await unlockModule(req.userId, vehicleId, vehicleName || vehicleId, moduleType, cost);
         res.json({
             success: true,
             credits: userData.credits,
@@ -517,9 +558,23 @@ app.post('/api/credits/unlock', express.json(), secureAuthMiddleware, async (req
     }
 });
 
+// Get Transaction History
+app.get('/api/credits/transactions', secureAuthMiddleware, async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 50;
+        const txns = await getTransactions(req.userId, limit);
+        res.json({ transactions: txns });
+    } catch (error) {
+        logger.error('Error fetching transactions:', error);
+        res.status(500).json({ error: 'Failed to fetch transaction history' });
+    }
+});
+
 // Stripe Webhook (No auth middleware, validates signature)
 // Using express.raw to preserve the raw body for signature verification
 app.post('/api/credits/webhook', express.raw({ type: 'application/json' }), handleWebhook);
+
+
 
 // Unified Proxy Middleware
 // Mount at root '/' to handle ALL requests (api, graphic, assets, v1, etc.)

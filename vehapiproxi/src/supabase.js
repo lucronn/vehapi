@@ -81,3 +81,44 @@ export async function logAiProcessing(logData) {
         logger.error(`Failed to write to ai_processing_logs:`, err);
     }
 }
+
+/**
+ * Checks for a cached article in the procedures table by its external_id (Motor Article ID).
+ * @param {string} articleId The Motor API article ID
+ * @returns {Object|null} The cached article data or null if not found
+ */
+export async function checkParsedArticle(articleId) {
+    const cfg = getSupabaseConfig();
+    if (!cfg) {
+        logger.warn(`Skipping Supabase check for article ${articleId}: credentials not set.`);
+        return null;
+    }
+
+    try {
+        const url = `${cfg.url}/rest/v1/procedures?external_id=eq.${articleId}`;
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': cfg.key,
+                'Authorization': `Bearer ${cfg.key}`,
+            },
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            logger.error(`Supabase REST error checking article ${articleId} [${response.status}]: ${errorText}`);
+            return null;
+        }
+
+        const data = await response.json();
+        if (data && data.length > 0) {
+            logger.info(`✓ Found cached procedure for article ${articleId}`);
+            return data[0]; // Return the first matching article
+        }
+        return null;
+    } catch (err) {
+        logger.error(`Unexpected error checking Supabase for article ${articleId}:`, err);
+        return null;
+    }
+}

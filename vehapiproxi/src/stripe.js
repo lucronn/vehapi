@@ -1,14 +1,13 @@
 
 import Stripe from 'stripe';
 import { config } from './config.js';
-import { addCredits } from './credits.js';
+import { addCredits, setStripeCustomerId } from './credits.js';
 import logger from './logger.js';
 
 let stripe;
 
 function getStripe() {
     if (!stripe) {
-        // Use Sandbox Key if available, otherwise fallback to main Secret Key
         const secretKey = process.env.STRIPE_SANDBOX_SKEY || process.env.STRIPE_SECRET_KEY;
 
         if (!secretKey) {
@@ -25,8 +24,8 @@ export async function createCheckoutSession(userId, amount, origin) {
     }
 
     try {
-        const stripe = getStripe();
-        const session = await stripe.checkout.sessions.create({
+        const s = getStripe();
+        const session = await s.checkout.sessions.create({
             payment_method_types: ['card'],
             line_items: [
                 {
@@ -42,8 +41,8 @@ export async function createCheckoutSession(userId, amount, origin) {
                 },
             ],
             mode: 'payment',
-            success_url: `${origin}/#/credits?purchase=success`,
-            cancel_url: `${origin}/#/credits?purchase=cancel`,
+            success_url: `${origin}/#/account?purchase=success`,
+            cancel_url: `${origin}/#/account?purchase=cancel`,
             client_reference_id: userId,
             metadata: {
                 userId: userId,
@@ -60,14 +59,13 @@ export async function createCheckoutSession(userId, amount, origin) {
 
 export async function handleWebhook(req, res) {
     const sig = req.headers['stripe-signature'];
-    // Note: User named it STRIKE_WEBHOOK_SECRET in Vercel
     const endpointSecret = process.env.STRIKE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
 
     let event;
 
     try {
-        const stripe = getStripe();
-        event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+        const s = getStripe();
+        event = s.webhooks.constructEvent(req.body, sig, endpointSecret);
     } catch (err) {
         logger.error(`Webhook Error: ${err.message}`);
         return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -75,12 +73,23 @@ export async function handleWebhook(req, res) {
 
     if (event.type === 'checkout.session.completed') {
         const session = event.data.object;
-        const userId = session.metadata.userId;
+        const userId = session.metadata.userId || session.client_reference_id;
         const credits = parseInt(session.metadata.credits, 10);
+        const usdCents = session.amount_total;
+        const stripeCustomerId = session.customer;
 
         if (userId && credits) {
-            await addCredits(userId, credits);
+            await addCredits(userId, credits, {
+                stripeSessionId: session.id,
+                stripePaymentIntent: session.payment_intent,
+                usdCents
+            });
             logger.info(`Added ${credits} credits to user ${userId}`);
+
+            // Store stripe customer ID for future portal access
+            if (stripeCustomerId) {
+                await setStripeCustomerId(userId, stripeCustomerId);
+            }
         }
     }
 

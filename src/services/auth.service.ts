@@ -1,61 +1,72 @@
-import { Injectable, signal, computed } from '@angular/core';
-import { initializeApp, getApp, getApps, FirebaseApp } from 'firebase/app';
-import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, User, onAuthStateChanged, Auth } from 'firebase/auth';
-import { environment } from '../environments/environment';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { User, Session } from '@supabase/supabase-js';
+import { SupabaseService } from './supabase.service';
 
 @Injectable({
-  providedIn: 'root'
+    providedIn: 'root'
 })
 export class AuthService {
-  private app: FirebaseApp;
-  private auth: Auth;
+    private supabase = inject(SupabaseService);
 
-  // Signals for user state
-  readonly user = signal<User | null>(null);
-  readonly isLoading = signal<boolean>(true);
-  readonly isAuthenticated = computed(() => !!this.user());
+    // Reactive state
+    private _user = signal<User | null>(null);
+    private _session = signal<Session | null>(null);
+    private _loading = signal(true);
 
-  constructor() {
-    // Initialize Firebase if needed
-    if (getApps().length === 0) {
-      this.app = initializeApp(environment.firebaseConfig);
-    } else {
-      this.app = getApp();
+    // Public readonly signals
+    readonly user = this._user.asReadonly();
+    readonly session = this._session.asReadonly();
+    readonly loading = this._loading.asReadonly();
+    readonly isLoggedIn = computed(() => !!this._user());
+    readonly userId = computed(() => this._user()?.id ?? null);
+
+    constructor() {
+        // Initialize session on startup
+        this.supabase.getSession().then(session => {
+            this._session.set(session);
+            this._user.set(session?.user ?? null);
+            this._loading.set(false);
+        });
+
+        // Listen for auth state changes
+        this.supabase.onAuthStateChange((event, session) => {
+            this._session.set(session);
+            this._user.set(session?.user ?? null);
+            this._loading.set(false);
+        });
     }
 
-    this.auth = getAuth(this.app);
-
-    // Subscribe to auth state changes
-    onAuthStateChanged(this.auth, (user) => {
-      this.user.set(user);
-      this.isLoading.set(false);
-    });
-  }
-
-  async signInWithGoogle(): Promise<void> {
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(this.auth, provider);
-    } catch (error) {
-      console.error('Google sign-in failed:', error);
-      throw error;
+    async signUpWithEmail(email: string, password: string) {
+        const { data, error } = await this.supabase.signUpWithEmail(email, password);
+        if (error) throw error;
+        return data;
     }
-  }
 
-  async signOut(): Promise<void> {
-    try {
-      await signOut(this.auth);
-    } catch (error) {
-      console.error('Sign-out failed:', error);
-      throw error;
+    async signInWithEmail(email: string, password: string) {
+        const { data, error } = await this.supabase.signInWithEmail(email, password);
+        if (error) throw error;
+        return data;
     }
-  }
 
-  async getIdToken(): Promise<string | null> {
-    const currentUser = this.auth.currentUser;
-    if (currentUser) {
-      return currentUser.getIdToken();
+    async signInWithGoogle() {
+        const { data, error } = await this.supabase.signInWithGoogle();
+        if (error) throw error;
+        return data;
     }
-    return null;
-  }
+
+    async signOut() {
+        const { error } = await this.supabase.signOut();
+        if (error) throw error;
+    }
+
+    async resetPassword(email: string) {
+        const { error } = await this.supabase.resetPassword(email);
+        if (error) throw error;
+    }
+
+    /** For CreditsService: return access token for API auth (Supabase session) */
+    async getIdToken(): Promise<string | null> {
+        const session = this._session();
+        return session?.access_token ?? null;
+    }
 }

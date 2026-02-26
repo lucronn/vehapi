@@ -116,11 +116,7 @@
         </app-specs-fluids-section>
         }
 
-        @if (availableSections()?.hasDtcs || availableSections()?.hasTsbs) {
-        <app-common-issues-section [vehicleName]="vehicleName()" [contentSource]="contentSource()"
-          [vehicleId]="vehicleId()">
-        </app-common-issues-section>
-        }
+
       </div>
       }
       @case ('dtcs') {

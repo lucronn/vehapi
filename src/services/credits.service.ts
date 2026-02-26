@@ -7,7 +7,21 @@ import { AuthService } from './auth.service';
 import { environment } from '../environments/environment';
 
 export interface UnlockMap {
-    [vehicleId: string]: string[]; // 'specs', 'procedures', 'full', etc.
+    [vehicleId: string]: string[];
+}
+
+export interface Transaction {
+    id: string;
+    user_id: string;
+    amount: number;
+    type: 'purchase' | 'unlock' | 'refund';
+    stripe_session_id: string | null;
+    stripe_payment_intent: string | null;
+    usd_cents: number | null;
+    vehicle_id: string | null;
+    vehicle_name: string | null;
+    module_type: string | null;
+    created_at: string;
 }
 
 @Injectable({
@@ -18,7 +32,6 @@ export class CreditsService {
     private userIdService = inject(UserIdService);
     private authService = inject(AuthService);
 
-    // Set this to true to use local storage instead of backend
     private readonly USE_MOCK = false;
     private readonly STORAGE_KEYS = {
         BALANCE: 'torque_mock_balance',
@@ -28,20 +41,21 @@ export class CreditsService {
     // State
     balance = signal<number>(0);
     unlocks = signal<UnlockMap>({});
+    transactions = signal<Transaction[]>([]);
     isLoading = signal<boolean>(false);
+    transactionsLoading = signal<boolean>(false);
 
     // Constants
     readonly COSTS = {
         SPECS: 5,
         FLUIDS: 5,
         MAINTENANCE: 5,
-        COMMON_ISSUES: 5,
         DTC: 5,
         TSB: 5,
         PROCEDURES: 10,
         DIAGRAMS: 10,
         PARTS: 10,
-        FULL_ACCESS: 25 // Per vehicle
+        FULL_ACCESS: 25
     };
 
     private get apiUrl() {
@@ -70,9 +84,11 @@ export class CreditsService {
 
         if (user) {
             try {
-                const token = await user.getIdToken();
-                headers = headers.set('Authorization', `Bearer ${token}`);
-                headers = headers.set('x-user-id', user.uid);
+                const token = await this.authService.getIdToken();
+                if (token) {
+                    headers = headers.set('Authorization', `Bearer ${token}`);
+                }
+                headers = headers.set('x-user-id', user.id);
             } catch (e) {
                 console.error('Failed to get ID token', e);
             }
@@ -101,7 +117,25 @@ export class CreditsService {
             this.unlocks.set(data.unlocks);
         } catch (error) {
             console.error('Failed to fetch credit balance:', error);
-            // Fallback to mock on error if needed, but for now just log
+        }
+    }
+
+    async fetchTransactions() {
+        if (this.USE_MOCK) return;
+        this.transactionsLoading.set(true);
+        try {
+            const headers = await this.getHeaders();
+            const res = await firstValueFrom(
+                this.http.get<{ transactions: Transaction[] }>(
+                    `${this.apiUrl}/transactions`,
+                    { headers }
+                )
+            );
+            this.transactions.set(res.transactions ?? []);
+        } catch (error) {
+            console.error('Failed to fetch transactions:', error);
+        } finally {
+            this.transactionsLoading.set(false);
         }
     }
 
@@ -136,7 +170,7 @@ export class CreditsService {
             const res = await firstValueFrom(
                 this.http.post<{ url: string }>(
                     `${this.apiUrl}/checkout`,
-                    { amount },
+                    { amount, origin: window.location.origin },
                     { headers }
                 )
             );
@@ -146,13 +180,12 @@ export class CreditsService {
             }
         } catch (error) {
             console.error('Checkout failed:', error);
-            // Fallback gracefully without alert on mobile
         } finally {
             this.isLoading.set(false);
         }
     }
 
-    async unlockModule(vehicleId: string, moduleType: string, cost: number): Promise<boolean> {
+    async unlockModule(vehicleId: string, vehicleName: string, moduleType: string, cost: number): Promise<boolean> {
         if (this.balance() < cost) {
             return false;
         }
@@ -184,7 +217,7 @@ export class CreditsService {
             const res = await firstValueFrom(
                 this.http.post<{ success: true, credits: number, unlocks: UnlockMap }>(
                     `${this.apiUrl}/unlock`,
-                    { vehicleId, moduleType, cost },
+                    { vehicleId, vehicleName, moduleType, cost },
                     { headers }
                 )
             );
@@ -215,7 +248,6 @@ export class CreditsService {
         if (savedBalance !== null) {
             this.balance.set(parseInt(savedBalance, 10));
         } else {
-            // Default starting balance for testing
             this.balance.set(10);
             this.saveMockData();
         }
