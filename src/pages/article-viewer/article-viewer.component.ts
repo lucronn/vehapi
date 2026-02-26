@@ -67,7 +67,6 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   articleSubtitle = signal<string>('');
 
   selectedImageUrl = signal<string | null>(null);
-  rawResponse = signal<any>(null); // For debugging
   pdfDataUri = signal<SafeResourceUrl | null>(null); // Set when article is a PDF
   isRetrying = signal(false); // Re-auth in progress
   retryCount = signal(0);
@@ -183,7 +182,6 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
     this.motorApi.getArticleContent(this.contentSource, this.vehicleId, aid).subscribe({
       next: (content) => {
         console.log('[ArticleViewer] Raw API Response:', content);
-        this.rawResponse.set(content);
         if (!content || !content.body || !content.body.html) {
           console.error('[ArticleViewer] API returned empty content body or html');
         }
