@@ -59,7 +59,7 @@ export async function createCheckoutSession(userId, amount, origin) {
 
 export async function handleWebhook(req, res) {
     const sig = req.headers['stripe-signature'];
-    const endpointSecret = process.env.STRIKE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
+    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
     let event;
 

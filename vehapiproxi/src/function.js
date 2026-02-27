@@ -1,5 +1,3 @@
-
-import { onRequest } from 'firebase-functions/v2/https';
 import express from 'express';
 import crypto from 'crypto';
 import cors from 'cors';
@@ -15,7 +13,7 @@ import { createRequire } from 'module';
 import { createCheckoutSession, handleWebhook } from './stripe.js';
 import { getUserData, unlockModule, getTransactions } from './credits.js';
 import { checkParsedArticle } from './supabase.js';
-import { getAuth } from 'firebase-admin/auth';
+import jwt from 'jsonwebtoken';
 
 // background_worker is loaded lazily to prevent cold-start crashes on serverless
 let _enqueueParsingTask = null;
@@ -480,40 +478,45 @@ app.get('/api/source/:source/vehicle/:vehicleId/article/:articleId/orientations'
 
 // --- CREDIT SYSTEM ENDPOINTS ---
 
-// Secure Auth Middleware for User Identification
+// Verify Supabase JWT (access_token). Uses SUPABASE_JWT_SECRET from project settings.
+function verifySupabaseJwt(token) {
+    const secret = process.env.SUPABASE_JWT_SECRET;
+    if (!secret) {
+        logger.warn('SUPABASE_JWT_SECRET not set; cannot verify Supabase JWT');
+        return null;
+    }
+    try {
+        const decoded = jwt.verify(token, secret, { algorithms: ['HS256'] });
+        return decoded; // decoded.sub is the user id
+    } catch (err) {
+        return null;
+    }
+}
+
+// Secure Auth Middleware: require Bearer token (Supabase JWT)
 const secureAuthMiddleware = async (req, res, next) => {
-    // Allow OPTIONS requests to pass through for CORS preflight
     if (req.method === 'OPTIONS') {
         return next();
     }
 
     const authHeader = req.headers.authorization;
-
-    // 1. Try Firebase Token (Preferred for secure operations)
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.split('Bearer ')[1];
-        try {
-            const decodedToken = await getAuth().verifyIdToken(token);
-            req.userId = decodedToken.uid;
-            req.user = decodedToken;
-            req.isVerified = true;
-            return next();
-        } catch (error) {
-            logger.warn('Invalid token provided:', error.message);
-            // If token provided but invalid, fail
-            return res.status(401).json({ error: 'Invalid authentication token' });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        if (req.headers['x-user-id']) {
+            logger.warn('x-user-id header rejected; use Bearer token (Supabase session).');
         }
+        return res.status(401).json({ error: 'Authorization header with Bearer token required' });
     }
 
-    // 2. Fallback to x-user-id for backward compatibility or guest access
-    const userId = req.headers['x-user-id'];
-    if (userId) {
-        req.userId = userId;
-        req.isVerified = false;
-        return next();
+    const token = authHeader.split('Bearer ')[1];
+    const decoded = verifySupabaseJwt(token);
+    if (!decoded) {
+        return res.status(401).json({ error: 'Invalid or expired authentication token' });
     }
 
-    return res.status(401).json({ error: 'Authentication required' });
+    req.userId = decoded.sub; // Supabase user id
+    req.user = decoded;
+    req.isVerified = true;
+    return next();
 };
 
 // Get User Balance & Unlocks
@@ -790,18 +793,5 @@ app.use('/', authMiddleware, createProxyMiddleware({
 }));
 
 
-// Export as Firebase Function (Optional)
-let motorApiAuthProxy;
-try {
-    motorApiAuthProxy = onRequest({
-        memory: '512MiB',
-        timeoutSeconds: 300,
-        region: 'us-central1',
-    }, app);
-} catch (e) {
-    // If we're not in a Firebase context, this might fail
-    motorApiAuthProxy = null;
-}
-
-export { motorApiAuthProxy, app };
+export { app };
 export default app;
