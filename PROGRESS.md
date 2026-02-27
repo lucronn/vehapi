@@ -1,6 +1,6 @@
 # Project Progress
 
-**Last updated:** 2025-02-26  
+**Last updated:** 2025-02-26 (Stripe portal + dashboard)  
 **Reference:** `documentation/IMPLEMENTATION_GUIDE.md` Section 23 (Implementation Checklist); credits/Stripe are project-specific (not in doc).
 
 This file is the single source of truth for project status. Update it whenever you complete work, find bugs, or change scope. See `.cursor/rules/progress-update.mdc` for the rule that enforces keeping this file current.
@@ -15,6 +15,7 @@ This file is the single source of truth for project status. Update it whenever y
 | Vehicle dashboard | ✅ Done  | Sections: procedures, parts, maintenance, diagrams, TSB, DTC, specs, component locations |
 | Credits dashboard | ✅ Done  | `/credits`, `/account`: balance, buy credits, vehicles, receipts tabs |
 | Stripe / payments | ✅ Done  | Checkout session, webhook, add credits; vehapiproxi `/api/credits/*` |
+| Supabase / data lake | ⚠️ Partial | Auth + normalized AI data cached in Supabase; read path & UI features not fully wired |
 | Article viewer    | ✅ Done  | HTML/PDF, image viewer modal |
 | API & proxy       | ✅ Done  | Motor API, vehapiproxi proxy, vehicle data service |
 | AI features       | ❌ Gaps  | Content rewriting not implemented; stepper UI only, no AI generation |
@@ -76,7 +77,16 @@ This file is the single source of truth for project status. Update it whenever y
 - [x] Stripe webhook — `checkout.session.completed` → addCredits, setStripeCustomerId
 - [x] Per-section paywall — procedures, parts, maintenance, diagrams, TSB, DTC, specs, component locations, common issues (unlock with CR)
 - [x] Transaction logging — logTransaction, addCredits with stripe session/intent and usdCents
-- [ ] Stripe Customer Portal / billing management — *customer ID stored; portal link not exposed in UI*
+- [x] Stripe Customer Portal / billing management — `POST /api/credits/portal`, Billing button and link on credits dashboard
+
+### Supabase / Data Caching & AI Data Lake
+
+- [x] Supabase JS client and auth service (`SupabaseService`, `AuthService`) for user identity and sessions
+- [x] Normalized schema models for AI data (`src/models/normalized_schema.ts`)
+- [x] Supabase REST helper in proxy (`vehapiproxi/src/supabase.js`) for `insertParsedData`, `logAiProcessing`, `checkParsedArticle`
+- [x] Background worker (`vehapiproxi/src/background_worker.js`) to parse Motor responses with AI and persist normalized rows (procedures, DTCs, TSBs, specs) into Supabase
+- [ ] Read path that prefers Supabase cached procedures via `checkParsedArticle` before falling back to live Motor API — *plumbing exists; integration not fully wired/verified*
+- [ ] Frontend features powered directly by normalized Supabase data (e.g. AI tutorials, richer search) — *blocked on AI integration work above*
 
 ### UI Components
 
@@ -159,7 +169,7 @@ This file is the single source of truth for project status. Update it whenever y
 | Bookmarks               | Not verified |
 | User settings API        | Not verified |
 | vehapiproxi debug API   | Requires `DEBUG_API_KEY`; optional |
-| Stripe Customer Portal | Customer ID stored; no UI link to Stripe billing portal yet |
+| Stripe Customer Portal | Done — portal session + Billing button on account page |
 
 ---
 

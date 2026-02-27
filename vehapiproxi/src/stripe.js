@@ -57,6 +57,29 @@ export async function createCheckoutSession(userId, amount, origin) {
     }
 }
 
+/**
+ * Create a Stripe Customer Billing Portal session.
+ * Customer must have made at least one purchase (customer ID stored in Supabase).
+ * @param {string} customerId - Stripe customer ID (cus_xxx)
+ * @param {string} returnUrl - URL to redirect after portal (e.g. origin + /#/account)
+ */
+export async function createBillingPortalSession(customerId, returnUrl) {
+    if (!customerId) {
+        throw new Error('No billing account. Make a purchase first to manage payment methods.');
+    }
+    try {
+        const s = getStripe();
+        const session = await s.billingPortal.sessions.create({
+            customer: customerId,
+            return_url: returnUrl
+        });
+        return session.url;
+    } catch (error) {
+        logger.error('Stripe billing portal session failed:', error);
+        throw error;
+    }
+}
+
 export async function handleWebhook(req, res) {
     const sig = req.headers['stripe-signature'];
     const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;

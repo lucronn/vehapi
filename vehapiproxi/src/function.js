@@ -10,7 +10,7 @@ import { authManager } from './auth.js';
 import logger, { logBuffer, logRequest, logResponse } from './logger.js';
 import swaggerUi from 'swagger-ui-express';
 import { createRequire } from 'module';
-import { createCheckoutSession, handleWebhook } from './stripe.js';
+import { createCheckoutSession, createBillingPortalSession, handleWebhook } from './stripe.js';
 import { getUserData, unlockModule, getTransactions } from './credits.js';
 import { checkParsedArticle } from './supabase.js';
 import jwt from 'jsonwebtoken';
@@ -542,6 +542,21 @@ app.post('/api/credits/checkout', express.json(), secureAuthMiddleware, async (r
     } catch (error) {
         logger.error('Error creating checkout session:', error);
         res.status(500).json({ error: error.message || 'Failed to create checkout session' });
+    }
+});
+
+// Create Billing Portal Session (manage payment methods, invoices)
+app.post('/api/credits/portal', express.json(), secureAuthMiddleware, async (req, res) => {
+    try {
+        const userData = await getUserData(req.userId);
+        const customerId = userData.stripe_customer_id || null;
+        const origin = req.body?.origin || req.headers.origin || '';
+        const returnUrl = `${origin}/#/account`;
+        const sessionUrl = await createBillingPortalSession(customerId, returnUrl);
+        res.json({ url: sessionUrl });
+    } catch (error) {
+        logger.error('Error creating billing portal session:', error);
+        res.status(400).json({ error: error.message || 'Unable to open billing. Make a purchase first to manage payment methods.' });
     }
 });
 
