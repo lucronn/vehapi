@@ -8,7 +8,7 @@ import {
   LucideAngularModule,
   CreditCard, ArrowLeft, Plus, Car, Receipt, User,
   Check, Clock, ChevronRight, Sparkles, Home, Lock,
-  LayoutDashboard
+  LayoutDashboard, Settings
 } from 'lucide-angular';
 
 type Tab = 'overview' | 'vehicles' | 'receipts' | 'buy';
@@ -55,12 +55,18 @@ const MODULE_LABELS: Record<string, string> = {
               {{ authService.user()?.email ?? 'My Account' }}
             </h1>
           </div>
-          <!-- Credit Balance Pill -->
-          <div class="flex items-center gap-3 bg-white/[0.04] border border-white/10 rounded-2xl px-5 py-3">
-            <lucide-icon [img]="icons.CreditCard" class="w-5 h-5 text-torque-cyan"></lucide-icon>
-            <div>
-              <p class="text-xs text-gray-400">Credits</p>
-              <p class="text-2xl font-mono font-bold text-white">{{ creditsService.balance() }}</p>
+          <div class="flex items-center gap-3">
+            <button (click)="openBillingPortal()" [disabled]="creditsService.portalLoading()"
+              class="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 hover:border-torque-cyan/40 hover:bg-white/[0.04] transition-colors text-sm text-gray-400 hover:text-white disabled:opacity-50">
+              <lucide-icon [img]="icons.Settings" class="w-4 h-4"></lucide-icon>
+              {{ creditsService.portalLoading() ? 'Opening…' : 'Billing' }}
+            </button>
+            <div class="flex items-center gap-3 bg-white/[0.04] border border-white/10 rounded-2xl px-5 py-3">
+              <lucide-icon [img]="icons.CreditCard" class="w-5 h-5 text-torque-cyan"></lucide-icon>
+              <div>
+                <p class="text-xs text-gray-400">Credits</p>
+                <p class="text-2xl font-mono font-bold text-white">{{ creditsService.balance() }}</p>
+              </div>
             </div>
           </div>
         </header>
@@ -131,6 +137,11 @@ const MODULE_LABELS: Record<string, string> = {
               </button>
               }
             </div>
+            <p class="text-xs text-gray-500 mt-4">
+              <button (click)="openBillingPortal()" [disabled]="creditsService.portalLoading()"
+                class="text-torque-cyan hover:underline disabled:opacity-50">Manage payment methods and invoices</button>
+              (Stripe billing portal)
+            </p>
           </div>
 
           <!-- Recent transactions preview -->
@@ -344,7 +355,7 @@ export class CreditsDashboardComponent implements OnInit {
   readonly authService = inject(AuthService);
   readonly route = inject(ActivatedRoute);
 
-  readonly icons = { CreditCard, ArrowLeft, Plus, Car, Receipt, User, Check, Clock, ChevronRight, Sparkles, Home, Lock, LayoutDashboard };
+  readonly icons = { CreditCard, ArrowLeft, Plus, Car, Receipt, User, Check, Clock, ChevronRight, Sparkles, Home, Lock, LayoutDashboard, Settings };
 
   activeTab = signal<Tab>('overview');
   purchaseSuccess = signal(false);
@@ -421,6 +432,10 @@ export class CreditsDashboardComponent implements OnInit {
 
   purchase(amount: number) {
     this.creditsService.startCheckout(amount);
+  }
+
+  openBillingPortal() {
+    this.creditsService.openBillingPortal();
   }
 
   moduleLabel(mod: string): string {

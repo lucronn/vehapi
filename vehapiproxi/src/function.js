@@ -1,5 +1,3 @@
-
-import { onRequest } from 'firebase-functions/v2/https';
 import express from 'express';
 import crypto from 'crypto';
 import cors from 'cors';
@@ -12,10 +10,10 @@ import { authManager } from './auth.js';
 import logger, { logBuffer, logRequest, logResponse } from './logger.js';
 import swaggerUi from 'swagger-ui-express';
 import { createRequire } from 'module';
-import { createCheckoutSession, handleWebhook } from './stripe.js';
+import { createCheckoutSession, createBillingPortalSession, handleWebhook } from './stripe.js';
 import { getUserData, unlockModule, getTransactions } from './credits.js';
 import { checkParsedArticle } from './supabase.js';
-import { getAuth } from 'firebase-admin/auth';
+import jwt from 'jsonwebtoken';
 
 // background_worker is loaded lazily to prevent cold-start crashes on serverless
 let _enqueueParsingTask = null;
@@ -480,9 +478,23 @@ app.get('/api/source/:source/vehicle/:vehicleId/article/:articleId/orientations'
 
 // --- CREDIT SYSTEM ENDPOINTS ---
 
-// Secure Auth Middleware: require Bearer token only (reject x-user-id for security)
+// Verify Supabase JWT (access_token). Uses SUPABASE_JWT_SECRET from project settings.
+function verifySupabaseJwt(token) {
+    const secret = process.env.SUPABASE_JWT_SECRET;
+    if (!secret) {
+        logger.warn('SUPABASE_JWT_SECRET not set; cannot verify Supabase JWT');
+        return null;
+    }
+    try {
+        const decoded = jwt.verify(token, secret, { algorithms: ['HS256'] });
+        return decoded; // decoded.sub is the user id
+    } catch (err) {
+        return null;
+    }
+}
+
+// Secure Auth Middleware: require Bearer token (Supabase JWT)
 const secureAuthMiddleware = async (req, res, next) => {
-    // Allow OPTIONS requests to pass through for CORS preflight
     if (req.method === 'OPTIONS') {
         return next();
     }
@@ -490,22 +502,21 @@ const secureAuthMiddleware = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         if (req.headers['x-user-id']) {
-            logger.warn('Legacy x-user-id header detected and rejected. Client must use Bearer token.');
+            logger.warn('x-user-id header rejected; use Bearer token (Supabase session).');
         }
         return res.status(401).json({ error: 'Authorization header with Bearer token required' });
     }
 
     const token = authHeader.split('Bearer ')[1];
-    try {
-        const decodedToken = await getAuth().verifyIdToken(token);
-        req.userId = decodedToken.uid;
-        req.user = decodedToken;
-        req.isVerified = true;
-        return next();
-    } catch (error) {
-        logger.warn('Invalid token provided:', error.message);
+    const decoded = verifySupabaseJwt(token);
+    if (!decoded) {
         return res.status(401).json({ error: 'Invalid or expired authentication token' });
     }
+
+    req.userId = decoded.sub; // Supabase user id
+    req.user = decoded;
+    req.isVerified = true;
+    return next();
 };
 
 // Get User Balance & Unlocks
@@ -531,6 +542,21 @@ app.post('/api/credits/checkout', express.json(), secureAuthMiddleware, async (r
     } catch (error) {
         logger.error('Error creating checkout session:', error);
         res.status(500).json({ error: error.message || 'Failed to create checkout session' });
+    }
+});
+
+// Create Billing Portal Session (manage payment methods, invoices)
+app.post('/api/credits/portal', express.json(), secureAuthMiddleware, async (req, res) => {
+    try {
+        const userData = await getUserData(req.userId);
+        const customerId = userData.stripe_customer_id || null;
+        const origin = req.body?.origin || req.headers.origin || '';
+        const returnUrl = `${origin}/#/account`;
+        const sessionUrl = await createBillingPortalSession(customerId, returnUrl);
+        res.json({ url: sessionUrl });
+    } catch (error) {
+        logger.error('Error creating billing portal session:', error);
+        res.status(400).json({ error: error.message || 'Unable to open billing. Make a purchase first to manage payment methods.' });
     }
 });
 
@@ -782,18 +808,5 @@ app.use('/', authMiddleware, createProxyMiddleware({
 }));
 
 
-// Export as Firebase Function (Optional)
-let motorApiAuthProxy;
-try {
-    motorApiAuthProxy = onRequest({
-        memory: '512MiB',
-        timeoutSeconds: 300,
-        region: 'us-central1',
-    }, app);
-} catch (e) {
-    // If we're not in a Firebase context, this might fail
-    motorApiAuthProxy = null;
-}
-
-export { motorApiAuthProxy, app };
+export { app };
 export default app;

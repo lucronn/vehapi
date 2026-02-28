@@ -33,7 +33,7 @@ interface SectionStrategy {
 }
 
 /**
- * Centralized service for vehicle data fetching with Firebase caching
+ * Centralized service for vehicle data fetching
  * Implements "Build-As-Used" caching pattern
  */
 @Injectable({

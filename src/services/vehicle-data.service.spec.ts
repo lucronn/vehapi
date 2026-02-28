@@ -12,10 +12,6 @@ mock.module('./motor-api.service', () => ({
     MotorApiService: MockMotorApiService
 }));
 
-mock.module('./firebase.service', () => ({
-    FirebaseService: class {}
-}));
-
 mock.module('@angular/core', () => ({
     Injectable: () => (target: any) => target,
     inject: (token: any) => {

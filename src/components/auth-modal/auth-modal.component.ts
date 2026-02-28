@@ -74,7 +74,7 @@ type AuthMode = 'signin' | 'signup' | 'reset';
                   required
                   autocomplete="current-password"
                 />
-                <button type="button" class="password-toggle" (click)="showPassword.update(v => !v)">
+                <button type="button" class="password-toggle" (click)="toggleShowPassword()">
                   <lucide-angular [img]="showPassword() ? icons.EyeOff : icons.Eye" size="14" />
                 </button>
               </div>
@@ -237,6 +237,10 @@ export class AuthModalComponent {
     mode = signal<AuthMode>('signin');
     loading = signal(false);
     showPassword = signal(false);
+
+    toggleShowPassword() {
+        this.showPassword.update(v => !v);
+    }
     errorMessage = signal('');
     successMessage = signal('');
 

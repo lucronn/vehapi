@@ -44,6 +44,7 @@ export class CreditsService {
     transactions = signal<Transaction[]>([]);
     isLoading = signal<boolean>(false);
     transactionsLoading = signal<boolean>(false);
+    portalLoading = signal<boolean>(false);
 
     // Constants
     readonly COSTS = {
@@ -186,6 +187,44 @@ export class CreditsService {
             console.error('Checkout failed:', error);
         } finally {
             this.isLoading.set(false);
+        }
+    }
+
+    /** Open Stripe Customer Billing Portal (payment methods, invoices). Requires at least one purchase. */
+    async openBillingPortal(): Promise<void> {
+        if (!this.authService.user()) {
+            try {
+                await this.authService.signInWithGoogle();
+                if (!this.authService.user()) return;
+            } catch {
+                return;
+            }
+        }
+
+        if (this.USE_MOCK) return;
+
+        this.portalLoading.set(true);
+        try {
+            const headers = await this.getHeaders();
+            const res = await firstValueFrom(
+                this.http.post<{ url: string }>(
+                    `${this.apiUrl}/portal`,
+                    { origin: window.location.origin },
+                    { headers }
+                )
+            );
+            if (res?.url) {
+                window.location.href = res.url;
+            }
+        } catch (err: unknown) {
+            const body = err && typeof err === 'object' && 'error' in err ? (err as { error: unknown }).error : undefined;
+            const msg = (body && typeof body === 'object' && body !== null && 'error' in body)
+                ? String((body as { error: unknown }).error)
+                : 'Unable to open billing. Make a purchase first to manage payment methods.';
+            console.error('Billing portal failed:', err);
+            alert(msg);
+        } finally {
+            this.portalLoading.set(false);
         }
     }
 
