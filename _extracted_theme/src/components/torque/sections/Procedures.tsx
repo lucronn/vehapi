@@ -28,7 +28,7 @@ const Procedures: React.FC<ProceduresProps> = ({ articlesData, onArticleSelect }
         Object.entries(grouped).map(([name, articles]) => [
           name,
           articles.filter(a => a.title?.toLowerCase().includes(search.toLowerCase()))
-        ]).filter(([, articles]) => (articles as any[]).length > 0)
+        ]).filter(([, articles]) => (articles as Article[]).length > 0)
       )
     : grouped;
 

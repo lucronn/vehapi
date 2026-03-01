@@ -77,14 +77,33 @@ export interface FluidsResponse {
   data: Fluid[];
 }
 
+export interface MaintenanceItem {
+  name?: string;
+  description?: string;
+  title?: string;
+  interval?: string | number;
+  [key: string]: unknown;
+}
+
+export interface MaintenanceInterval {
+  name?: string;
+  description?: string;
+  value?: string | number;
+  interval?: string | number;
+  [key: string]: unknown;
+}
+
 export interface MaintenanceSchedule {
   id?: string;
   name?: string;
   description?: string;
-  items?: any[];
-  intervals?: any[];
-  [key: string]: any;
+  title?: string;
+  items?: MaintenanceItem[];
+  intervals?: MaintenanceInterval[];
+  [key: string]: unknown;
 }
+
+export type MaintenanceData = MaintenanceSchedule[] | { schedules?: MaintenanceSchedule[], data?: MaintenanceSchedule[] };
 
 export interface ArticleContent {
   html: string;
@@ -132,10 +151,10 @@ export async function decodeVin(vin: string): Promise<VinDecodeResult> {
 }
 
 export async function getVehicleName(src: string, vid: string): Promise<string> {
-  const data = await apiFetch<any>(`/api/source/${src}/${vid}/name`);
+  const data = await apiFetch<unknown>(`/api/source/${src}/${vid}/name`);
   if (typeof data === 'string') return data;
-  if (data?.name) return data.name;
-  if (data?.vehicleName) return data.vehicleName;
+  if (data && typeof data === 'object' && 'name' in data && typeof (data as Record<string, unknown>).name === 'string') return (data as Record<string, unknown>).name as string;
+  if (data && typeof data === 'object' && 'vehicleName' in data && typeof (data as Record<string, unknown>).vehicleName === 'string') return (data as Record<string, unknown>).vehicleName as string;
   return String(data);
 }
 
@@ -155,12 +174,12 @@ export async function getFluids(src: string, vid: string): Promise<FluidsRespons
   return apiFetch<FluidsResponse>(`/api/source/${src}/vehicle/${vid}/fluids`);
 }
 
-export async function getMaintenanceByFrequency(src: string, vid: string): Promise<any> {
-  return apiFetch<any>(`/api/source/${src}/vehicle/${vid}/maintenanceSchedules/frequency`);
+export async function getMaintenanceByFrequency(src: string, vid: string): Promise<MaintenanceData> {
+  return apiFetch<MaintenanceData>(`/api/source/${src}/vehicle/${vid}/maintenanceSchedules/frequency`);
 }
 
-export async function getMaintenanceByIntervals(src: string, vid: string, type: string): Promise<any> {
-  return apiFetch<any>(`/api/source/${src}/vehicle/${vid}/maintenanceSchedules/intervals?intervalType=${type}`);
+export async function getMaintenanceByIntervals(src: string, vid: string, type: string): Promise<MaintenanceData> {
+  return apiFetch<MaintenanceData>(`/api/source/${src}/vehicle/${vid}/maintenanceSchedules/intervals?intervalType=${type}`);
 }
 
 export function getGraphicUrl(src: string, id: string): string {
