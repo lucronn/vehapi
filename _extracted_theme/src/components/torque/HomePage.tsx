@@ -430,7 +430,7 @@ const ListItems: React.FC<{
     id: string | number;
     label: string;
   }[];
-  onSelect: (id: any) => void;
+  onSelect: (id: string | number) => void;
 }> = ({
   items,
   onSelect
