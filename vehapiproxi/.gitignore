@@ -4,3 +4,5 @@ session-cookies.json
 *.log
 .DS_Store
 .vercel
+*.har
+downloaded-logs-*.json

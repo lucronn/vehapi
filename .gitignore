@@ -25,3 +25,14 @@ dist-ssr
 .vercel
 .angular/
 __pycache__/
+
+# HAR network capture files
+*.har
+
+# Build and error logs
+build_error*.txt
+build_log*.txt
+fail_log*.txt
+
+# Temporary/debug data files
+downloaded-logs-*.json
