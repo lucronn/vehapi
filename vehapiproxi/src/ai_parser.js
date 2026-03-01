@@ -7,40 +7,46 @@ const MODEL = 'gemini-2.5-flash';
 // The schema definitions to enforce structured output
 const SCHEMAS = {
     dtcs: {
-        type: 'OBJECT',
-        properties: {
-            code: { type: 'STRING' },
-            description: { type: 'STRING' },
-            possible_causes: { type: 'ARRAY', items: { type: 'STRING' } },
-            symptoms: { type: 'ARRAY', items: { type: 'STRING' } },
-            monitor_strategy: { type: 'STRING' },
-            malfunction_criteria: { type: 'STRING' },
-            diagnostic_steps: {
-                type: 'ARRAY',
-                items: {
-                    type: 'OBJECT',
-                    properties: {
-                        order: { type: 'INTEGER' },
-                        text: { type: 'STRING' },
-                        warning: { type: 'STRING' }
+        type: 'ARRAY',
+        items: {
+            type: 'OBJECT',
+            properties: {
+                code: { type: 'STRING' },
+                description: { type: 'STRING' },
+                possible_causes: { type: 'ARRAY', items: { type: 'STRING' } },
+                symptoms: { type: 'ARRAY', items: { type: 'STRING' } },
+                monitor_strategy: { type: 'STRING' },
+                malfunction_criteria: { type: 'STRING' },
+                diagnostic_steps: {
+                    type: 'ARRAY',
+                    items: {
+                        type: 'OBJECT',
+                        properties: {
+                            order: { type: 'INTEGER' },
+                            text: { type: 'STRING' },
+                            warning: { type: 'STRING' }
+                        }
                     }
                 }
-            }
-        },
-        required: ['code', 'description']
+            },
+            required: ['code', 'description']
+        }
     },
     tsbs: {
-        type: 'OBJECT',
-        properties: {
-            bulletin_number: { type: 'STRING' },
-            issue_date: { type: 'STRING' },
-            title: { type: 'STRING' },
-            summary: { type: 'STRING' },
-            content: { type: 'STRING' },
-            affected_components: { type: 'ARRAY', items: { type: 'STRING' } },
-            models_affected: { type: 'ARRAY', items: { type: 'STRING' } }
-        },
-        required: ['bulletin_number', 'title']
+        type: 'ARRAY',
+        items: {
+            type: 'OBJECT',
+            properties: {
+                bulletin_number: { type: 'STRING' },
+                issue_date: { type: 'STRING' },
+                title: { type: 'STRING' },
+                summary: { type: 'STRING' },
+                content: { type: 'STRING' },
+                affected_components: { type: 'ARRAY', items: { type: 'STRING' } },
+                models_affected: { type: 'ARRAY', items: { type: 'STRING' } }
+            },
+            required: ['bulletin_number', 'title']
+        }
     },
     procedures: {
         type: 'OBJECT',
@@ -64,44 +70,56 @@ const SCHEMAS = {
         required: ['title']
     },
     specifications: {
+        type: 'ARRAY',
+        items: {
+            type: 'OBJECT',
+            properties: {
+                category: { type: 'STRING' },
+                name: { type: 'STRING' },
+                value: { type: 'STRING' },
+                unit: { type: 'STRING' },
+                display_text: { type: 'STRING' }
+            },
+            required: ['name', 'value', 'category']
+        }
+    }
+};
+
+// Schema for tutorial generation
+const TUTORIAL_SCHEMA = {
+    type: 'ARRAY',
+    items: {
         type: 'OBJECT',
         properties: {
-            category: { type: 'STRING' },
-            name: { type: 'STRING' },
-            value: { type: 'STRING' },
-            unit: { type: 'STRING' },
-            display_text: { type: 'STRING' }
+            title: { type: 'STRING' },
+            content: { type: 'STRING' },
+            warning: { type: 'STRING' },
+            tool: { type: 'STRING' },
+            mediaPlaceholder: { type: 'STRING' }
         },
-        required: ['name', 'value', 'category']
+        required: ['title', 'content']
     }
 };
 
 /**
- * Parses raw JSON from the Motor API into a structured format via Gemini REST API.
- * @param {string} rawData JSON string of the raw response
- * @param {string} targetSchema The key in SCHEMAS (e.g. 'dtcs' or 'tsbs')
+ * Internal helper that calls the Gemini generateContent endpoint.
+ * @param {string} prompt Text prompt to send
+ * @param {object|null} schema Optional JSON schema for structured output
+ * @returns {string} Raw text response from Gemini
  */
-export async function parseWithAI(rawData, targetSchema) {
+async function callGemini(prompt, schema = null) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
         throw new Error('GEMINI_API_KEY environment variable is not set');
     }
 
-    if (!SCHEMAS[targetSchema]) {
-        throw new Error(`Schema ${targetSchema} is not defined in ai_parser.js`);
-    }
-
-    // Trim raw data to avoid exceeding token limits (first 8000 chars)
-    const trimmedData = typeof rawData === 'string' ? rawData.slice(0, 8000) : JSON.stringify(rawData).slice(0, 8000);
-
-    const prompt = `You are an automotive data parser. Extract the relevant technical information from the provided raw JSON response and map it strictly to the output schema. If some data is not present, omit it or provide empty arrays/strings. Do not hallucinate data.\n\nRaw Data:\n${trimmedData}`;
+    const generationConfig = schema
+        ? { responseMimeType: 'application/json', responseSchema: schema }
+        : {};
 
     const requestBody = {
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-            responseMimeType: 'application/json',
-            responseSchema: SCHEMAS[targetSchema]
-        }
+        generationConfig
     };
 
     const url = `${GEMINI_API_BASE}/${MODEL}:generateContent?key=${apiKey}`;
@@ -122,6 +140,86 @@ export async function parseWithAI(rawData, targetSchema) {
     if (!text) {
         throw new Error('Gemini returned no text in response');
     }
+    return text;
+}
 
+/**
+ * Rewrites the text content of an HTML article using AI while preserving structure and media.
+ * Images (<img>, <mtr-image>) and PDFs are kept untouched; only text nodes are rewritten.
+ * @param {string} html Raw HTML from the Motor API
+ * @returns {Promise<string>} Rewritten HTML string
+ */
+export async function rewriteArticleHtml(html) {
+    if (!html || !html.trim()) return html;
+
+    // Trim input to avoid token limits
+    const trimmed = html.slice(0, 12000);
+
+    const prompt = `You are an automotive technical writer. Rephrase the text content in the following HTML article in your own words while maintaining technical accuracy, the original meaning, step sequences, safety warnings, and HTML structure.
+
+Rules:
+- Keep ALL HTML tags, attributes, and structure exactly as-is.
+- Rephrase ONLY the visible text content inside tags (paragraphs, headings, list items, table cells, etc.) using different wording while preserving meaning.
+- Do NOT change, remove, or add any <img>, <mtr-image>, <iframe>, or <object> tags.
+- Do NOT change href or src attribute values.
+- Preserve all part numbers, codes, measurements, and technical specifications exactly.
+- Use active voice and clear, concise language.
+- Output ONLY the rewritten HTML with no additional commentary.
+
+Original HTML:
+${trimmed}`;
+
+    const rewritten = await callGemini(prompt, null);
+    return rewritten.trim();
+}
+
+/**
+ * Generates interactive tutorial steps from an article's HTML content.
+ * @param {string} html Processed article HTML
+ * @param {string} title Article title for context
+ * @returns {Promise<Array>} Array of TutorialStep objects
+ */
+export async function generateTutorialSteps(html, title = '') {
+    if (!html || !html.trim()) return [];
+
+    // Strip HTML tags to get plain text for the prompt (keeps token count manageable)
+    const plainText = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 8000);
+
+    const prompt = `You are an automotive service expert. Generate a step-by-step interactive tutorial from the following vehicle service article.
+
+Article Title: ${title || 'Vehicle Service Procedure'}
+
+Article Content:
+${plainText}
+
+Requirements for each step:
+- title: Short, action-oriented title (5-10 words, imperative mood e.g. "Remove the Battery")
+- content: Clear HTML instruction paragraph(s) for this step. Use active voice, include specific details.
+- warning: (optional) Safety-critical warning text if applicable. Omit if not relevant.
+- tool: (optional) Primary tool or part required for this step. Omit if not applicable.
+- mediaPlaceholder: (optional) Leave empty string.
+
+Create between 3 and 12 meaningful steps covering the full procedure. Only include steps that are genuinely actionable. Preserve safety warnings and technical accuracy.`;
+
+    const text = await callGemini(prompt, TUTORIAL_SCHEMA);
+    return JSON.parse(text);
+}
+
+/**
+ * Parses raw JSON from the Motor API into a structured format via Gemini REST API.
+ * @param {string} rawData JSON string of the raw response
+ * @param {string} targetSchema The key in SCHEMAS (e.g. 'dtcs' or 'tsbs')
+ */
+export async function parseWithAI(rawData, targetSchema) {
+    if (!SCHEMAS[targetSchema]) {
+        throw new Error(`Schema ${targetSchema} is not defined in ai_parser.js`);
+    }
+
+    // Trim raw data to avoid exceeding token limits (first 8000 chars)
+    const trimmedData = typeof rawData === 'string' ? rawData.slice(0, 8000) : JSON.stringify(rawData).slice(0, 8000);
+
+    const prompt = `You are an automotive data parser. Extract the relevant technical information from the provided raw JSON response and map it strictly to the output schema. If some data is not present, omit it or provide empty arrays/strings. Do not hallucinate data.\n\nRaw Data:\n${trimmedData}`;
+
+    const text = await callGemini(prompt, SCHEMAS[targetSchema]);
     return JSON.parse(text);
 }

@@ -1,0 +1,614 @@
+build	Set up job	﻿2026-02-21T20:32:15.2822696Z Current runner version: '2.331.0'
+build	Set up job	2026-02-21T20:32:15.2856732Z ##[group]Runner Image Provisioner
+build	Set up job	2026-02-21T20:32:15.2857899Z Hosted Compute Agent
+build	Set up job	2026-02-21T20:32:15.2858759Z Version: 20260123.484
+build	Set up job	2026-02-21T20:32:15.2859577Z Commit: 6bd6555ca37d84114959e1c76d2c01448ff61c5d
+build	Set up job	2026-02-21T20:32:15.2886197Z Build Date: 2026-01-23T19:41:17Z
+build	Set up job	2026-02-21T20:32:15.2887286Z Worker ID: {f1d5e0c6-9686-495c-8e0c-0d839c51ed18}
+build	Set up job	2026-02-21T20:32:15.2888312Z Azure Region: westcentralus
+build	Set up job	2026-02-21T20:32:15.2889258Z ##[endgroup]
+build	Set up job	2026-02-21T20:32:15.2891426Z ##[group]Operating System
+build	Set up job	2026-02-21T20:32:15.2892255Z Ubuntu
+build	Set up job	2026-02-21T20:32:15.2892995Z 24.04.3
+build	Set up job	2026-02-21T20:32:15.2893668Z LTS
+build	Set up job	2026-02-21T20:32:15.2894257Z ##[endgroup]
+build	Set up job	2026-02-21T20:32:15.2895008Z ##[group]Runner Image
+build	Set up job	2026-02-21T20:32:15.2895764Z Image: ubuntu-24.04
+build	Set up job	2026-02-21T20:32:15.2896528Z Version: 20260201.15.1
+build	Set up job	2026-02-21T20:32:15.2898180Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260201.15/images/ubuntu/Ubuntu2404-Readme.md
+build	Set up job	2026-02-21T20:32:15.2921097Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260201.15
+build	Set up job	2026-02-21T20:32:15.2922647Z ##[endgroup]
+build	Set up job	2026-02-21T20:32:15.2924104Z ##[group]GITHUB_TOKEN Permissions
+build	Set up job	2026-02-21T20:32:15.2927614Z Contents: read
+build	Set up job	2026-02-21T20:32:15.2928402Z Metadata: read
+build	Set up job	2026-02-21T20:32:15.2929081Z ##[endgroup]
+build	Set up job	2026-02-21T20:32:15.2932609Z Secret source: Actions
+build	Set up job	2026-02-21T20:32:15.2933912Z Prepare workflow directory
+build	Set up job	2026-02-21T20:32:15.3451451Z Prepare all required actions
+build	Set up job	2026-02-21T20:32:15.3570394Z Getting action download info
+build	Set up job	2026-02-21T20:32:15.8261958Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+build	Set up job	2026-02-21T20:32:15.9295733Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+build	Set up job	2026-02-21T20:32:16.0552997Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+build	Set up job	2026-02-21T20:32:16.2469169Z Complete job name: build
+build	Run actions/checkout@v4	﻿2026-02-21T20:32:16.3126926Z ##[group]Run actions/checkout@v4
+build	Run actions/checkout@v4	2026-02-21T20:32:16.3127880Z with:
+build	Run actions/checkout@v4	2026-02-21T20:32:16.3128478Z   repository: lucronn/vehapi
+build	Run actions/checkout@v4	2026-02-21T20:32:16.3129320Z   token: ***
+build	Run actions/checkout@v4	2026-02-21T20:32:16.3129779Z   ssh-strict: true
+build	Run actions/checkout@v4	2026-02-21T20:32:16.3130633Z   ssh-user: git
+build	Run actions/checkout@v4	2026-02-21T20:32:16.3131111Z   persist-credentials: true
+build	Run actions/checkout@v4	2026-02-21T20:32:16.3131663Z   clean: true
+build	Run actions/checkout@v4	2026-02-21T20:32:16.3132153Z   sparse-checkout-cone-mode: true
+build	Run actions/checkout@v4	2026-02-21T20:32:16.3132756Z   fetch-depth: 1
+build	Run actions/checkout@v4	2026-02-21T20:32:16.3133215Z   fetch-tags: false
+build	Run actions/checkout@v4	2026-02-21T20:32:16.3133757Z   show-progress: true
+build	Run actions/checkout@v4	2026-02-21T20:32:16.3134297Z   lfs: false
+build	Run actions/checkout@v4	2026-02-21T20:32:16.3134746Z   submodules: false
+build	Run actions/checkout@v4	2026-02-21T20:32:16.3135265Z   set-safe-directory: true
+build	Run actions/checkout@v4	2026-02-21T20:32:16.3136082Z ##[endgroup]
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4239276Z Syncing repository: lucronn/vehapi
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4246313Z ##[group]Getting Git version info
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4247211Z Working directory is '/home/runner/work/vehapi/vehapi'
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4248526Z [command]/usr/bin/git version
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4297333Z git version 2.52.0
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4325706Z ##[endgroup]
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4342261Z Temporarily overriding HOME='/home/runner/work/_temp/799cdf83-9bf3-4250-8ec8-ce0d7fde4023' before making global git config changes
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4344980Z Adding repository directory to the temporary git global config as a safe directory
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4374465Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/vehapi/vehapi
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4421389Z Deleting the contents of '/home/runner/work/vehapi/vehapi'
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4426369Z ##[group]Initializing the repository
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4432855Z [command]/usr/bin/git init /home/runner/work/vehapi/vehapi
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4649110Z hint: Using 'master' as the name for the initial branch. This default branch name
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4672007Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4673793Z hint: to use in all of your new repositories, which will suppress this warning,
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4676059Z hint: call:
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4676773Z hint:
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4677629Z hint: 	git config --global init.defaultBranch <name>
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4678586Z hint:
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4679508Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4681454Z hint: 'development'. The just-created branch can be renamed via this command:
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4682824Z hint:
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4683525Z hint: 	git branch -m <name>
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4684449Z hint:
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4685611Z hint: Disable this message with "git config set advice.defaultBranchName false"
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4687569Z Initialized empty Git repository in /home/runner/work/vehapi/vehapi/.git/
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4696681Z [command]/usr/bin/git remote add origin https://github.com/lucronn/vehapi
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4700161Z ##[endgroup]
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4701675Z ##[group]Disabling automatic garbage collection
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4703113Z [command]/usr/bin/git config --local gc.auto 0
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4705834Z ##[endgroup]
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4707200Z ##[group]Setting up auth
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4708458Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4712979Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+build	Run actions/checkout@v4	2026-02-21T20:32:16.4978553Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+build	Run actions/checkout@v4	2026-02-21T20:32:16.5007011Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+build	Run actions/checkout@v4	2026-02-21T20:32:16.5192997Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+build	Run actions/checkout@v4	2026-02-21T20:32:16.5231617Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+build	Run actions/checkout@v4	2026-02-21T20:32:16.5415944Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+build	Run actions/checkout@v4	2026-02-21T20:32:16.5448073Z ##[endgroup]
+build	Run actions/checkout@v4	2026-02-21T20:32:16.5450401Z ##[group]Fetching the repository
+build	Run actions/checkout@v4	2026-02-21T20:32:16.5457849Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +61486f228e97daa94069e5efe0ef2c7507e56492:refs/remotes/origin/main
+build	Run actions/checkout@v4	2026-02-21T20:32:17.3947745Z From https://github.com/lucronn/vehapi
+build	Run actions/checkout@v4	2026-02-21T20:32:17.3950226Z  * [new ref]         61486f228e97daa94069e5efe0ef2c7507e56492 -> origin/main
+build	Run actions/checkout@v4	2026-02-21T20:32:17.3957619Z ##[endgroup]
+build	Run actions/checkout@v4	2026-02-21T20:32:17.3960622Z ##[group]Determining the checkout info
+build	Run actions/checkout@v4	2026-02-21T20:32:17.3963092Z ##[endgroup]
+build	Run actions/checkout@v4	2026-02-21T20:32:17.3964474Z [command]/usr/bin/git sparse-checkout disable
+build	Run actions/checkout@v4	2026-02-21T20:32:17.3968655Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+build	Run actions/checkout@v4	2026-02-21T20:32:17.3973848Z ##[group]Checking out the ref
+build	Run actions/checkout@v4	2026-02-21T20:32:17.3976170Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+build	Run actions/checkout@v4	2026-02-21T20:32:17.4031636Z Switched to a new branch 'main'
+build	Run actions/checkout@v4	2026-02-21T20:32:17.4038392Z branch 'main' set up to track 'origin/main'.
+build	Run actions/checkout@v4	2026-02-21T20:32:17.4051655Z ##[endgroup]
+build	Run actions/checkout@v4	2026-02-21T20:32:17.4085755Z [command]/usr/bin/git log -1 --format=%H
+build	Run actions/checkout@v4	2026-02-21T20:32:17.4107676Z 61486f228e97daa94069e5efe0ef2c7507e56492
+build	Setup Node.js	﻿2026-02-21T20:32:17.4419216Z ##[group]Run actions/setup-node@v4
+build	Setup Node.js	2026-02-21T20:32:17.4420475Z with:
+build	Setup Node.js	2026-02-21T20:32:17.4421250Z   node-version: 20
+build	Setup Node.js	2026-02-21T20:32:17.4422084Z   cache: npm
+build	Setup Node.js	2026-02-21T20:32:17.4422881Z   always-auth: false
+build	Setup Node.js	2026-02-21T20:32:17.4423763Z   check-latest: false
+build	Setup Node.js	2026-02-21T20:32:17.4424968Z   token: ***
+build	Setup Node.js	2026-02-21T20:32:17.4425747Z ##[endgroup]
+build	Setup Node.js	2026-02-21T20:32:17.6235696Z Found in cache @ /opt/hostedtoolcache/node/20.20.0/x64
+build	Setup Node.js	2026-02-21T20:32:17.6279488Z ##[group]Environment details
+build	Setup Node.js	2026-02-21T20:32:20.3303151Z node: v20.20.0
+build	Setup Node.js	2026-02-21T20:32:20.3305326Z npm: 10.8.2
+build	Setup Node.js	2026-02-21T20:32:20.3315410Z yarn: 1.22.22
+build	Setup Node.js	2026-02-21T20:32:20.3317819Z ##[endgroup]
+build	Setup Node.js	2026-02-21T20:32:20.3330330Z [command]/opt/hostedtoolcache/node/20.20.0/x64/bin/npm config get cache
+build	Setup Node.js	2026-02-21T20:32:20.6544533Z /home/runner/.npm
+build	Setup Node.js	2026-02-21T20:32:20.8908047Z Cache hit for: node-cache-Linux-x64-npm-d0d31ceac5fb790e56a08b0dfad4b31a473d68cb9a31f0fdfaae5d79c64122bc
+build	Setup Node.js	2026-02-21T20:32:22.1030184Z Received 58720256 of 156649444 (37.5%), 56.0 MBs/sec
+build	Setup Node.js	2026-02-21T20:32:23.0774148Z Received 156649444 of 156649444 (100.0%), 75.6 MBs/sec
+build	Setup Node.js	2026-02-21T20:32:23.0788929Z Cache Size: ~149 MB (156649444 B)
+build	Setup Node.js	2026-02-21T20:32:23.0821771Z [command]/usr/bin/tar -xf /home/runner/work/_temp/cc1e205c-482c-433d-9d02-e3d433fb33cc/cache.tzst -P -C /home/runner/work/vehapi/vehapi --use-compress-program unzstd
+build	Setup Node.js	2026-02-21T20:32:23.3654878Z Cache restored successfully
+build	Setup Node.js	2026-02-21T20:32:23.3849590Z Cache restored from key: node-cache-Linux-x64-npm-d0d31ceac5fb790e56a08b0dfad4b31a473d68cb9a31f0fdfaae5d79c64122bc
+build	Install dependencies	﻿2026-02-21T20:32:23.3983355Z ##[group]Run npm ci
+build	Install dependencies	2026-02-21T20:32:23.3983689Z [36;1mnpm ci[0m
+build	Install dependencies	2026-02-21T20:32:23.4060966Z shell: /usr/bin/bash -e {0}
+build	Install dependencies	2026-02-21T20:32:23.4061271Z ##[endgroup]
+build	Install dependencies	2026-02-21T20:32:31.4238917Z npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+build	Install dependencies	2026-02-21T20:32:31.8234860Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+build	Install dependencies	2026-02-21T20:32:32.7307619Z npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+build	Install dependencies	2026-02-21T20:32:33.7224132Z npm warn deprecated json-ptr@3.1.1: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+build	Install dependencies	2026-02-21T20:32:44.9209638Z 
+build	Install dependencies	2026-02-21T20:32:44.9211394Z added 1228 packages, and audited 1229 packages in 21s
+build	Install dependencies	2026-02-21T20:32:44.9212582Z 
+build	Install dependencies	2026-02-21T20:32:44.9231013Z 163 packages are looking for funding
+build	Install dependencies	2026-02-21T20:32:44.9231799Z   run `npm fund` for details
+build	Install dependencies	2026-02-21T20:32:45.1159709Z 
+build	Install dependencies	2026-02-21T20:32:45.1161483Z 38 vulnerabilities (1 low, 7 moderate, 30 high)
+build	Install dependencies	2026-02-21T20:32:45.1162661Z 
+build	Install dependencies	2026-02-21T20:32:45.1163836Z To address issues that do not require attention, run:
+build	Install dependencies	2026-02-21T20:32:45.1175876Z   npm audit fix
+build	Install dependencies	2026-02-21T20:32:45.1176170Z 
+build	Install dependencies	2026-02-21T20:32:45.1176560Z To address all issues (including breaking changes), run:
+build	Install dependencies	2026-02-21T20:32:45.1177156Z   npm audit fix --force
+build	Install dependencies	2026-02-21T20:32:45.1177440Z 
+build	Install dependencies	2026-02-21T20:32:45.1177664Z Run `npm audit` for details.
+build	Build	﻿2026-02-21T20:32:45.1713418Z ##[group]Run npm run build
+build	Build	2026-02-21T20:32:45.1713690Z [36;1mnpm run build[0m
+build	Build	2026-02-21T20:32:45.1736157Z shell: /usr/bin/bash -e {0}
+build	Build	2026-02-21T20:32:45.1736428Z ##[endgroup]
+build	Build	2026-02-21T20:32:45.2776718Z 
+build	Build	2026-02-21T20:32:45.2777955Z > torque@0.0.0 build
+build	Build	2026-02-21T20:32:45.2779001Z > ng build
+build	Build	2026-02-21T20:32:45.2779163Z 
+build	Build	2026-02-21T20:32:45.9300319Z [33m❯[39m Building...
+build	Build	2026-02-21T20:33:06.2721531Z [32m✔[39m Building...
+build	Build	2026-02-21T20:33:06.2741877Z [1mInitial chunk files[22m[2m | [22m[1mNames[22m        [2m | [22m[1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+build	Build	2026-02-21T20:33:06.2743823Z [32mmain-TACJUHCI.js[39m   [2m | [22m[2mmain[22m         [2m | [22m [36m1.81 MB[39m[2m | [22m              [36m408.93 kB[39m
+build	Build	2026-02-21T20:33:06.2745547Z [32mstyles-273VB4MO.css[39m[2m | [22m[2mstyles[22m       [2m | [22m[36m51.24 kB[39m[2m | [22m                [36m8.28 kB[39m
+build	Build	2026-02-21T20:33:06.2746309Z 
+build	Build	2026-02-21T20:33:06.2747362Z [1m [22m                  [2m | [22m[1mInitial total[22m[2m | [22m [1m1.86 MB[22m[2m | [22m              [1m417.21 kB[22m
+build	Build	2026-02-21T20:33:06.2750612Z 
+build	Build	2026-02-21T20:33:06.2751360Z Application bundle generation complete. [20.339 seconds] - 2026-02-21T20:33:06.269Z
+build	Build	2026-02-21T20:33:06.2751983Z 
+build	Build	2026-02-21T20:33:06.2752393Z Output location: /home/runner/work/vehapi/vehapi/dist
+build	Build	2026-02-21T20:33:06.2752913Z 
+build	Upload dist	﻿2026-02-21T20:33:06.3108710Z ##[group]Run actions/upload-artifact@v4
+build	Upload dist	2026-02-21T20:33:06.3108990Z with:
+build	Upload dist	2026-02-21T20:33:06.3109179Z   name: dist
+build	Upload dist	2026-02-21T20:33:06.3109360Z   path: dist/
+build	Upload dist	2026-02-21T20:33:06.3109539Z   if-no-files-found: warn
+build	Upload dist	2026-02-21T20:33:06.3109762Z   compression-level: 6
+build	Upload dist	2026-02-21T20:33:06.3110142Z   overwrite: false
+build	Upload dist	2026-02-21T20:33:06.3110462Z   include-hidden-files: false
+build	Upload dist	2026-02-21T20:33:06.3110688Z ##[endgroup]
+build	Upload dist	2026-02-21T20:33:06.5211833Z With the provided path, there will be 5 files uploaded
+build	Upload dist	2026-02-21T20:33:06.5217554Z Artifact name is valid!
+build	Upload dist	2026-02-21T20:33:06.5218703Z Root directory input is valid!
+build	Upload dist	2026-02-21T20:33:06.7450159Z Beginning upload of artifact content to blob storage
+build	Upload dist	2026-02-21T20:33:07.3282208Z Uploaded bytes 512634
+build	Upload dist	2026-02-21T20:33:07.3924967Z Finished uploading artifact content to blob storage!
+build	Upload dist	2026-02-21T20:33:07.3930160Z SHA256 digest of uploaded artifact zip is b906e593a9b963b974dc682efe2a2ae8ff887dafe93c4fc390526a351caf1e05
+build	Upload dist	2026-02-21T20:33:07.3932243Z Finalizing artifact upload
+build	Upload dist	2026-02-21T20:33:07.5269516Z Artifact dist.zip successfully finalized. Artifact ID 5603160966
+build	Upload dist	2026-02-21T20:33:07.5275866Z Artifact dist has been successfully uploaded! Final size is 512634 bytes. Artifact ID is 5603160966
+build	Upload dist	2026-02-21T20:33:07.5280955Z Artifact download URL: https://github.com/lucronn/vehapi/actions/runs/22263851770/artifacts/5603160966
+build	Post Setup Node.js	﻿2026-02-21T20:33:07.5393256Z Post job cleanup.
+build	Post Setup Node.js	2026-02-21T20:33:07.6858737Z Cache hit occurred on the primary key node-cache-Linux-x64-npm-d0d31ceac5fb790e56a08b0dfad4b31a473d68cb9a31f0fdfaae5d79c64122bc, not saving cache.
+build	Post Run actions/checkout@v4	﻿2026-02-21T20:33:07.6950689Z Post job cleanup.
+build	Post Run actions/checkout@v4	2026-02-21T20:33:07.7838010Z [command]/usr/bin/git version
+build	Post Run actions/checkout@v4	2026-02-21T20:33:07.7874676Z git version 2.52.0
+build	Post Run actions/checkout@v4	2026-02-21T20:33:07.7916377Z Temporarily overriding HOME='/home/runner/work/_temp/ac1c02f8-290f-4c3f-b32d-3d2d64fb13d0' before making global git config changes
+build	Post Run actions/checkout@v4	2026-02-21T20:33:07.7918694Z Adding repository directory to the temporary git global config as a safe directory
+build	Post Run actions/checkout@v4	2026-02-21T20:33:07.7923416Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/vehapi/vehapi
+build	Post Run actions/checkout@v4	2026-02-21T20:33:07.7965762Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+build	Post Run actions/checkout@v4	2026-02-21T20:33:07.7996763Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+build	Post Run actions/checkout@v4	2026-02-21T20:33:07.8186391Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+build	Post Run actions/checkout@v4	2026-02-21T20:33:07.8207405Z http.https://github.com/.extraheader
+build	Post Run actions/checkout@v4	2026-02-21T20:33:07.8219150Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+build	Post Run actions/checkout@v4	2026-02-21T20:33:07.8247587Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+build	Post Run actions/checkout@v4	2026-02-21T20:33:07.8452025Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+build	Post Run actions/checkout@v4	2026-02-21T20:33:07.8497213Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+build	Complete job	﻿2026-02-21T20:33:07.8899756Z Cleaning up orphan processes
+deploy-vercel	Set up job	﻿2026-02-21T20:33:14.1043598Z Current runner version: '2.331.0'
+deploy-vercel	Set up job	2026-02-21T20:33:14.1080128Z ##[group]Runner Image Provisioner
+deploy-vercel	Set up job	2026-02-21T20:33:14.1081437Z Hosted Compute Agent
+deploy-vercel	Set up job	2026-02-21T20:33:14.1082444Z Version: 20260123.484
+deploy-vercel	Set up job	2026-02-21T20:33:14.1083524Z Commit: 6bd6555ca37d84114959e1c76d2c01448ff61c5d
+deploy-vercel	Set up job	2026-02-21T20:33:14.1084752Z Build Date: 2026-01-23T19:41:17Z
+deploy-vercel	Set up job	2026-02-21T20:33:14.1086311Z Worker ID: {52be87db-f843-41b5-96f2-bcd6d954bcf4}
+deploy-vercel	Set up job	2026-02-21T20:33:14.1087532Z Azure Region: westus3
+deploy-vercel	Set up job	2026-02-21T20:33:14.1088460Z ##[endgroup]
+deploy-vercel	Set up job	2026-02-21T20:33:14.1090947Z ##[group]Operating System
+deploy-vercel	Set up job	2026-02-21T20:33:14.1091985Z Ubuntu
+deploy-vercel	Set up job	2026-02-21T20:33:14.1092765Z 24.04.3
+deploy-vercel	Set up job	2026-02-21T20:33:14.1093713Z LTS
+deploy-vercel	Set up job	2026-02-21T20:33:14.1094493Z ##[endgroup]
+deploy-vercel	Set up job	2026-02-21T20:33:14.1095262Z ##[group]Runner Image
+deploy-vercel	Set up job	2026-02-21T20:33:14.1096564Z Image: ubuntu-24.04
+deploy-vercel	Set up job	2026-02-21T20:33:14.1097446Z Version: 20260201.15.1
+deploy-vercel	Set up job	2026-02-21T20:33:14.1099212Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260201.15/images/ubuntu/Ubuntu2404-Readme.md
+deploy-vercel	Set up job	2026-02-21T20:33:14.1102358Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260201.15
+deploy-vercel	Set up job	2026-02-21T20:33:14.1104153Z ##[endgroup]
+deploy-vercel	Set up job	2026-02-21T20:33:14.1106149Z ##[group]GITHUB_TOKEN Permissions
+deploy-vercel	Set up job	2026-02-21T20:33:14.1108657Z Contents: read
+deploy-vercel	Set up job	2026-02-21T20:33:14.1109756Z Metadata: read
+deploy-vercel	Set up job	2026-02-21T20:33:14.1110549Z ##[endgroup]
+deploy-vercel	Set up job	2026-02-21T20:33:14.1113458Z Secret source: Actions
+deploy-vercel	Set up job	2026-02-21T20:33:14.1114931Z Prepare workflow directory
+deploy-vercel	Set up job	2026-02-21T20:33:14.1798259Z Prepare all required actions
+deploy-vercel	Set up job	2026-02-21T20:33:14.1856260Z Getting action download info
+deploy-vercel	Set up job	2026-02-21T20:33:14.6350666Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+deploy-vercel	Set up job	2026-02-21T20:33:14.7337601Z Download action repository 'actions/download-artifact@v4' (SHA:d3f86a106a0bac45b974a628896c90dbdf5c8093)
+deploy-vercel	Set up job	2026-02-21T20:33:15.5883776Z Download action repository 'amondnet/vercel-action@v20' (SHA:2d78157ee070f28ff89dd4da74e0369fc26d3b34)
+deploy-vercel	Set up job	2026-02-21T20:33:16.4036935Z Complete job name: deploy-vercel
+deploy-vercel	Run actions/checkout@v4	﻿2026-02-21T20:33:16.4851887Z ##[group]Run actions/checkout@v4
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.4853310Z with:
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.4854089Z   repository: lucronn/vehapi
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.4855384Z   token: ***
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.4856388Z   ssh-strict: true
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.4857181Z   ssh-user: git
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.4858000Z   persist-credentials: true
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.4858914Z   clean: true
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.4859733Z   sparse-checkout-cone-mode: true
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.4860716Z   fetch-depth: 1
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.4861500Z   fetch-tags: false
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.4862312Z   show-progress: true
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.4863138Z   lfs: false
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.4863891Z   submodules: false
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.4864741Z   set-safe-directory: true
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.4866032Z ##[endgroup]
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6025125Z Syncing repository: lucronn/vehapi
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6029518Z ##[group]Getting Git version info
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6031738Z Working directory is '/home/runner/work/vehapi/vehapi'
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6034936Z [command]/usr/bin/git version
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6116792Z git version 2.52.0
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6149909Z ##[endgroup]
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6166545Z Temporarily overriding HOME='/home/runner/work/_temp/50469208-f233-4aa0-8a13-863c930b1284' before making global git config changes
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6184309Z Adding repository directory to the temporary git global config as a safe directory
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6188416Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/vehapi/vehapi
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6234662Z Deleting the contents of '/home/runner/work/vehapi/vehapi'
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6240044Z ##[group]Initializing the repository
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6244831Z [command]/usr/bin/git init /home/runner/work/vehapi/vehapi
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6379609Z hint: Using 'master' as the name for the initial branch. This default branch name
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6383136Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6387388Z hint: to use in all of your new repositories, which will suppress this warning,
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6390488Z hint: call:
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6391813Z hint:
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6397511Z hint: 	git config --global init.defaultBranch <name>
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6399944Z hint:
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6401973Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6405124Z hint: 'development'. The just-created branch can be renamed via this command:
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6407728Z hint:
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6410210Z hint: 	git branch -m <name>
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6411639Z hint:
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6413615Z hint: Disable this message with "git config set advice.defaultBranchName false"
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6417334Z Initialized empty Git repository in /home/runner/work/vehapi/vehapi/.git/
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6422370Z [command]/usr/bin/git remote add origin https://github.com/lucronn/vehapi
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6462807Z ##[endgroup]
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6465161Z ##[group]Disabling automatic garbage collection
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6467913Z [command]/usr/bin/git config --local gc.auto 0
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6494216Z ##[endgroup]
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6503156Z ##[group]Setting up auth
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6505497Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6539129Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6933813Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.6971366Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.7205789Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.7248580Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.7495072Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.7535749Z ##[endgroup]
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.7539613Z ##[group]Fetching the repository
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:16.7548882Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +61486f228e97daa94069e5efe0ef2c7507e56492:refs/remotes/origin/main
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:17.6841613Z From https://github.com/lucronn/vehapi
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:17.6846651Z  * [new ref]         61486f228e97daa94069e5efe0ef2c7507e56492 -> origin/main
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:17.6850315Z ##[endgroup]
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:17.6855647Z ##[group]Determining the checkout info
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:17.6858381Z ##[endgroup]
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:17.6859840Z [command]/usr/bin/git sparse-checkout disable
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:17.6863852Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:17.6865081Z ##[group]Checking out the ref
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:17.6865568Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:17.7466766Z Switched to a new branch 'main'
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:17.7469074Z branch 'main' set up to track 'origin/main'.
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:17.7481125Z ##[endgroup]
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:17.7521460Z [command]/usr/bin/git log -1 --format=%H
+deploy-vercel	Run actions/checkout@v4	2026-02-21T20:33:17.7544390Z 61486f228e97daa94069e5efe0ef2c7507e56492
+deploy-vercel	Download dist	﻿2026-02-21T20:33:17.7757395Z ##[group]Run actions/download-artifact@v4
+deploy-vercel	Download dist	2026-02-21T20:33:17.7757821Z with:
+deploy-vercel	Download dist	2026-02-21T20:33:17.7758055Z   name: dist
+deploy-vercel	Download dist	2026-02-21T20:33:17.7758309Z   path: dist
+deploy-vercel	Download dist	2026-02-21T20:33:17.7758573Z   merge-multiple: false
+deploy-vercel	Download dist	2026-02-21T20:33:17.7758880Z   repository: lucronn/vehapi
+deploy-vercel	Download dist	2026-02-21T20:33:17.7759204Z   run-id: 22263851770
+deploy-vercel	Download dist	2026-02-21T20:33:17.7759474Z ##[endgroup]
+deploy-vercel	Download dist	2026-02-21T20:33:17.9811343Z Downloading single artifact
+deploy-vercel	Download dist	2026-02-21T20:33:18.2250809Z Preparing to download the following artifacts:
+deploy-vercel	Download dist	2026-02-21T20:33:18.2263837Z - dist (ID: 5603160966, Size: 512634, Expected Digest: sha256:b906e593a9b963b974dc682efe2a2ae8ff887dafe93c4fc390526a351caf1e05)
+deploy-vercel	Download dist	2026-02-21T20:33:18.3897430Z Redirecting to blob download url: https://productionresultssa3.blob.core.windows.net/actions-results/ff7c61b9-ef0e-4fbf-8f22-5e2ab9ff7962/workflow-job-run-3d26fa1c-965e-5801-b989-89208eeb941a/artifacts/bcae0416621b3db43d8cba1e4454a792c7af9e4b7287e51056efc5a215d95839.zip
+deploy-vercel	Download dist	2026-02-21T20:33:18.3900213Z Starting download of artifact to: /home/runner/work/vehapi/vehapi/dist
+deploy-vercel	Download dist	2026-02-21T20:33:18.6415307Z (node:2048) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+deploy-vercel	Download dist	2026-02-21T20:33:18.6417428Z (Use `node --trace-deprecation ...` to show where the warning was created)
+deploy-vercel	Download dist	2026-02-21T20:33:18.9101281Z SHA256 digest of downloaded artifact is b906e593a9b963b974dc682efe2a2ae8ff887dafe93c4fc390526a351caf1e05
+deploy-vercel	Download dist	2026-02-21T20:33:18.9103094Z Artifact download completed successfully.
+deploy-vercel	Download dist	2026-02-21T20:33:18.9104344Z Total of 1 artifact(s) downloaded
+deploy-vercel	Download dist	2026-02-21T20:33:18.9105142Z Download artifact has finished successfully
+deploy-vercel	Deploy to Vercel	﻿2026-02-21T20:33:18.9251556Z ##[warning]Input 'zeit-token' has been deprecated with message: Zeit is now Vercel. Use "vercel-token" instead
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:18.9268655Z ##[group]Run amondnet/vercel-action@v20
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:18.9268938Z with:
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:18.9269390Z   zeit-token: ***
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:18.9269737Z   vercel-token: ***
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:18.9269996Z   vercel-org-id: ***
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:18.9270274Z   vercel-project-id: ***
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:18.9270518Z   vercel-args: --prod
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:18.9270739Z   working-directory: ./
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:18.9270977Z   github-comment: true
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:18.9271193Z   github-deployment: false
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:18.9271419Z ##[endgroup]
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:19.0161392Z set environment for vercel cli
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:19.0162043Z set env variable : VERCEL_ORG_ID
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:19.0162686Z set env variable : VERCEL_PROJECT_ID
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:19.0165339Z [command]/usr/local/bin/npx vercel --prod -t *** -m githubCommitSha=61486f228e97daa94069e5efe0ef2c7507e56492 -m githubCommitAuthorName=lucronn -m githubCommitAuthorLogin=lucronn -m githubDeployment=1 -m githubOrg=lucronn -m githubRepo=vehapi -m githubCommitOrg=lucronn -m githubCommitRepo=vehapi -m githubCommitMessage="ci: fix deploy.yml syntax and permissions" -m githubCommitRef=main
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:26.5947151Z npm warn exec The following package was not found and will be installed: vercel@50.22.1
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:26.5948315Z 
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:26.5950156Z npm warn exec The following package was not found and will be installed: vercel@50.22.1
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:52.0033539Z npm warn deprecated tar@7.5.7: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:52.0047703Z 
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:52.0049277Z npm warn deprecated tar@7.5.7: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:54.4811227Z Vercel CLI 50.22.1
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:54.4812788Z 
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:54.4813098Z Vercel CLI 50.22.1
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:54.5049626Z > NOTE: The Vercel CLI now collects telemetry regarding usage of the CLI.
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:54.5050588Z > This information is used to shape the CLI roadmap and prioritize features.
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:54.5051175Z 
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:54.5051906Z > NOTE: The Vercel CLI now collects telemetry regarding usage of the CLI.
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:54.5054327Z > This information is used to shape the CLI roadmap and prioritize features.
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:54.5056781Z > You can learn more, including how to opt-out if you'd not like to participate in this program, by visiting the following URL:
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:54.5058227Z > https://vercel.com/docs/cli/about-telemetry
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:54.5058622Z 
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:54.5059253Z > You can learn more, including how to opt-out if you'd not like to participate in this program, by visiting the following URL:
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:54.5060287Z > https://vercel.com/docs/cli/about-telemetry
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:54.6341112Z Retrieving project…
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:54.6341490Z 
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:54.6341728Z Retrieving project…
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:54.8748110Z Deploying curtt/vehapi
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:54.8748499Z 
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:54.8748656Z Deploying curtt/vehapi
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:57.2987450Z Inspect: https://vercel.com/curtt/vehapi/GoZS8gpyaaqi2rjxU2vokkUjJiZi [2s]
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:57.2988911Z Production: https://vehapi-or14kkq6g-curtt.vercel.app [2s]
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:57.2989740Z 
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:57.2990527Z Inspect: https://vercel.com/curtt/vehapi/GoZS8gpyaaqi2rjxU2vokkUjJiZi [2s]
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:57.2991772Z Production: https://vehapi-or14kkq6g-curtt.vercel.app [2s]
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:57.2992656Z https://vehapi-or14kkq6g-curtt.vercel.app
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:57.3001262Z https://vehapi-or14kkq6g-curtt.vercel.appBuilding...
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:57.3002259Z 
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:57.3005030Z Building...
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:59.0080895Z Building...
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:59.0083677Z 
+deploy-vercel	Deploy to Vercel	2026-02-21T20:33:59.0084132Z Building...
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:00.5193182Z Building: Running build in Washington, D.C., USA (East) – iad1
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:00.5194283Z 
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:00.5194922Z Building: Running build in Washington, D.C., USA (East) – iad1
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:00.5195684Z Building: Build machine configuration: 2 cores, 8 GB
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:00.5196650Z Building: Retrieving list of deployment files...
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:00.5197560Z 
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:00.5198016Z Building: Build machine configuration: 2 cores, 8 GB
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:00.5199160Z Building: Retrieving list of deployment files...
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:01.5513830Z Building: Downloading 258 deployment files...
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:01.5514592Z 
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:01.5515101Z Building: Downloading 258 deployment files...
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:04.6585798Z Building: Restored build cache from previous deployment (DxKh5vmvRwSXAMJwU44fynzhPbQv)
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:04.6586826Z 
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:04.6587320Z Building: Restored build cache from previous deployment (DxKh5vmvRwSXAMJwU44fynzhPbQv)
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:04.6588324Z Building: Running "vercel build"
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:04.6588591Z 
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:04.6588723Z Building: Running "vercel build"
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:05.6929497Z Building: Vercel CLI 50.22.0
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:05.6930374Z 
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:05.6930887Z Building: Vercel CLI 50.22.0
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:05.6931729Z Building: Detected `pnpm-lock.yaml` 9 which may be generated by pnpm@9.x or pnpm@10.x
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:05.6932778Z Building: Using pnpm@10.x based on project creation date
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:05.6933779Z Building: To use pnpm@9.x, manually opt in using corepack (https://vercel.com/docs/deployments/configure-a-build#corepack)
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:05.6934795Z Building: Installing dependencies...
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:05.6935178Z 
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:05.6935648Z Building: Detected `pnpm-lock.yaml` 9 which may be generated by pnpm@9.x or pnpm@10.x
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:05.6936852Z Building: Using pnpm@10.x based on project creation date
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:05.6938142Z Building: To use pnpm@9.x, manually opt in using corepack (https://vercel.com/docs/deployments/configure-a-build#corepack)
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:05.6938861Z Building: Installing dependencies...
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:07.7621263Z Building: ERR_PNPM_OUTDATED_LOCKFILE  Cannot install with "frozen-lockfile" because pnpm-lock.yaml is not up to date with <ROOT>/package.json
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:07.7622694Z 
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:07.7623997Z Building: ERR_PNPM_OUTDATED_LOCKFILE  Cannot install with "frozen-lockfile" because pnpm-lock.yaml is not up to date with <ROOT>/package.json
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:07.7625777Z Building: Note that in CI environments this setting is true by default. If you still need to run install in such cases, use "pnpm install --no-frozen-lockfile"
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:07.7627606Z Building: Failure reason:
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:07.7627886Z 
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:07.7628726Z Building: Note that in CI environments this setting is true by default. If you still need to run install in such cases, use "pnpm install --no-frozen-lockfile"
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:07.7629918Z Building: Failure reason:
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:07.7630550Z Building: specifiers in the lockfile don't match specifiers in package.json:
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:07.7631352Z Building: * 1 dependencies were added: happy-dom@^20.6.2
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:07.7631770Z 
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:07.7632148Z Building: specifiers in the lockfile don't match specifiers in package.json:
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:07.7632900Z Building: * 1 dependencies were added: happy-dom@^20.6.2
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:07.7633496Z Building: Error: Command "pnpm install" exited with 1
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:07.7633873Z 
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:07.7634091Z Building: Error: Command "pnpm install" exited with 1
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:08.0276902Z Error: Command "pnpm install" exited with 1
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:08.0287527Z 
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:08.0288111Z Error: Command "pnpm install" exited with 1
+deploy-vercel	Deploy to Vercel	2026-02-21T20:34:08.3630231Z ##[error]The process '/usr/local/bin/npx' failed with exit code 1
+deploy-vercel	Post Run actions/checkout@v4	﻿2026-02-21T20:34:08.3812205Z Post job cleanup.
+deploy-vercel	Post Run actions/checkout@v4	2026-02-21T20:34:08.5295170Z [command]/usr/bin/git version
+deploy-vercel	Post Run actions/checkout@v4	2026-02-21T20:34:08.5362516Z git version 2.52.0
+deploy-vercel	Post Run actions/checkout@v4	2026-02-21T20:34:08.5437548Z Temporarily overriding HOME='/home/runner/work/_temp/aa95cc5d-780b-4987-bc74-d19211cfd71b' before making global git config changes
+deploy-vercel	Post Run actions/checkout@v4	2026-02-21T20:34:08.5441581Z Adding repository directory to the temporary git global config as a safe directory
+deploy-vercel	Post Run actions/checkout@v4	2026-02-21T20:34:08.5454637Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/vehapi/vehapi
+deploy-vercel	Post Run actions/checkout@v4	2026-02-21T20:34:08.5579287Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+deploy-vercel	Post Run actions/checkout@v4	2026-02-21T20:34:08.5628114Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+deploy-vercel	Post Run actions/checkout@v4	2026-02-21T20:34:08.6022149Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+deploy-vercel	Post Run actions/checkout@v4	2026-02-21T20:34:08.6067274Z http.https://github.com/.extraheader
+deploy-vercel	Post Run actions/checkout@v4	2026-02-21T20:34:08.6083840Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+deploy-vercel	Post Run actions/checkout@v4	2026-02-21T20:34:08.6139978Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+deploy-vercel	Post Run actions/checkout@v4	2026-02-21T20:34:08.6614091Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+deploy-vercel	Post Run actions/checkout@v4	2026-02-21T20:34:08.6660860Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+deploy-vercel	Complete job	﻿2026-02-21T20:34:08.7202250Z Cleaning up orphan processes
+deploy-vercel	Complete job	2026-02-21T20:34:08.7971377Z Terminate orphan process: pid (2135) (node)
+deploy-firebase	Set up job	﻿2026-02-21T20:33:14.5844205Z Current runner version: '2.331.0'
+deploy-firebase	Set up job	2026-02-21T20:33:14.5868946Z ##[group]Runner Image Provisioner
+deploy-firebase	Set up job	2026-02-21T20:33:14.5869726Z Hosted Compute Agent
+deploy-firebase	Set up job	2026-02-21T20:33:14.5870198Z Version: 20260123.484
+deploy-firebase	Set up job	2026-02-21T20:33:14.5870798Z Commit: 6bd6555ca37d84114959e1c76d2c01448ff61c5d
+deploy-firebase	Set up job	2026-02-21T20:33:14.5871387Z Build Date: 2026-01-23T19:41:17Z
+deploy-firebase	Set up job	2026-02-21T20:33:14.5871977Z Worker ID: {72c18eaf-cf8f-4562-96f3-e19c2cca066e}
+deploy-firebase	Set up job	2026-02-21T20:33:14.5872597Z Azure Region: westus3
+deploy-firebase	Set up job	2026-02-21T20:33:14.5873108Z ##[endgroup]
+deploy-firebase	Set up job	2026-02-21T20:33:14.5874383Z ##[group]Operating System
+deploy-firebase	Set up job	2026-02-21T20:33:14.5874908Z Ubuntu
+deploy-firebase	Set up job	2026-02-21T20:33:14.5875331Z 24.04.3
+deploy-firebase	Set up job	2026-02-21T20:33:14.5875853Z LTS
+deploy-firebase	Set up job	2026-02-21T20:33:14.5876304Z ##[endgroup]
+deploy-firebase	Set up job	2026-02-21T20:33:14.5876725Z ##[group]Runner Image
+deploy-firebase	Set up job	2026-02-21T20:33:14.5877218Z Image: ubuntu-24.04
+deploy-firebase	Set up job	2026-02-21T20:33:14.5877623Z Version: 20260201.15.1
+deploy-firebase	Set up job	2026-02-21T20:33:14.5878521Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260201.15/images/ubuntu/Ubuntu2404-Readme.md
+deploy-firebase	Set up job	2026-02-21T20:33:14.5879965Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260201.15
+deploy-firebase	Set up job	2026-02-21T20:33:14.5880740Z ##[endgroup]
+deploy-firebase	Set up job	2026-02-21T20:33:14.5881565Z ##[group]GITHUB_TOKEN Permissions
+deploy-firebase	Set up job	2026-02-21T20:33:14.5883363Z Contents: read
+deploy-firebase	Set up job	2026-02-21T20:33:14.5883839Z Metadata: read
+deploy-firebase	Set up job	2026-02-21T20:33:14.5884289Z ##[endgroup]
+deploy-firebase	Set up job	2026-02-21T20:33:14.5886471Z Secret source: Actions
+deploy-firebase	Set up job	2026-02-21T20:33:14.5887152Z Prepare workflow directory
+deploy-firebase	Set up job	2026-02-21T20:33:14.6307027Z Prepare all required actions
+deploy-firebase	Set up job	2026-02-21T20:33:14.6403610Z Getting action download info
+deploy-firebase	Set up job	2026-02-21T20:33:15.1086189Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+deploy-firebase	Set up job	2026-02-21T20:33:15.2246995Z Download action repository 'actions/download-artifact@v4' (SHA:d3f86a106a0bac45b974a628896c90dbdf5c8093)
+deploy-firebase	Set up job	2026-02-21T20:33:16.0824916Z Download action repository 'FirebaseExtended/action-hosting-deploy@v0' (SHA:e2eda2e106cfa35cdbcf4ac9ddaf6c4756df2c8c)
+deploy-firebase	Set up job	2026-02-21T20:33:16.9218904Z Complete job name: deploy-firebase
+deploy-firebase	Run actions/checkout@v4	﻿2026-02-21T20:33:16.9953132Z ##[group]Run actions/checkout@v4
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:16.9954467Z with:
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:16.9955302Z   repository: lucronn/vehapi
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:16.9956813Z   token: ***
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:16.9957559Z   ssh-strict: true
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:16.9958402Z   ssh-user: git
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:16.9959151Z   persist-credentials: true
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:16.9960006Z   clean: true
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:16.9960764Z   sparse-checkout-cone-mode: true
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:16.9961700Z   fetch-depth: 1
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:16.9962414Z   fetch-tags: false
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:16.9963192Z   show-progress: true
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:16.9963970Z   lfs: false
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:16.9964688Z   submodules: false
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:16.9965582Z   set-safe-directory: true
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:16.9966737Z ##[endgroup]
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1102358Z Syncing repository: lucronn/vehapi
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1105739Z ##[group]Getting Git version info
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1107418Z Working directory is '/home/runner/work/vehapi/vehapi'
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1109349Z [command]/usr/bin/git version
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1154313Z git version 2.52.0
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1183349Z ##[endgroup]
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1200098Z Temporarily overriding HOME='/home/runner/work/_temp/ce86cae3-3214-4d0f-9c38-f7c1c2d26336' before making global git config changes
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1206131Z Adding repository directory to the temporary git global config as a safe directory
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1220939Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/vehapi/vehapi
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1262308Z Deleting the contents of '/home/runner/work/vehapi/vehapi'
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1267559Z ##[group]Initializing the repository
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1277622Z [command]/usr/bin/git init /home/runner/work/vehapi/vehapi
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1363355Z hint: Using 'master' as the name for the initial branch. This default branch name
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1368408Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1371586Z hint: to use in all of your new repositories, which will suppress this warning,
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1374467Z hint: call:
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1376069Z hint:
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1377927Z hint: 	git config --global init.defaultBranch <name>
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1379728Z hint:
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1381342Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1383872Z hint: 'development'. The just-created branch can be renamed via this command:
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1386407Z hint:
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1387555Z hint: 	git branch -m <name>
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1388878Z hint:
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1390713Z hint: Disable this message with "git config set advice.defaultBranchName false"
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1393647Z Initialized empty Git repository in /home/runner/work/vehapi/vehapi/.git/
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1399225Z [command]/usr/bin/git remote add origin https://github.com/lucronn/vehapi
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1421675Z ##[endgroup]
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1424655Z ##[group]Disabling automatic garbage collection
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1427136Z [command]/usr/bin/git config --local gc.auto 0
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1457162Z ##[endgroup]
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1459335Z ##[group]Setting up auth
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1465293Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1499580Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1792586Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.1978394Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.2072139Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.2110585Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.2305785Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.2341853Z ##[endgroup]
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.2345068Z ##[group]Fetching the repository
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:17.2354156Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +61486f228e97daa94069e5efe0ef2c7507e56492:refs/remotes/origin/main
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:18.1895256Z From https://github.com/lucronn/vehapi
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:18.1897154Z  * [new ref]         61486f228e97daa94069e5efe0ef2c7507e56492 -> origin/main
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:18.1927219Z ##[endgroup]
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:18.1937709Z ##[group]Determining the checkout info
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:18.1938490Z ##[endgroup]
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:18.1947252Z [command]/usr/bin/git sparse-checkout disable
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:18.2010004Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:18.2061114Z ##[group]Checking out the ref
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:18.2064664Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:18.2847838Z Switched to a new branch 'main'
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:18.2858224Z branch 'main' set up to track 'origin/main'.
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:18.2878649Z ##[endgroup]
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:18.2941244Z [command]/usr/bin/git log -1 --format=%H
+deploy-firebase	Run actions/checkout@v4	2026-02-21T20:33:18.2977014Z 61486f228e97daa94069e5efe0ef2c7507e56492
+deploy-firebase	Download dist	﻿2026-02-21T20:33:18.3183395Z ##[group]Run actions/download-artifact@v4
+deploy-firebase	Download dist	2026-02-21T20:33:18.3183706Z with:
+deploy-firebase	Download dist	2026-02-21T20:33:18.3183882Z   name: dist
+deploy-firebase	Download dist	2026-02-21T20:33:18.3184049Z   path: dist
+deploy-firebase	Download dist	2026-02-21T20:33:18.3184225Z   merge-multiple: false
+deploy-firebase	Download dist	2026-02-21T20:33:18.3184433Z   repository: lucronn/vehapi
+deploy-firebase	Download dist	2026-02-21T20:33:18.3184645Z   run-id: 22263851770
+deploy-firebase	Download dist	2026-02-21T20:33:18.3184821Z ##[endgroup]
+deploy-firebase	Download dist	2026-02-21T20:33:18.5157541Z Downloading single artifact
+deploy-firebase	Download dist	2026-02-21T20:33:18.8253710Z Preparing to download the following artifacts:
+deploy-firebase	Download dist	2026-02-21T20:33:18.8254704Z - dist (ID: 5603160966, Size: 512634, Expected Digest: sha256:b906e593a9b963b974dc682efe2a2ae8ff887dafe93c4fc390526a351caf1e05)
+deploy-firebase	Download dist	2026-02-21T20:33:18.9956942Z Redirecting to blob download url: https://productionresultssa3.blob.core.windows.net/actions-results/ff7c61b9-ef0e-4fbf-8f22-5e2ab9ff7962/workflow-job-run-3d26fa1c-965e-5801-b989-89208eeb941a/artifacts/bcae0416621b3db43d8cba1e4454a792c7af9e4b7287e51056efc5a215d95839.zip
+deploy-firebase	Download dist	2026-02-21T20:33:18.9961058Z Starting download of artifact to: /home/runner/work/vehapi/vehapi/dist
+deploy-firebase	Download dist	2026-02-21T20:33:19.2743095Z (node:2027) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+deploy-firebase	Download dist	2026-02-21T20:33:19.2754424Z (Use `node --trace-deprecation ...` to show where the warning was created)
+deploy-firebase	Download dist	2026-02-21T20:33:19.6376053Z SHA256 digest of downloaded artifact is b906e593a9b963b974dc682efe2a2ae8ff887dafe93c4fc390526a351caf1e05
+deploy-firebase	Download dist	2026-02-21T20:33:19.6378543Z Artifact download completed successfully.
+deploy-firebase	Download dist	2026-02-21T20:33:19.6379817Z Total of 1 artifact(s) downloaded
+deploy-firebase	Download dist	2026-02-21T20:33:19.6384659Z Download artifact has finished successfully
+deploy-firebase	Deploy to Firebase	﻿2026-02-21T20:33:19.6504061Z ##[group]Run FirebaseExtended/action-hosting-deploy@v0
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.6504395Z with:
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.6504809Z   repoToken: ***
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.6504992Z   channelId: live
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.6505185Z   projectId: vehapi-torque
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.6505417Z   expires: 7d
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.6505863Z   entryPoint: .
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.6506054Z   firebaseToolsVersion: latest
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.6506285Z   disableComment: false
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.6506479Z   force: false
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.6506645Z env:
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.6506827Z   FIREBASE_CLI_PREVIEWS: hostingchannels
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.6507074Z ##[endgroup]
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.7054413Z /home/runner/work/_actions/FirebaseExtended/action-hosting-deploy/v0/bin/action.min.js:2102
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.7055756Z         throw new Error(`Input required and not supplied: ${name}`);
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.7056305Z         ^
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.7056490Z 
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.7056757Z Error: Input required and not supplied: firebaseServiceAccount
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.7057794Z     at Object.getInput (/home/runner/work/_actions/FirebaseExtended/action-hosting-deploy/v0/bin/action.min.js:2102:15)
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.7059012Z     at Object.<anonymous> (/home/runner/work/_actions/FirebaseExtended/action-hosting-deploy/v0/bin/action.min.js:93179:43)
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.7060001Z     at Module._compile (node:internal/modules/cjs/loader:1521:14)
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.7060774Z     at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.7061402Z     at Module.load (node:internal/modules/cjs/loader:1266:32)
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.7061949Z     at Module._load (node:internal/modules/cjs/loader:1091:12)
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.7062635Z     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.7063338Z     at node:internal/main/run_main_module:28:49
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.7063628Z 
+deploy-firebase	Deploy to Firebase	2026-02-21T20:33:19.7063749Z Node.js v20.19.6
+deploy-firebase	Post Run actions/checkout@v4	﻿2026-02-21T20:33:19.7162626Z Post job cleanup.
+deploy-firebase	Post Run actions/checkout@v4	2026-02-21T20:33:19.8061698Z [command]/usr/bin/git version
+deploy-firebase	Post Run actions/checkout@v4	2026-02-21T20:33:19.8099054Z git version 2.52.0
+deploy-firebase	Post Run actions/checkout@v4	2026-02-21T20:33:19.8144013Z Temporarily overriding HOME='/home/runner/work/_temp/5802b027-3016-4045-86dd-5f92e57aefb0' before making global git config changes
+deploy-firebase	Post Run actions/checkout@v4	2026-02-21T20:33:19.8146402Z Adding repository directory to the temporary git global config as a safe directory
+deploy-firebase	Post Run actions/checkout@v4	2026-02-21T20:33:19.8151783Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/vehapi/vehapi
+deploy-firebase	Post Run actions/checkout@v4	2026-02-21T20:33:19.8194083Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+deploy-firebase	Post Run actions/checkout@v4	2026-02-21T20:33:19.8226979Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+deploy-firebase	Post Run actions/checkout@v4	2026-02-21T20:33:19.8421432Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+deploy-firebase	Post Run actions/checkout@v4	2026-02-21T20:33:19.8464231Z http.https://github.com/.extraheader
+deploy-firebase	Post Run actions/checkout@v4	2026-02-21T20:33:19.8465963Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+deploy-firebase	Post Run actions/checkout@v4	2026-02-21T20:33:19.8509509Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+deploy-firebase	Post Run actions/checkout@v4	2026-02-21T20:33:19.8790004Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+deploy-firebase	Post Run actions/checkout@v4	2026-02-21T20:33:19.8835951Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+deploy-firebase	Complete job	﻿2026-02-21T20:33:19.9265830Z Cleaning up orphan processes

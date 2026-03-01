@@ -1,9 +1,8 @@
-import os
 import re
 from pathlib import Path
 
 # Base directory
-base_dir = Path(r"x:\cursor\vehapi\src\pages\vehicle-dashboard\components\sections")
+base_dir = Path(__file__).resolve().parent / "src" / "pages" / "vehicle-dashboard" / "components" / "sections"
 
 files = list(base_dir.rglob("*.component.html"))
 

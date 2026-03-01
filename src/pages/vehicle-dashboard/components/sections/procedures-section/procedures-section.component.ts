@@ -24,6 +24,7 @@ import { WindowManagerService } from '../../../../../services/window-manager.ser
 export class ProceduresSectionComponent implements OnInit {
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
+    @Input() vehicleName: string = '';
     @Input() motorVehicleId?: string;
 
     private vehicleData = inject(VehicleDataService);
@@ -109,19 +110,12 @@ export class ProceduresSectionComponent implements OnInit {
 
         const cost = this.creditsService.COSTS.PROCEDURES;
         if (this.creditsService.balance() < cost) {
-            alert('Insufficient credits. Please purchase more.');
-            return;
+            return; // Button shows insufficient credits already
         }
 
-        if (confirm(`Unlock Repair Procedures for ${cost} credits?`)) {
-            this.isUnlocking.set(true);
-            const success = await this.creditsService.unlockModule(this.vehicleId, 'procedures', cost);
-            this.isUnlocking.set(false);
-
-            if (!success) {
-                alert('Unlock failed. Please try again.');
-            }
-        }
+        this.isUnlocking.set(true);
+        await this.creditsService.unlockModule(this.vehicleId, this.vehicleName, 'procedures', cost);
+        this.isUnlocking.set(false);
     }
 
     viewProcedure(procedure: Procedure) {

@@ -96,6 +96,7 @@ export interface ArticleContentData {
   html: string;
   content?: string;
   html_content?: string;
+  pdfDataUri?: string;  // Set when article content is a PDF (base64 data URI)
   id?: string;
   title?: string;
   metadata?: Record<string, any>;

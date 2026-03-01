@@ -1,14 +1,18 @@
 import { ChangeDetectionStrategy, Component, computed, inject, Input, signal, ViewEncapsulation, OnInit, OnChanges, SimpleChanges, SecurityContext } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { DomSanitizer } from '@angular/platform-browser';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map, switchMap, of, catchError, Subject, takeUntil } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 
 import { MotorApiService } from '../../services/motor-api.service';
 import { MotorHtmlProcessorService } from '../../services/motor-html-processor.service';
-import { LucideAngularModule, ArrowLeft, Maximize2, List, X } from 'lucide-angular';
+import { AiRewriteService } from '../../services/ai-rewrite.service';
+import { LucideAngularModule, ArrowLeft, Maximize2, List, X, Sparkles, BookOpen } from 'lucide-angular';
 import { ImageViewerModalComponent } from './components/image-viewer-modal/image-viewer-modal.component';
+import { TutorialComponent } from '../../components/tutorial/tutorial.component';
+import { TutorialStep } from '../../models/motor.models';
 
 export interface TableOfContents {
   id: string;
@@ -34,7 +38,7 @@ function cleanSpecificTag(match: string): string {
   styleUrls: ['./article-viewer.component.css'],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterModule, LucideAngularModule, ImageViewerModalComponent],
+  imports: [CommonModule, RouterModule, LucideAngularModule, ImageViewerModalComponent, TutorialComponent],
   standalone: true
 })
 export class ArticleViewerComponent implements OnInit, OnChanges {
@@ -48,9 +52,10 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   private route = inject(ActivatedRoute);
   private motorApi = inject(MotorApiService);
   private motorHtml = inject(MotorHtmlProcessorService);
+  private aiRewrite = inject(AiRewriteService);
   private sanitizer = inject(DomSanitizer);
 
-  readonly icons = { ArrowLeft, Maximize2, List, X };
+  readonly icons = { ArrowLeft, Maximize2, List, X, Sparkles, BookOpen };
 
   // Use a Subject to trigger data loading when inputs change or on init
   private loadTrigger = new Subject<void>();
@@ -66,8 +71,25 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   articleSubtitle = signal<string>('');
 
   selectedImageUrl = signal<string | null>(null);
-  rawResponse = signal<any>(null); // For debugging
+  pdfDataUri = signal<SafeResourceUrl | null>(null); // Set when article is a PDF
+  isRetrying = signal(false); // Re-auth in progress
+  retryCount = signal(0);
   params = toSignal(this.route.paramMap);
+
+  // AI rewriting & tutorial state
+  isRewriting = signal(false);
+  tutorialSteps = signal<TutorialStep[]>([]);
+  isGeneratingTutorial = signal(false);
+  showTutorial = signal(false);
+
+  /** Raw processed HTML kept for tutorial generation */
+  protected rawHtmlForTutorial = '';
+
+  private http = inject(HttpClient);
+
+  // Signal-safe accessors for template — fall back to route params when inputs are undefined
+  contentSourceSig = computed(() => this.contentSource || this.params()?.get('contentSource') || '');
+  vehicleIdSig = computed(() => this.vehicleId || this.params()?.get('vehicleId') || '');
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['articleId']) {
@@ -172,36 +194,139 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
     // Fetch Content
     this.motorApi.getArticleContent(this.contentSource, this.vehicleId, aid).subscribe({
       next: (content) => {
-        console.log('[ArticleViewer] Raw API Response:', content);
-        this.rawResponse.set(content);
-        if (!content || !content.body || !content.body.html) {
+        if (!content || !content.body || !(content.body as any).html) {
           console.error('[ArticleViewer] API returned empty content body or html');
         }
 
         const rawHtml = (content.body as any)?.html || '';
+        const pdfUri = (content.body as any)?.pdfDataUri || null;
+
+        if (pdfUri) {
+          // PDF content — set safe URI for inline viewer, clear HTML
+          this.pdfDataUri.set(this.sanitizer.bypassSecurityTrustResourceUrl(pdfUri));
+          this.articleContent.set('');
+          this.sections.set([]);
+          this.isLoading.set(false);
+          return;
+        }
+
+        this.pdfDataUri.set(null);
         const { htmlString, safeHtml, sections } = this.processHtml(rawHtml, this.contentSource!, this.vehicleId!);
 
-        console.log('[ArticleViewer] Processed HTML length:', htmlString?.length);
-        console.log('[ArticleViewer] Processed HTML snippet:', htmlString?.substring(0, 100));
-
         if (!htmlString || htmlString.trim() === '') {
-          console.warn('[ArticleViewer] Content is empty after processing');
           this.articleContent.set('');
         } else {
+          // Show original content immediately (progressive enhancement)
           this.articleContent.set(safeHtml);
+          // Store for tutorial generation
+          this.rawHtmlForTutorial = htmlString;
+          // Reset tutorial state when loading a new article
+          this.tutorialSteps.set([]);
+          this.showTutorial.set(false);
+          // Trigger AI rewriting in the background
+          this.triggerAiRewrite(htmlString);
         }
 
         this.sections.set(sections);
         this.isLoading.set(false);
         // Reset scroll position when loading new article content in modal
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) { }
       },
       error: (err) => {
-        console.error('[ArticleViewer] Failed to load article API error:', err);
-        this.error.set('Failed to load article content. ' + (err.message || 'Unknown error'));
-        this.isLoading.set(false);
+        console.error('[ArticleViewer] Failed to load article:', err);
+        const status = err?.status;
+
+        if ((status === 401 || status === 403) && this.retryCount() < 3) {
+          // Auth expired — proxy is re-authenticating, poll and retry
+          this.isRetrying.set(true);
+          this.retryCount.update(n => n + 1);
+          this.pollAndRetry();
+        } else {
+          this.isRetrying.set(false);
+          this.retryCount.set(0);
+          // Extract clean message without exposing proxy URLs
+          let msg = 'Could not load this article.';
+          if (status === 404) msg = 'Article not found.';
+          else if (status === 401 || status === 403) msg = 'Session expired. Please refresh and try again.';
+          else if (status === 500) msg = 'Server error — the data service is temporarily unavailable.';
+          else if (status === 0) msg = 'Network error — check your connection and try again.';
+          this.error.set(msg);
+          this.isLoading.set(false);
+        }
       }
     });
+  }
+
+  /** Poll /auth/status until ready, then re-attempt loadData */
+  private pollAndRetry() {
+    const baseUrl = this.motorApi.baseUrl;
+    let attempts = 0;
+    const maxAttempts = 20; // ~10s
+
+    const poll = () => {
+      if (attempts++ > maxAttempts) {
+        this.isRetrying.set(false);
+        this.error.set('Re-authentication timed out. Please refresh the page.');
+        this.isLoading.set(false);
+        return;
+      }
+
+      this.http.get<any>(`${baseUrl}/auth/status`).subscribe({
+        next: (status) => {
+          if (status?.status === 'success' || status?.sessionValid === true) {
+            console.log('[ArticleViewer] Auth restored, retrying article load...');
+            this.isRetrying.set(false);
+            this.loadData();
+          } else {
+            // Not ready yet, poll again in 800ms
+            setTimeout(poll, 800);
+          }
+        },
+        error: () => setTimeout(poll, 1000)
+      });
+    };
+
+    setTimeout(poll, 1000); // Give it 1s head start
+  }
+
+  /** Rewrites article HTML in the background and updates content when done */
+  private triggerAiRewrite(htmlString: string) {
+    if (!htmlString) return;
+    this.isRewriting.set(true);
+    this.aiRewrite.rewriteArticleHtml(htmlString, this.articleTitle()).subscribe({
+      next: (rewritten) => {
+        if (rewritten && rewritten !== htmlString) {
+          const safe = this.sanitizer.sanitize(SecurityContext.HTML, rewritten) || '';
+          if (safe) {
+            this.articleContent.set(safe);
+            this.rawHtmlForTutorial = rewritten;
+          }
+        }
+        this.isRewriting.set(false);
+      },
+      error: () => this.isRewriting.set(false)
+    });
+  }
+
+  /** Generates tutorial steps from the current article HTML */
+  startTutorial() {
+    if (this.isGeneratingTutorial()) return;
+    const html = this.rawHtmlForTutorial;
+    if (!html) return;
+    this.isGeneratingTutorial.set(true);
+    this.showTutorial.set(false);
+    this.aiRewrite.generateTutorialSteps(html, this.articleTitle()).subscribe({
+      next: (steps) => {
+        this.tutorialSteps.set(steps);
+        this.showTutorial.set(steps.length > 0);
+        this.isGeneratingTutorial.set(false);
+      },
+      error: () => this.isGeneratingTutorial.set(false)
+    });
+  }
+
+  closeTutorial() {
+    this.showTutorial.set(false);
   }
 
   private cleanTitle(rawTitle: string): string {

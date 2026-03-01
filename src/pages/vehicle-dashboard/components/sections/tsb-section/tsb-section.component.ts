@@ -26,6 +26,7 @@ import { CreditsService } from '../../../../../services/credits.service';
 export class TsbSectionComponent implements OnInit {
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
+    @Input() vehicleName: string = '';
     @Input() motorVehicleId?: string;
 
     private vehicleData = inject(VehicleDataService);
@@ -90,21 +91,15 @@ export class TsbSectionComponent implements OnInit {
 
         const cost = this.creditsService.COSTS.TSB;
         if (this.creditsService.balance() < cost) {
-            alert('Insufficient credits. Please purchase more.');
-            return;
+            return; // Button shows insufficient credits already
         }
 
-        if (confirm(`Unlock Technical Service Bulletins for ${cost} credits?`)) {
-            this.isUnlocking.set(true);
-            const success = await this.creditsService.unlockModule(this.vehicleId, 'tsbs', cost);
-            this.isUnlocking.set(false);
+        this.isUnlocking.set(true);
+        const success = await this.creditsService.unlockModule(this.vehicleId, this.vehicleName, 'tsbs', cost);
+        this.isUnlocking.set(false);
 
-            if (!success) {
-                alert('Unlock failed. Please try again.');
-            } else {
-                // Update display since we are now unlocked
-                this.updateDisplayedTsbs();
-            }
+        if (success) {
+            this.updateDisplayedTsbs();
         }
     }
 
