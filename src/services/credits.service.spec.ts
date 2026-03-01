@@ -34,14 +34,22 @@ mock.module('../environments/environment', () => ({
     }
 }));
 
+import '@angular/compiler';
 // Mock @angular/core
 mock.module('@angular/core', () => ({
     Injectable: () => (target: any) => target,
+    computed: (fn: any) => fn,
     inject: (token: any) => {
         if (token === MockHttpClientToken) return mockHttpClient;
         if (token === MockUserIdServiceToken) return mockUserIdService;
+        if (token && token.name === 'AuthService') return {
+            user: () => null,
+            getIdToken: async () => null,
+            signInWithGoogle: async () => null
+        };
         return null;
     },
+    effect: () => {},
     signal: (initialValue: any) => {
         let value = initialValue;
         const s: any = () => value;
