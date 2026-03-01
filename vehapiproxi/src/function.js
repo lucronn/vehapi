@@ -806,29 +806,38 @@ app.use('/', authMiddleware, createProxyMiddleware({
                 // even 5000 items is only ~1MB — safe for iOS.
                 const isArticleCatalog = req.path.includes('/articles/v2');
 
-                if (!isArticleCatalog) {
+                if (!isArticleCatalog && normalizedData.length > 1000) {
                     try {
                         let parsedJson = JSON.parse(normalizedData);
                         let didTruncate = false;
 
-                        const truncateArrays = (obj) => {
-                            if (!obj || typeof obj !== 'object') return;
-                            if (Array.isArray(obj)) {
-                                if (obj.length > 500) {
-                                    obj.length = 500;
+                        const queue = [parsedJson];
+                        let head = 0;
+
+                        while (head < queue.length) {
+                            const current = queue[head++];
+
+                            if (Array.isArray(current)) {
+                                if (current.length > 500) {
+                                    current.length = 500;
                                     didTruncate = true;
                                 }
-                                for (let i = 0; i < obj.length; i++) {
-                                    truncateArrays(obj[i]);
+                                for (let i = 0; i < current.length; i++) {
+                                    const item = current[i];
+                                    if (item && typeof item === 'object') {
+                                        queue.push(item);
+                                    }
                                 }
                             } else {
-                                for (const key of Object.keys(obj)) {
-                                    truncateArrays(obj[key]);
+                                const keys = Object.keys(current);
+                                for (let i = 0; i < keys.length; i++) {
+                                    const item = current[keys[i]];
+                                    if (item && typeof item === 'object') {
+                                        queue.push(item);
+                                    }
                                 }
                             }
-                        };
-
-                        truncateArrays(parsedJson);
+                        }
 
                         if (didTruncate) {
                             normalizedData = JSON.stringify(parsedJson);
