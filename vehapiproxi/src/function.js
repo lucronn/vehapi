@@ -15,6 +15,23 @@ import { getUserData, unlockModule, getTransactions } from './credits.js';
 import { checkParsedArticle } from './supabase.js';
 import jwt from 'jsonwebtoken';
 
+// AI parser is loaded lazily to avoid cold-start crashes when GEMINI_API_KEY is absent
+let _rewriteArticleHtml = null;
+let _generateTutorialSteps = null;
+async function getAiFunctions() {
+    if (_rewriteArticleHtml && _generateTutorialSteps) {
+        return { rewriteArticleHtml: _rewriteArticleHtml, generateTutorialSteps: _generateTutorialSteps };
+    }
+    try {
+        const mod = await import('./ai_parser.js');
+        _rewriteArticleHtml = mod.rewriteArticleHtml;
+        _generateTutorialSteps = mod.generateTutorialSteps;
+    } catch (e) {
+        logger.warn('AI parser unavailable:', e.message);
+    }
+    return { rewriteArticleHtml: _rewriteArticleHtml, generateTutorialSteps: _generateTutorialSteps };
+}
+
 // background_worker is loaded lazily to prevent cold-start crashes on serverless
 let _enqueueParsingTask = null;
 async function getEnqueue() {
@@ -592,9 +609,55 @@ app.get('/api/credits/transactions', secureAuthMiddleware, async (req, res) => {
 // Using express.raw to preserve the raw body for signature verification
 app.post('/api/credits/webhook', express.raw({ type: 'application/json' }), handleWebhook);
 
+// --- AI ENDPOINTS ---
+
+// POST /api/rewrite — rewrites article HTML text content via Gemini
+// Body: { html: string, title?: string }
+// Returns: { html: string } or error
+app.post('/api/rewrite', express.json({ limit: '256kb' }), async (req, res) => {
+    const { html, title } = req.body || {};
+    if (!html || typeof html !== 'string') {
+        return res.status(400).json({ error: 'html field is required' });
+    }
+
+    const { rewriteArticleHtml } = await getAiFunctions();
+    if (!rewriteArticleHtml) {
+        return res.status(503).json({ error: 'AI rewriting unavailable — GEMINI_API_KEY not configured' });
+    }
+
+    try {
+        const rewritten = await rewriteArticleHtml(html, title || '');
+        res.json({ html: rewritten });
+    } catch (err) {
+        logger.error('AI rewrite error:', err);
+        res.status(500).json({ error: 'AI rewrite failed', message: err.message });
+    }
+});
+
+// POST /api/tutorials/generate — generates tutorial steps from article HTML via Gemini
+// Body: { html: string, title?: string }
+// Returns: { steps: TutorialStep[] } or error
+app.post('/api/tutorials/generate', express.json({ limit: '256kb' }), async (req, res) => {
+    const { html, title } = req.body || {};
+    if (!html || typeof html !== 'string') {
+        return res.status(400).json({ error: 'html field is required' });
+    }
+
+    const { generateTutorialSteps } = await getAiFunctions();
+    if (!generateTutorialSteps) {
+        return res.status(503).json({ error: 'AI tutorial generation unavailable — GEMINI_API_KEY not configured' });
+    }
+
+    try {
+        const steps = await generateTutorialSteps(html, title || '');
+        res.json({ steps });
+    } catch (err) {
+        logger.error('AI tutorial generation error:', err);
+        res.status(500).json({ error: 'Tutorial generation failed', message: err.message });
+    }
+});
 
 
-// Unified Proxy Middleware
 // Mount at root '/' to handle ALL requests (api, graphic, assets, v1, etc.)
 app.use('/', authMiddleware, createProxyMiddleware({
     target: config.motorApiBase, // https://sites.motor.com/m1

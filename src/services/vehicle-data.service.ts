@@ -1,4 +1,4 @@
-import { Injectable, inject, WritableSignal } from '@angular/core';
+import { Injectable, inject, WritableSignal, isDevMode } from '@angular/core';
 import { Observable, from, of, forkJoin } from 'rxjs';
 import { map, switchMap, tap, catchError, timeout } from 'rxjs/operators';
 import { MotorApiService } from './motor-api.service';
@@ -444,24 +444,31 @@ export class VehicleDataService {
                     });
                 }
 
-                // DEBUG: Log bucket names and article sample for diagnostics
-                const uniqueBuckets = [...new Set(articles.map((a: any) => a.bucket))];
-                console.log(`[VehicleData] Section = ${section}, Total articles = ${articles.length}, Valid buckets = [${validBuckets.join(', ')}], All unique buckets in response=[${uniqueBuckets.join(', ')}]`);
+                if (isDevMode()) {
+                    const uniqueBuckets = [...new Set(articles.map((a: any) => a.bucket))];
+                    console.log(`[VehicleData] Section = ${section}, Total articles = ${articles.length}, Valid buckets = [${validBuckets.join(', ')}], All unique buckets in response=[${uniqueBuckets.join(', ')}]`);
+                }
 
                 let filtered = articles.filter((a: any) =>
                     validBuckets.includes(a.bucket) ||
                     (a.parentBucket && validBuckets.includes(a.parentBucket))
                 ).map(strategy.mapper);
 
-                console.log(`[VehicleData] Section = ${section}, Filtered count = ${filtered.length} `);
+                if (isDevMode()) {
+                    console.log(`[VehicleData] Section = ${section}, Filtered count = ${filtered.length} `);
+                }
 
                 // Handle Fallback Search (DTCs)
                 if (strategy.enableFallbackSearch && filtered.length === 0) {
-                    console.log(`[VehicleData] No ${strategy.type} found with empty search.Triggering fallback search...`);
+                    if (isDevMode()) {
+                        console.log(`[VehicleData] No ${strategy.type} found with empty search.Triggering fallback search...`);
+                    }
                     this.motorApi.searchArticles(contentSource, vehicleId, 'DTC').subscribe({
                         next: (fallbackRes) => {
                             const fallbackArticles = fallbackRes.body?.articleDetails || [];
-                            console.log(`[VehicleData] Fallback search returned ${fallbackArticles.length} articles`);
+                            if (isDevMode()) {
+                                console.log(`[VehicleData] Fallback search returned ${fallbackArticles.length} articles`);
+                            }
 
                             const fallbackFiltered = fallbackArticles.filter((a: any) =>
                                 validBuckets.includes(a.bucket) ||
@@ -469,7 +476,9 @@ export class VehicleDataService {
                             ).map(strategy.mapper);
 
                             if (fallbackFiltered.length > 0) {
-                                console.log(`[VehicleData] Fallback search found ${fallbackFiltered.length} items.`);
+                                if (isDevMode()) {
+                                    console.log(`[VehicleData] Fallback search found ${fallbackFiltered.length} items.`);
+                                }
                                 updateState(fallbackFiltered);
                             } else {
                                 updateState([]);
