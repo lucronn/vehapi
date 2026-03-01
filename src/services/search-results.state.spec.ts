@@ -209,4 +209,130 @@ describe('SearchResultsState', () => {
             expect(procBucket?.children?.[0].articles[0].id).toBe('p1');
         });
     });
+
+    describe('filterTabsAndTheirFullBuckets', () => {
+        const mockArticles: Article[] = [
+            { id: '1', title: 'Article 1', bucket: 'General', sort: 1 },
+            { id: '2', title: 'Article 2', bucket: 'Diagnostics', sort: 2 },
+            { id: '3', title: 'Article 3', bucket: 'Procedures', sort: 3 },
+            { id: '-999', title: 'Magic 1', bucket: 'General', sort: 4 },
+            { id: '-998', title: 'Magic 2', bucket: 'Diagnostics', sort: 5 }
+        ];
+
+        const mockFilterTabs: FilterTab[] = [
+            {
+                name: 'Browse All',
+                filterTabType: 'All',
+                articleTrailId: 100,
+                isCountUnknown: false,
+                buckets: [
+                    { name: 'General', count: 0, sort: 1 },
+                    { name: 'Diagnostics', count: 0, sort: 2 },
+                    { name: 'Procedures', count: 0, sort: 3 }
+                ]
+            },
+            {
+                name: 'Service',
+                filterTabType: 'Basic',
+                articleTrailId: 200,
+                isCountUnknown: true,
+                buckets: [
+                    { name: 'General', count: 0, sort: 1 }
+                ]
+            },
+            {
+                name: 'Repair',
+                filterTabType: 'Basic',
+                articleTrailId: 300,
+                isCountUnknown: false,
+                buckets: [
+                    { name: 'Diagnostics', count: 0, sort: 2 },
+                    {
+                        name: 'Procedures', count: 0, sort: 3, children: [
+                            { name: 'ProcChild', count: 0, sort: 1 }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        beforeEach(() => {
+            state.articleDetails.set(mockArticles);
+            state.filterTabs.set(mockFilterTabs);
+        });
+
+        test('should correctly group buckets by filter tab', () => {
+            const results = state.filterTabsAndTheirFullBuckets();
+            const serviceTab = results.find((r: any) => r.filterTab === 'Service');
+
+            expect(serviceTab).toBeDefined();
+            expect(serviceTab?.buckets.length).toBe(1);
+            expect(serviceTab?.buckets[0].bucketName).toBe('General');
+            expect(serviceTab?.articleTrailId).toBe(200);
+            expect(serviceTab?.isCountUnknown).toBe(true);
+            expect(serviceTab?.filterTabType).toBe('Basic');
+        });
+
+        test('should include all buckets in the "All" tab', () => {
+            const results = state.filterTabsAndTheirFullBuckets();
+            const allTab = results.find((r: any) => r.filterTab === 'Browse All');
+
+            expect(allTab).toBeDefined();
+            // Browse All tab receives all distributed buckets.
+            // In the logic: fullBucketByFilterTab[allTab.name]?.push(fullBucket)
+            // fullBuckets will have General, Diagnostics, Procedures. So Browse All gets all of them.
+            expect(allTab?.buckets.length).toBe(3);
+        });
+
+        test('should calculate article counts correctly and exclude magic IDs', () => {
+            const results = state.filterTabsAndTheirFullBuckets();
+            const serviceTab = results.find((r: any) => r.filterTab === 'Service');
+
+            // Service tab -> General bucket. Articles: '1', '-999'. Magic ID '-999' is excluded. Count: 1.
+            expect(serviceTab?.articlesCount).toBe(1);
+
+            const repairTab = results.find((r: any) => r.filterTab === 'Repair');
+            // Repair tab -> Diagnostics ('2', '-998' -> count 1) and Procedures ('3' -> count 1). Total: 2.
+            expect(repairTab?.articlesCount).toBe(2);
+        });
+
+        test('should calculate child bucket article counts correctly', () => {
+            const customArticles: Article[] = [
+                { id: '10', title: 'Proc Parent', bucket: 'Procedures', sort: 1 },
+                { id: '11', title: 'Proc Child', bucket: 'ProcChild', sort: 2 }
+            ];
+            const customTabs: FilterTab[] = [{
+                name: 'Repair',
+                filterTabType: 'Basic',
+                buckets: [
+                    {
+                        name: 'Procedures', count: 0, sort: 1, children: [
+                            { name: 'ProcChild', count: 0, sort: 1 }
+                        ]
+                    }
+                ]
+            }];
+
+            state.articleDetails.set(customArticles);
+            state.filterTabs.set(customTabs);
+
+            const results = state.filterTabsAndTheirFullBuckets();
+            const repairTab = results.find((r: any) => r.filterTab === 'Repair');
+
+            // Parent has 1 article, child has 1 article, so total is 2.
+            expect(repairTab?.articlesCount).toBe(2);
+        });
+
+        test('should handle empty or missing buckets gracefully', () => {
+            state.filterTabs.set([
+                { name: 'Empty Tab', filterTabType: 'Basic', buckets: [] }
+            ]);
+
+            const results = state.filterTabsAndTheirFullBuckets();
+            expect(results.length).toBe(1);
+            expect(results[0].filterTab).toBe('Empty Tab');
+            expect(results[0].buckets.length).toBe(0);
+            expect(results[0].articlesCount).toBe(0);
+        });
+    });
 });
