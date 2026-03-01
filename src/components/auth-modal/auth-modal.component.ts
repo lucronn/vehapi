@@ -1,4 +1,4 @@
-import { Component, signal, inject, output } from '@angular/core';
+import { Component, signal, inject, output, input, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
@@ -227,6 +227,8 @@ type AuthMode = 'signin' | 'signup' | 'reset';
 })
 export class AuthModalComponent {
     close = output<void>();
+    /** When provided, open in this mode (e.g. 'signup' for registration). */
+    startMode = input<AuthMode>('signin');
 
     private authService = inject(AuthService);
 
@@ -235,6 +237,10 @@ export class AuthModalComponent {
     email = '';
     password = '';
     mode = signal<AuthMode>('signin');
+
+    constructor() {
+        effect(() => this.mode.set(this.startMode()));
+    }
     loading = signal(false);
     showPassword = signal(false);
 

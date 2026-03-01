@@ -8,8 +8,9 @@ import {
   LucideAngularModule,
   CreditCard, ArrowLeft, Plus, Car, Receipt, User,
   Check, Clock, ChevronRight, Sparkles, Home, Lock,
-  LayoutDashboard, Settings
+  LayoutDashboard, Settings, LogIn, UserPlus, LogOut
 } from 'lucide-angular';
+import { AuthModalComponent } from '../../components/auth-modal/auth-modal.component';
 
 type Tab = 'overview' | 'vehicles' | 'receipts' | 'buy';
 
@@ -29,7 +30,7 @@ const MODULE_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-credits-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, LucideAngularModule],
+  imports: [CommonModule, RouterLink, LucideAngularModule, AuthModalComponent],
   template: `
     <div class="min-h-screen bg-[#0a0a0f] text-white font-sans">
       <!-- Ambient Background -->
@@ -55,21 +56,59 @@ const MODULE_LABELS: Record<string, string> = {
               {{ authService.user()?.email ?? 'My Account' }}
             </h1>
           </div>
-          <div class="flex items-center gap-3">
-            <button (click)="openBillingPortal()" [disabled]="creditsService.portalLoading()"
-              class="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 hover:border-torque-cyan/40 hover:bg-white/[0.04] transition-colors text-sm text-gray-400 hover:text-white disabled:opacity-50">
-              <lucide-icon [img]="icons.Settings" class="w-4 h-4"></lucide-icon>
-              {{ creditsService.portalLoading() ? 'Opening…' : 'Billing' }}
-            </button>
-            <div class="flex items-center gap-3 bg-white/[0.04] border border-white/10 rounded-2xl px-5 py-3">
-              <lucide-icon [img]="icons.CreditCard" class="w-5 h-5 text-torque-cyan"></lucide-icon>
-              <div>
-                <p class="text-xs text-gray-400">Credits</p>
-                <p class="text-2xl font-mono font-bold text-white">{{ creditsService.balance() }}</p>
+          <div class="flex items-center gap-3 flex-wrap">
+            @if (authService.user(); as user) {
+              <button (click)="signOut()" class="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 hover:border-red-400/40 hover:bg-red-400/10 transition-colors text-sm text-gray-400 hover:text-red-300">
+                <lucide-icon [img]="icons.LogOut" class="w-4 h-4"></lucide-icon>
+                Sign out
+              </button>
+              <button (click)="openBillingPortal()" [disabled]="creditsService.portalLoading()"
+                class="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 hover:border-torque-cyan/40 hover:bg-white/[0.04] transition-colors text-sm text-gray-400 hover:text-white disabled:opacity-50">
+                <lucide-icon [img]="icons.Settings" class="w-4 h-4"></lucide-icon>
+                {{ creditsService.portalLoading() ? 'Opening…' : 'Payment methods' }}
+              </button>
+              <div class="flex items-center gap-3 bg-white/[0.04] border border-white/10 rounded-2xl px-5 py-3">
+                <lucide-icon [img]="icons.CreditCard" class="w-5 h-5 text-torque-cyan"></lucide-icon>
+                <div>
+                  <p class="text-xs text-gray-400">Credits</p>
+                  <p class="text-2xl font-mono font-bold text-white">{{ creditsService.balance() }}</p>
+                </div>
               </div>
-            </div>
+            } @else {
+              <div class="flex items-center gap-2">
+                <button (click)="openAuthModal('signin')" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.06] border border-white/10 hover:border-torque-cyan/40 text-sm text-white font-medium">
+                  <lucide-icon [img]="icons.LogIn" class="w-4 h-4"></lucide-icon>
+                  Sign in
+                </button>
+                <button (click)="openAuthModal('signup')" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-torque-cyan/20 border border-torque-cyan/40 text-torque-cyan hover:bg-torque-cyan/30 text-sm font-medium">
+                  <lucide-icon [img]="icons.UserPlus" class="w-4 h-4"></lucide-icon>
+                  Create account
+                </button>
+              </div>
+            }
           </div>
         </header>
+
+        <!-- Not signed in: prompt to sign in or register -->
+        @if (!authService.user()) {
+        <div class="mb-6 p-5 rounded-xl bg-white/[0.04] border border-white/10">
+          <p class="text-sm text-gray-400 mb-1">Sign in or create an account to:</p>
+          <ul class="text-sm text-gray-300 list-disc list-inside space-y-0.5 mb-4">
+            <li>View your credit balance and purchase history</li>
+            <li>Buy credits and manage payment methods</li>
+            <li>See which vehicles and modules you’ve unlocked with credits</li>
+          </ul>
+          <div class="flex flex-wrap gap-2">
+            <button (click)="openAuthModal('signin')" class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-white text-sm font-medium">Sign in</button>
+            <button (click)="openAuthModal('signup')" class="px-4 py-2 rounded-lg bg-torque-cyan text-black text-sm font-semibold hover:bg-torque-cyan/90">Create account</button>
+          </div>
+        </div>
+        }
+
+        <!-- Auth Modal -->
+        @if (showAuthModal()) {
+        <app-auth-modal [startMode]="authModalStartMode()" (close)="showAuthModal.set(false)" />
+        }
 
         <!-- Purchase success banner -->
         @if (purchaseSuccess()) {
@@ -220,9 +259,10 @@ const MODULE_LABELS: Record<string, string> = {
         </div>
         }
 
-        <!-- ══════════════════════ RECEIPTS TAB ══════════════════════ -->
+        <!-- ══════════════════════ HISTORY TAB (purchases + credit usage) ══════════════════════ -->
         @if (activeTab() === 'receipts') {
         <div class="animate-fade-in-up">
+          <p class="text-xs text-gray-500 mb-4">Credit purchases (top-ups) and credit usage (unlocks for vehicles).</p>
           @if (creditsService.transactionsLoading()) {
           <div class="space-y-3">
             @for (i of [1,2,3,4,5]; track i) {
@@ -235,7 +275,7 @@ const MODULE_LABELS: Record<string, string> = {
               <lucide-icon [img]="icons.Receipt" class="w-8 h-8 text-gray-500"></lucide-icon>
             </div>
             <h3 class="text-lg font-semibold mb-2">No transactions yet</h3>
-            <p class="text-gray-500 text-sm">Your credit purchases and unlock history will appear here.</p>
+            <p class="text-gray-500 text-sm">Credit purchases and unlocks (items purchased with credits) will appear here.</p>
           </div>
           } @else {
           <div class="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
@@ -243,6 +283,7 @@ const MODULE_LABELS: Record<string, string> = {
               <thead>
                 <tr class="border-b border-white/[0.06]">
                   <th class="text-left text-xs text-gray-500 uppercase tracking-wider px-5 py-3">Date</th>
+                  <th class="text-left text-xs text-gray-500 uppercase tracking-wider px-5 py-3 hidden sm:table-cell">Type</th>
                   <th class="text-left text-xs text-gray-500 uppercase tracking-wider px-5 py-3">Description</th>
                   <th class="text-right text-xs text-gray-500 uppercase tracking-wider px-5 py-3">Amount</th>
                   <th class="text-right text-xs text-gray-500 uppercase tracking-wider px-5 py-3 hidden sm:table-cell">USD</th>
@@ -252,6 +293,11 @@ const MODULE_LABELS: Record<string, string> = {
                 @for (txn of creditsService.transactions(); track txn.id) {
                 <tr class="border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors">
                   <td class="px-5 py-4 text-gray-400 whitespace-nowrap">{{ txn.created_at | date:'MMM d, y' }}</td>
+                  <td class="px-5 py-4 hidden sm:table-cell">
+                    <span [class]="txn.type === 'purchase' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-orange-500/20 text-orange-400'" class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded">
+                      {{ txn.type === 'purchase' ? 'Purchase' : 'Usage' }}
+                    </span>
+                  </td>
                   <td class="px-5 py-4">
                     <p class="font-medium text-white">{{ txnLabel(txn) }}</p>
                     @if (txn.stripe_session_id) {
@@ -355,15 +401,17 @@ export class CreditsDashboardComponent implements OnInit {
   readonly authService = inject(AuthService);
   readonly route = inject(ActivatedRoute);
 
-  readonly icons = { CreditCard, ArrowLeft, Plus, Car, Receipt, User, Check, Clock, ChevronRight, Sparkles, Home, Lock, LayoutDashboard, Settings };
+  readonly icons = { CreditCard, ArrowLeft, Plus, Car, Receipt, User, Check, Clock, ChevronRight, Sparkles, Home, Lock, LayoutDashboard, Settings, LogIn, UserPlus, LogOut };
 
   activeTab = signal<Tab>('overview');
   purchaseSuccess = signal(false);
+  showAuthModal = signal(false);
+  authModalStartMode = signal<'signin' | 'signup'>('signin');
 
   readonly tabs = [
     { id: 'overview' as Tab, label: 'Overview', icon: LayoutDashboard },
     { id: 'vehicles' as Tab, label: 'My Vehicles', icon: Car },
-    { id: 'receipts' as Tab, label: 'Receipts', icon: Receipt },
+    { id: 'receipts' as Tab, label: 'History', icon: Receipt },
     { id: 'buy' as Tab, label: 'Buy Credits', icon: Plus },
   ];
 
@@ -436,6 +484,15 @@ export class CreditsDashboardComponent implements OnInit {
 
   openBillingPortal() {
     this.creditsService.openBillingPortal();
+  }
+
+  openAuthModal(mode: 'signin' | 'signup') {
+    this.authModalStartMode.set(mode);
+    this.showAuthModal.set(true);
+  }
+
+  async signOut() {
+    await this.authService.signOut();
   }
 
   moduleLabel(mod: string): string {

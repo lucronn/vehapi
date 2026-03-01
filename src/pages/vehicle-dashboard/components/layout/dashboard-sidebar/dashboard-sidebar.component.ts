@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { LucideAngularModule, House, TriangleAlert, FileText, Cable, Wrench, ClipboardList, Package, LogOut, MapPin, Calendar, User, LogIn } from 'lucide-angular';
+import { LucideAngularModule, House, TriangleAlert, FileText, Cable, Wrench, ClipboardList, Package, LogOut, MapPin, Calendar, User, LogIn, CreditCard } from 'lucide-angular';
 
 import { SectionAvailability } from '../../../../../services/vehicle-data.service';
 import { AuthService } from '../../../../../services/auth.service';
@@ -28,7 +28,7 @@ export class DashboardSidebarComponent {
     protected authService = inject(AuthService);
     showAuthModal = signal(false);
 
-    readonly icons = { House, TriangleAlert, FileText, Cable, Wrench, ClipboardList, Package, LogOut, MapPin, Calendar, User, LogIn };
+    readonly icons = { House, TriangleAlert, FileText, Cable, Wrench, ClipboardList, Package, LogOut, MapPin, Calendar, User, LogIn, CreditCard };
 
     onSectionClick(section: DashboardSection) {
         this.sectionChange.emit(section);
