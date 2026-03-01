@@ -254,7 +254,7 @@ export class CreditsService {
         try {
             const headers = await this.getHeaders();
             const res = await firstValueFrom(
-                this.http.post<{ success: true, credits: number, unlocks: UnlockMap }>(
+                this.http.post<{ success: boolean, credits: number, unlocks: UnlockMap }>(
                     `${this.apiUrl}/unlock`,
                     { vehicleId, vehicleName, moduleType, cost },
                     { headers }
