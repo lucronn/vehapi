@@ -18,7 +18,6 @@ bootstrapApplication(AppComponent, {
     provideRouter([
       { path: '', component: HomeComponent },
       { path: 'credits', component: CreditsDashboardComponent },
-      { path: 'account', component: CreditsDashboardComponent },
       { path: 'vehicle/:contentSource/:vehicleId', component: VehicleDashboardComponent },
       { path: 'vehicle/:contentSource/:vehicleId/article/:articleId', component: ArticleViewerComponent },
       { path: '**', redirectTo: '', pathMatch: 'full' }

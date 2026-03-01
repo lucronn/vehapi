@@ -25,6 +25,7 @@ import { DiagramsSectionComponent } from './components/sections/diagrams-section
 import { ComponentLocationsSectionComponent } from './components/sections/component-locations-section/component-locations-section.component';
 import { MaintenanceSectionComponent } from './components/sections/maintenance-section/maintenance-section.component';
 import { PartsSectionComponent } from './components/sections/parts-section/parts-section.component';
+import { CommonIssuesSectionComponent } from './components/sections/common-issues-section/common-issues-section.component';
 
 // Icons
 import { LucideAngularModule, Menu, X, House, TriangleAlert, FileText, Wrench, Package } from 'lucide-angular';
@@ -60,6 +61,7 @@ export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'comp
     ComponentLocationsSectionComponent,
     MaintenanceSectionComponent,
     PartsSectionComponent,
+    CommonIssuesSectionComponent,
     LogoComponent,
     OrientationSelectorModalComponent,
     ThemeToggleComponent
@@ -304,10 +306,6 @@ export class VehicleDashboardComponent {
         }
       },
       error: (err) => {
-        if (err?.name === 'AbortError' || err?.error?.name === 'AbortError') {
-          // Silently ignore HTTP cancellations during rapid navigation
-          return;
-        }
         console.error('[Dashboard] Failed to resolve vehicle mapping, falling back', err);
         this.searchResultsState.search(contentSource, vehicleId, '', this.motorVehicleId());
       }
@@ -332,28 +330,22 @@ export class VehicleDashboardComponent {
       return;
     }
 
-    // Open in Window or Navigate on Mobile
+    // Open in Window
     const contentSource = this.contentSource();
     const vehicleId = this.vehicleId();
     const title = article.title || 'Article Viewer';
 
     if (contentSource && vehicleId && articleId) {
-      if (this.windowManager.isDesktop()) {
-        this.windowManager.openWindow(
-          title,
-          ArticleViewerComponent,
-          {
-            articleId: articleId,
-            contentSource: contentSource,
-            vehicleId: vehicleId,
-            articleTitleInput: title
-          }
-        );
-      } else {
-        this.router.navigate(['/vehicle', contentSource, vehicleId, 'article', articleId], {
-          queryParams: { title }
-        });
-      }
+      this.windowManager.openWindow(
+        title,
+        ArticleViewerComponent,
+        {
+          articleId: articleId,
+          contentSource: contentSource,
+          vehicleId: vehicleId,
+          articleTitleInput: title
+        }
+      );
     }
   }
 

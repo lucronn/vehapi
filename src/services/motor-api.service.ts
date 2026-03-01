@@ -107,12 +107,6 @@ export class MotorApiService {
    * Verbose logging helper for API errors
    */
   private logApiError(url: string, error: any, duration?: number): void {
-    // Suppress AbortError from Angular switchMap / HTTP client cancellation
-    if (error?.name === 'AbortError' || error?.name === 'HttpErrorResponse' && error?.error?.name === 'AbortError') {
-      console.log(`[API REQUEST CANCELLED] Frontend intentionally cancelled HTTP request to ${url} ( likely due to fast route navigation )`);
-      return;
-    }
-
     const timestamp = new Date().toISOString();
     console.group(`[API ERROR] ${timestamp}`);
     console.error('❌ Request Failed');
@@ -191,20 +185,7 @@ export class MotorApiService {
 
   getVehicleName(contentSource: string, vehicleId: string): Observable<ApiResponse<string>> {
     const url = `${this.baseUrl}/api/source/${contentSource}/${vehicleId}/name`;
-    return this.getWithLogging<ApiResponse<string>>(url).pipe(
-      map(res => {
-        // Proxy sometimes returns empty strings, 500s or incomplete objects.
-        // Ensure we never return "undefined undefined" parsing by providing an explicit string map.
-        if (!res || !res.body) {
-          return { ...res, body: 'Unknown Vehicle' } as ApiResponse<string>;
-        }
-        // In an edge case where the name comes back literally as undefined undefined
-        if (typeof res.body === 'string' && (res.body.includes('undefined undefined') || res.body.trim() === '')) {
-          return { ...res, body: 'Unknown Vehicle' } as ApiResponse<string>;
-        }
-        return res;
-      })
-    );
+    return this.getWithLogging<ApiResponse<string>>(url);
   }
 
   searchArticles(contentSource: string, vehicleId: string, searchTerm: string = ''): Observable<ApiResponse<ArticlesData>> {
@@ -390,7 +371,7 @@ export class MotorApiService {
           } else if (body.html_content) {
             res.body.html = body.html_content;
           } else if (body.pdf) {
-            // Handle PDF content - store as data URI for inline viewing
+            // Handle PDF content - check if it's base64 data or HTML content
             const pdfContent = body.pdf;
             if (typeof pdfContent === 'string') {
               const cleanBase64 = pdfContent.replace(/\s/g, '');
@@ -401,8 +382,15 @@ export class MotorApiService {
                 const dataUri = cleanBase64.startsWith('data:')
                   ? cleanBase64
                   : `data:application/pdf;base64,${cleanBase64}`;
-                res.body.pdfDataUri = dataUri;
-                res.body.html = ''; // No HTML content - viewer handles it
+                res.body.html = `
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:40px 20px;text-align:center;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:#60a5fa;opacity:0.8"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                      <p style="color:var(--text-secondary);font-size:0.9rem;max-width:300px;">This document is only available in PDF format.</p>
+                      <a href="${dataUri}" download="document.pdf"
+                        style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:var(--primary);color:white;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none;">
+                        Download PDF
+                      </a>
+                    </div>`;
               } else if (pdfContent.startsWith('<')) {
                 res.body.html = pdfContent;
               } else {

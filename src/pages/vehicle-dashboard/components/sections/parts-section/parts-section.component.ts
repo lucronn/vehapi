@@ -24,7 +24,6 @@ import { CreditsService } from '../../../../../services/credits.service';
 export class PartsSectionComponent implements OnInit {
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
-    @Input() vehicleName: string = '';
 
     private motorApi = inject(MotorApiService);
     private destroyRef = inject(DestroyRef);
@@ -99,15 +98,21 @@ export class PartsSectionComponent implements OnInit {
 
         const cost = this.creditsService.COSTS.PARTS;
         if (this.creditsService.balance() < cost) {
-            return; // Button shows insufficient credits already
+            alert('Insufficient credits. Please purchase more.');
+            return;
         }
 
-        this.isUnlocking.set(true);
-        const success = await this.creditsService.unlockModule(this.vehicleId, this.vehicleName, 'parts', cost);
-        this.isUnlocking.set(false);
+        if (confirm(`Unlock Parts & Catalog for ${cost} credits?`)) {
+            this.isUnlocking.set(true);
+            const success = await this.creditsService.unlockModule(this.vehicleId, 'parts', cost);
+            this.isUnlocking.set(false);
 
-        if (success) {
-            this.updateDisplayedParts();
+            if (!success) {
+                alert('Unlock failed. Please try again.');
+            } else {
+                // Update display since we are now unlocked
+                this.updateDisplayedParts();
+            }
         }
     }
 }

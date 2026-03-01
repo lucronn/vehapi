@@ -1,37 +1,23 @@
-import { Injectable, inject, computed } from '@angular/core';
-import { AuthService } from './auth.service';
 
-/**
- * Provides a stable User ID for the application.
- * - If the user is authenticated via Supabase, returns their Supabase UUID.
- * - Otherwise, returns an anonymous local ID stored in localStorage as fallback.
- */
+import { Injectable } from '@angular/core';
+
 @Injectable({
     providedIn: 'root'
 })
 export class UserIdService {
-    private authService = inject(AuthService);
     private readonly STORAGE_KEY = 'torque_user_id';
+    private userId: string | null = null;
 
-    /** Returns the currently active user ID (Supabase UUID or anonymous local ID). */
-    readonly userId = computed(() => {
-        const supabaseId = this.authService.userId();
-        if (supabaseId) return supabaseId;
-        return this.getOrCreateAnonymousId();
-    });
-
-    /** @deprecated Use `userId` signal instead */
-    getUserId(): string {
-        return this.userId();
+    constructor() {
+        this.userId = localStorage.getItem(this.STORAGE_KEY);
+        if (!this.userId) {
+            this.userId = this.generateId();
+            localStorage.setItem(this.STORAGE_KEY, this.userId);
+        }
     }
 
-    private getOrCreateAnonymousId(): string {
-        let id = localStorage.getItem(this.STORAGE_KEY);
-        if (!id) {
-            id = this.generateId();
-            localStorage.setItem(this.STORAGE_KEY, id);
-        }
-        return id;
+    getUserId(): string {
+        return this.userId!;
     }
 
     private generateId(): string {

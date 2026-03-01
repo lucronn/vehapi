@@ -1,5 +1,6 @@
+
+import { onRequest } from 'firebase-functions/v2/https';
 import express from 'express';
-import crypto from 'crypto';
 import cors from 'cors';
 import { createProxyMiddleware, responseInterceptor } from 'http-proxy-middleware';
 import fs from 'fs';
@@ -10,28 +11,8 @@ import { authManager } from './auth.js';
 import logger, { logBuffer, logRequest, logResponse } from './logger.js';
 import swaggerUi from 'swagger-ui-express';
 import { createRequire } from 'module';
-import { createCheckoutSession, createBillingPortalSession, handleWebhook } from './stripe.js';
-import { getUserData, unlockModule, getTransactions } from './credits.js';
-import { checkParsedArticle } from './supabase.js';
-import jwt from 'jsonwebtoken';
-
-// AI parser is loaded lazily to avoid cold-start crashes when GEMINI_API_KEY is absent
-let _rewriteArticleHtml = null;
-let _generateTutorialSteps = null;
-async function getAiFunctions() {
-    if (_rewriteArticleHtml && _generateTutorialSteps) {
-        return { rewriteArticleHtml: _rewriteArticleHtml, generateTutorialSteps: _generateTutorialSteps };
-    }
-    try {
-        const mod = await import('./ai_parser.js');
-        _rewriteArticleHtml = mod.rewriteArticleHtml;
-        _generateTutorialSteps = mod.generateTutorialSteps;
-    } catch (e) {
-        logger.warn('AI parser unavailable:', e.message);
-    }
-    return { rewriteArticleHtml: _rewriteArticleHtml, generateTutorialSteps: _generateTutorialSteps };
-}
-
+import { createCheckoutSession, handleWebhook } from './stripe.js';
+import { getUserData, unlockModule } from './credits.js';
 // background_worker is loaded lazily to prevent cold-start crashes on serverless
 let _enqueueParsingTask = null;
 async function getEnqueue() {
@@ -105,45 +86,6 @@ app.post('/auth/start', async (req, res) => {
 });
 
 // ============ DEBUG ENDPOINTS ============
-
-// Debug Authentication Middleware
-const debugAuthMiddleware = (req, res, next) => {
-    const { debugApiKey } = config;
-
-    // Fail closed if no key is configured
-    if (!debugApiKey) {
-        logger.warn('Debug access attempted but DEBUG_API_KEY is not configured');
-        return res.status(403).json({ error: 'Debug access disabled' });
-    }
-
-    const requestKey = req.headers['x-debug-key'];
-
-    // Constant-time comparison
-    if (!requestKey || typeof requestKey !== 'string') {
-        logger.warn(`Unauthorized debug access attempt from ${req.ip}`);
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    // Ensure lengths are equal first to avoid timing attacks on length
-    if (requestKey.length !== debugApiKey.length) {
-        logger.warn(`Unauthorized debug access attempt from ${req.ip}`);
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const requestKeyBuf = Buffer.from(requestKey);
-    const debugApiKeyBuf = Buffer.from(debugApiKey);
-
-    if (!crypto.timingSafeEqual(requestKeyBuf, debugApiKeyBuf)) {
-        logger.warn(`Unauthorized debug access attempt from ${req.ip}`);
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    next();
-};
-
-// Apply auth middleware to all debug endpoints
-app.use('/debug', debugAuthMiddleware);
-
 // Get all logs with optional filtering
 app.get('/debug/logs', (req, res) => {
     try {
@@ -212,7 +154,7 @@ app.post('/debug/clear', (req, res) => {
     }
 });
 
-// Async Authentication Middleware (Upstream Proxy)
+// Async Authentication Middleware
 const authMiddleware = async (req, res, next) => {
     // Skip auth for preflight requests
     if (req.method === 'OPTIONS') {
@@ -495,49 +437,18 @@ app.get('/api/source/:source/vehicle/:vehicleId/article/:articleId/orientations'
 
 // --- CREDIT SYSTEM ENDPOINTS ---
 
-// Verify Supabase JWT (access_token). Uses SUPABASE_JWT_SECRET from project settings.
-function verifySupabaseJwt(token) {
-    const secret = process.env.SUPABASE_JWT_SECRET;
-    if (!secret) {
-        logger.warn('SUPABASE_JWT_SECRET not set; cannot verify Supabase JWT');
-        return null;
+// Middleware to extract user ID from header
+const userIdMiddleware = (req, res, next) => {
+    const userId = req.headers['x-user-id'];
+    if (!userId) {
+        return res.status(401).json({ error: 'User ID required' });
     }
-    try {
-        const decoded = jwt.verify(token, secret, { algorithms: ['HS256'] });
-        return decoded; // decoded.sub is the user id
-    } catch (err) {
-        return null;
-    }
-}
-
-// Secure Auth Middleware: require Bearer token (Supabase JWT)
-const secureAuthMiddleware = async (req, res, next) => {
-    if (req.method === 'OPTIONS') {
-        return next();
-    }
-
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        if (req.headers['x-user-id']) {
-            logger.warn('x-user-id header rejected; use Bearer token (Supabase session).');
-        }
-        return res.status(401).json({ error: 'Authorization header with Bearer token required' });
-    }
-
-    const token = authHeader.split('Bearer ')[1];
-    const decoded = verifySupabaseJwt(token);
-    if (!decoded) {
-        return res.status(401).json({ error: 'Invalid or expired authentication token' });
-    }
-
-    req.userId = decoded.sub; // Supabase user id
-    req.user = decoded;
-    req.isVerified = true;
-    return next();
+    req.userId = userId;
+    next();
 };
 
 // Get User Balance & Unlocks
-app.get('/api/credits/balance', secureAuthMiddleware, async (req, res) => {
+app.get('/api/credits/balance', userIdMiddleware, async (req, res) => {
     try {
         const userData = await getUserData(req.userId);
         res.json({
@@ -551,37 +462,22 @@ app.get('/api/credits/balance', secureAuthMiddleware, async (req, res) => {
 });
 
 // Create Checkout Session
-app.post('/api/credits/checkout', express.json(), secureAuthMiddleware, async (req, res) => {
+app.post('/api/credits/checkout', express.json(), userIdMiddleware, async (req, res) => {
     try {
-        const { amount, origin } = req.body;
-        const sessionUrl = await createCheckoutSession(req.userId, amount, origin || req.headers.origin);
+        const { amount, priceId, origin } = req.body;
+        const sessionUrl = await createCheckoutSession(req.userId, amount, priceId, origin || req.headers.origin);
         res.json({ url: sessionUrl });
     } catch (error) {
         logger.error('Error creating checkout session:', error);
-        res.status(500).json({ error: error.message || 'Failed to create checkout session' });
-    }
-});
-
-// Create Billing Portal Session (manage payment methods, invoices)
-app.post('/api/credits/portal', express.json(), secureAuthMiddleware, async (req, res) => {
-    try {
-        const userData = await getUserData(req.userId);
-        const customerId = userData.stripe_customer_id || null;
-        const origin = req.body?.origin || req.headers.origin || '';
-        const returnUrl = `${origin}/#/account`;
-        const sessionUrl = await createBillingPortalSession(customerId, returnUrl);
-        res.json({ url: sessionUrl });
-    } catch (error) {
-        logger.error('Error creating billing portal session:', error);
-        res.status(400).json({ error: error.message || 'Unable to open billing. Make a purchase first to manage payment methods.' });
+        res.status(500).json({ error: 'Failed to create checkout session' });
     }
 });
 
 // Unlock Module
-app.post('/api/credits/unlock', express.json(), secureAuthMiddleware, async (req, res) => {
+app.post('/api/credits/unlock', express.json(), userIdMiddleware, async (req, res) => {
     try {
-        const { vehicleId, vehicleName, moduleType, cost } = req.body;
-        const userData = await unlockModule(req.userId, vehicleId, vehicleName || vehicleId, moduleType, cost);
+        const { vehicleId, moduleType, cost } = req.body;
+        const userData = await unlockModule(req.userId, vehicleId, moduleType, cost);
         res.json({
             success: true,
             credits: userData.credits,
@@ -593,71 +489,11 @@ app.post('/api/credits/unlock', express.json(), secureAuthMiddleware, async (req
     }
 });
 
-// Get Transaction History
-app.get('/api/credits/transactions', secureAuthMiddleware, async (req, res) => {
-    try {
-        const limit = parseInt(req.query.limit) || 50;
-        const txns = await getTransactions(req.userId, limit);
-        res.json({ transactions: txns });
-    } catch (error) {
-        logger.error('Error fetching transactions:', error);
-        res.status(500).json({ error: 'Failed to fetch transaction history' });
-    }
-});
-
 // Stripe Webhook (No auth middleware, validates signature)
 // Using express.raw to preserve the raw body for signature verification
 app.post('/api/credits/webhook', express.raw({ type: 'application/json' }), handleWebhook);
 
-// --- AI ENDPOINTS ---
-
-// POST /api/rewrite — rewrites article HTML text content via Gemini
-// Body: { html: string, title?: string }
-// Returns: { html: string } or error
-app.post('/api/rewrite', express.json({ limit: '256kb' }), async (req, res) => {
-    const { html, title } = req.body || {};
-    if (!html || typeof html !== 'string') {
-        return res.status(400).json({ error: 'html field is required' });
-    }
-
-    const { rewriteArticleHtml } = await getAiFunctions();
-    if (!rewriteArticleHtml) {
-        return res.status(503).json({ error: 'AI rewriting unavailable — GEMINI_API_KEY not configured' });
-    }
-
-    try {
-        const rewritten = await rewriteArticleHtml(html, title || '');
-        res.json({ html: rewritten });
-    } catch (err) {
-        logger.error('AI rewrite error:', err);
-        res.status(500).json({ error: 'AI rewrite failed', message: err.message });
-    }
-});
-
-// POST /api/tutorials/generate — generates tutorial steps from article HTML via Gemini
-// Body: { html: string, title?: string }
-// Returns: { steps: TutorialStep[] } or error
-app.post('/api/tutorials/generate', express.json({ limit: '256kb' }), async (req, res) => {
-    const { html, title } = req.body || {};
-    if (!html || typeof html !== 'string') {
-        return res.status(400).json({ error: 'html field is required' });
-    }
-
-    const { generateTutorialSteps } = await getAiFunctions();
-    if (!generateTutorialSteps) {
-        return res.status(503).json({ error: 'AI tutorial generation unavailable — GEMINI_API_KEY not configured' });
-    }
-
-    try {
-        const steps = await generateTutorialSteps(html, title || '');
-        res.json({ steps });
-    } catch (err) {
-        logger.error('AI tutorial generation error:', err);
-        res.status(500).json({ error: 'Tutorial generation failed', message: err.message });
-    }
-});
-
-
+// Unified Proxy Middleware
 // Mount at root '/' to handle ALL requests (api, graphic, assets, v1, etc.)
 app.use('/', authMiddleware, createProxyMiddleware({
     target: config.motorApiBase, // https://sites.motor.com/m1
@@ -794,52 +630,6 @@ app.use('/', authMiddleware, createProxyMiddleware({
                 normalizedData = normalizedData.replace(/&nbsp;/g, ' ');
                 logger.info('Normalized HTML content in proxy (Whitespace only)');
             } else if (contentType.includes('application/json')) {
-                // =============== IOS / SERVERLESS CRASH PROTECTION ===============
-                // Massive arrays (like 5,000+ items) will crash iOS Safari due to massive
-                // Javascript Array heap allocations upon JSON.parse.
-                // We truncate any deeply nested array to 500 items max at the Proxy level.
-                //
-                // EXCEPTION: /articles/v2 is the master article CATALOG endpoint. It returns
-                // lightweight metadata (id, title, bucket) for ALL article types (DTCs, TSBs,
-                // Procedures, etc.). Truncating this array breaks section filtering because
-                // DTCs/TSBs may appear past index 500. Since each item is ~200 bytes,
-                // even 5000 items is only ~1MB — safe for iOS.
-                const isArticleCatalog = req.path.includes('/articles/v2');
-
-                if (!isArticleCatalog) {
-                    try {
-                        let parsedJson = JSON.parse(normalizedData);
-                        let didTruncate = false;
-
-                        const truncateArrays = (obj) => {
-                            if (!obj || typeof obj !== 'object') return;
-                            if (Array.isArray(obj)) {
-                                if (obj.length > 500) {
-                                    obj.length = 500;
-                                    didTruncate = true;
-                                }
-                                for (let i = 0; i < obj.length; i++) {
-                                    truncateArrays(obj[i]);
-                                }
-                            } else {
-                                for (const key of Object.keys(obj)) {
-                                    truncateArrays(obj[key]);
-                                }
-                            }
-                        };
-
-                        truncateArrays(parsedJson);
-
-                        if (didTruncate) {
-                            normalizedData = JSON.stringify(parsedJson);
-                            logger.info(`Truncated massive JSON arrays to prevent iOS/Vercel OOM crashes on ${req.path}`);
-                        }
-                    } catch (e) {
-                        logger.warn('Failed to parse or truncate JSON for performance protections:', e);
-                    }
-                }
-                // =================================================================
-
                 // Enqueue for background AI parsing and caching to Supabase
                 // Done via lazy dynamic import to prevent cold-start crashes on serverless
                 getEnqueue().then(enqueue => {
@@ -871,5 +661,18 @@ app.use('/', authMiddleware, createProxyMiddleware({
 }));
 
 
-export { app };
+// Export as Firebase Function (Optional)
+let motorApiAuthProxy;
+try {
+    motorApiAuthProxy = onRequest({
+        memory: '512MiB',
+        timeoutSeconds: 300,
+        region: 'us-central1',
+    }, app);
+} catch (e) {
+    // If we're not in a Firebase context, this might fail
+    motorApiAuthProxy = null;
+}
+
+export { motorApiAuthProxy, app };
 export default app;

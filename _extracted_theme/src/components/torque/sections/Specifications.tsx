@@ -19,8 +19,8 @@ const Specifications: React.FC<SpecificationsProps> = ({ contentSource, vehicleI
       try {
         const data = await getFluids(contentSource, vehicleId);
         setFluids(data?.data || []);
-      } catch {
-        // Fluid data unavailable, UI will show empty state
+      } catch (e) {
+        console.warn('Fluids not available');
       } finally {
         setFluidsLoading(false);
       }

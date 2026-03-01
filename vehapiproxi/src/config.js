@@ -1,11 +1,9 @@
 import dotenv from 'dotenv';
-import logger from './logger.js';
-
 dotenv.config();
 
 export const config = {
     // Authentication credentials
-    // On Vercel, these come from environment / project settings
+    // In Firebase Functions, these come from secrets (injected as env vars)
     // Locally, these come from .env file
     libraryBarcode: process.env.LIBRARY_BARCODE || '',
     ebscoUser: process.env.EBSCO_USER || '',
@@ -14,7 +12,6 @@ export const config = {
     // API configuration
     motorApiBase: process.env.MOTOR_API_BASE || 'https://sites.motor.com/m1',
     proxyPort: parseInt(process.env.PORT || process.env.PROXY_PORT || '3001', 10),
-    debugApiKey: process.env.DEBUG_API_KEY,
 
     // Session management
     maxSessionAge: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
@@ -39,7 +36,7 @@ export function validateConfig() {
     if (missing.length > 0) {
         const errorMsg = `Missing required configuration: ${missing.join(', ')}. ` +
             `Please set these as environment variables: ${missing.map(k => k.toUpperCase()).join(', ')}`;
-        logger.error(errorMsg);
+        console.error(errorMsg);
         // Don't throw for now, just log error. 
         // This allows the function to start even if config is impartial.
         // throw new Error(errorMsg); 

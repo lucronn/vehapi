@@ -24,4 +24,3 @@ dist-ssr
 *.sw?
 .vercel
 .angular/
-__pycache__/

@@ -20,7 +20,6 @@ import { CreditsService } from '../../../../../services/credits.service';
 export class MaintenanceSectionComponent implements OnInit {
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
-    @Input() vehicleName: string = '';
     @Input() motorVehicleId?: string;
 
     private vehicleData = inject(VehicleDataService);
@@ -97,7 +96,7 @@ export class MaintenanceSectionComponent implements OnInit {
 
         if (confirm(`Unlock Maintenance Schedules for ${cost} credits?`)) {
             this.isUnlocking.set(true);
-            const success = await this.creditsService.unlockModule(this.vehicleId, this.vehicleName, 'maintenance', cost);
+            const success = await this.creditsService.unlockModule(this.vehicleId, 'maintenance', cost);
             this.isUnlocking.set(false);
 
             if (!success) {

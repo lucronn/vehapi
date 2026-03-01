@@ -27,7 +27,6 @@ export class SpecsFluidsSectionComponent implements OnInit {
     readonly icons = { Gauge, Droplets, Info, ChevronRight, FileText, ArrowRight, Lock, Unlock, Sparkles };
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
-    @Input() vehicleName: string = '';
     @Input() motorVehicleId?: string;
 
     private vehicleData = inject(VehicleDataService);
@@ -110,7 +109,7 @@ export class SpecsFluidsSectionComponent implements OnInit {
 
         if (confirm(`Unlock Specifications & Fluids for ${cost} credits?`)) {
             this.isUnlocking.set(true);
-            const success = await this.creditsService.unlockModule(this.vehicleId, this.vehicleName, 'specs', cost);
+            const success = await this.creditsService.unlockModule(this.vehicleId, 'specs', cost);
             this.isUnlocking.set(false);
 
             if (!success) {

@@ -1,121 +1,38 @@
+
+import { getFirestore } from 'firebase-admin/firestore';
+import { initializeApp, getApps } from 'firebase-admin/app';
 import logger from './logger.js';
 
-function getSupabaseConfig() {
-    const url = process.env.SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!url || !key) {
-        throw new Error("Missing Supabase credentials in environment");
-    }
-    return { url, key };
+// Initialize Firebase Admin if not already initialized
+if (getApps().length === 0) {
+    initializeApp();
 }
 
-async function fetchSupabase(endpoint, options = {}) {
-    const cfg = getSupabaseConfig();
-
-    const headers = {
-        'Content-Type': 'application/json',
-        'apikey': cfg.key,
-        'Authorization': `Bearer ${cfg.key}`,
-        'Prefer': 'return=representation',
-        ...(options.headers || {})
-    };
-
-    const response = await fetch(`${cfg.url}/rest/v1/${endpoint}`, {
-        ...options,
-        headers
-    });
-
-    if (!response.ok) {
-        let errorText = await response.text();
-        throw new Error(`Supabase API Error [${response.status}]: ${errorText}`);
-    }
-
-    if (response.status !== 204) {
-        return response.json();
-    }
-    return null;
-}
-
-// Simple in-memory cache
-const userCache = new Map();
-const CACHE_TTL_MS = 60 * 1000; // 1 minute cache
+const db = getFirestore();
+const USERS_COLLECTION = 'users';
 
 /**
  * Get user data or create if not exists
  */
 export async function getUserData(userId) {
     try {
-        // Check cache first
-        const cached = userCache.get(userId);
-        if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
-            return cached.data;
-        }
+        const userRef = db.collection(USERS_COLLECTION).doc(userId);
+        const doc = await userRef.get();
 
-        const users = await fetchSupabase(`users?id=eq.${userId}&select=*`);
-
-        if (!users || users.length === 0) {
+        if (!doc.exists) {
             const newUser = {
-                id: userId,
+                userId,
                 credits: 0,
-                unlocks: {}
+                createdAt: new Date().toISOString(),
+                unlocks: {} // { vehicleId: ['specs', 'procedures', ...] }
             };
-
-            const inserted = await fetchSupabase(`users`, {
-                method: 'POST',
-                body: JSON.stringify(newUser)
-            });
-
-            const result = inserted[0];
-            userCache.set(userId, { data: result, timestamp: Date.now() });
-            return result;
+            await userRef.set(newUser);
+            return newUser;
         }
 
-        const result = users[0];
-        userCache.set(userId, { data: result, timestamp: Date.now() });
-        return result;
+        return doc.data();
     } catch (error) {
-        logger.error('Error fetching user data from Supabase:', error);
-        throw error;
-    }
-}
-
-/**
- * Log a transaction (purchase or unlock)
- */
-export async function logTransaction(userId, { amount, type, stripeSessionId, stripePaymentIntent, usdCents, vehicleId, vehicleName, moduleType }) {
-    try {
-        await fetchSupabase(`transactions`, {
-            method: 'POST',
-            headers: { 'Prefer': 'return=minimal' },
-            body: JSON.stringify({
-                user_id: userId,
-                amount,
-                type,
-                stripe_session_id: stripeSessionId || null,
-                stripe_payment_intent: stripePaymentIntent || null,
-                usd_cents: usdCents || null,
-                vehicle_id: vehicleId || null,
-                vehicle_name: vehicleName || null,
-                module_type: moduleType || null
-            })
-        });
-    } catch (error) {
-        // Non-fatal — don't fail the main operation if logging fails
-        logger.error('Failed to log transaction:', error);
-    }
-}
-
-/**
- * Get user transaction history
- */
-export async function getTransactions(userId, limit = 50) {
-    try {
-        const rows = await fetchSupabase(
-            `transactions?user_id=eq.${userId}&order=created_at.desc&limit=${limit}&select=*`
-        );
-        return rows || [];
-    } catch (error) {
-        logger.error('Error fetching transactions:', error);
+        logger.error('Error fetching user data:', error);
         throw error;
     }
 }
@@ -123,46 +40,43 @@ export async function getTransactions(userId, limit = 50) {
 /**
  * Unlock a specific module for a vehicle
  */
-export async function unlockModule(userId, vehicleId, vehicleName, moduleType, cost) {
+export async function unlockModule(userId, vehicleId, moduleType, cost) {
+    const userRef = db.collection(USERS_COLLECTION).doc(userId);
+
     try {
-        const userData = await getUserData(userId);
-        const currentCredits = userData.credits || 0;
+        await db.runTransaction(async (t) => {
+            const doc = await t.get(userRef);
+            if (!doc.exists) {
+                throw new Error('User not found');
+            }
 
-        const currentUnlocks = userData.unlocks?.[vehicleId] || [];
-        if (currentUnlocks.includes(moduleType) || currentUnlocks.includes('full')) {
-            return userData;
-        }
+            const userData = doc.data();
+            const currentCredits = userData.credits || 0;
 
-        if (currentCredits < cost) {
-            throw new Error('Insufficient credits');
-        }
+            // Check if already unlocked
+            const currentUnlocks = userData.unlocks?.[vehicleId] || [];
+            if (currentUnlocks.includes(moduleType) || currentUnlocks.includes('full')) {
+                return; // Already unlocked
+            }
 
-        const newUnlocks = { ...userData.unlocks };
-        if (!newUnlocks[vehicleId]) {
-            newUnlocks[vehicleId] = [];
-        }
-        newUnlocks[vehicleId].push(moduleType);
+            if (currentCredits < cost) {
+                throw new Error('Insufficient credits');
+            }
 
-        const updated = await fetchSupabase(`users?id=eq.${userId}`, {
-            method: 'PATCH',
-            body: JSON.stringify({
+            // Deduct credits and add unlock
+            const newUnlocks = { ...userData.unlocks };
+            if (!newUnlocks[vehicleId]) {
+                newUnlocks[vehicleId] = [];
+            }
+            newUnlocks[vehicleId].push(moduleType);
+
+            t.update(userRef, {
                 credits: currentCredits - cost,
                 unlocks: newUnlocks
-            })
+            });
         });
 
-        // Log the unlock transaction (non-fatal)
-        await logTransaction(userId, {
-            amount: -cost,
-            type: 'unlock',
-            vehicleId,
-            vehicleName,
-            moduleType
-        });
-
-        const result = updated[0];
-        userCache.set(userId, { data: result, timestamp: Date.now() });
-        return result;
+        return await getUserData(userId);
     } catch (error) {
         logger.error('Error unlocking module:', error);
         throw error;
@@ -170,49 +84,35 @@ export async function unlockModule(userId, vehicleId, vehicleName, moduleType, c
 }
 
 /**
- * Add credits to user (called after Stripe webhook)
+ * Add credits to user
  */
-export async function addCredits(userId, amount, { stripeSessionId, stripePaymentIntent, usdCents } = {}) {
+export async function addCredits(userId, amount) {
+    const userRef = db.collection(USERS_COLLECTION).doc(userId);
+
     try {
-        const userData = await getUserData(userId);
-        const currentCredits = userData.credits || 0;
+        await db.runTransaction(async (t) => {
+            const doc = await t.get(userRef);
 
-        const updated = await fetchSupabase(`users?id=eq.${userId}`, {
-            method: 'PATCH',
-            body: JSON.stringify({
-                credits: currentCredits + amount
-            })
+            if (!doc.exists) {
+                // Create user if they don't exist yet (e.g. first purchase)
+                const newUser = {
+                    userId,
+                    credits: amount,
+                    createdAt: new Date().toISOString(),
+                    unlocks: {}
+                };
+                t.set(userRef, newUser);
+            } else {
+                const userData = doc.data();
+                t.update(userRef, {
+                    credits: (userData.credits || 0) + amount
+                });
+            }
         });
 
-        // Log the purchase transaction
-        await logTransaction(userId, {
-            amount,
-            type: 'purchase',
-            stripeSessionId,
-            stripePaymentIntent,
-            usdCents
-        });
-
-        const result = updated[0];
-        userCache.set(userId, { data: result, timestamp: Date.now() });
-        return result;
+        return await getUserData(userId);
     } catch (error) {
         logger.error('Error adding credits:', error);
         throw error;
-    }
-}
-
-/**
- * Store stripe_customer_id on user record
- */
-export async function setStripeCustomerId(userId, stripeCustomerId) {
-    try {
-        await fetchSupabase(`users?id=eq.${userId}`, {
-            method: 'PATCH',
-            headers: { 'Prefer': 'return=minimal' },
-            body: JSON.stringify({ stripe_customer_id: stripeCustomerId })
-        });
-    } catch (error) {
-        logger.error('Error setting stripe_customer_id:', error);
     }
 }

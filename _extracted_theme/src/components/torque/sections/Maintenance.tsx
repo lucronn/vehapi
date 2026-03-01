@@ -23,8 +23,8 @@ const Maintenance: React.FC<MaintenanceProps> = ({ contentSource, vehicleId }) =
         ]);
         if (freq.status === 'fulfilled') setFrequency(freq.value);
         if (miles.status === 'fulfilled') setIntervals(miles.value);
-      } catch {
-        // Maintenance data unavailable, UI will show empty state
+      } catch (e) {
+        console.warn('Maintenance data not available');
       } finally {
         setLoading(false);
       }

@@ -1,47 +1,25 @@
-import { getAuth } from 'firebase-admin/auth';
+import { initializeApp, getApps } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 import https from 'https';
 import { URL } from 'url';
 import { config } from './config.js';
 import logger from './logger.js';
 
-function getSupabaseConfig() {
-    const url = process.env.SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!url || !key) return null;
-    return { url, key };
-}
+// Initialize Firebase Admin (Optional on Render/Local if configured)
+let db = null;
+let firebaseInitialized = false;
 
-async function fetchSupabase(endpoint, options = {}) {
-    const cfg = getSupabaseConfig();
-    if (!cfg) return null;
-
-    const headers = {
-        'Content-Type': 'application/json',
-        'apikey': cfg.key,
-        'Authorization': `Bearer ${cfg.key}`,
-        'Prefer': 'return=representation',
-        ...(options.headers || {})
-    };
-
-    try {
-        const response = await fetch(`${cfg.url}/rest/v1/${endpoint}`, {
-            ...options,
-            headers
-        });
-
-        if (!response.ok && response.status !== 406) {
-            let errorText = await response.text();
-            throw new Error(`Supabase API Error [${response.status}]: ${errorText}`);
-        }
-
-        if (response.status !== 204) {
-            return response.json();
-        }
-    } catch (err) {
-        logger.error(`Supabase Fetch Error on ${endpoint}:`, err);
-        return null; // Fail gracefully
+try {
+    if (!getApps().length) {
+        // If GOOGLE_APPLICATION_CREDENTIALS is not set, this might fail or warn
+        // depending on environment. We catch it to allow fallback.
+        initializeApp();
     }
-    return null;
+    db = getFirestore();
+    firebaseInitialized = true;
+    logger.info('Firebase Admin initialized successfully');
+} catch (error) {
+    logger.warn('Firebase Admin initialization failed or credentials missing. Running without persistent session storage.', error.message);
 }
 
 const SESSION_DOC_ID = 'motor_proxy_v3'; // Bump version to invalidate old sessions
@@ -175,36 +153,40 @@ class AuthManager {
     }
 
     /**
-     * Load saved session cookies from Supabase
+     * Load saved session cookies from Firestore
      */
     async loadSession() {
+        if (!db) {
+            logger.info('Firestore not initialized, skipping persistent session load');
+            return false;
+        }
         try {
-            const data = await fetchSupabase(`system_sessions?id=eq.${SESSION_DOC_ID}&select=*`);
+            const doc = await db.collection('sessions').doc(SESSION_DOC_ID).get();
 
-            if (!data || data.length === 0) {
-                logger.info('No saved session found in Supabase, will authenticate');
+            if (!doc.exists) {
+                logger.info('No saved session found in Firestore, will authenticate');
                 return false;
             }
 
-            const session = data[0].data; // We stored cookies inside 'data' JSONB col
+            const session = doc.data();
             this.cookies = session.cookies;
             this.lastAuthTime = session.timestamp;
 
             if (this.isSessionValid()) {
-                logger.info('✓ Loaded valid session from Supabase');
+                logger.info('✓ Loaded valid session from Firestore');
                 return true;
             } else {
                 logger.info('Session expired, re-authenticating...');
                 return false;
             }
         } catch (error) {
-            logger.error('Error loading session from Supabase:', error);
+            logger.error('Error loading session from Firestore:', error);
             return false;
         }
     }
 
     /**
-     * Save session cookies to Supabase
+     * Save session cookies to Firestore
      */
     async saveSession() {
         const session = {
@@ -214,33 +196,27 @@ class AuthManager {
         };
 
         try {
-            // Upsert session
-            await fetchSupabase('system_sessions', {
-                method: 'POST',
-                headers: { 'Prefer': 'resolution=merge-duplicates' }, // Upsert
-                body: JSON.stringify({
-                    id: SESSION_DOC_ID,
-                    data: session,
-                    updated_at: new Date().toISOString()
-                })
-            });
-            logger.info('✓ Session saved to Supabase');
+            if (!db) {
+                // logger.debug('Firestore not initialized, skipping session save');
+                return;
+            }
+            await db.collection('sessions').doc(SESSION_DOC_ID).set(session);
+            logger.info('✓ Session saved to Firestore');
         } catch (e) {
-            logger.error('Could not save session to Supabase', e);
+            logger.error('Could not save session to Firestore', e);
         }
     }
 
     /**
-     * Delete session from Supabase (called when session is invalid)
+     * Delete session from Firestore (called when session is invalid)
      */
     async deleteSession() {
         try {
-            await fetchSupabase(`system_sessions?id=eq.${SESSION_DOC_ID}`, {
-                method: 'DELETE'
-            });
-            logger.info('✓ Session deleted from Supabase');
+            if (!db) return;
+            await db.collection('sessions').doc(SESSION_DOC_ID).delete();
+            logger.info('✓ Session deleted from Firestore');
         } catch (e) {
-            logger.error('Could not delete session from Supabase', e);
+            logger.error('Could not delete session from Firestore', e);
         }
     }
 
@@ -422,19 +398,3 @@ class AuthManager {
 
 // Singleton instance
 export const authManager = new AuthManager();
-
-/**
- * Verify Firebase ID Token
- * @param {string} token
- * @returns {Promise<import('firebase-admin/auth').DecodedIdToken | null>}
- */
-export async function verifyFirebaseIdToken(token) {
-    try {
-        const auth = getAuth();
-        const decodedToken = await auth.verifyIdToken(token);
-        return decodedToken;
-    } catch (error) {
-        logger.error('Error verifying Firebase ID token:', error);
-        return null;
-    }
-}
