@@ -10,12 +10,12 @@ DIVERSE_MAKES = [
     "Chevrolet", "Mercedes-Benz", "Jeep", "Hyundai", "Kia"
 ]
 
-# Session Info (Extracted from HAR data)
+# Session Info (Extracted from environment variables to avoid hardcoded secrets)
 COOKIES = {
-    "UIUserSettings": "%7B%22userId%22%3A%22ns238476%22%2C%22isCcc%22%3Afalse%2C%22enableMotorVehicleModel%22%3Atrue%2C%22pageTitle%22%3A%22Auto%20RepairSource_Powered%20by%20MOTOR%22%2C%22splashUrl%22%3A%22api%2Fasset%2F3f9e9e79-b9c1-4586-91b8-94fe68174f7e%22%2C%22ymmeSelectorMode%22%3A%22Link%22%2C%22hamburgerMenuMode%22%3A%22Enabled%22%2C%22ymmeVinSearchMode%22%3A%22Enabled%22%2C%22recentVehiclesMode%22%3A%22Enabled%22%2C%22recentVehiclesCount%22%3A%2210%22%2C%22loginType%22%3A%22SharedKey%22%2C%22sessionExpirationRedirectURL%22%3A%22%22%2C%22oemLicenseAgreement%22%3A%22Enabled%22%2C%22apiUserLogoutMode%22%3A%22Disabled%22%2C%22apiUserLogoutLabel%22%3A%22Logout%22%2C%22apiUserRedirectionURL%22%3A%22%22%2C%22feedbackMode%22%3A%22Disabled%22%2C%22feedbackLabel%22%3A%22Feedback%22%2C%22lhNavigationDefaultMode%22%3A%22Collapsed%22%2C%22lhNavigationSiloDisplayMode%22%3A%22Show%22%2C%22lhNavigationSpecSiloDisplayMode%22%3A%22Show%22%2C%22printEnableHeader%22%3A%22%22%2C%22printBannerUrl%22%3A%22api%2Fasset%2Fa99274b9-6d81-419f-8f14-d5b913cd1a56%22%2C%22printBannerColor%22%3A%22%23002F56%22%2C%22printDisplayVehicleDetails%22%3A%22%22%2C%22navigateToVehicleDeltaReport%22%3Afalse%7D",
-    "AuthUserInfo": "eyJQdWJsaWNLZXkiOiJTNWRGdXRvaVFnIiwiQXBpVG9rZW5LZXkiOiJldFMxSCIsIkFwaVRva2VuVmFsdWUiOiJMaTdzMURyd3cyeXFIajJVMlV4S2Q1a25PIiwiQXBpVG9rZW5FeHBpcmF0aW9uIjoiMjAyNi0wMi0wMlQwMjoyMTowNVoiLCJMb2dvdXRVcmwiOiIvIiwiU3Vic2NyaXB0aW9ucyI6WyJUcnVTcGVlZCJdLCJVc2VyTmFtZSI6IlRydVNwZWVkVHJpYWxFQlNDTyIsIkZpcnN0TmFtZSI6IlRydVNwZWVkIFRyaWFsIiwiTGFzdE5hbWUiOiJFQlNDTyIsIkJ5cGFzc0lkZW50aXR5U2VydmVyIjp0cnVlfQ",
-    ".AspNetCore.Cookies": "CfDJ8CS7VC-PkJNGignRlOslmrj9nwRdcG7NS3_BhTuKdIHfnCY99i4SszT3bUIfpytgC9PuZ61od83mPJ2y-h1ZVYHN1pjWo5NEWd9uz9KP65PUwJJIIK8ZMsk5UwKJGcR0Iz1xBW55KmAF9m0rOeuG8uaEQxWKm8R9NzSzhlBkbTCk2HeT2Wqpt8WJWy_r6_J4nt4vjTyhokQObeZ_EqXeul9Q7OzSJ40QpTwq5PDmTsMxiMmh6vosKYcUiPNcnLrkYbIubnp2PBIYQjfakdBSOYUga-hCDc05ZizYuyumM4cZOmnj3W6o_-HbgKIE37SkvtwnR68pz2dKKDA5TMHizNTvVbJj5xXHx_wN4UBzsV-r6NNLT7lQxdCoN05udTXydrEtE7ZkpVirnqpsIFCuVWJ0yUC2sRURuNanhpN9WY0va7o8SHI6061UuRoTFiNZBz3ebjwoE6hxA5VwhKU0hA3Emds4vxlbFsqNev1iPnaQUxBdDFi0OAO9TfavdOa8lacLHqMX7kmi3l5ZFj7k1gR9Ej6KxaIeD0PwmoDn8iZjZ9NVVzCRFtMgrMXbvt3XZgoCPpeD68wKn1gsMYelNMlRJTHDaoKkhTX-5WHVDl5NNlrrWykWvWM4sE0IsncrE0L14HqRxNPXlq1_Fx3w7AGUeKTIlMS02ZTNyEYcDFj9YW1iHRauUJP0BUYAuroq7MA0drJdfgwE4fKrzAHcvXWhU-LozJknJoAXPSgjOp2KA-ULm4KwwEq7A6P2yWBMhg",
-    "SessionIdentifier": "f0cda6af-ca69-46a6-9a99-b247140db1a2"
+    "UIUserSettings": os.environ.get("MOTOR_UI_USER_SETTINGS", ""),
+    "AuthUserInfo": os.environ.get("MOTOR_AUTH_USER_INFO", ""),
+    ".AspNetCore.Cookies": os.environ.get("MOTOR_ASPNETCORE_COOKIES", ""),
+    "SessionIdentifier": os.environ.get("MOTOR_SESSION_IDENTIFIER", "")
 }
 
 HEADERS = {
@@ -44,6 +44,13 @@ def get_json(url):
     return None
 
 def extract():
+    # Check if required environment variables are set
+    missing_cookies = [k for k, v in COOKIES.items() if not v]
+    if missing_cookies:
+        print(f"Error: Missing required environment variables for cookies: {', '.join(missing_cookies)}")
+        print("Please set MOTOR_UI_USER_SETTINGS, MOTOR_AUTH_USER_INFO, MOTOR_ASPNETCORE_COOKIES, and MOTOR_SESSION_IDENTIFIER.")
+        return
+
     results = []
     
     # 1. Get all makes for YEAR
