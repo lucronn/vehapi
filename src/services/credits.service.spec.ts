@@ -62,7 +62,7 @@ mock.module('rxjs', () => ({
 const mockLocalStorage = {
     store: {} as Record<string, string>,
     getItem(key: string) {
-        return this.store[key] || null;
+        return key in this.store ? this.store[key] : null;
     },
     setItem(key: string, value: string) {
         this.store[key] = String(value);
