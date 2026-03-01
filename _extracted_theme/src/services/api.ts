@@ -77,12 +77,21 @@ export interface FluidsResponse {
   data: Fluid[];
 }
 
+export interface MaintenanceItem {
+  name?: string;
+  description?: string;
+  title?: string;
+  interval?: string | number;
+  value?: string | number;
+  [key: string]: any;
+}
+
 export interface MaintenanceSchedule {
   id?: string;
   name?: string;
   description?: string;
-  items?: any[];
-  intervals?: any[];
+  items?: MaintenanceItem[];
+  intervals?: MaintenanceItem[];
   [key: string]: any;
 }
 

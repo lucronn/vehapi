@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getMaintenanceByFrequency, getMaintenanceByIntervals } from '@/services/api';
+import { getMaintenanceByFrequency, getMaintenanceByIntervals, MaintenanceItem } from '@/services/api';
 import { Skeleton, EmptyState } from '../LoadingStates';
 
 interface MaintenanceProps {
@@ -55,7 +55,7 @@ const Maintenance: React.FC<MaintenanceProps> = ({ contentSource, vehicleId }) =
             </h4>
             {schedule.items && Array.isArray(schedule.items) && (
               <div className="space-y-2 mt-3">
-                {schedule.items.map((item: any, j: number) => (
+                {schedule.items.map((item: MaintenanceItem, j: number) => (
                   <div key={j} className="flex items-start gap-3 py-2 border-b border-white/5 last:border-0">
                     <div className="w-1.5 h-1.5 rounded-full bg-[hsl(191,97%,50%)]/50 mt-1.5 flex-shrink-0" />
                     <div>
@@ -78,7 +78,7 @@ const Maintenance: React.FC<MaintenanceProps> = ({ contentSource, vehicleId }) =
                     </tr>
                   </thead>
                   <tbody>
-                    {schedule.intervals.map((item: any, j: number) => (
+                    {schedule.intervals.map((item: MaintenanceItem, j: number) => (
                       <tr key={j} className="border-t border-white/5">
                         <td className="py-2 text-white/80">{item.name || item.description}</td>
                         <td className="py-2 font-mono text-[hsl(191,97%,50%)] text-xs">{item.value || item.interval}</td>
