@@ -806,36 +806,56 @@ app.use('/', authMiddleware, createProxyMiddleware({
                 // even 5000 items is only ~1MB — safe for iOS.
                 const isArticleCatalog = req.path.includes('/articles/v2');
 
-                if (!isArticleCatalog) {
-                    try {
-                        let parsedJson = JSON.parse(normalizedData);
-                        let didTruncate = false;
+                if (!isArticleCatalog && normalizedData && normalizedData.length >= 1000) {
+                    // Fast heuristic to avoid JSON.parse entirely if there's no possibility of a 500-element array.
+                    // Does the string contain 500 commas?
+                    let commaCount = 0;
+                    let idx = normalizedData.indexOf(',');
+                    while (idx !== -1) {
+                        commaCount++;
+                        if (commaCount >= 500) break;
+                        idx = normalizedData.indexOf(',', idx + 1);
+                    }
 
-                        const truncateArrays = (obj) => {
-                            if (!obj || typeof obj !== 'object') return;
-                            if (Array.isArray(obj)) {
-                                if (obj.length > 500) {
-                                    obj.length = 500;
-                                    didTruncate = true;
+                    if (commaCount >= 500) {
+                        try {
+                            let parsedJson = JSON.parse(normalizedData);
+                            let didTruncate = false;
+
+                            const truncateArrays = (obj) => {
+                                if (!obj || typeof obj !== 'object') return;
+                                if (Array.isArray(obj)) {
+                                    if (obj.length > 500) {
+                                        obj.length = 500;
+                                        didTruncate = true;
+                                    }
+                                    for (let i = 0; i < obj.length; i++) {
+                                        const child = obj[i];
+                                        if (child && typeof child === 'object') {
+                                            truncateArrays(child);
+                                        }
+                                    }
+                                } else {
+                                    for (const key in obj) {
+                                        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                                            const child = obj[key];
+                                            if (child && typeof child === 'object') {
+                                                truncateArrays(child);
+                                            }
+                                        }
+                                    }
                                 }
-                                for (let i = 0; i < obj.length; i++) {
-                                    truncateArrays(obj[i]);
-                                }
-                            } else {
-                                for (const key of Object.keys(obj)) {
-                                    truncateArrays(obj[key]);
-                                }
+                            };
+
+                            truncateArrays(parsedJson);
+
+                            if (didTruncate) {
+                                normalizedData = JSON.stringify(parsedJson);
+                                logger.info(`Truncated massive JSON arrays to prevent iOS/Vercel OOM crashes on ${req.path}`);
                             }
-                        };
-
-                        truncateArrays(parsedJson);
-
-                        if (didTruncate) {
-                            normalizedData = JSON.stringify(parsedJson);
-                            logger.info(`Truncated massive JSON arrays to prevent iOS/Vercel OOM crashes on ${req.path}`);
+                        } catch (e) {
+                            logger.warn('Failed to parse or truncate JSON for performance protections:', e);
                         }
-                    } catch (e) {
-                        logger.warn('Failed to parse or truncate JSON for performance protections:', e);
                     }
                 }
                 // =================================================================
