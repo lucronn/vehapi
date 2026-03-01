@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { getArticleContent, processArticleHtml, ArticleContent } from '@/services/api';
 import { ArrowLeftIcon } from './Icons';
 import { Skeleton } from './LoadingStates';
+import DOMPurify from 'dompurify';
 
 interface ArticleViewerProps {
   contentSource: string;
@@ -52,6 +53,8 @@ const ArticleViewer: React.FC<ArticleViewerProps> = ({
     ? processArticleHtml(article.content, contentSource)
     : '';
 
+  const safeHtml = DOMPurify.sanitize(processedHtml);
+
   return (
     <div className="max-w-4xl mx-auto">
       {/* Back button */}
@@ -84,7 +87,7 @@ const ArticleViewer: React.FC<ArticleViewerProps> = ({
             <div
               className="motor-prose"
               onClick={handleContentClick}
-              dangerouslySetInnerHTML={{ __html: processedHtml }}
+              dangerouslySetInnerHTML={{ __html: safeHtml }}
             />
           </div>
         </div>
