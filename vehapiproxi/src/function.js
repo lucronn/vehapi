@@ -212,6 +212,51 @@ app.post('/debug/clear', (req, res) => {
     }
 });
 
+// Get curl command to hit Motor directly using proxy's auth (Cookie + Referer/User-Agent)
+app.get('/debug/motor-curl', async (req, res) => {
+    try {
+        const cookieHeader = await authManager.getCookieHeader();
+        if (!cookieHeader || cookieHeader.length === 0) {
+            return res.status(502).json({ error: 'No proxy session; authenticate first via proxy.' });
+        }
+        const path = (req.query.path || '/').replace(/^\/+/, '/');
+        const url = `${config.motorApiBase}${path === '/' ? '' : path}`;
+        const curl = `curl -H 'Cookie: ${cookieHeader.replace(/'/g, "'\\''")}' -H 'Referer: https://sites.motor.com/m1/' -H 'User-Agent: ${config.userAgent.replace(/'/g, "'\\''")}' '${url}'`;
+        res.json({ curl, url });
+    } catch (error) {
+        logger.error('debug/motor-curl:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Fetch Motor directly with proxy auth and return response body (e.g. to inspect HTML/scripts)
+app.get('/debug/motor-fetch', async (req, res) => {
+    try {
+        const cookieHeader = await authManager.getCookieHeader();
+        if (!cookieHeader || cookieHeader.length === 0) {
+            return res.status(502).json({ error: 'No proxy session; authenticate first via proxy.' });
+        }
+        const path = (req.query.path || '/').replace(/^\/+/, '/');
+        const url = `${config.motorApiBase}${path === '/' ? '' : path}`;
+        const resp = await fetch(url, {
+            headers: {
+                Cookie: cookieHeader,
+                Referer: 'https://sites.motor.com/m1/',
+                'User-Agent': config.userAgent
+            }
+        });
+        const contentType = resp.headers.get('content-type') || 'application/octet-stream';
+        const body = await resp.text();
+        res.set('Content-Type', contentType);
+        res.set('X-Motor-Status', String(resp.status));
+        res.set('X-Motor-Url', url);
+        res.status(200).send(body);
+    } catch (error) {
+        logger.error('debug/motor-fetch:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Async Authentication Middleware (Upstream Proxy)
 const authMiddleware = async (req, res, next) => {
     // Skip auth for preflight requests
