@@ -789,10 +789,8 @@ app.use('/', authMiddleware, createProxyMiddleware({
             let normalizedData = responseData;
 
             if (contentType.includes('text/html')) {
-                // Clean up excessive whitespace only
-                normalizedData = normalizedData.replace(/\n\s*\n\s*\n/g, '\n\n');
-                normalizedData = normalizedData.replace(/&nbsp;/g, ' ');
-                logger.info('Normalized HTML content in proxy (Whitespace only)');
+                // HTML is inherently whitespace-agnostic; skip costly regex cleanup to improve performance.
+                logger.info('Skipping HTML whitespace normalization for performance');
             } else if (contentType.includes('application/json')) {
                 // =============== IOS / SERVERLESS CRASH PROTECTION ===============
                 // Massive arrays (like 5,000+ items) will crash iOS Safari due to massive
