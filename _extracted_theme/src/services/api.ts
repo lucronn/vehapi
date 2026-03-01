@@ -83,7 +83,6 @@ export interface MaintenanceSchedule {
   description?: string;
   items?: any[];
   intervals?: any[];
-  [key: string]: any;
 }
 
 export interface ArticleContent {
