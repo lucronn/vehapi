@@ -237,13 +237,15 @@ describe('CreditsService', () => {
             const originalError = console.error;
             console.error = consoleSpy;
 
-            const result = await service.unlockModule('vehicle-123', 'specs', 10);
+            try {
+                const result = await service.unlockModule('vehicle-123', 'specs', 10);
 
-            expect(result).toBe(false);
-            expect(consoleSpy).toHaveBeenCalled();
-            expect(service.isLoading()).toBe(false);
-
-            console.error = originalError;
+                expect(result).toBe(false);
+                expect(consoleSpy).toHaveBeenCalled();
+                expect(service.isLoading()).toBe(false);
+            } finally {
+                console.error = originalError;
+            }
         });
     });
 });
