@@ -14,7 +14,7 @@ export interface OrientationOption {
   imports: [CommonModule, LucideAngularModule],
   template: `
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
-      style="background:rgba(0,0,0,0.5);backdrop-filter:blur(4px)" (click)="close.emit()">
+      style="background:rgba(0,0,0,0.5);backdrop-filter:blur(4px)" (click)="onClose()">
       <div class="card max-w-2xl w-full max-h-[80vh] overflow-hidden animate-scale-in"
         style="background:var(--bg-surface)" (click)="$event.stopPropagation()">
         <!-- Header -->
@@ -23,7 +23,7 @@ export interface OrientationOption {
             <p class="text-xs uppercase tracking-wide font-semibold mb-0.5" style="color:var(--primary)">Configuration</p>
             <h2 class="text-lg font-bold" style="color:var(--text-primary)">Select Vehicle Model</h2>
           </div>
-          <button (click)="close.emit()" class="btn-ghost p-2 rounded-lg">
+          <button (click)="onClose()" class="btn-ghost p-2 rounded-lg">
             <lucide-icon [img]="icons.X" class="w-5 h-5"></lucide-icon>
           </button>
         </div>
@@ -39,7 +39,7 @@ export interface OrientationOption {
         <div class="overflow-y-auto max-h-[50vh]">
           @for (option of options; track option.id) {
             <button
-              (click)="selectOrientation.emit(option)"
+              (click)="onSelectOption(option)"
               class="w-full px-6 py-4 flex items-center justify-between transition-all group"
               style="border-bottom:1px solid var(--border-muted)">
               <div class="flex-1 text-left">
@@ -90,4 +90,12 @@ export class OrientationSelectorModalComponent {
   @Output() close = new EventEmitter<void>();
 
   readonly icons = { X, ChevronRight };
+
+  onSelectOption(option: OrientationOption): void {
+    this.selectOrientation.emit(option);
+  }
+
+  onClose(): void {
+    this.close.emit();
+  }
 }
