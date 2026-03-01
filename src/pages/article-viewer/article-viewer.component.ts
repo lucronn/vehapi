@@ -8,8 +8,11 @@ import { HttpClient } from '@angular/common/http';
 
 import { MotorApiService } from '../../services/motor-api.service';
 import { MotorHtmlProcessorService } from '../../services/motor-html-processor.service';
-import { LucideAngularModule, ArrowLeft, Maximize2, List, X } from 'lucide-angular';
+import { AiRewriteService } from '../../services/ai-rewrite.service';
+import { LucideAngularModule, ArrowLeft, Maximize2, List, X, Sparkles, BookOpen } from 'lucide-angular';
 import { ImageViewerModalComponent } from './components/image-viewer-modal/image-viewer-modal.component';
+import { TutorialComponent } from '../../components/tutorial/tutorial.component';
+import { TutorialStep } from '../../models/motor.models';
 
 export interface TableOfContents {
   id: string;
@@ -35,7 +38,7 @@ function cleanSpecificTag(match: string): string {
   styleUrls: ['./article-viewer.component.css'],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterModule, LucideAngularModule, ImageViewerModalComponent],
+  imports: [CommonModule, RouterModule, LucideAngularModule, ImageViewerModalComponent, TutorialComponent],
   standalone: true
 })
 export class ArticleViewerComponent implements OnInit, OnChanges {
@@ -49,9 +52,10 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   private route = inject(ActivatedRoute);
   private motorApi = inject(MotorApiService);
   private motorHtml = inject(MotorHtmlProcessorService);
+  private aiRewrite = inject(AiRewriteService);
   private sanitizer = inject(DomSanitizer);
 
-  readonly icons = { ArrowLeft, Maximize2, List, X };
+  readonly icons = { ArrowLeft, Maximize2, List, X, Sparkles, BookOpen };
 
   // Use a Subject to trigger data loading when inputs change or on init
   private loadTrigger = new Subject<void>();
@@ -71,6 +75,15 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   isRetrying = signal(false); // Re-auth in progress
   retryCount = signal(0);
   params = toSignal(this.route.paramMap);
+
+  // AI rewriting & tutorial state
+  isRewriting = signal(false);
+  tutorialSteps = signal<TutorialStep[]>([]);
+  isGeneratingTutorial = signal(false);
+  showTutorial = signal(false);
+
+  /** Raw processed HTML kept for tutorial generation */
+  protected rawHtmlForTutorial = '';
 
   private http = inject(HttpClient);
 
@@ -181,8 +194,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
     // Fetch Content
     this.motorApi.getArticleContent(this.contentSource, this.vehicleId, aid).subscribe({
       next: (content) => {
-        console.log('[ArticleViewer] Raw API Response:', content);
-        if (!content || !content.body || !content.body.html) {
+        if (!content || !content.body || !(content.body as any).html) {
           console.error('[ArticleViewer] API returned empty content body or html');
         }
 
@@ -201,14 +213,18 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
         this.pdfDataUri.set(null);
         const { htmlString, safeHtml, sections } = this.processHtml(rawHtml, this.contentSource!, this.vehicleId!);
 
-        console.log('[ArticleViewer] Processed HTML length:', htmlString?.length);
-        console.log('[ArticleViewer] Processed HTML snippet:', htmlString?.substring(0, 100));
-
         if (!htmlString || htmlString.trim() === '') {
-          console.warn('[ArticleViewer] Content is empty after processing');
           this.articleContent.set('');
         } else {
+          // Show original content immediately (progressive enhancement)
           this.articleContent.set(safeHtml);
+          // Store for tutorial generation
+          this.rawHtmlForTutorial = htmlString;
+          // Reset tutorial state when loading a new article
+          this.tutorialSteps.set([]);
+          this.showTutorial.set(false);
+          // Trigger AI rewriting in the background
+          this.triggerAiRewrite(htmlString);
         }
 
         this.sections.set(sections);
@@ -271,6 +287,46 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
     };
 
     setTimeout(poll, 1000); // Give it 1s head start
+  }
+
+  /** Rewrites article HTML in the background and updates content when done */
+  private triggerAiRewrite(htmlString: string) {
+    if (!htmlString) return;
+    this.isRewriting.set(true);
+    this.aiRewrite.rewriteArticleHtml(htmlString, this.articleTitle()).subscribe({
+      next: (rewritten) => {
+        if (rewritten && rewritten !== htmlString) {
+          const safe = this.sanitizer.sanitize(SecurityContext.HTML, rewritten) || '';
+          if (safe) {
+            this.articleContent.set(safe);
+            this.rawHtmlForTutorial = rewritten;
+          }
+        }
+        this.isRewriting.set(false);
+      },
+      error: () => this.isRewriting.set(false)
+    });
+  }
+
+  /** Generates tutorial steps from the current article HTML */
+  startTutorial() {
+    if (this.isGeneratingTutorial()) return;
+    const html = this.rawHtmlForTutorial;
+    if (!html) return;
+    this.isGeneratingTutorial.set(true);
+    this.showTutorial.set(false);
+    this.aiRewrite.generateTutorialSteps(html, this.articleTitle()).subscribe({
+      next: (steps) => {
+        this.tutorialSteps.set(steps);
+        this.showTutorial.set(steps.length > 0);
+        this.isGeneratingTutorial.set(false);
+      },
+      error: () => this.isGeneratingTutorial.set(false)
+    });
+  }
+
+  closeTutorial() {
+    this.showTutorial.set(false);
   }
 
   private cleanTitle(rawTitle: string): string {

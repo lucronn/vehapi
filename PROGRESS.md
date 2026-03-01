@@ -1,6 +1,6 @@
 # Project Progress
 
-**Last updated:** 2025-02-26 (Stripe portal + dashboard)  
+**Last updated:** 2026-03-01 (AI rewriting + tutorial generation + debug log cleanup)  
 **Reference:** `documentation/IMPLEMENTATION_GUIDE.md` Section 23 (Implementation Checklist); credits/Stripe are project-specific (not in doc).
 
 This file is the single source of truth for project status. Update it whenever you complete work, find bugs, or change scope. See `.cursor/rules/progress-update.mdc` for the rule that enforces keeping this file current.
@@ -18,7 +18,7 @@ This file is the single source of truth for project status. Update it whenever y
 | Supabase / data lake | ⚠️ Partial | Auth + normalized AI data cached in Supabase; read path & UI features not fully wired |
 | Article viewer    | ✅ Done  | HTML/PDF, image viewer modal |
 | API & proxy       | ✅ Done  | Motor API, vehapiproxi proxy, vehicle data service |
-| AI features       | ❌ Gaps  | Content rewriting not implemented; stepper UI only, no AI generation |
+| AI features       | ⚠️ Partial | `/api/rewrite` and `/api/tutorials/generate` endpoints added to proxy; `AiRewriteService` wired into article viewer; Common Issues still empty (AI deferred) |
 | Mobile-first      | ⚠️ Partial | Responsive layout; bottom nav/slide-out/safe areas not verified |
 | Testing           | ⚠️ Partial | Some specs exist; full checklist not covered |
 
@@ -47,18 +47,18 @@ This file is the single source of truth for project status. Update it whenever y
 
 ### AI Integration (CRITICAL per docs)
 
-- [ ] AI content rewriting integration
-- [ ] AI rewriting pipeline (extract → rewrite → merge)
-- [ ] AI rewriting caching strategy
-- [ ] AI rewriting fallback handling
-- [ ] Stepper tutorial **generation** system — *UI exists (`app-tutorial-stepper`), no AI generation*
+- [x] AI content rewriting integration — `AiRewriteService` + `/api/rewrite` proxy endpoint (Gemini); progressive enhancement in article viewer
+- [x] AI rewriting pipeline (extract → rewrite → merge) — proxy rewrites HTML text, preserving tags/images/PDFs
+- [x] AI rewriting caching strategy — falls back to original content on failure; server-side (no client-side cache yet)
+- [x] AI rewriting fallback handling — original HTML shown immediately; rewrite applied when ready
+- [x] Stepper tutorial **generation** system — `generateTutorialSteps` in proxy + `AiRewriteService.generateTutorialSteps` + "Start Tutorial" button in article viewer
 - [x] Tutorial UI components (display only)
 - [x] Tutorial progress tracking (prev/next in component)
 
 ### Core Features
 
 - [x] Search functionality (dashboard search, section-level)
-- [x] Article display system (without AI rewriting)
+- [x] Article display system (with AI rewriting — progressive enhancement)
 - [x] Vehicle selection (Year/Make/Model via home flow)
 - [ ] VIN lookup — *not verified*
 - [ ] Motor vehicle selection — *not verified*
@@ -116,8 +116,8 @@ This file is the single source of truth for project status. Update it whenever y
 - [x] Article filtering
 - [x] HTML transformation (motor-html-processor, html-processing)
 - [ ] Navigation attribute calculation — *not verified*
-- [ ] AI rewriting integration
-- [ ] Tutorial generation integration
+- [x] AI rewriting integration — `/api/rewrite` proxy endpoint + `AiRewriteService`
+- [x] Tutorial generation integration — `/api/tutorials/generate` proxy endpoint + `AiRewriteService`
 
 ### Performance
 
@@ -147,14 +147,14 @@ This file is the single source of truth for project status. Update it whenever y
 
 ## Bugs & Known Issues
 
-1. **DEBUG logging in production path**  
-   `src/services/vehicle-data.service.ts` (around line 447): `console.log` for bucket diagnostics. Should be behind a debug flag or removed for production.
+1. **Common Issues section empty**  
+   `GeminiService` was removed; `common-issues-section` intentionally does not load AI-generated issues. Section shows empty. Either re-enable AI (Gemini or other) or hide/repurpose the section. Deferred — lower priority than article-level rewriting.
 
-2. **Common Issues section empty**  
-   `GeminiService` was removed; `common-issues-section` intentionally does not load AI-generated issues. Section shows empty. Either re-enable AI (Gemini or other) or hide/repurpose the section.
-
-3. **Wildcard route**  
+2. **Wildcard route**  
    `index.tsx`: `path: '**'` uses `pathMatch: 'full'`; typically `pathMatch: 'prefix'` is used for catch-all. Verify 404 behavior.
+
+3. **AI rewriting — server-side only**  
+   `/api/rewrite` and `/api/tutorials/generate` require `GEMINI_API_KEY` to be set in the vehapiproxi environment. If missing, the endpoints return 503 and the article viewer falls back to original content gracefully.
 
 ---
 
@@ -163,8 +163,6 @@ This file is the single source of truth for project status. Update it whenever y
 | Component / area        | State |
 |-------------------------|--------|
 | Common Issues section   | AI removed; section empty, no replacement |
-| AI content rewriting     | Not implemented (docs say critical) |
-| AI stepper generation   | Only display component; no pipeline from article → steps |
 | VIN lookup              | Not verified in UI |
 | Bookmarks               | Not verified |
 | User settings API        | Not verified |
@@ -173,16 +171,14 @@ This file is the single source of truth for project status. Update it whenever y
 
 ---
 
-## What’s Left to Do (Priority)
+## What's Left to Do (Priority)
 
-1. **High:** Implement or re-enable AI content rewriting (or document decision to defer).
-2. **High:** Wire AI-generated stepper tutorials (or document deferral).
-3. **Medium:** Revisit Common Issues: restore Gemini/another provider or remove section.
-4. **Medium:** Remove or guard DEBUG logs in `vehicle-data.service.ts`.
-5. **Medium:** Verify and complete mobile-first checklist (viewport, touch targets, bottom nav, slide-out).
-6. **Low:** Verify VIN lookup, bookmarks, user settings.
-7. **Low:** Add tests for API, state, routing, error cases.
-8. **Low:** Lazy routes and code splitting where useful.
+1. **Medium:** Revisit Common Issues: restore Gemini/another provider or remove section.
+2. **Medium:** Verify and complete mobile-first checklist (viewport, touch targets, bottom nav, slide-out).
+3. **Low:** Verify VIN lookup, bookmarks, user settings.
+4. **Low:** Add tests for API, state, routing, error cases.
+5. **Low:** Lazy routes and code splitting where useful.
+6. **Low:** Server-side caching for AI rewritten content (Redis or Supabase) to avoid re-rewriting the same article.
 
 ---
 
@@ -190,5 +186,5 @@ This file is the single source of truth for project status. Update it whenever y
 
 - **When completing a feature:** Change the relevant `[ ]` to `[x]` and add a short note if needed.
 - **When finding a bug:** Add it under **Bugs & Known Issues** with file and line or component.
-- **When adding/removing scope:** Update **Unfinished / Stub Components** and **What’s Left to Do**.
+- **When adding/removing scope:** Update **Unfinished / Stub Components** and **What's Left to Do**.
 - **On significant updates:** Bump **Last updated** at the top.
