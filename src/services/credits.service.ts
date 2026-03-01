@@ -17,7 +17,7 @@ export class CreditsService {
     private userIdService = inject(UserIdService);
 
     // Set this to true to use local storage instead of backend
-    private readonly USE_MOCK = true;
+    public USE_MOCK = true;
     private readonly STORAGE_KEYS = {
         BALANCE: 'torque_mock_balance',
         UNLOCKS: 'torque_mock_unlocks'
@@ -149,11 +149,9 @@ export class CreditsService {
 
         this.isLoading.set(true);
 
-        // MOCK: Commented out HTTP call
-        /*
         try {
             const res = await firstValueFrom(
-                this.http.post<{ success: true, credits: number, unlocks: UnlockMap }>(
+                this.http.post<{ success: boolean, credits: number, unlocks: UnlockMap }>(
                     `${this.apiUrl}/unlock`,
                     { vehicleId, moduleType, cost },
                     { headers: this.headers }
@@ -172,23 +170,6 @@ export class CreditsService {
         } finally {
             this.isLoading.set(false);
         }
-        */
-
-        // MOCK Implementation
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                this.balance.update(b => b - cost);
-                this.unlocks.update(u => {
-                    const vehicleUnlocks = u[vehicleId] || [];
-                    if (!vehicleUnlocks.includes(moduleType)) {
-                        vehicleUnlocks.push(moduleType);
-                    }
-                    return { ...u, [vehicleId]: vehicleUnlocks };
-                });
-                this.isLoading.set(false);
-                resolve(true);
-            }, 500);
-        });
     }
 
     hasAccess(vehicleId: string, moduleType: string): boolean {
