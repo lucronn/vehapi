@@ -17,7 +17,7 @@ export class CreditsService {
     private userIdService = inject(UserIdService);
 
     // Set this to true to use local storage instead of backend
-    public USE_MOCK = true;
+    private useMock = true;
     private readonly STORAGE_KEYS = {
         BALANCE: 'torque_mock_balance',
         UNLOCKS: 'torque_mock_unlocks'
@@ -57,7 +57,7 @@ export class CreditsService {
     }
 
     async refreshBalance() {
-        if (this.USE_MOCK) {
+        if (this.useMock) {
             this.loadMockData();
             return;
         }
@@ -78,7 +78,7 @@ export class CreditsService {
     }
 
     async startCheckout(amount: number) {
-        if (this.USE_MOCK) {
+        if (this.useMock) {
             // In mock mode, just give them the credits
             this.isLoading.set(true);
             setTimeout(() => {
@@ -127,7 +127,7 @@ export class CreditsService {
             return false;
         }
 
-        if (this.USE_MOCK) {
+        if (this.useMock) {
             this.isLoading.set(true);
             return new Promise((resolve) => {
                 setTimeout(() => {
@@ -151,7 +151,7 @@ export class CreditsService {
 
         try {
             const res = await firstValueFrom(
-                this.http.post<{ success: boolean, credits: number, unlocks: UnlockMap }>(
+                this.http.post<{ success: true; credits: number; unlocks: UnlockMap } | { success: false }>(
                     `${this.apiUrl}/unlock`,
                     { vehicleId, moduleType, cost },
                     { headers: this.headers }
