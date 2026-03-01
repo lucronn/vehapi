@@ -12,10 +12,10 @@ import { RouterLink } from '@angular/router';
   template: `
     <div class="flex items-center gap-3">
       <!-- Credits Display -->
-      <a routerLink="/credits" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.05] border border-white/10 hover:bg-white/10 transition-colors group">
+      <a routerLink="/credits" class="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-full bg-white/[0.05] border border-white/10 hover:bg-white/10 transition-colors group" title="Account &amp; Credits">
         <lucide-icon [img]="CreditCard" class="w-3.5 h-3.5 text-torque-cyan"></lucide-icon>
         <span class="text-xs font-mono text-white">{{ creditsService.balance() }} CR</span>
-        <span class="ml-2 text-[10px] font-bold text-torque-cyan group-hover:text-white transition-colors uppercase tracking-wider">
+        <span class="ml-1 sm:ml-2 text-[10px] font-bold text-torque-cyan group-hover:text-white transition-colors uppercase tracking-wider">
           ADD
         </span>
       </a>

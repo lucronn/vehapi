@@ -40,7 +40,8 @@ const MODULE_LABELS: Record<string, string> = {
         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-torque-cyan/2 rounded-full blur-[200px]"></div>
       </div>
 
-      <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 py-10">
+      <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 py-10"
+        style="padding-left: calc(1rem + env(safe-area-inset-left, 0px)); padding-right: calc(1rem + env(safe-area-inset-right, 0px)); padding-top: calc(2.5rem + env(safe-area-inset-top, 0px)); padding-bottom: calc(2.5rem + env(safe-area-inset-bottom, 0px));">
 
         <!-- Back Nav -->
         <a routerLink="/" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-torque-cyan transition-colors mb-8 group">

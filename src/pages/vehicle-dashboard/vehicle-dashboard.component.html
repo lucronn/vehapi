@@ -52,8 +52,12 @@
       </button>
     </div>
     <div class="mt-6 space-y-3">
+      <a routerLink="/credits" (click)="toggleMobileMenu()"
+        class="flex items-center justify-center gap-2 w-full py-3 text-sm font-medium text-torque-cyan hover:text-white border border-torque-cyan/30 hover:bg-torque-cyan/10 rounded-xl transition-colors">
+        Account &amp; Credits
+      </a>
       <button (click)="setSection('browse-all')" class="w-full btn-secondary py-3 text-sm">All Data</button>
-      <a routerLink="/"
+      <a routerLink="/" (click)="toggleMobileMenu()"
         class="block w-full text-center py-3 text-sm text-torque-muted hover:text-white transition-colors">Exit</a>
     </div>
   </div>
