@@ -1,6 +1,6 @@
 # Project Progress
 
-**Last updated:** 2026-03-01 (Credits dashboard + payments mobile-first debug and polish)  
+**Last updated:** 2026-03-02 (Stripe checkout verified, auth modal global overlay)  
 **Reference:** `documentation/IMPLEMENTATION_GUIDE.md` Section 23 (Implementation Checklist); credits/Stripe are project-specific (not in doc).
 
 This file is the single source of truth for project status. Update it whenever you complete work, find bugs, or change scope. See `.cursor/rules/progress-update.mdc` for the rule that enforces keeping this file current.

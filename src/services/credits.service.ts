@@ -180,11 +180,7 @@ export class CreditsService {
             }
             return { success: false, error: 'No checkout URL received' };
         } catch (err: unknown) {
-            const body = err && typeof err === 'object' && 'error' in err ? (err as { error: unknown }).error : undefined;
-            const msg = typeof body === 'string' ? body
-                : (body && typeof body === 'object' && body !== null && 'error' in body)
-                    ? String((body as { error: unknown }).error)
-                    : 'Checkout failed. Please try again.';
+            const msg = this.extractErrorMessage(err, 'Checkout failed. Please try again.');
             console.error('Checkout failed:', err);
             this.lastError.set(msg);
             return { success: false, error: msg };
@@ -221,10 +217,7 @@ export class CreditsService {
                 window.location.href = res.url;
             }
         } catch (err: unknown) {
-            const body = err && typeof err === 'object' && 'error' in err ? (err as { error: unknown }).error : undefined;
-            const msg = (body && typeof body === 'object' && body !== null && 'error' in body)
-                ? String((body as { error: unknown }).error)
-                : 'Unable to open billing. Make a purchase first to manage payment methods.';
+            const msg = this.extractErrorMessage(err, 'Unable to open billing. Make a purchase first to manage payment methods.');
             console.error('Billing portal failed:', err);
             this.lastError.set(msg);
         } finally {
@@ -286,6 +279,25 @@ export class CreditsService {
     hasAccess(vehicleId: string, moduleType: string): boolean {
         const vehicleUnlocks = this.unlocks()[vehicleId] || [];
         return vehicleUnlocks.includes('full') || vehicleUnlocks.includes(moduleType);
+    }
+
+    /** Extract user-friendly error message from HttpErrorResponse, AbortError, or unknown error. */
+    private extractErrorMessage(err: unknown, fallback: string): string {
+        if (err && typeof err === 'object') {
+            if ('name' in err && (err as { name: string }).name === 'AbortError') {
+                return 'Request was interrupted. Please try again.';
+            }
+            const body = 'error' in err ? (err as { error: unknown }).error : undefined;
+            if (typeof body === 'string' && body) return body;
+            if (body && typeof body === 'object' && body !== null && 'error' in body) {
+                return String((body as { error: unknown }).error);
+            }
+            const status = 'status' in err ? (err as { status: number }).status : undefined;
+            if (status && status >= 500) {
+                return 'Server error. Please try again in a moment.';
+            }
+        }
+        return fallback;
     }
 
     private loadMockData() {

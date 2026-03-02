@@ -35,6 +35,7 @@ import { OrientationSelectorModalComponent, OrientationOption } from '../../comp
 import { ThemeToggleComponent } from '../../components/theme-toggle/theme-toggle.component';
 import { ArticleViewerComponent } from '../article-viewer/article-viewer.component';
 import { WindowManagerService } from '../../services/window-manager.service';
+import { AuthModalComponent } from '../../components/auth-modal/auth-modal.component';
 
 export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'component-locations' | 'procedures' | 'parts' | 'specs' | 'maintenance' | 'browse-all';
 
@@ -62,7 +63,8 @@ export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'comp
     PartsSectionComponent,
     LogoComponent,
     OrientationSelectorModalComponent,
-    ThemeToggleComponent
+    ThemeToggleComponent,
+    AuthModalComponent
   ],
 })
 export class VehicleDashboardComponent {
@@ -184,6 +186,7 @@ export class VehicleDashboardComponent {
   // UI State
   activeSection = signal<DashboardSection>('overview');
   isMobileMenuOpen = signal(false);
+  showAuthModal = signal(false);
 
   // Orientation Selection State
   showOrientationModal = signal(false);

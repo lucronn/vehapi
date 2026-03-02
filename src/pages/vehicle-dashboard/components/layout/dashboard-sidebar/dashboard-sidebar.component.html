@@ -224,7 +224,7 @@
             </button>
         </div>
         } @else {
-        <button (click)="showAuthModal.set(true)" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl
+        <button (click)="onOpenAuthClick()" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl
                        bg-[hsl(217,91%,55%)]/10 border border-[hsl(217,91%,55%)]/20
                        text-[hsl(217,91%,70%)] hover:bg-[hsl(217,91%,55%)]/20
                        transition-colors text-xs font-semibold">
@@ -239,9 +239,4 @@
             <span class="ml-auto text-[10px] font-mono text-torque-muted">V2.4.0</span>
         </div>
     </div>
-
-    <!-- Auth Modal -->
-    @if (showAuthModal()) {
-    <app-auth-modal (close)="showAuthModal.set(false)" />
-    }
 </aside>
