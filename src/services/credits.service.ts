@@ -45,6 +45,8 @@ export class CreditsService {
     isLoading = signal<boolean>(false);
     transactionsLoading = signal<boolean>(false);
     portalLoading = signal<boolean>(false);
+    /** User-facing error (checkout, portal, etc.). Clear when starting a new action. */
+    lastError = signal<string | null>(null);
 
     // Constants
     readonly COSTS = {
@@ -66,15 +68,17 @@ export class CreditsService {
     }
 
     constructor() {
-        // Automatically refresh balance when user logs in
+        // Automatically refresh balance and transactions when user logs in
         effect(() => {
             const user = this.authService.user();
             if (user) {
                 this.refreshBalance();
+                this.fetchTransactions();
             } else {
                 // Reset state on logout
                 this.balance.set(0);
                 this.unlocks.set({});
+                this.transactions.set([]);
             }
         });
     }
@@ -105,6 +109,7 @@ export class CreditsService {
             this.loadMockData();
             return;
         }
+        if (!this.authService.user()) return;
 
         try {
             const headers = await this.getHeaders();
@@ -123,6 +128,7 @@ export class CreditsService {
 
     async fetchTransactions() {
         if (this.USE_MOCK) return;
+        if (!this.authService.user()) return;
         this.transactionsLoading.set(true);
         try {
             const headers = await this.getHeaders();
@@ -140,19 +146,10 @@ export class CreditsService {
         }
     }
 
-    async startCheckout(amount: number) {
+    async startCheckout(amount: number): Promise<{ success: boolean; error?: string }> {
         if (!this.authService.user()) {
-            // Prompt for login if not logged in
-            try {
-                await this.authService.signInWithGoogle();
-                // After login, effect will trigger refreshBalance.
-                // We should probably wait or continue?
-                // For now, let's just return and let user click again or continue.
-                // But better to just proceed if login successful.
-                if (!this.authService.user()) return;
-            } catch (e) {
-                return; // Login failed/cancelled
-            }
+            // Caller (e.g. credits dashboard) should show auth modal - don't force Google
+            return { success: false, error: 'Sign in required' };
         }
 
         if (this.USE_MOCK) {
@@ -162,9 +159,10 @@ export class CreditsService {
                 this.saveMockData();
                 this.isLoading.set(false);
             }, 800);
-            return;
+            return { success: true };
         }
 
+        this.lastError.set(null);
         this.isLoading.set(true);
         try {
             const headers = await this.getHeaders();
@@ -176,11 +174,20 @@ export class CreditsService {
                 )
             );
 
-            if (res.url) {
+            if (res?.url) {
                 window.location.href = res.url;
+                return { success: true };
             }
-        } catch (error) {
-            console.error('Checkout failed:', error);
+            return { success: false, error: 'No checkout URL received' };
+        } catch (err: unknown) {
+            const body = err && typeof err === 'object' && 'error' in err ? (err as { error: unknown }).error : undefined;
+            const msg = typeof body === 'string' ? body
+                : (body && typeof body === 'object' && body !== null && 'error' in body)
+                    ? String((body as { error: unknown }).error)
+                    : 'Checkout failed. Please try again.';
+            console.error('Checkout failed:', err);
+            this.lastError.set(msg);
+            return { success: false, error: msg };
         } finally {
             this.isLoading.set(false);
         }
@@ -199,6 +206,7 @@ export class CreditsService {
 
         if (this.USE_MOCK) return;
 
+        this.lastError.set(null);
         this.portalLoading.set(true);
         try {
             const headers = await this.getHeaders();
@@ -218,7 +226,7 @@ export class CreditsService {
                 ? String((body as { error: unknown }).error)
                 : 'Unable to open billing. Make a purchase first to manage payment methods.';
             console.error('Billing portal failed:', err);
-            alert(msg);
+            this.lastError.set(msg);
         } finally {
             this.portalLoading.set(false);
         }

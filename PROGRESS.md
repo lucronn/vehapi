@@ -1,6 +1,6 @@
 # Project Progress
 
-**Last updated:** 2026-03-01 (AI rewriting + tutorial generation + debug log cleanup)  
+**Last updated:** 2026-03-01 (Credits dashboard + payments mobile-first debug and polish)  
 **Reference:** `documentation/IMPLEMENTATION_GUIDE.md` Section 23 (Implementation Checklist); credits/Stripe are project-specific (not in doc).
 
 This file is the single source of truth for project status. Update it whenever you complete work, find bugs, or change scope. See `.cursor/rules/progress-update.mdc` for the rule that enforces keeping this file current.
@@ -19,7 +19,7 @@ This file is the single source of truth for project status. Update it whenever y
 | Article viewer    | ✅ Done  | HTML/PDF, image viewer modal |
 | API & proxy       | ✅ Done  | Motor API, vehapiproxi proxy, vehicle data service |
 | AI features       | ⚠️ Partial | `/api/rewrite` and `/api/tutorials/generate` endpoints added to proxy; `AiRewriteService` wired into article viewer; Common Issues still empty (AI deferred) |
-| Mobile-first      | ⚠️ Partial | Responsive layout; bottom nav/slide-out/safe areas not verified |
+| Mobile-first      | ⚠️ Partial | Credits dashboard: 44px tap targets, card layout on mobile; bottom nav/slide-out not verified |
 | Testing           | ⚠️ Partial | Some specs exist; full checklist not covered |
 
 ---
@@ -78,6 +78,8 @@ This file is the single source of truth for project status. Update it whenever y
 - [x] Per-section paywall — procedures, parts, maintenance, diagrams, TSB, DTC, specs, component locations, common issues (unlock with CR)
 - [x] Transaction logging — logTransaction, addCredits with stripe session/intent and usdCents
 - [x] Stripe Customer Portal / billing management — `POST /api/credits/portal`, Billing button and link on credits dashboard
+- [x] Credits dashboard UX polish — auth-first purchase flow (modal instead of forced Google), `lastError` banner for checkout/portal failures, fetch balance+transactions only when logged in
+- [x] Credits dashboard mobile — card layout for history on small screens, min 44px tap targets, touch-manipulation, billing portal return to `/#/credits`
 
 ### Supabase / Data Caching & AI Data Lake
 

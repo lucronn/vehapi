@@ -86,12 +86,12 @@
 
         <!-- Lock Overlay -->
         @if (!creditsService.hasAccess(vehicleId, 'parts')) {
-        <div class="absolute inset-0 z-10 flex flex-col p-6 text-center rounded-xl overflow-hidden mt-0!"
+        <div class="absolute inset-0 z-10 flex items-center justify-center p-6 text-center rounded-xl overflow-y-auto"
             style="min-height: 350px;">
             <div class="absolute inset-0 bg-black/60 backdrop-blur-[2px]"></div>
             <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-black/80"></div>
 
-            <div class="relative z-20 max-w-sm mx-auto space-y-4 animate-fade-in-up sticky top-[30vh]">
+            <div class="relative z-20 max-w-sm mx-auto space-y-4 animate-fade-in-up">
                 <div
                     class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-2 ring-1 ring-white/20">
                     <lucide-icon [img]="icons.Lock" class="w-6 h-6 text-white"></lucide-icon>

@@ -8,7 +8,7 @@ import {
   LucideAngularModule,
   CreditCard, ArrowLeft, Plus, Car, Receipt, User,
   Check, Clock, ChevronRight, Sparkles, Home, Lock,
-  LayoutDashboard, Settings, LogIn, UserPlus, LogOut
+  LayoutDashboard, Settings, LogIn, UserPlus, LogOut, X, AlertCircle
 } from 'lucide-angular';
 import { AuthModalComponent } from '../../components/auth-modal/auth-modal.component';
 
@@ -57,14 +57,14 @@ const MODULE_LABELS: Record<string, string> = {
               {{ authService.user()?.email ?? 'My Account' }}
             </h1>
           </div>
-          <div class="flex items-center gap-3 flex-wrap">
+          <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
             @if (authService.user(); as user) {
-              <button (click)="signOut()" class="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 hover:border-red-400/40 hover:bg-red-400/10 transition-colors text-sm text-gray-400 hover:text-red-300">
+              <button (click)="signOut()" class="flex items-center gap-2 px-4 py-3 min-h-[44px] rounded-xl border border-white/10 hover:border-red-400/40 hover:bg-red-400/10 transition-colors text-sm text-gray-400 hover:text-red-300 touch-manipulation">
                 <lucide-icon [img]="icons.LogOut" class="w-4 h-4"></lucide-icon>
                 Sign out
               </button>
               <button (click)="openBillingPortal()" [disabled]="creditsService.portalLoading()"
-                class="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 hover:border-torque-cyan/40 hover:bg-white/[0.04] transition-colors text-sm text-gray-400 hover:text-white disabled:opacity-50">
+                class="flex items-center gap-2 px-4 py-3 min-h-[44px] rounded-xl border border-white/10 hover:border-torque-cyan/40 hover:bg-white/[0.04] transition-colors text-sm text-gray-400 hover:text-white disabled:opacity-50 touch-manipulation">
                 <lucide-icon [img]="icons.Settings" class="w-4 h-4"></lucide-icon>
                 {{ creditsService.portalLoading() ? 'Opening…' : 'Payment methods' }}
               </button>
@@ -77,11 +77,11 @@ const MODULE_LABELS: Record<string, string> = {
               </div>
             } @else {
               <div class="flex items-center gap-2">
-                <button (click)="openAuthModal('signin')" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.06] border border-white/10 hover:border-torque-cyan/40 text-sm text-white font-medium">
+                <button (click)="openAuthModal('signin')" class="flex items-center gap-2 px-4 py-3 min-h-[44px] rounded-xl bg-white/[0.06] border border-white/10 hover:border-torque-cyan/40 text-sm text-white font-medium touch-manipulation">
                   <lucide-icon [img]="icons.LogIn" class="w-4 h-4"></lucide-icon>
                   Sign in
                 </button>
-                <button (click)="openAuthModal('signup')" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-torque-cyan/20 border border-torque-cyan/40 text-torque-cyan hover:bg-torque-cyan/30 text-sm font-medium">
+                <button (click)="openAuthModal('signup')" class="flex items-center gap-2 px-4 py-3 min-h-[44px] rounded-xl bg-torque-cyan/20 border border-torque-cyan/40 text-torque-cyan hover:bg-torque-cyan/30 text-sm font-medium touch-manipulation">
                   <lucide-icon [img]="icons.UserPlus" class="w-4 h-4"></lucide-icon>
                   Create account
                 </button>
@@ -119,16 +119,27 @@ const MODULE_LABELS: Record<string, string> = {
         </div>
         }
 
-        <!-- Tabs -->
-        <div class="flex gap-1 bg-white/[0.03] border border-white/[0.06] rounded-xl p-1 mb-8 overflow-x-auto">
+        <!-- Error banner -->
+        @if (creditsService.lastError(); as err) {
+        <div class="mb-6 flex items-center gap-3 bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-4 text-red-400">
+          <lucide-icon [img]="icons.AlertCircle" class="w-5 h-5 flex-shrink-0"></lucide-icon>
+          <span class="font-medium flex-1">{{ err }}</span>
+          <button (click)="creditsService.lastError.set(null)" class="p-1.5 rounded-lg hover:bg-red-500/20 transition-colors" aria-label="Dismiss">
+            <lucide-icon [img]="icons.X" class="w-4 h-4"></lucide-icon>
+          </button>
+        </div>
+        }
+
+        <!-- Tabs: min 44px tap targets, scroll on narrow screens -->
+        <div class="flex gap-1 bg-white/[0.03] border border-white/[0.06] rounded-xl p-1.5 mb-8 overflow-x-auto -mx-1 sm:mx-0" style="-webkit-overflow-scrolling: touch;">
           @for (tab of tabs; track tab.id) {
           <button
             (click)="activeTab.set(tab.id)"
             [class.bg-white]="activeTab() === tab.id"
             [class.text-black]="activeTab() === tab.id"
             [class.font-semibold]="activeTab() === tab.id"
-            class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm whitespace-nowrap transition-all duration-200 text-gray-400 hover:text-white">
-            <lucide-icon [img]="tab.icon" class="w-4 h-4"></lucide-icon>
+            class="flex items-center gap-2 px-4 py-3 min-h-[44px] rounded-lg text-sm whitespace-nowrap transition-all duration-200 text-gray-400 hover:text-white touch-manipulation">
+            <lucide-icon [img]="tab.icon" class="w-4 h-4 flex-shrink-0"></lucide-icon>
             {{ tab.label }}
           </button>
           }
@@ -139,38 +150,38 @@ const MODULE_LABELS: Record<string, string> = {
         <div class="space-y-6 animate-fade-in-up">
 
           <!-- Stats row -->
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div class="bg-white/[0.03] border border-white/[0.06] rounded-xl p-5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 sm:p-5">
               <p class="text-xs text-gray-500 mb-1">Balance</p>
               <p class="text-2xl font-mono font-bold text-torque-cyan">{{ creditsService.balance() }}</p>
               <p class="text-xs text-gray-600 mt-1">credits</p>
             </div>
-            <div class="bg-white/[0.03] border border-white/[0.06] rounded-xl p-5">
+            <div class="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 sm:p-5">
               <p class="text-xs text-gray-500 mb-1">Vehicles</p>
               <p class="text-2xl font-mono font-bold">{{ unlockedVehicleCount() }}</p>
               <p class="text-xs text-gray-600 mt-1">unlocked</p>
             </div>
-            <div class="bg-white/[0.03] border border-white/[0.06] rounded-xl p-5">
+            <div class="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 sm:p-5">
               <p class="text-xs text-gray-500 mb-1">Purchases</p>
               <p class="text-2xl font-mono font-bold">{{ purchaseCount() }}</p>
               <p class="text-xs text-gray-600 mt-1">transactions</p>
             </div>
-            <div class="bg-white/[0.03] border border-white/[0.06] rounded-xl p-5">
+            <div class="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 sm:p-5">
               <p class="text-xs text-gray-500 mb-1">Total Spent</p>
               <p class="text-2xl font-mono font-bold">\${{ totalSpent() }}</p>
               <p class="text-xs text-gray-600 mt-1">lifetime</p>
             </div>
           </div>
 
-          <!-- Quick buy -->
-          <div class="bg-white/[0.03] border border-white/[0.06] rounded-xl p-6">
+          <!-- Quick buy: responsive grid, touch-friendly buttons -->
+          <div class="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 sm:p-6">
             <h2 class="font-semibold text-gray-300 mb-4">Top Up Credits</h2>
-            <div class="grid grid-cols-3 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
               @for (pack of creditPacks; track pack.credits) {
               <button
                 (click)="purchase(pack.credits)"
                 [disabled]="creditsService.isLoading()"
-                class="group relative overflow-hidden bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.08] hover:border-torque-cyan/40 rounded-xl p-4 transition-all duration-200 text-left">
+                class="group relative overflow-hidden bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.08] hover:border-torque-cyan/40 rounded-xl p-5 min-h-[100px] transition-all duration-200 text-left touch-manipulation disabled:opacity-50">
                 <p class="text-sm text-gray-400 mb-1">{{ pack.label }}</p>
                 <p class="text-xl font-mono font-bold text-torque-cyan">{{ pack.credits | number }}</p>
                 <p class="text-xs text-gray-500 mt-1">\${{ pack.price }}</p>
@@ -279,22 +290,49 @@ const MODULE_LABELS: Record<string, string> = {
             <p class="text-gray-500 text-sm">Credit purchases and unlocks (items purchased with credits) will appear here.</p>
           </div>
           } @else {
-          <div class="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
+          <!-- Mobile: card layout -->
+          <div class="sm:hidden space-y-3">
+            @for (txn of creditsService.transactions(); track txn.id) {
+            <div class="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 touch-manipulation">
+              <div class="flex justify-between items-start gap-3">
+                <div class="min-w-0 flex-1">
+                  <p class="font-medium text-white">{{ txnLabel(txn) }}</p>
+                  <p class="text-xs text-gray-500 mt-1">{{ txn.created_at | date:'MMM d, y' }}</p>
+                </div>
+                <span [class.text-emerald-400]="txn.amount > 0" [class.text-orange-400]="txn.amount < 0"
+                  class="font-mono font-semibold text-sm flex-shrink-0">
+                  {{ txn.amount > 0 ? '+' : '' }}{{ txn.amount }} CR
+                </span>
+              </div>
+              <div class="flex items-center gap-2 mt-2">
+                <span [class]="txn.type === 'purchase' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-orange-500/20 text-orange-400'"
+                  class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded">
+                  {{ txn.type === 'purchase' ? 'Purchase' : 'Usage' }}
+                </span>
+                @if (txn.usd_cents) {
+                <span class="text-xs text-gray-500">\${{ txn.usd_cents / 100 | number:'1.2-2' }}</span>
+                }
+              </div>
+            </div>
+            }
+          </div>
+          <!-- Desktop: table -->
+          <div class="hidden sm:block bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
             <table class="w-full text-sm">
               <thead>
                 <tr class="border-b border-white/[0.06]">
                   <th class="text-left text-xs text-gray-500 uppercase tracking-wider px-5 py-3">Date</th>
-                  <th class="text-left text-xs text-gray-500 uppercase tracking-wider px-5 py-3 hidden sm:table-cell">Type</th>
+                  <th class="text-left text-xs text-gray-500 uppercase tracking-wider px-5 py-3">Type</th>
                   <th class="text-left text-xs text-gray-500 uppercase tracking-wider px-5 py-3">Description</th>
                   <th class="text-right text-xs text-gray-500 uppercase tracking-wider px-5 py-3">Amount</th>
-                  <th class="text-right text-xs text-gray-500 uppercase tracking-wider px-5 py-3 hidden sm:table-cell">USD</th>
+                  <th class="text-right text-xs text-gray-500 uppercase tracking-wider px-5 py-3">USD</th>
                 </tr>
               </thead>
               <tbody>
                 @for (txn of creditsService.transactions(); track txn.id) {
                 <tr class="border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors">
                   <td class="px-5 py-4 text-gray-400 whitespace-nowrap">{{ txn.created_at | date:'MMM d, y' }}</td>
-                  <td class="px-5 py-4 hidden sm:table-cell">
+                  <td class="px-5 py-4">
                     <span [class]="txn.type === 'purchase' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-orange-500/20 text-orange-400'" class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded">
                       {{ txn.type === 'purchase' ? 'Purchase' : 'Usage' }}
                     </span>
@@ -310,7 +348,7 @@ const MODULE_LABELS: Record<string, string> = {
                     [class.text-orange-400]="txn.amount < 0">
                     {{ txn.amount > 0 ? '+' : '' }}{{ txn.amount }} CR
                   </td>
-                  <td class="px-5 py-4 text-right text-gray-400 hidden sm:table-cell whitespace-nowrap">
+                  <td class="px-5 py-4 text-right text-gray-400 whitespace-nowrap">
                     {{ txn.usd_cents ? ('$' + (txn.usd_cents / 100 | number:'1.2-2')) : '—' }}
                   </td>
                 </tr>
@@ -402,7 +440,7 @@ export class CreditsDashboardComponent implements OnInit {
   readonly authService = inject(AuthService);
   readonly route = inject(ActivatedRoute);
 
-  readonly icons = { CreditCard, ArrowLeft, Plus, Car, Receipt, User, Check, Clock, ChevronRight, Sparkles, Home, Lock, LayoutDashboard, Settings, LogIn, UserPlus, LogOut };
+  readonly icons = { CreditCard, ArrowLeft, Plus, Car, Receipt, User, Check, Clock, ChevronRight, Sparkles, Home, Lock, LayoutDashboard, Settings, LogIn, UserPlus, LogOut, X, AlertCircle };
 
   activeTab = signal<Tab>('overview');
   purchaseSuccess = signal(false);
@@ -479,8 +517,16 @@ export class CreditsDashboardComponent implements OnInit {
     this.creditsService.fetchTransactions();
   }
 
-  purchase(amount: number) {
-    this.creditsService.startCheckout(amount);
+  async purchase(amount: number) {
+    if (!this.authService.user()) {
+      this.authModalStartMode.set('signin');
+      this.showAuthModal.set(true);
+      return;
+    }
+    const result = await this.creditsService.startCheckout(amount);
+    if (!result.success) {
+      this.creditsService.lastError.set(result.error ?? 'Checkout failed');
+    }
   }
 
   openBillingPortal() {

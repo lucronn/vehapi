@@ -497,7 +497,7 @@
 
   /* ---- Section Labels ---- */
   .section-label {
-    font-size: 0.625rem;
+    font-size: 0.75rem;
     font-weight: 600;
     font-family: 'JetBrains Mono', monospace;
     text-transform: uppercase;
@@ -865,7 +865,7 @@
     font-weight: 500;
     color: var(--text-muted);
     border-radius: var(--radius-sm);
-    transition: color 0.15s ease;
+    transition: color 0.15s ease, background-color 0.15s ease;
     min-width: 3.5rem;
     cursor: pointer;
     background: transparent;
@@ -874,10 +874,12 @@
 
   .bottom-tab.active {
     color: hsl(191, 97%, 50%);
+    background: var(--bg-hover);
   }
 
   [data-theme="light"] .bottom-tab.active {
     color: var(--primary);
+    background: var(--bg-muted);
   }
 
   .bottom-tab:hover {

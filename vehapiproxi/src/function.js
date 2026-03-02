@@ -599,7 +599,11 @@ app.get('/api/credits/balance', secureAuthMiddleware, async (req, res) => {
 app.post('/api/credits/checkout', express.json(), secureAuthMiddleware, async (req, res) => {
     try {
         const { amount, origin } = req.body;
+        if (!amount || amount < 1000) {
+            return res.status(400).json({ error: 'Minimum purchase is 1000 credits ($10)' });
+        }
         const sessionUrl = await createCheckoutSession(req.userId, amount, origin || req.headers.origin);
+        logger.info(`Checkout session created for user ${req.userId}, amount ${amount}`);
         res.json({ url: sessionUrl });
     } catch (error) {
         logger.error('Error creating checkout session:', error);
@@ -613,8 +617,9 @@ app.post('/api/credits/portal', express.json(), secureAuthMiddleware, async (req
         const userData = await getUserData(req.userId);
         const customerId = userData.stripe_customer_id || null;
         const origin = req.body?.origin || req.headers.origin || '';
-        const returnUrl = `${origin}/#/account`;
+        const returnUrl = `${origin}/#/credits`;
         const sessionUrl = await createBillingPortalSession(customerId, returnUrl);
+        logger.info(`Billing portal session created for user ${req.userId}`);
         res.json({ url: sessionUrl });
     } catch (error) {
         logger.error('Error creating billing portal session:', error);

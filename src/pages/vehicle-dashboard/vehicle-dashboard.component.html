@@ -18,7 +18,8 @@
     </div>
     <div class="flex items-center gap-1">
       <app-theme-toggle></app-theme-toggle>
-      <button (click)="toggleMobileMenu()" class="btn-glass p-2 rounded-lg">
+      <button (click)="toggleMobileMenu()" class="btn-glass p-2 rounded-lg"
+        [attr.aria-label]="isMobileMenuOpen() ? 'Close navigation menu' : 'Open navigation menu'">
         <lucide-icon [img]="isMobileMenuOpen() ? icons.X : icons.Menu" class="w-5 h-5"></lucide-icon>
       </button>
     </div>
@@ -68,7 +69,7 @@
 
     <!-- Decorative blur -->
     <div
-      class="absolute top-0 right-0 w-[500px] h-[500px] bg-[hsl(191,97%,50%)] opacity-[0.02] rounded-full blur-[150px] pointer-events-none">
+      class="hidden sm:block absolute top-0 right-0 w-[500px] h-[500px] bg-[hsl(191,97%,50%)] opacity-[0.02] rounded-full blur-[150px] pointer-events-none">
     </div>
 
     <!-- Search Bar -->

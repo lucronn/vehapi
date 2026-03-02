@@ -9,7 +9,7 @@
                     <lucide-icon [img]="icons.Gauge" class="w-4 h-4"></lucide-icon>
                 </div>
                 <div>
-                    <p class="text-[10px] font-mono uppercase tracking-[0.15em]" style="color:hsl(191,97%,50%)">Service
+                    <p class="text-xs font-mono uppercase tracking-[0.15em]" style="color:hsl(191,97%,50%)">Service
                         Interval</p>
                     <h3 class="text-base font-bold" style="color:var(--text-primary)">Select Mileage</h3>
                 </div>
@@ -39,39 +39,41 @@
             [class.pointer-events-none]="!creditsService.hasAccess(vehicleId, 'maintenance')"
             class="card overflow-hidden transition-all duration-300 select-none">
             <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <thead style="border-bottom:1px solid var(--border);background:var(--bg-muted)">
-                        <tr>
-                            <th scope="col" class="px-5 py-4 text-xs font-semibold uppercase tracking-wide"
-                                style="color:var(--text-muted)">Action</th>
-                            <th scope="col" class="px-5 py-4 text-xs font-semibold uppercase tracking-wide"
-                                style="color:var(--text-muted)">Description</th>
-                            <th scope="col" class="px-5 py-4 text-xs font-semibold uppercase tracking-wide text-right"
-                                style="color:var(--text-muted)">Frequency</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (item of displayedSchedules(); track $index) {
-                        <tr class="transition-colors animate-fade-in-up"
-                            style="border-bottom:1px solid var(--border-muted)"
-                            [style.animation-delay]="$index * 50 + 'ms'">
-                            <td class="px-5 py-4">
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold"
-                                    style="background:var(--primary-subtle);color:var(--primary)">
-                                    {{ item.action }}
-                                </span>
-                            </td>
-                            <td class="px-5 py-4">
-                                <p class="font-medium" style="color:var(--text-primary)">{{ item.description }}</p>
-                            </td>
-                            <td class="px-5 py-4 text-right">
-                                <span class="text-xs font-medium" style="color:var(--text-muted)">{{
-                                    item.frequency || 'As needed' }}</span>
-                            </td>
-                        </tr>
-                        }
-                    </tbody>
-                </table>
+                <div class="motor-prose">
+                    <table class="w-full text-left text-sm">
+                        <thead style="border-bottom:1px solid var(--border);background:var(--bg-muted)">
+                            <tr>
+                                <th scope="col" class="px-5 py-4 text-xs font-semibold uppercase tracking-wide"
+                                    style="color:var(--text-muted)">Action</th>
+                                <th scope="col" class="px-5 py-4 text-xs font-semibold uppercase tracking-wide"
+                                    style="color:var(--text-muted)">Description</th>
+                                <th scope="col" class="px-5 py-4 text-xs font-semibold uppercase tracking-wide text-right"
+                                    style="color:var(--text-muted)">Frequency</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (item of displayedSchedules(); track $index) {
+                            <tr class="transition-colors animate-fade-in-up"
+                                style="border-bottom:1px solid var(--border-muted)"
+                                [style.animation-delay]="$index * 50 + 'ms'">
+                                <td class="px-5 py-4" data-label="Action">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold"
+                                        style="background:var(--primary-subtle);color:var(--primary)">
+                                        {{ item.action }}
+                                    </span>
+                                </td>
+                                <td class="px-5 py-4" data-label="Description">
+                                    <p class="font-medium" style="color:var(--text-primary)">{{ item.description }}</p>
+                                </td>
+                                <td class="px-5 py-4 text-right" data-label="Frequency">
+                                    <span class="text-xs font-medium" style="color:var(--text-muted)">{{
+                                        item.frequency || 'As needed' }}</span>
+                                </td>
+                            </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -87,12 +89,12 @@
 
         <!-- Lock Overlay -->
         @if (!creditsService.hasAccess(vehicleId, 'maintenance')) {
-        <div class="absolute inset-0 z-10 flex flex-col p-6 text-center rounded-xl overflow-hidden mt-0!"
+        <div class="absolute inset-0 z-10 flex items-center justify-center p-6 text-center rounded-xl overflow-y-auto"
             style="min-height: 350px;">
             <div class="absolute inset-0 bg-black/60 backdrop-blur-[2px]"></div>
             <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-black/80"></div>
 
-            <div class="relative z-20 max-w-sm mx-auto space-y-4 animate-fade-in-up sticky top-[30vh]">
+            <div class="relative z-20 max-w-sm mx-auto space-y-4 animate-fade-in-up">
                 <div
                     class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-2 ring-1 ring-white/20">
                     <lucide-icon [img]="icons.Lock" class="w-6 h-6 text-white"></lucide-icon>

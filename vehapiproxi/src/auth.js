@@ -1,4 +1,3 @@
-import { getAuth } from 'firebase-admin/auth';
 import https from 'https';
 import { URL } from 'url';
 import { config } from './config.js';
@@ -424,12 +423,13 @@ class AuthManager {
 export const authManager = new AuthManager();
 
 /**
- * Verify Firebase ID Token
+ * Verify Firebase ID Token (lazy-loads firebase-admin; unused in credits flow)
  * @param {string} token
  * @returns {Promise<import('firebase-admin/auth').DecodedIdToken | null>}
  */
 export async function verifyFirebaseIdToken(token) {
     try {
+        const { getAuth } = await import('firebase-admin/auth');
         const auth = getAuth();
         const decodedToken = await auth.verifyIdToken(token);
         return decodedToken;
