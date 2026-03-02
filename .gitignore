@@ -25,3 +25,7 @@ dist-ssr
 .vercel
 .angular/
 __pycache__/
+
+# Local environment files (backend)
+vehapiproxi/.env
+vehapiproxi/.env.local
