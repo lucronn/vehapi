@@ -10,8 +10,17 @@ function getSupabaseConfig() {
     return { url, key };
 }
 
+const UPSERT_CONFLICT_COLUMNS = {
+    procedures: 'vehicle_id,title',
+    tsbs: 'vehicle_id,bulletin_number',
+    dtcs: 'vehicle_id,code',
+    specifications: 'vehicle_id,category,name'
+};
+
 /**
  * Persists normalized data to the specified Supabase table via REST API.
+ * Uses UPSERT (merge-duplicates) so re-processed data overwrites stale rows
+ * instead of creating duplicates.
  * @param {string} table The target table name (e.g., 'dtcs', 'tsbs', 'procedures')
  * @param {Object|Array} data The parsed data matching the table schema
  */
@@ -22,17 +31,29 @@ export async function insertParsedData(table, data) {
         return { success: false, error: 'Supabase credentials not configured' };
     }
 
-    // Accept both a single object and an array
     const rows = Array.isArray(data) ? data : [data];
+    if (rows.length === 0) {
+        return { success: true };
+    }
+
+    const onConflict = UPSERT_CONFLICT_COLUMNS[table];
+    const prefer = onConflict
+        ? 'return=minimal,resolution=merge-duplicates'
+        : 'return=minimal';
 
     try {
-        const response = await fetch(`${cfg.url}/rest/v1/${table}`, {
+        let url = `${cfg.url}/rest/v1/${table}`;
+        if (onConflict) {
+            url += `?on_conflict=${onConflict}`;
+        }
+
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'apikey': cfg.key,
                 'Authorization': `Bearer ${cfg.key}`,
-                'Prefer': 'return=minimal'
+                'Prefer': prefer
             },
             body: JSON.stringify(rows)
         });
@@ -43,7 +64,7 @@ export async function insertParsedData(table, data) {
             return { success: false, error: errorText };
         }
 
-        logger.info(`✓ Cached ${rows.length} row(s) into Supabase table: ${table}`);
+        logger.info(`✓ Upserted ${rows.length} row(s) into Supabase table: ${table}`);
         return { success: true };
     } catch (err) {
         logger.error(`Unexpected error inserting into ${table}:`, err);
@@ -114,11 +135,39 @@ export async function checkParsedArticle(articleId) {
         const data = await response.json();
         if (data && data.length > 0) {
             logger.info(`✓ Found cached procedure for article ${articleId}`);
-            return data[0]; // Return the first matching article
+            return data[0];
         }
         return null;
     } catch (err) {
         logger.error(`Unexpected error checking Supabase for article ${articleId}:`, err);
         return null;
+    }
+}
+
+/**
+ * Checks whether a given source path was already successfully parsed.
+ * Used by the background worker to skip redundant (and rate-limited) AI calls.
+ * @param {string} sourcePath The proxy request URL path
+ * @returns {boolean}
+ */
+export async function wasAlreadyParsed(sourcePath) {
+    const cfg = getSupabaseConfig();
+    if (!cfg) return false;
+
+    try {
+        const encoded = encodeURIComponent(sourcePath);
+        const url = `${cfg.url}/rest/v1/ai_processing_logs?source_file=eq.${encoded}&status=eq.COMPLETED&select=id&limit=1`;
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'apikey': cfg.key,
+                'Authorization': `Bearer ${cfg.key}`,
+            },
+        });
+        if (!response.ok) return false;
+        const rows = await response.json();
+        return rows && rows.length > 0;
+    } catch {
+        return false;
     }
 }

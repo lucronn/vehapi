@@ -1,6 +1,6 @@
 # Project Progress
 
-**Last updated:** 2026-03-03 (Fixed Stripe credit fulfillment: added session verification endpoint)  
+**Last updated:** 2026-03-04 (Data normalization hardening: upsert, dedup, retry, unique constraints, data-limit increase)  
 **Reference:** `documentation/IMPLEMENTATION_GUIDE.md` Section 23 (Implementation Checklist); credits/Stripe are project-specific (not in doc).
 
 This file is the single source of truth for project status. Update it whenever you complete work, find bugs, or change scope. See `.cursor/rules/progress-update.mdc` for the rule that enforces keeping this file current.
@@ -15,7 +15,7 @@ This file is the single source of truth for project status. Update it whenever y
 | Vehicle dashboard | ✅ Done  | Sections: procedures, parts, maintenance, diagrams, TSB, DTC, specs, component locations |
 | Credits dashboard | ✅ Done  | `/credits`, `/account`: balance, buy credits, vehicles, receipts tabs |
 | Stripe / payments | ✅ Done  | Checkout session, webhook, add credits; vehapiproxi `/api/credits/*` |
-| Supabase / data lake | ⚠️ Partial | Auth + normalized AI data cached in Supabase; read path & UI features not fully wired |
+| Supabase / data lake | ⚠️ Partial | Auth + normalized AI data cached in Supabase with UPSERT, dedup, unique constraints; read path & UI features not fully wired |
 | Article viewer    | ✅ Done  | HTML/PDF, image viewer modal |
 | API & proxy       | ✅ Done  | Motor API, vehapiproxi proxy, vehicle data service |
 | AI features       | ⚠️ Partial | `/api/rewrite` and `/api/tutorials/generate` endpoints added to proxy; `AiRewriteService` wired into article viewer; Common Issues still empty (AI deferred) |
@@ -85,8 +85,11 @@ This file is the single source of truth for project status. Update it whenever y
 
 - [x] Supabase JS client and auth service (`SupabaseService`, `AuthService`) for user identity and sessions
 - [x] Normalized schema models for AI data (`src/models/normalized_schema.ts`)
-- [x] Supabase REST helper in proxy (`vehapiproxi/src/supabase.js`) for `insertParsedData`, `logAiProcessing`, `checkParsedArticle`
-- [x] Background worker (`vehapiproxi/src/background_worker.js`) to parse Motor responses with AI and persist normalized rows (procedures, DTCs, TSBs, specs) into Supabase
+- [x] Supabase REST helper in proxy (`vehapiproxi/src/supabase.js`) for `insertParsedData` (UPSERT with conflict resolution), `logAiProcessing`, `checkParsedArticle`, `wasAlreadyParsed`
+- [x] Background worker (`vehapiproxi/src/background_worker.js`) to parse Motor responses with AI and persist normalized rows — dedup check before AI call, `external_id` for all types, skip if no `vehicle_id`
+- [x] Unique constraints on Supabase tables (`procedures`, `tsbs`, `dtcs`, `specifications`) to prevent duplicate rows at DB level
+- [x] Gemini retry with exponential backoff on 429 rate-limit errors (up to 3 retries)
+- [x] AI data limit increased from 8k to 30k chars to reduce data truncation loss
 - [ ] Read path that prefers Supabase cached procedures via `checkParsedArticle` before falling back to live Motor API — *plumbing exists; integration not fully wired/verified*
 - [ ] Frontend features powered directly by normalized Supabase data (e.g. AI tutorials, richer search) — *blocked on AI integration work above*
 
@@ -157,6 +160,9 @@ This file is the single source of truth for project status. Update it whenever y
 
 3. **AI rewriting — server-side only**  
    `/api/rewrite` and `/api/tutorials/generate` require `GEMINI_API_KEY` to be set in the vehapiproxi environment. If missing, the endpoints return 503 and the article viewer falls back to original content gracefully.
+
+4. **~Resolved~ AI parsing high failure rate**  
+   Was 61% failure (71/116 tasks) due to: (a) Gemini 429 rate-limit with no retry, (b) Vercel freeze killing fire-and-forget tasks, (c) duplicate work consuming quota. Fixed with retry+backoff, dedup check before AI call, and data limit increase. Vercel freeze is inherent to hobby tier.
 
 ---
 

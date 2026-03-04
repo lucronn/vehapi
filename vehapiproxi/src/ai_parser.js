@@ -2,7 +2,8 @@ import logger from './logger.js';
 
 // Use the Gemini REST API directly via fetch - no SDK needed, works everywhere
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
-const MODEL = 'gemini-2.5-flash';
+// 2.0-flash: fast, cheap, ideal for structured extraction. Upgrade to gemini-3-flash when GA.
+const MODEL = 'gemini-2.0-flash';
 
 // The schema definitions to enforce structured output
 const SCHEMAS = {
@@ -101,8 +102,11 @@ const TUTORIAL_SCHEMA = {
     }
 };
 
+const MAX_RETRIES = 3;
+
 /**
  * Internal helper that calls the Gemini generateContent endpoint.
+ * Retries automatically on 429 (rate limit) with exponential backoff.
  * @param {string} prompt Text prompt to send
  * @param {object|null} schema Optional JSON schema for structured output
  * @returns {string} Raw text response from Gemini
@@ -124,23 +128,35 @@ async function callGemini(prompt, schema = null) {
 
     const url = `${GEMINI_API_BASE}/${MODEL}:generateContent?key=${apiKey}`;
 
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-    });
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Gemini API error ${response.status}: ${errorText}`);
+        if (response.status === 429 && attempt < MAX_RETRIES) {
+            const retryMatch = (await response.text()).match(/retryDelay.*?(\d+)/);
+            const delaySec = retryMatch ? Math.min(parseInt(retryMatch[1], 10), 60) : (10 * (attempt + 1));
+            logger.info(`Gemini 429 rate-limited, retrying in ${delaySec}s (attempt ${attempt + 1}/${MAX_RETRIES})`);
+            await new Promise(r => setTimeout(r, delaySec * 1000));
+            continue;
+        }
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Gemini API error ${response.status}: ${errorText}`);
+        }
+
+        const result = await response.json();
+        const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) {
+            throw new Error('Gemini returned no text in response');
+        }
+        return text;
     }
 
-    const result = await response.json();
-    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) {
-        throw new Error('Gemini returned no text in response');
-    }
-    return text;
+    throw new Error('Gemini API: max retries exceeded on 429');
 }
 
 /**
@@ -215,10 +231,11 @@ export async function parseWithAI(rawData, targetSchema) {
         throw new Error(`Schema ${targetSchema} is not defined in ai_parser.js`);
     }
 
-    // Trim raw data to avoid exceeding token limits (first 8000 chars)
-    const trimmedData = typeof rawData === 'string' ? rawData.slice(0, 8000) : JSON.stringify(rawData).slice(0, 8000);
+    const rawStr = typeof rawData === 'string' ? rawData : JSON.stringify(rawData);
+    const trimmedData = rawStr.slice(0, 30000);
+    const wasTruncated = rawStr.length > 30000;
 
-    const prompt = `You are an automotive data parser. Extract the relevant technical information from the provided raw JSON response and map it strictly to the output schema. If some data is not present, omit it or provide empty arrays/strings. Do not hallucinate data.\n\nRaw Data:\n${trimmedData}`;
+    const prompt = `You are an automotive data parser. Extract ALL relevant technical information from the provided raw JSON response and map it strictly to the output schema. Capture every item — do not skip any. If some optional fields are not present, omit them or provide empty arrays/strings. Do not hallucinate data.${wasTruncated ? '\n\nNote: The data below was truncated. Extract everything that IS present.' : ''}\n\nRaw Data:\n${trimmedData}`;
 
     const text = await callGemini(prompt, SCHEMAS[targetSchema]);
     return JSON.parse(text);

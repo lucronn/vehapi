@@ -90,7 +90,7 @@ export async function verifyAndFulfillSession(sessionId, callerUserId) {
     const s = getStripe();
     const session = await s.checkout.sessions.retrieve(sessionId);
 
-    if (session.payment_status !== 'paid') {
+    if (session.payment_status !== 'paid' && session.payment_status !== 'no_payment_required') {
         return { fulfilled: false, reason: 'Payment not completed' };
     }
 
