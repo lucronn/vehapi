@@ -502,17 +502,24 @@ export class CreditsDashboardComponent implements OnInit {
   recentTransactions = computed(() => this.creditsService.transactions().slice(0, 5));
 
   ngOnInit() {
-    // Handle Stripe redirect params
     this.route.queryParams.subscribe(async params => {
       if (params['purchase'] === 'success') {
         const sessionId = params['session_id'];
+        let verified = false;
         if (sessionId) {
-          await this.creditsService.verifySession(sessionId);
+          verified = await this.creditsService.verifySession(sessionId);
         }
-        this.purchaseSuccess.set(true);
+        if (verified) {
+          this.purchaseSuccess.set(true);
+          setTimeout(() => this.purchaseSuccess.set(false), 8000);
+        } else if (sessionId && !this.authService.user()) {
+          this.creditsService.lastError.set('Please sign in to complete your purchase. Your payment is saved and credits will be added after sign-in.');
+          this.openAuthModal('signin');
+        } else if (sessionId) {
+          this.creditsService.lastError.set('Credit fulfillment failed. Please contact support if credits are missing.');
+        }
         this.creditsService.refreshBalance();
         this.creditsService.fetchTransactions();
-        setTimeout(() => this.purchaseSuccess.set(false), 5000);
       }
     });
 

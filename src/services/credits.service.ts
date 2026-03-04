@@ -68,14 +68,22 @@ export class CreditsService {
     }
 
     constructor() {
-        // Automatically refresh balance and transactions when user logs in
         effect(() => {
             const user = this.authService.user();
             if (user) {
                 this.refreshBalance();
                 this.fetchTransactions();
+                // Retry any pending Stripe session that failed due to auth not being ready
+                const pending = localStorage.getItem(this.PENDING_SESSION_KEY);
+                if (pending) {
+                    this.fulfillPendingSession(pending).then(ok => {
+                        if (ok) {
+                            this.refreshBalance();
+                            this.fetchTransactions();
+                        }
+                    });
+                }
             } else {
-                // Reset state on logout
                 this.balance.set(0);
                 this.unlocks.set({});
                 this.transactions.set([]);
@@ -146,23 +154,47 @@ export class CreditsService {
         }
     }
 
+    private readonly PENDING_SESSION_KEY = 'torque_pending_stripe_session';
+
     /**
      * After returning from Stripe checkout, verify the session server-side
-     * and fulfill credits. This is the primary credit-granting path (webhooks
-     * serve as a backup for edge cases like the user closing the tab).
+     * and fulfill credits. Persists the sessionId to localStorage so it can
+     * be retried after sign-in if auth wasn't restored in time.
      */
     async verifySession(sessionId: string): Promise<boolean> {
-        if (!sessionId || !this.authService.user()) return false;
+        if (!sessionId) return false;
+
+        localStorage.setItem(this.PENDING_SESSION_KEY, sessionId);
+
+        // Auth may still be loading after a full page redirect from Stripe checkout.
+        // Wait up to 15 seconds for the session to restore.
+        for (let i = 0; i < 150 && this.authService.loading(); i++) {
+            await new Promise(r => setTimeout(r, 100));
+        }
+        if (!this.authService.user()) {
+            console.warn('Auth not restored after Stripe redirect; session saved for retry after sign-in');
+            return false;
+        }
+
+        return this.fulfillPendingSession(sessionId);
+    }
+
+    /** Called internally and also after sign-in to fulfill any saved Stripe session. */
+    async fulfillPendingSession(sessionId?: string): Promise<boolean> {
+        const sid = sessionId ?? localStorage.getItem(this.PENDING_SESSION_KEY);
+        if (!sid || !this.authService.user()) return false;
+
         try {
             const headers = await this.getHeaders();
             const res = await firstValueFrom(
                 this.http.post<{ fulfilled: boolean; credits?: number; unlocks?: UnlockMap }>(
                     `${this.apiUrl}/verify-session`,
-                    { sessionId },
+                    { sessionId: sid },
                     { headers }
                 )
             );
             if (res.fulfilled) {
+                localStorage.removeItem(this.PENDING_SESSION_KEY);
                 if (res.credits !== undefined) this.balance.set(res.credits);
                 if (res.unlocks) this.unlocks.set(res.unlocks);
                 return true;
