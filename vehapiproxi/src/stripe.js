@@ -18,11 +18,17 @@ function getStripe() {
     return stripe;
 }
 
+const FRONTEND_URL = (process.env.VEHAPI_URL || process.env.FRONTEND_URL || 'https://vehapi.vercel.app').replace(/\/$/, '');
+
 export async function createCheckoutSession(userId, amount, origin) {
     const parsedAmount = parseInt(amount, 10);
     if (isNaN(parsedAmount) || parsedAmount < 1000) {
         throw new Error('Minimum purchase is 1000 credits ($10)');
     }
+
+    const base = (origin && /^https?:\/\//.test(origin)) ? origin.replace(/\/$/, '') : FRONTEND_URL;
+    const successPath = `/#/account?purchase=success&session_id={CHECKOUT_SESSION_ID}`;
+    const cancelPath = `/#/account?purchase=cancel`;
 
     try {
         const s = getStripe();
@@ -42,8 +48,8 @@ export async function createCheckoutSession(userId, amount, origin) {
                 },
             ],
             mode: 'payment',
-            success_url: `${origin}/#/account?purchase=success&session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${origin}/#/account?purchase=cancel`,
+            success_url: `${base}${successPath}`,
+            cancel_url: `${base}${cancelPath}`,
             client_reference_id: userId,
             metadata: {
                 userId: String(userId),
@@ -90,7 +96,7 @@ export async function verifyAndFulfillSession(sessionId, callerUserId) {
     const s = getStripe();
     const session = await s.checkout.sessions.retrieve(sessionId);
 
-    if (session.payment_status !== 'paid' && session.payment_status !== 'no_payment_required') {
+    if (session.payment_status !== 'paid') {
         return { fulfilled: false, reason: 'Payment not completed' };
     }
 

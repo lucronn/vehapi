@@ -1,6 +1,6 @@
 # Project Progress
 
-**Last updated:** 2026-03-04 (Data normalization hardening: upsert, dedup, retry, unique constraints, data-limit increase)  
+**Last updated:** 2026-03-04 (Mobile purchase redirect black screen fix)  
 **Reference:** `documentation/IMPLEMENTATION_GUIDE.md` Section 23 (Implementation Checklist); credits/Stripe are project-specific (not in doc).
 
 This file is the single source of truth for project status. Update it whenever you complete work, find bugs, or change scope. See `.cursor/rules/progress-update.mdc` for the rule that enforces keeping this file current.
@@ -163,6 +163,9 @@ This file is the single source of truth for project status. Update it whenever y
 
 4. **~Resolved~ AI parsing high failure rate**  
    Was 61% failure (71/116 tasks) due to: (a) Gemini 429 rate-limit with no retry, (b) Vercel freeze killing fire-and-forget tasks, (c) duplicate work consuming quota. Fixed with retry+backoff, dedup check before AI call, and data limit increase. Vercel freeze is inherent to hobby tier.
+
+5. **~Resolved~ Mobile black screen after purchase redirect**  
+   After Stripe redirect on mobile, users saw a black screen. Fixed with: (a) canonical frontend URL in Stripe success/cancel URLs (`VEHAPI_URL` fallback when origin unreliable), (b) body background in `index.html` so page is never blank, (c) immediate "Completing your purchase…" banner in credits dashboard when `purchase=success` is detected.
 
 ---
 

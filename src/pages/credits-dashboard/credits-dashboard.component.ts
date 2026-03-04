@@ -111,6 +111,14 @@ const MODULE_LABELS: Record<string, string> = {
         <app-auth-modal [startMode]="authModalStartMode()" (close)="showAuthModal.set(false)" />
         }
 
+        <!-- Processing purchase (immediate feedback on redirect) -->
+        @if (processingPurchase()) {
+        <div class="mb-6 flex items-center gap-3 bg-torque-cyan/10 border border-torque-cyan/30 rounded-xl px-5 py-4 text-torque-cyan">
+          <span class="inline-block w-5 h-5 border-2 border-torque-cyan/30 border-t-torque-cyan rounded-full animate-spin" aria-hidden="true"></span>
+          <span class="font-medium">Completing your purchase…</span>
+        </div>
+        }
+
         <!-- Purchase success banner -->
         @if (purchaseSuccess()) {
         <div class="mb-6 flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-5 py-4 text-emerald-400">
@@ -443,6 +451,7 @@ export class CreditsDashboardComponent implements OnInit {
   readonly icons = { CreditCard, ArrowLeft, Plus, Car, Receipt, User, Check, Clock, ChevronRight, Sparkles, Home, Lock, LayoutDashboard, Settings, LogIn, UserPlus, LogOut, X, AlertCircle };
 
   activeTab = signal<Tab>('overview');
+  processingPurchase = signal(false);
   purchaseSuccess = signal(false);
   showAuthModal = signal(false);
   authModalStartMode = signal<'signin' | 'signup'>('signin');
@@ -502,20 +511,28 @@ export class CreditsDashboardComponent implements OnInit {
   recentTransactions = computed(() => this.creditsService.transactions().slice(0, 5));
 
   ngOnInit() {
+    const snapshot = this.route.snapshot;
+    const purchase = snapshot.queryParams['purchase'];
+    const sessionId = snapshot.queryParams['session_id'];
+    if (purchase === 'success') {
+      this.processingPurchase.set(true);
+    }
+
     this.route.queryParams.subscribe(async params => {
       if (params['purchase'] === 'success') {
-        const sessionId = params['session_id'];
+        const sid = params['session_id'];
         let verified = false;
-        if (sessionId) {
-          verified = await this.creditsService.verifySession(sessionId);
+        if (sid) {
+          verified = await this.creditsService.verifySession(sid);
         }
+        this.processingPurchase.set(false);
         if (verified) {
           this.purchaseSuccess.set(true);
           setTimeout(() => this.purchaseSuccess.set(false), 8000);
-        } else if (sessionId && !this.authService.user()) {
+        } else if (sid && !this.authService.user()) {
           this.creditsService.lastError.set('Please sign in to complete your purchase. Your payment is saved and credits will be added after sign-in.');
           this.openAuthModal('signin');
-        } else if (sessionId) {
+        } else if (sid) {
           this.creditsService.lastError.set('Credit fulfillment failed. Please contact support if credits are missing.');
         }
         this.creditsService.refreshBalance();
