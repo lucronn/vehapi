@@ -4,8 +4,8 @@ import { config } from './config.js';
 import logger from './logger.js';
 
 function getSupabaseConfig() {
-    const url = process.env.SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const url = (process.env.SUPABASE_URL || '').trim();
+    const key = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
     if (!url || !key) return null;
     return { url, key };
 }

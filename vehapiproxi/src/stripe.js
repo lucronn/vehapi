@@ -8,7 +8,7 @@ let stripe;
 
 function getStripe() {
     if (!stripe) {
-        const secretKey = process.env.STRIPE_SANDBOX_SKEY || process.env.STRIPE_SECRET_KEY;
+        const secretKey = (process.env.STRIPE_SANDBOX_SKEY || process.env.STRIPE_SECRET_KEY || '').trim();
 
         if (!secretKey) {
             throw new Error('Neither STRIPE_SANDBOX_SKEY nor STRIPE_SECRET_KEY is set');
@@ -124,7 +124,7 @@ export async function verifyAndFulfillSession(sessionId, callerUserId) {
 
 export async function handleWebhook(req, res) {
     const sig = req.headers['stripe-signature'];
-    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    const endpointSecret = (process.env.STRIPE_WEBHOOK_SECRET || '').trim();
 
     let event;
 

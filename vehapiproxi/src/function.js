@@ -544,8 +544,8 @@ app.get('/api/source/:source/vehicle/:vehicleId/article/:articleId/orientations'
 // This is required because Supabase issues ES256 (asymmetric) tokens for user sessions,
 // which cannot be verified locally using just the HS256 string secret.
 async function verifySupabaseJwt(token) {
-    const url = process.env.SUPABASE_URL;
-    const apiKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const url = (process.env.SUPABASE_URL || '').trim();
+    const apiKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
     if (!url) {
         logger.warn('SUPABASE_URL not set; cannot verify Supabase JWT');
         return null;
