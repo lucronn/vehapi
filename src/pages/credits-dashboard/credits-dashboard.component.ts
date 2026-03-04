@@ -503,17 +503,19 @@ export class CreditsDashboardComponent implements OnInit {
 
   ngOnInit() {
     // Handle Stripe redirect params
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.subscribe(async params => {
       if (params['purchase'] === 'success') {
+        const sessionId = params['session_id'];
+        if (sessionId) {
+          await this.creditsService.verifySession(sessionId);
+        }
         this.purchaseSuccess.set(true);
         this.creditsService.refreshBalance();
         this.creditsService.fetchTransactions();
-        // Auto-dismiss after 5s
         setTimeout(() => this.purchaseSuccess.set(false), 5000);
       }
     });
 
-    // Start on receipts tab if coming from a purchase flow
     this.creditsService.fetchTransactions();
   }
 

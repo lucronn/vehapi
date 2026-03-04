@@ -146,6 +146,34 @@ export class CreditsService {
         }
     }
 
+    /**
+     * After returning from Stripe checkout, verify the session server-side
+     * and fulfill credits. This is the primary credit-granting path (webhooks
+     * serve as a backup for edge cases like the user closing the tab).
+     */
+    async verifySession(sessionId: string): Promise<boolean> {
+        if (!sessionId || !this.authService.user()) return false;
+        try {
+            const headers = await this.getHeaders();
+            const res = await firstValueFrom(
+                this.http.post<{ fulfilled: boolean; credits?: number; unlocks?: UnlockMap }>(
+                    `${this.apiUrl}/verify-session`,
+                    { sessionId },
+                    { headers }
+                )
+            );
+            if (res.fulfilled) {
+                if (res.credits !== undefined) this.balance.set(res.credits);
+                if (res.unlocks) this.unlocks.set(res.unlocks);
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Session verification failed:', error);
+            return false;
+        }
+    }
+
     async startCheckout(amount: number): Promise<{ success: boolean; error?: string }> {
         if (!this.authService.user()) {
             // Caller (e.g. credits dashboard) should show auth modal - don't force Google

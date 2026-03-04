@@ -10,7 +10,7 @@ import { authManager } from './auth.js';
 import logger, { logBuffer, logRequest, logResponse } from './logger.js';
 import swaggerUi from 'swagger-ui-express';
 import { createRequire } from 'module';
-import { createCheckoutSession, createBillingPortalSession, handleWebhook } from './stripe.js';
+import { createCheckoutSession, createBillingPortalSession, handleWebhook, verifyAndFulfillSession } from './stripe.js';
 import { getUserData, unlockModule, getTransactions } from './credits.js';
 import { checkParsedArticle } from './supabase.js';
 import jwt from 'jsonwebtoken';
@@ -540,17 +540,31 @@ app.get('/api/source/:source/vehicle/:vehicleId/article/:articleId/orientations'
 
 // --- CREDIT SYSTEM ENDPOINTS ---
 
-// Verify Supabase JWT (access_token). Uses SUPABASE_JWT_SECRET from project settings.
-function verifySupabaseJwt(token) {
-    const secret = process.env.SUPABASE_JWT_SECRET;
-    if (!secret) {
-        logger.warn('SUPABASE_JWT_SECRET not set; cannot verify Supabase JWT');
+// Verify Supabase JWT (access_token) by calling the Supabase auth endpoint.
+// This is required because Supabase issues ES256 (asymmetric) tokens for user sessions,
+// which cannot be verified locally using just the HS256 string secret.
+async function verifySupabaseJwt(token) {
+    const url = process.env.SUPABASE_URL;
+    const apiKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url) {
+        logger.warn('SUPABASE_URL not set; cannot verify Supabase JWT');
         return null;
     }
     try {
-        const decoded = jwt.verify(token, secret, { algorithms: ['HS256'] });
-        return decoded; // decoded.sub is the user id
+        const response = await fetch(`${url}/auth/v1/user`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                apikey: apiKey
+            }
+        });
+        if (!response.ok) {
+            logger.warn('JWT verification via Supabase API failed: ' + await response.text());
+            return null;
+        }
+        const user = await response.json();
+        return { sub: user.id, email: user.email }; // minimal decoded format
     } catch (err) {
+        logger.warn('JWT verification error: ' + err.message);
         return null;
     }
 }
@@ -570,7 +584,7 @@ const secureAuthMiddleware = async (req, res, next) => {
     }
 
     const token = authHeader.split('Bearer ')[1];
-    const decoded = verifySupabaseJwt(token);
+    const decoded = await verifySupabaseJwt(token);
     if (!decoded) {
         return res.status(401).json({ error: 'Invalid or expired authentication token' });
     }
@@ -652,6 +666,21 @@ app.get('/api/credits/transactions', secureAuthMiddleware, async (req, res) => {
     } catch (error) {
         logger.error('Error fetching transactions:', error);
         res.status(500).json({ error: 'Failed to fetch transaction history' });
+    }
+});
+
+// Verify and fulfill a checkout session (called by frontend on return from Stripe)
+app.post('/api/credits/verify-session', express.json(), secureAuthMiddleware, async (req, res) => {
+    try {
+        const { sessionId } = req.body;
+        if (!sessionId || typeof sessionId !== 'string') {
+            return res.status(400).json({ error: 'sessionId is required' });
+        }
+        const result = await verifyAndFulfillSession(sessionId);
+        res.json(result);
+    } catch (error) {
+        logger.error('Error verifying checkout session:', error);
+        res.status(500).json({ error: error.message || 'Failed to verify session' });
     }
 });
 

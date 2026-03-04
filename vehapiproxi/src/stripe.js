@@ -1,7 +1,7 @@
 
 import Stripe from 'stripe';
 import { config } from './config.js';
-import { addCredits, setStripeCustomerId } from './credits.js';
+import { addCredits, setStripeCustomerId, getUserData, getTransactions } from './credits.js';
 import logger from './logger.js';
 
 let stripe;
@@ -19,7 +19,8 @@ function getStripe() {
 }
 
 export async function createCheckoutSession(userId, amount, origin) {
-    if (amount < 1000) {
+    const parsedAmount = parseInt(amount, 10);
+    if (isNaN(parsedAmount) || parsedAmount < 1000) {
         throw new Error('Minimum purchase is 1000 credits ($10)');
     }
 
@@ -37,16 +38,16 @@ export async function createCheckoutSession(userId, amount, origin) {
                         },
                         unit_amount: 1, // 1 credit = 1 cent ($0.01)
                     },
-                    quantity: amount,
+                    quantity: parsedAmount,
                 },
             ],
             mode: 'payment',
-            success_url: `${origin}/#/account?purchase=success`,
+            success_url: `${origin}/#/account?purchase=success&session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${origin}/#/account?purchase=cancel`,
             client_reference_id: userId,
             metadata: {
-                userId: userId,
-                credits: amount
+                userId: String(userId),
+                credits: String(parsedAmount)
             }
         });
 
@@ -78,6 +79,53 @@ export async function createBillingPortalSession(customerId, returnUrl) {
         logger.error('Stripe billing portal session failed:', error);
         throw error;
     }
+}
+
+/**
+ * Verify a completed checkout session and add credits if not already fulfilled.
+ * Called by the frontend on return from Stripe checkout as a reliable fallback
+ * for when webhooks are unavailable (e.g. local dev without Stripe CLI).
+ */
+export async function verifyAndFulfillSession(sessionId) {
+    const s = getStripe();
+    const session = await s.checkout.sessions.retrieve(sessionId);
+
+    if (session.payment_status !== 'paid') {
+        return { fulfilled: false, reason: 'Payment not completed' };
+    }
+
+    const userId = session.metadata?.userId || session.client_reference_id;
+    const credits = parseInt(session.metadata?.credits, 10);
+
+    if (!userId || !credits) {
+        return { fulfilled: false, reason: 'Missing user or credits metadata' };
+    }
+
+    const userData = await getUserData(userId);
+    const usdCents = session.amount_total;
+
+    const existingTxns = await getTransactions(userId, 200);
+    const alreadyFulfilled = existingTxns.some(
+        t => t.stripe_session_id === sessionId && t.type === 'purchase'
+    );
+
+    if (alreadyFulfilled) {
+        return { fulfilled: true, alreadyProcessed: true, credits: userData.credits, unlocks: userData.unlocks };
+    }
+
+    await addCredits(userId, credits, {
+        stripeSessionId: sessionId,
+        stripePaymentIntent: session.payment_intent,
+        usdCents
+    });
+    logger.info(`[verify] Added ${credits} credits to user ${userId} (session ${sessionId})`);
+
+    if (session.customer) {
+        await setStripeCustomerId(userId, session.customer);
+    }
+
+    const updated = await getUserData(userId);
+    return { fulfilled: true, alreadyProcessed: false, credits: updated.credits, unlocks: updated.unlocks };
 }
 
 export async function handleWebhook(req, res) {
