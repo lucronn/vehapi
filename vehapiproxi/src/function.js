@@ -676,7 +676,7 @@ app.post('/api/credits/verify-session', express.json(), secureAuthMiddleware, as
         if (!sessionId || typeof sessionId !== 'string') {
             return res.status(400).json({ error: 'sessionId is required' });
         }
-        const result = await verifyAndFulfillSession(sessionId);
+        const result = await verifyAndFulfillSession(sessionId, req.userId);
         res.json(result);
     } catch (error) {
         logger.error('Error verifying checkout session:', error);

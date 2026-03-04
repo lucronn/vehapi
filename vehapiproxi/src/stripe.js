@@ -86,7 +86,7 @@ export async function createBillingPortalSession(customerId, returnUrl) {
  * Called by the frontend on return from Stripe checkout as a reliable fallback
  * for when webhooks are unavailable (e.g. local dev without Stripe CLI).
  */
-export async function verifyAndFulfillSession(sessionId) {
+export async function verifyAndFulfillSession(sessionId, callerUserId) {
     const s = getStripe();
     const session = await s.checkout.sessions.retrieve(sessionId);
 
@@ -99,6 +99,11 @@ export async function verifyAndFulfillSession(sessionId) {
 
     if (!userId || !credits) {
         return { fulfilled: false, reason: 'Missing user or credits metadata' };
+    }
+
+    if (userId !== callerUserId) {
+        logger.warn(`[verify] Ownership mismatch: caller ${callerUserId} tried to verify session owned by ${userId}`);
+        return { fulfilled: false, reason: 'Session does not belong to this user' };
     }
 
     const usdCents = session.amount_total;
