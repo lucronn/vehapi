@@ -170,10 +170,22 @@ export async function unlockModule(userId, vehicleId, vehicleName, moduleType, c
 }
 
 /**
- * Add credits to user (called after Stripe webhook)
+ * Add credits to user. Idempotent when stripeSessionId is provided —
+ * skips if a purchase transaction for that session already exists.
  */
 export async function addCredits(userId, amount, { stripeSessionId, stripePaymentIntent, usdCents } = {}) {
     try {
+        if (stripeSessionId) {
+            const existing = await fetchSupabase(
+                `transactions?user_id=eq.${userId}&stripe_session_id=eq.${stripeSessionId}&type=eq.purchase&select=id&limit=1`
+            );
+            if (existing && existing.length > 0) {
+                logger.info(`Skipping duplicate addCredits for session ${stripeSessionId}`);
+                const userData = await getUserData(userId);
+                return userData;
+            }
+        }
+
         const userData = await getUserData(userId);
         const currentCredits = userData.credits || 0;
 
@@ -184,7 +196,6 @@ export async function addCredits(userId, amount, { stripeSessionId, stripePaymen
             })
         });
 
-        // Log the purchase transaction
         await logTransaction(userId, {
             amount,
             type: 'purchase',

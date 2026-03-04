@@ -1,7 +1,7 @@
 
 import Stripe from 'stripe';
 import { config } from './config.js';
-import { addCredits, setStripeCustomerId, getUserData, getTransactions } from './credits.js';
+import { addCredits, setStripeCustomerId } from './credits.js';
 import logger from './logger.js';
 
 let stripe;
@@ -101,31 +101,20 @@ export async function verifyAndFulfillSession(sessionId) {
         return { fulfilled: false, reason: 'Missing user or credits metadata' };
     }
 
-    const userData = await getUserData(userId);
     const usdCents = session.amount_total;
 
-    const existingTxns = await getTransactions(userId, 200);
-    const alreadyFulfilled = existingTxns.some(
-        t => t.stripe_session_id === sessionId && t.type === 'purchase'
-    );
-
-    if (alreadyFulfilled) {
-        return { fulfilled: true, alreadyProcessed: true, credits: userData.credits, unlocks: userData.unlocks };
-    }
-
-    await addCredits(userId, credits, {
+    const result = await addCredits(userId, credits, {
         stripeSessionId: sessionId,
         stripePaymentIntent: session.payment_intent,
         usdCents
     });
-    logger.info(`[verify] Added ${credits} credits to user ${userId} (session ${sessionId})`);
+    logger.info(`[verify] Fulfilled session ${sessionId} for user ${userId}`);
 
     if (session.customer) {
         await setStripeCustomerId(userId, session.customer);
     }
 
-    const updated = await getUserData(userId);
-    return { fulfilled: true, alreadyProcessed: false, credits: updated.credits, unlocks: updated.unlocks };
+    return { fulfilled: true, credits: result.credits, unlocks: result.unlocks };
 }
 
 export async function handleWebhook(req, res) {
