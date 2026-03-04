@@ -20,6 +20,60 @@ function extractVehicleId(urlPath) {
 }
 
 /**
+ * Normalizes parsed data for Supabase: ensures arrays exist, dates are valid, no undefined.
+ * Maximizes retention by preserving all extracted data in a DB-compatible form.
+ */
+function normalizeForSupabase(data, schemaType) {
+    const ensureArray = (v) => (Array.isArray(v) ? v : []);
+    const ensureNum = (v) => (typeof v === 'number' && !isNaN(v) ? v : null);
+
+    if (Array.isArray(data)) {
+        return data.map(item => normalizeForSupabase(item, schemaType));
+    }
+
+    const out = { ...data };
+
+    if (schemaType === 'dtcs') {
+        out.possible_causes = ensureArray(out.possible_causes);
+        out.symptoms = ensureArray(out.symptoms);
+        out.diagnostic_steps = ensureArray(out.diagnostic_steps).map(s => ({
+            order: s.order ?? 0,
+            test: s.test ?? '',
+            result_match: s.result_match ?? '',
+            action_if_match: s.action_if_match ?? '',
+            action_if_not_match: s.action_if_not_match ?? '',
+            warning: s.warning ?? ''
+        }));
+    } else if (schemaType === 'tsbs') {
+        out.affected_components = ensureArray(out.affected_components);
+        out.models_affected = ensureArray(out.models_affected);
+        if (out.issue_date && typeof out.issue_date === 'string') {
+            const parsed = new Date(out.issue_date);
+            out.issue_date = isNaN(parsed.getTime()) ? null : parsed.toISOString().slice(0, 10);
+        }
+    } else if (schemaType === 'procedures') {
+        out.steps = ensureArray(out.steps).map(s => ({
+            order: s.order ?? 0,
+            text: s.text ?? '',
+            image_url: s.image_url || null,
+            warning: s.warning || null,
+            note: s.note || null
+        }));
+        out.tools_required = ensureArray(out.tools_required);
+        out.parts_required = ensureArray(out.parts_required).map(p => ({
+            part_number: p.part_number || null,
+            description: p.description ?? '',
+            quantity: typeof p.quantity === 'number' ? p.quantity : 1
+        }));
+        out.time_estimate_hours = ensureNum(out.time_estimate_hours);
+    } else if (schemaType === 'specifications') {
+        out.metadata = out.metadata && typeof out.metadata === 'object' ? out.metadata : null;
+    }
+
+    return out;
+}
+
+/**
  * Extracts a stable external_id that can be used for dedup across all schema types.
  * Procedures: article ID from /article/<id>
  * Others: derive from the full path (vehicle + endpoint) for a stable fingerprint.
@@ -94,7 +148,8 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
             attachMeta(parsedData);
         }
 
-        const result = await insertParsedData(targetSchema, parsedData);
+        const normalized = normalizeForSupabase(parsedData, targetSchema);
+        const result = await insertParsedData(targetSchema, normalized);
 
         if (!result.success) {
             status = 'FAILED';

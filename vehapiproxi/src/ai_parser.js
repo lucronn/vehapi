@@ -5,7 +5,8 @@ const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models
 // 2.0-flash: fast, cheap, ideal for structured extraction. Upgrade to gemini-3-flash when GA.
 const MODEL = 'gemini-2.0-flash';
 
-// The schema definitions to enforce structured output
+// Schema definitions aligned with Supabase/TypeScript for maximum retention and accessibility.
+// Single source of truth for AI output structure.
 const SCHEMAS = {
     dtcs: {
         type: 'ARRAY',
@@ -24,9 +25,13 @@ const SCHEMAS = {
                         type: 'OBJECT',
                         properties: {
                             order: { type: 'INTEGER' },
-                            text: { type: 'STRING' },
+                            test: { type: 'STRING' },
+                            result_match: { type: 'STRING' },
+                            action_if_match: { type: 'STRING' },
+                            action_if_not_match: { type: 'STRING' },
                             warning: { type: 'STRING' }
-                        }
+                        },
+                        required: ['order', 'test']
                     }
                 }
             },
@@ -61,11 +66,27 @@ const SCHEMAS = {
                     properties: {
                         order: { type: 'INTEGER' },
                         text: { type: 'STRING' },
-                        warning: { type: 'STRING' }
-                    }
+                        image_url: { type: 'STRING' },
+                        warning: { type: 'STRING' },
+                        note: { type: 'STRING' }
+                    },
+                    required: ['order', 'text']
                 }
             },
             tools_required: { type: 'ARRAY', items: { type: 'STRING' } },
+            parts_required: {
+                type: 'ARRAY',
+                items: {
+                    type: 'OBJECT',
+                    properties: {
+                        part_number: { type: 'STRING' },
+                        description: { type: 'STRING' },
+                        quantity: { type: 'INTEGER' }
+                    },
+                    required: ['description', 'quantity']
+                }
+            },
+            time_estimate_hours: { type: 'NUMBER' },
             cautions: { type: 'STRING' }
         },
         required: ['title']
@@ -79,7 +100,8 @@ const SCHEMAS = {
                 name: { type: 'STRING' },
                 value: { type: 'STRING' },
                 unit: { type: 'STRING' },
-                display_text: { type: 'STRING' }
+                display_text: { type: 'STRING' },
+                metadata: { type: 'OBJECT' }
             },
             required: ['name', 'value', 'category']
         }
@@ -232,10 +254,21 @@ export async function parseWithAI(rawData, targetSchema) {
     }
 
     const rawStr = typeof rawData === 'string' ? rawData : JSON.stringify(rawData);
-    const trimmedData = rawStr.slice(0, 30000);
-    const wasTruncated = rawStr.length > 30000;
+    const MAX_CHARS = 150000; // ~37k tokens; Gemini 2.0 Flash supports 1M - no truncation for typical articles
+    const trimmedData = rawStr.slice(0, MAX_CHARS);
+    const wasTruncated = rawStr.length > MAX_CHARS;
 
-    const prompt = `You are an automotive data parser. Extract ALL relevant technical information from the provided raw JSON response and map it strictly to the output schema. Capture every item — do not skip any. If some optional fields are not present, omit them or provide empty arrays/strings. Do not hallucinate data.${wasTruncated ? '\n\nNote: The data below was truncated. Extract everything that IS present.' : ''}\n\nRaw Data:\n${trimmedData}`;
+    if (wasTruncated) {
+        logger.warn(`parseWithAI: input truncated from ${rawStr.length} to ${MAX_CHARS} chars for ${targetSchema}`);
+    }
+    const schemaHints = {
+        tsbs: 'Format issue_date as YYYY-MM-DD when present. Preserve full content including HTML.',
+        dtcs: 'For diagnostic_steps: test=what to measure, result_match=expected value/criteria, action_if_match=next step if pass, action_if_not_match=action if fail. Use empty string for missing action fields.',
+        procedures: 'Extract parts_required (part_number, description, quantity) when present. Include image_url in steps if image references exist. time_estimate_hours as number when given.',
+        specifications: 'Use metadata for any extra key-value pairs that do not fit category/name/value/unit.'
+    };
+    const hint = schemaHints[targetSchema] ? `\n\nSchema-specific: ${schemaHints[targetSchema]}` : '';
+    const prompt = `You are an automotive data parser. Extract ALL relevant technical information from the provided raw JSON response and map it strictly to the output schema. Capture every item — do not skip any. If some optional fields are not present, omit them or provide empty arrays/strings. Do not hallucinate data.${hint}${wasTruncated ? '\n\nNote: The data below was truncated. Extract everything that IS present.' : ''}\n\nRaw Data:\n${trimmedData}`;
 
     const text = await callGemini(prompt, SCHEMAS[targetSchema]);
     return JSON.parse(text);
