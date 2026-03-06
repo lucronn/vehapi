@@ -325,8 +325,10 @@ export class VehicleDashboardComponent {
   onArticleClick(event: Event | null, article: Article | any): void {
     // Prevent default navigation
     if (event) {
-      event.preventDefault();
+        event.preventDefault();
     }
+    // Prevent default navigation
+    event.preventDefault();
 
     const articleId = article.id || article;
 
