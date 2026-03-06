@@ -1,4 +1,4 @@
-import { expect, test, describe, beforeEach, mock } from 'bun:test';
+import { expect, test, describe, beforeEach, afterAll, mock } from 'bun:test';
 
 // Mock tokens
 class MockHttpClientToken {}
@@ -83,6 +83,7 @@ const mockLocalStorage = {
     }
 };
 
+const originalLocalStorage = (globalThis as any).localStorage;
 (globalThis as any).localStorage = mockLocalStorage;
 
 // Import the service under test
@@ -91,6 +92,10 @@ const { CreditsService } = await import('./credits.service');
 
 describe('CreditsService', () => {
     let service: any;
+
+    afterAll(() => {
+        (globalThis as any).localStorage = originalLocalStorage;
+    });
 
     beforeEach(() => {
         mockLocalStorage.clear();
@@ -147,7 +152,7 @@ describe('CreditsService', () => {
         let postMock: import("bun:test").Mock<any>;
 
         beforeEach(() => {
-            service.USE_MOCK = false;
+            (service as any).useMock = false;
             // Provide sufficient starting balance
             service.balance.set(100);
 
