@@ -31,8 +31,8 @@ export class CategoryTreeService {
         const bucketNodes = new Map<string, TreeNode>();
 
         articles.forEach(article => {
-            const parentBucket = article.parentBucket || 'Other';
             const bucket = article.bucket || 'Uncategorized';
+            const parentBucket = article.parentBucket || bucket || 'Other';
 
             // 1. Ensure Parent Bucket Node exists
             let parentNode = bucketNodes.get(parentBucket);
