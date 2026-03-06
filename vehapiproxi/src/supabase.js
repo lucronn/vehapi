@@ -14,7 +14,8 @@ const UPSERT_CONFLICT_COLUMNS = {
     procedures: 'vehicle_id,title',
     tsbs: 'vehicle_id,bulletin_number',
     dtcs: 'vehicle_id,code',
-    specifications: 'vehicle_id,category,name'
+    specifications: 'vehicle_id,category,name',
+    categories: 'name,type'
 };
 
 /**
