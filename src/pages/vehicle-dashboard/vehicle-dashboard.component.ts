@@ -322,9 +322,11 @@ export class VehicleDashboardComponent {
 
   // ... existing code ...
   // Orientation Selection
-  onArticleClick(event: Event, article: Article | any): void {
+  onArticleClick(event: Event | null, article: Article | any): void {
     // Prevent default navigation
-    event.preventDefault();
+    if (event) {
+        event.preventDefault();
+    }
 
     const articleId = article.id || article;
 
