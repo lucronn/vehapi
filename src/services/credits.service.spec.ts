@@ -34,14 +34,22 @@ mock.module('../environments/environment', () => ({
     }
 }));
 
+import '@angular/compiler';
 // Mock @angular/core
 mock.module('@angular/core', () => ({
     Injectable: () => (target: any) => target,
+    computed: (fn: any) => fn,
     inject: (token: any) => {
         if (token === MockHttpClientToken) return mockHttpClient;
         if (token === MockUserIdServiceToken) return mockUserIdService;
+        if (token && token.name === 'AuthService') return {
+            user: () => null,
+            getIdToken: async () => null,
+            signInWithGoogle: async () => null
+        };
         return null;
     },
+    effect: () => {},
     signal: (initialValue: any) => {
         let value = initialValue;
         const s: any = () => value;
@@ -62,7 +70,7 @@ mock.module('rxjs', () => ({
 const mockLocalStorage = {
     store: {} as Record<string, string>,
     getItem(key: string) {
-        return key in this.store ? this.store[key] : null;
+        return this.store[key] || null;
     },
     setItem(key: string, value: string) {
         this.store[key] = String(value);
@@ -242,15 +250,13 @@ describe('CreditsService', () => {
             const originalError = console.error;
             console.error = consoleSpy;
 
-            try {
-                const result = await service.unlockModule('vehicle-123', 'specs', 10);
+            const result = await service.unlockModule('vehicle-123', 'specs', 10);
 
-                expect(result).toBe(false);
-                expect(consoleSpy).toHaveBeenCalled();
-                expect(service.isLoading()).toBe(false);
-            } finally {
-                console.error = originalError;
-            }
+            expect(result).toBe(false);
+            expect(consoleSpy).toHaveBeenCalled();
+            expect(service.isLoading()).toBe(false);
+
+            console.error = originalError;
         });
     });
 });

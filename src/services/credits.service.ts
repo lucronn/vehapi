@@ -1,12 +1,27 @@
 
-import { Injectable, signal, inject } from '@angular/core';
+import { Injectable, signal, inject, effect } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { UserIdService } from './user-id.service';
+import { AuthService } from './auth.service';
 import { environment } from '../environments/environment';
 
 export interface UnlockMap {
-    [vehicleId: string]: string[]; // 'specs', 'procedures', 'full', etc.
+    [vehicleId: string]: string[];
+}
+
+export interface Transaction {
+    id: string;
+    user_id: string;
+    amount: number;
+    type: 'purchase' | 'unlock' | 'refund';
+    stripe_session_id: string | null;
+    stripe_payment_intent: string | null;
+    usd_cents: number | null;
+    vehicle_id: string | null;
+    vehicle_name: string | null;
+    module_type: string | null;
+    created_at: string;
 }
 
 @Injectable({
@@ -15,45 +30,74 @@ export interface UnlockMap {
 export class CreditsService {
     private http = inject(HttpClient);
     private userIdService = inject(UserIdService);
+    private authService = inject(AuthService);
 
-    // Set this to true to use local storage instead of backend
-    private useMock = true;
+    private readonly USE_MOCK = false;
     private readonly STORAGE_KEYS = {
         BALANCE: 'torque_mock_balance',
         UNLOCKS: 'torque_mock_unlocks'
     };
 
     // State
-    balance = signal<number>(100); // Mock initial balance
+    balance = signal<number>(0);
     unlocks = signal<UnlockMap>({});
+    transactions = signal<Transaction[]>([]);
     isLoading = signal<boolean>(false);
+    transactionsLoading = signal<boolean>(false);
+    portalLoading = signal<boolean>(false);
 
     // Constants
     readonly COSTS = {
         SPECS: 5,
         FLUIDS: 5,
         MAINTENANCE: 5,
-        COMMON_ISSUES: 5,
         DTC: 5,
         TSB: 5,
         PROCEDURES: 10,
         DIAGRAMS: 10,
         PARTS: 10,
-        FULL_ACCESS: 25 // Per vehicle
+        FULL_ACCESS: 25
     };
-
-    private get headers() {
-        return new HttpHeaders().set('x-user-id', this.userIdService.getUserId());
-    }
 
     private get apiUrl() {
         return environment.production
-            ? 'https://vehapi-gx7nz7bkv-curtt.vercel.app/api/credits'
+            ? 'https://vehapiproxi.vercel.app/api/credits'
             : '/api/credits';
     }
 
     constructor() {
-        this.refreshBalance();
+        // Automatically refresh balance when user logs in
+        effect(() => {
+            const user = this.authService.user();
+            if (user) {
+                this.refreshBalance();
+            } else {
+                // Reset state on logout
+                this.balance.set(0);
+                this.unlocks.set({});
+            }
+        });
+    }
+
+    private async getHeaders(): Promise<HttpHeaders> {
+        let headers = new HttpHeaders();
+        const user = this.authService.user();
+
+        if (user) {
+            try {
+                const token = await this.authService.getIdToken();
+                if (token) {
+                    headers = headers.set('Authorization', `Bearer ${token}`);
+                }
+                headers = headers.set('x-user-id', user.id);
+            } catch (e) {
+                console.error('Failed to get ID token', e);
+            }
+        } else {
+             // Fallback for guest (if supported) or unauthenticated requests
+             headers = headers.set('x-user-id', this.userIdService.getUserId());
+        }
+        return headers;
     }
 
     async refreshBalance() {
@@ -63,43 +107,72 @@ export class CreditsService {
         }
 
         try {
+            const headers = await this.getHeaders();
             const data = await firstValueFrom(
                 this.http.get<{ credits: number, unlocks: UnlockMap }>(
                     `${this.apiUrl}/balance`,
-                    { headers: this.headers }
+                    { headers }
                 )
             );
             this.balance.set(data.credits);
             this.unlocks.set(data.unlocks);
         } catch (error) {
             console.error('Failed to fetch credit balance:', error);
-            // Fallback to mock on error if needed, but for now just log
+        }
+    }
+
+    async fetchTransactions() {
+        if (this.USE_MOCK) return;
+        this.transactionsLoading.set(true);
+        try {
+            const headers = await this.getHeaders();
+            const res = await firstValueFrom(
+                this.http.get<{ transactions: Transaction[] }>(
+                    `${this.apiUrl}/transactions`,
+                    { headers }
+                )
+            );
+            this.transactions.set(res.transactions ?? []);
+        } catch (error) {
+            console.error('Failed to fetch transactions:', error);
+        } finally {
+            this.transactionsLoading.set(false);
         }
     }
 
     async startCheckout(amount: number) {
-        if (this.useMock) {
-            // In mock mode, just give them the credits
+        if (!this.authService.user()) {
+            // Prompt for login if not logged in
+            try {
+                await this.authService.signInWithGoogle();
+                // After login, effect will trigger refreshBalance.
+                // We should probably wait or continue?
+                // For now, let's just return and let user click again or continue.
+                // But better to just proceed if login successful.
+                if (!this.authService.user()) return;
+            } catch (e) {
+                return; // Login failed/cancelled
+            }
+        }
+
+        if (this.USE_MOCK) {
             this.isLoading.set(true);
             setTimeout(() => {
                 this.balance.update(b => b + amount);
                 this.saveMockData();
                 this.isLoading.set(false);
-                alert(`SUCCESS (Mock): Added ${amount} credits to your account.`);
             }, 800);
             return;
         }
 
         this.isLoading.set(true);
-        // MOCK: Commented out HTTP call
-        /*
         try {
-            const priceId = 'price_1Q...';
+            const headers = await this.getHeaders();
             const res = await firstValueFrom(
                 this.http.post<{ url: string }>(
                     `${this.apiUrl}/checkout`,
-                    { amount, priceId },
-                    { headers: this.headers }
+                    { amount, origin: window.location.origin },
+                    { headers }
                 )
             );
 
@@ -108,21 +181,50 @@ export class CreditsService {
             }
         } catch (error) {
             console.error('Checkout failed:', error);
-            alert('Failed to start checkout. Please try again.');
         } finally {
             this.isLoading.set(false);
         }
-        */
-
-        // MOCK Implementation
-        setTimeout(() => {
-            this.balance.update(b => b + amount);
-            alert(`Mock Checkout: Successfully added ${amount} credits!`);
-            this.isLoading.set(false);
-        }, 1000); // Simulate network delay
     }
 
-    async unlockModule(vehicleId: string, moduleType: string, cost: number): Promise<boolean> {
+    /** Open Stripe Customer Billing Portal (payment methods, invoices). Requires at least one purchase. */
+    async openBillingPortal(): Promise<void> {
+        if (!this.authService.user()) {
+            try {
+                await this.authService.signInWithGoogle();
+                if (!this.authService.user()) return;
+            } catch {
+                return;
+            }
+        }
+
+        if (this.USE_MOCK) return;
+
+        this.portalLoading.set(true);
+        try {
+            const headers = await this.getHeaders();
+            const res = await firstValueFrom(
+                this.http.post<{ url: string }>(
+                    `${this.apiUrl}/portal`,
+                    { origin: window.location.origin },
+                    { headers }
+                )
+            );
+            if (res?.url) {
+                window.location.href = res.url;
+            }
+        } catch (err: unknown) {
+            const body = err && typeof err === 'object' && 'error' in err ? (err as { error: unknown }).error : undefined;
+            const msg = (body && typeof body === 'object' && body !== null && 'error' in body)
+                ? String((body as { error: unknown }).error)
+                : 'Unable to open billing. Make a purchase first to manage payment methods.';
+            console.error('Billing portal failed:', err);
+            alert(msg);
+        } finally {
+            this.portalLoading.set(false);
+        }
+    }
+
+    async unlockModule(vehicleId: string, vehicleName: string, moduleType: string, cost: number): Promise<boolean> {
         if (this.balance() < cost) {
             return false;
         }
@@ -150,11 +252,12 @@ export class CreditsService {
         this.isLoading.set(true);
 
         try {
+            const headers = await this.getHeaders();
             const res = await firstValueFrom(
                 this.http.post<{ success: true; credits: number; unlocks: UnlockMap } | { success: false }>(
                     `${this.apiUrl}/unlock`,
-                    { vehicleId, moduleType, cost },
-                    { headers: this.headers }
+                    { vehicleId, vehicleName, moduleType, cost },
+                    { headers }
                 )
             );
 
@@ -184,7 +287,6 @@ export class CreditsService {
         if (savedBalance !== null) {
             this.balance.set(parseInt(savedBalance, 10));
         } else {
-            // Default starting balance for testing
             this.balance.set(10);
             this.saveMockData();
         }

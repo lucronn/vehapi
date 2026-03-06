@@ -1,35 +1,48 @@
 
 import Stripe from 'stripe';
 import { config } from './config.js';
-import { addCredits } from './credits.js';
+import { addCredits, setStripeCustomerId } from './credits.js';
 import logger from './logger.js';
 
 let stripe;
 
 function getStripe() {
     if (!stripe) {
-        if (!process.env.STRIPE_SECRET_KEY) {
-            throw new Error('STRIPE_SECRET_KEY is not set');
+        const secretKey = process.env.STRIPE_SANDBOX_SKEY || process.env.STRIPE_SECRET_KEY;
+
+        if (!secretKey) {
+            throw new Error('Neither STRIPE_SANDBOX_SKEY nor STRIPE_SECRET_KEY is set');
         }
-        stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+        stripe = new Stripe(secretKey);
     }
     return stripe;
 }
 
-export async function createCheckoutSession(userId, amount, priceId, origin) {
+export async function createCheckoutSession(userId, amount, origin) {
+    if (amount < 1000) {
+        throw new Error('Minimum purchase is 1000 credits ($10)');
+    }
+
     try {
-        const stripe = getStripe();
-        const session = await stripe.checkout.sessions.create({
+        const s = getStripe();
+        const session = await s.checkout.sessions.create({
             payment_method_types: ['card'],
             line_items: [
                 {
-                    price: priceId, // e.g., 'price_12345...'
+                    price_data: {
+                        currency: 'usd',
+                        product_data: {
+                            name: 'Torque Credits',
+                            description: 'Credits for unlocking premium vehicle data modules.',
+                        },
+                        unit_amount: 1, // 1 credit = 1 cent ($0.01)
+                    },
                     quantity: amount,
                 },
             ],
             mode: 'payment',
-            success_url: `${origin}/?purchase=success`,
-            cancel_url: `${origin}/?purchase=cancel`,
+            success_url: `${origin}/#/account?purchase=success`,
+            cancel_url: `${origin}/#/account?purchase=cancel`,
             client_reference_id: userId,
             metadata: {
                 userId: userId,
@@ -44,6 +57,29 @@ export async function createCheckoutSession(userId, amount, priceId, origin) {
     }
 }
 
+/**
+ * Create a Stripe Customer Billing Portal session.
+ * Customer must have made at least one purchase (customer ID stored in Supabase).
+ * @param {string} customerId - Stripe customer ID (cus_xxx)
+ * @param {string} returnUrl - URL to redirect after portal (e.g. origin + /#/account)
+ */
+export async function createBillingPortalSession(customerId, returnUrl) {
+    if (!customerId) {
+        throw new Error('No billing account. Make a purchase first to manage payment methods.');
+    }
+    try {
+        const s = getStripe();
+        const session = await s.billingPortal.sessions.create({
+            customer: customerId,
+            return_url: returnUrl
+        });
+        return session.url;
+    } catch (error) {
+        logger.error('Stripe billing portal session failed:', error);
+        throw error;
+    }
+}
+
 export async function handleWebhook(req, res) {
     const sig = req.headers['stripe-signature'];
     const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -51,8 +87,8 @@ export async function handleWebhook(req, res) {
     let event;
 
     try {
-        const stripe = getStripe();
-        event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+        const s = getStripe();
+        event = s.webhooks.constructEvent(req.body, sig, endpointSecret);
     } catch (err) {
         logger.error(`Webhook Error: ${err.message}`);
         return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -60,12 +96,23 @@ export async function handleWebhook(req, res) {
 
     if (event.type === 'checkout.session.completed') {
         const session = event.data.object;
-        const userId = session.metadata.userId;
+        const userId = session.metadata.userId || session.client_reference_id;
         const credits = parseInt(session.metadata.credits, 10);
+        const usdCents = session.amount_total;
+        const stripeCustomerId = session.customer;
 
         if (userId && credits) {
-            await addCredits(userId, credits);
+            await addCredits(userId, credits, {
+                stripeSessionId: session.id,
+                stripePaymentIntent: session.payment_intent,
+                usdCents
+            });
             logger.info(`Added ${credits} credits to user ${userId}`);
+
+            // Store stripe customer ID for future portal access
+            if (stripeCustomerId) {
+                await setStripeCustomerId(userId, stripeCustomerId);
+            }
         }
     }
 

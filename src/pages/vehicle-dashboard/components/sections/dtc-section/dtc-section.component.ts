@@ -23,6 +23,7 @@ import { CreditsService } from '../../../../../services/credits.service';
 export class DtcSectionComponent implements OnInit {
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
+    @Input() vehicleName: string = '';
     @Input() motorVehicleId?: string;
 
     private vehicleData = inject(VehicleDataService);
@@ -86,21 +87,15 @@ export class DtcSectionComponent implements OnInit {
 
         const cost = this.creditsService.COSTS.DTC;
         if (this.creditsService.balance() < cost) {
-            alert('Insufficient credits. Please purchase more.');
-            return;
+            return; // Button shows insufficient credits already
         }
 
-        if (confirm(`Unlock Diagnostic Trouble Codes for ${cost} credits?`)) {
-            this.isUnlocking.set(true);
-            const success = await this.creditsService.unlockModule(this.vehicleId, 'dtcs', cost);
-            this.isUnlocking.set(false);
+        this.isUnlocking.set(true);
+        const success = await this.creditsService.unlockModule(this.vehicleId, this.vehicleName, 'dtcs', cost);
+        this.isUnlocking.set(false);
 
-            if (!success) {
-                alert('Unlock failed. Please try again.');
-            } else {
-                // Update display since we are now unlocked
-                this.updateDisplayedDtcs();
-            }
+        if (success) {
+            this.updateDisplayedDtcs();
         }
     }
 

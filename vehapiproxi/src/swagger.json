@@ -2100,6 +2100,61 @@
         }
       }
     },
+    "/api/credits/portal": {
+      "post": {
+        "tags": [
+          "Credits"
+        ],
+        "summary": "Create billing portal session",
+        "description": "Creates a Stripe Customer Billing Portal session (payment methods, invoices). User must have made at least one purchase.",
+        "operationId": "createBillingPortal",
+        "parameters": [
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "origin": {
+                    "type": "string",
+                    "description": "Return URL origin (e.g. app origin)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Portal URL",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No Stripe customer (user has not purchased yet)"
+          }
+        }
+      }
+    },
     "/api/credits/unlock": {
       "post": {
         "tags": [
