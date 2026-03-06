@@ -5,10 +5,9 @@ import { Article } from '../models/motor.models';
 export interface TreeNode {
     id: string;
     name: string;
-    type: 'system' | 'group' | 'subgroup' | 'article' | 'bucket';
+    type: 'system' | 'group' | 'article';
     children: TreeNode[];
     article?: Article;
-    isOpen?: boolean;
 }
 
 @Injectable({
@@ -41,8 +40,7 @@ export class CategoryTreeService {
                     id: parentBucket,
                     name: parentBucket,
                     type: 'system',
-                    children: [],
-                    isOpen: false
+                    children: []
                 };
                 bucketNodes.set(parentBucket, parentNode);
                 root.push(parentNode);
@@ -56,8 +54,7 @@ export class CategoryTreeService {
                     id: bucketId,
                     name: bucket,
                     type: 'group',
-                    children: [],
-                    isOpen: false
+                    children: []
                 };
                 bucketNodes.set(bucketId, bucketNode);
                 parentNode.children.push(bucketNode);
