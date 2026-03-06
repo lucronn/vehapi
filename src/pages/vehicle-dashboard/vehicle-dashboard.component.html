@@ -5,7 +5,8 @@
     [activeSection]="activeSection()"
     [availableSections]="availableSections()"
     (sectionChange)="setSection($event)"
-    (openAuthModal)="showAuthModal.set(true)">
+    (openAuthModal)="showAuthModal.set(true)"
+    (articleSelected)="onArticleClick(null, {id: $event})">
   </app-dashboard-sidebar>
 
   <!-- Mobile Header -->

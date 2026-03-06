@@ -46,6 +46,7 @@ import {
 import { parsePrice } from '../utils/price-parser';
 import { MOTOR_API_BASE_URL } from '../utils/motor-api.constants';
 import { HtmlProcessingService } from './html-processing.service';
+import { environment } from '../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class MotorApiService {
@@ -68,6 +69,7 @@ export class MotorApiService {
    * Verbose logging helper for API requests
    */
   private logRequest(method: string, url: string, params?: any, body?: any): void {
+    if (environment.production) return;
     const timestamp = new Date().toISOString();
     console.group(`[API REQUEST] ${method} ${timestamp}`);
     console.log('📍 Frontend → Proxy');
@@ -88,6 +90,7 @@ export class MotorApiService {
    * Verbose logging helper for API responses
    */
   private logResponse(url: string, status: number, statusText: string, headers: any, bodySize?: number, duration?: number): void {
+    if (environment.production) return;
     const timestamp = new Date().toISOString();
     console.group(`[API RESPONSE] ${timestamp}`);
     console.log('📍 Proxy → Frontend');
@@ -109,10 +112,13 @@ export class MotorApiService {
   private logApiError(url: string, error: any, duration?: number): void {
     // Suppress AbortError from Angular switchMap / HTTP client cancellation
     if (error?.name === 'AbortError' || error?.name === 'HttpErrorResponse' && error?.error?.name === 'AbortError') {
-      console.log(`[API REQUEST CANCELLED] Frontend intentionally cancelled HTTP request to ${url} ( likely due to fast route navigation )`);
+      if (!environment.production) {
+        console.log(`[API REQUEST CANCELLED] Frontend intentionally cancelled HTTP request to ${url} ( likely due to fast route navigation )`);
+      }
       return;
     }
 
+    if (environment.production) return;
     const timestamp = new Date().toISOString();
     console.group(`[API ERROR] ${timestamp}`);
     console.error('❌ Request Failed');
@@ -213,7 +219,9 @@ export class MotorApiService {
 
     // Return cached data if available
     if (this.articleCache.has(cacheKey)) {
-      console.log(`[API CACHE HIT] searchArticles: ${cacheKey}`);
+      if (!environment.production) {
+        console.log(`[API CACHE HIT] searchArticles: ${cacheKey}`);
+      }
       return of(this.articleCache.get(cacheKey)!);
     }
 
@@ -229,7 +237,9 @@ export class MotorApiService {
         // Cache the successful response
         if (data.header.statusCode === 200) {
           this.articleCache.set(cacheKey, data);
-          console.log(`[API CACHE SET] searchArticles: ${cacheKey}`);
+          if (!environment.production) {
+            console.log(`[API CACHE SET] searchArticles: ${cacheKey}`);
+          }
         }
         return data;
       })
@@ -830,7 +840,9 @@ export class MotorApiService {
     return this.http.get<AuthStatusResponse>(`${this.baseUrl}/auth/status`, { withCredentials: true }).pipe(
       timeout(5000),
       catchError(error => {
-        console.error('[Auth Polling] Failed:', error);
+        if (!environment.production) {
+          console.error('[Auth Polling] Failed:', error);
+        }
         // If we can't reach the status endpoint, assume error
         return of({ status: 'error' as const, progress: 0, message: error.message || 'Connection failed' });
       })
