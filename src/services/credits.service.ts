@@ -113,7 +113,7 @@ export class CreditsService {
     }
 
     async refreshBalance() {
-        if (this.useMock) {
+        if (this.USE_MOCK) {
             this.loadMockData();
             return;
         }
@@ -290,7 +290,7 @@ export class CreditsService {
             return false;
         }
 
-        if (this.useMock) {
+        if (this.USE_MOCK) {
             this.isLoading.set(true);
             return new Promise((resolve) => {
                 setTimeout(() => {
