@@ -4,6 +4,10 @@ import { map, switchMap, tap, catchError, timeout } from 'rxjs/operators';
 import { MotorApiService } from './motor-api.service';
 import { ApiResponse, Dtc, Tsb, Procedure, WiringDiagram, ComponentLocation, Spec, Fluid, MaintenanceSchedule, FilterTab, ArticlesData } from '../models/motor.models';
 
+const SPEC_ARTICLE_REGEX = /specification|specs/i;
+const SPEC_TITLE_REGEX = /specification|specs|capacity/i;
+const PRIORITY_SPEC_REGEX = /engine oil|fluid|alignment/i;
+
 export interface SectionAvailability {
     hasDtcs: boolean;
     hasTsbs: boolean;
@@ -182,15 +186,10 @@ export class VehicleDataService {
                     const articles = res.body?.articleDetails || [];
 
                     // Filter for anything that looks like a specification
-                    const specArticles = articles.filter(a => {
-                        const bucket = (a.bucket || '').toLowerCase();
-                        const title = (a.title || '').toLowerCase();
-                        return bucket.includes('specification') ||
-                            bucket.includes('specs') ||
-                            title.includes('specifications') ||
-                            title.includes('specs') ||
-                            title.includes('capacity');
-                    });
+                    const specArticles = articles.filter(a =>
+                        SPEC_ARTICLE_REGEX.test(a.bucket || '') ||
+                        SPEC_TITLE_REGEX.test(a.title || '')
+                    );
 
                     console.log(`[VehicleDataService - V4] Found ${specArticles.length} matching articles.`);
 
@@ -207,10 +206,9 @@ export class VehicleDataService {
                     } as Spec));
 
                     // High value specs for content fetch
-                    const priorities = specArticles.filter(a => {
-                        const t = (a.title || '').toLowerCase();
-                        return t.includes('engine oil') || t.includes('fluid') || t.includes('alignment');
-                    }).slice(0, 10);
+                    const priorities = specArticles.filter(a =>
+                        PRIORITY_SPEC_REGEX.test(a.title || '')
+                    ).slice(0, 10);
 
                     if (priorities.length === 0) return of(initialSpecs);
 
@@ -351,15 +349,10 @@ export class VehicleDataService {
 
                 // Specs: Check tabs OR articles
                 const hasSpecsInTabs = checkTabExists('Specs', ['Specifications', 'Specs']);
-                const hasSpecsInArticles = articles.some(a => {
-                    const bucket = (a.bucket || '').toLowerCase();
-                    const title = (a.title || '').toLowerCase();
-                    return bucket.includes('specification') ||
-                        bucket.includes('specs') ||
-                        title.includes('specifications') ||
-                        title.includes('specs') ||
-                        title.includes('capacity');
-                });
+                const hasSpecsInArticles = articles.some(a =>
+                    SPEC_ARTICLE_REGEX.test(a.bucket || '') ||
+                    SPEC_TITLE_REGEX.test(a.title || '')
+                );
                 const hasSpecs = hasSpecsInTabs || hasSpecsInArticles;
 
                 return {
