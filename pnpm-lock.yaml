@@ -56,9 +56,6 @@ importers:
       http-proxy-middleware:
         specifier: ^2.0.6
         version: 2.0.9(@types/express@4.17.25)
-      lucide-angular:
-        specifier: ^0.561.0
-        version: 0.561.0(@angular/common@21.1.5(@angular/core@21.1.5(@angular/compiler@21.1.5)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.1.5(@angular/compiler@21.1.5)(rxjs@7.8.2))
       rxjs:
         specifier: ^7.8.2
         version: 7.8.2
@@ -90,6 +87,9 @@ importers:
       happy-dom:
         specifier: ^20.6.2
         version: 20.7.0
+      lucide-angular:
+        specifier: ^0.577.0
+        version: 0.577.0(@angular/common@21.1.5(@angular/core@21.1.5(@angular/compiler@21.1.5)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.1.5(@angular/compiler@21.1.5)(rxjs@7.8.2))
       postcss:
         specifier: ^8.5.6
         version: 8.5.6
@@ -2508,8 +2508,8 @@ packages:
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
 
-  lucide-angular@0.561.0:
-    resolution: {integrity: sha512-/DVDEVDJM08h8bGarLH65+4jfLcjaGhHcG1TdDXvo0hX1CXczG0NzEIEs6CJdddfEdO+wzv3KLGpAz1QPw7sSg==}
+  lucide-angular@0.577.0:
+    resolution: {integrity: sha512-X+W7qnLDnOGKsuG7QedRSEFjLOPb4bU1oE9jZiJYHwbykkEW49g836Ma472NAQ/N4kWGY+5iEo4NvCfPjbRmZA==}
     peerDependencies:
       '@angular/common': 13.x - 21.x
       '@angular/core': 13.x - 21.x
@@ -5844,7 +5844,7 @@ snapshots:
     dependencies:
       yallist: 3.1.1
 
-  lucide-angular@0.561.0(@angular/common@21.1.5(@angular/core@21.1.5(@angular/compiler@21.1.5)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.1.5(@angular/compiler@21.1.5)(rxjs@7.8.2)):
+  lucide-angular@0.577.0(@angular/common@21.1.5(@angular/core@21.1.5(@angular/compiler@21.1.5)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.1.5(@angular/compiler@21.1.5)(rxjs@7.8.2)):
     dependencies:
       '@angular/common': 21.1.5(@angular/core@21.1.5(@angular/compiler@21.1.5)(rxjs@7.8.2))(rxjs@7.8.2)
       '@angular/core': 21.1.5(@angular/compiler@21.1.5)(rxjs@7.8.2)

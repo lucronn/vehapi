@@ -327,6 +327,10 @@ export class VehicleDashboardComponent {
     if (event) {
         event.preventDefault();
     }
+    // Prevent default navigation
+    if (event) {
+        event.preventDefault();
+    }
 
     const articleId = article.id || article;
 

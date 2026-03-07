@@ -1,15 +1,13 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, inject } from '@angular/core';
 import { SearchResultsState } from './search-results.state';
 import { Article } from '../models/motor.models';
-import { SupabaseService } from './supabase.service';
 
 export interface TreeNode {
     id: string;
     name: string;
-    type: 'system' | 'group' | 'subgroup' | 'article' | 'bucket';
+    type: 'system' | 'group' | 'article';
     children: TreeNode[];
     article?: Article;
-    isOpen?: boolean;
 }
 
 @Injectable({
@@ -17,62 +15,38 @@ export interface TreeNode {
 })
 export class CategoryTreeService {
     private searchState = inject(SearchResultsState);
-    private supabaseService = inject(SupabaseService);
-
-    // This will hold the DB taxonomy once we hook it up
-    private dbCategories = signal<any[]>([]);
-
-    constructor() {
-        this.fetchDbCategories();
-    }
-
-    async fetchDbCategories() {
-        try {
-            const { data, error } = await this.supabaseService.client
-                .from('categories')
-                .select('*')
-                .order('sort_order', { ascending: true });
-
-            if (data && !error) {
-                this.dbCategories.set(data);
-            }
-        } catch (e) {
-            console.error('Error fetching categories from DB', e);
-        }
-    }
 
     // This converts the flat articles array into a hierarchical tree based on taxonomy
     readonly categoryTree = computed<TreeNode[]>(() => {
         const articles = this.searchState.articleDetails();
-        const dbCats = this.dbCategories();
 
-        // Strategy:
-        // 1. If we have DB categories, we should ideally construct the tree from them,
-        // and map the articles to the appropriate leaves.
-        // However, since the AI worker is still populating it and the DB currently lacks
-        // full relational mapping between "procedures" and "categories" tables, we fallback to
-        // the synthesized tree from SearchResultsState.
+        // Since we don't have explicit taxonomy data on the articles in the current response,
+        // we'll build a synthetic tree based on the existing buckets, but structured deeply
+        // to support the reorganised view.
 
         const root: TreeNode[] = [];
+
+        // Map to quickly find nodes
         const bucketNodes = new Map<string, TreeNode>();
 
         articles.forEach(article => {
             const parentBucket = article.parentBucket || 'Other';
             const bucket = article.bucket || 'Uncategorized';
 
+            // 1. Ensure Parent Bucket Node exists
             let parentNode = bucketNodes.get(parentBucket);
             if (!parentNode) {
                 parentNode = {
                     id: parentBucket,
                     name: parentBucket,
                     type: 'system',
-                    children: [],
-                    isOpen: false
+                    children: []
                 };
                 bucketNodes.set(parentBucket, parentNode);
                 root.push(parentNode);
             }
 
+            // 2. Ensure Bucket Node exists
             const bucketId = `${parentBucket}-${bucket}`;
             let bucketNode = bucketNodes.get(bucketId);
             if (!bucketNode) {
@@ -80,13 +54,13 @@ export class CategoryTreeService {
                     id: bucketId,
                     name: bucket,
                     type: 'group',
-                    children: [],
-                    isOpen: false
+                    children: []
                 };
                 bucketNodes.set(bucketId, bucketNode);
                 parentNode.children.push(bucketNode);
             }
 
+            // 3. Add Article Node
             bucketNode.children.push({
                 id: article.id,
                 name: article.title,

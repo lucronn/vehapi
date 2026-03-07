@@ -25,7 +25,7 @@ export class DashboardSidebarComponent {
     @Input({ required: true }) activeSection!: DashboardSection;
     @Input() availableSections: SectionAvailability | null = null;
     @Output() sectionChange = new EventEmitter<DashboardSection>();
-    @Output() articleSelected = new EventEmitter<any>(); // Emits article ID
+    @Output() articleSelected = new EventEmitter<string>(); // Emits article ID
     /** Ask parent layout to open the global auth modal. */
     @Output() openAuthModal = new EventEmitter<void>();
 
@@ -55,9 +55,8 @@ export class DashboardSidebarComponent {
         return this.expandedNodes().has(nodeId);
     }
 
-    onArticleClick(articleId: string, articleTitle?: string) {
-        // Emit the article object structure that VehicleDashboardComponent expects
-        this.articleSelected.emit({ id: articleId, title: articleTitle } as any);
+    onArticleClick(articleId: string) {
+        this.articleSelected.emit(articleId);
         this.sectionChange.emit('browse-all'); // Switch main view to browse-all or a dedicated article view
     }
 
