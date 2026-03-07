@@ -1,5 +1,0 @@
-{
-  "name": "Torque",
-  "description": "A futuristic, AI-powered assistant for automotive diagnostics and repair, designed for both novice DIYers and master mechanics. Look up any vehicle by VIN or Year/Make/Model to access a comprehensive database of repair procedures, wiring diagrams, service bulletins, and more.",
-  "requestFramePermissions": []
-}
