@@ -17,7 +17,8 @@ export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'comp
     templateUrl: './dashboard-sidebar.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [CommonModule, RouterModule, LucideAngularModule],
-    standalone: true
+    standalone: true,
+    host: { class: 'contents' }
 })
 export class DashboardSidebarComponent {
     @Input({ required: true }) vehicleName!: string;
