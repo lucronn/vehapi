@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, map, of, timeout } from 'rxjs';
-import { TutorialStep } from '../models/motor.models';
+import { TutorialStep, CommonIssue } from '../models/motor.models';
 import { MOTOR_API_BASE_URL } from '../utils/motor-api.constants';
 
 /**
@@ -54,6 +54,28 @@ export class AiRewriteService {
             timeout(60_000),
             map(res => res?.steps || []),
             catchError(() => of([]))
+        );
+    }
+
+    /**
+     * Generates common issues for a given vehicle using AI.
+     * @param vehicleName - The year make model of the vehicle.
+     * @returns Observable that emits an array of CommonIssue objects.
+     */
+    generateCommonIssues(vehicleName: string): Observable<CommonIssue[]> {
+        if (!vehicleName || !vehicleName.trim()) {
+            return of([]);
+        }
+        return this.http.post<{ issues: CommonIssue[] }>(
+            `${this.baseUrl}/api/common-issues/generate`,
+            { vehicleMetadata: { vehicleName } } // Passing as dynamic context
+        ).pipe(
+            timeout(60_000),
+            map(res => res?.issues || []),
+            catchError((err) => {
+                console.error('Failed to generate common issues:', err);
+                return of([]);
+            })
         );
     }
 }

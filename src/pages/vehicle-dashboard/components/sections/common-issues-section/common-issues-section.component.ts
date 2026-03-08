@@ -1,7 +1,7 @@
 import { Component, Input, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-// import { GeminiService } from '../../../../../services/gemini.service'; // Removed
+import { AiRewriteService } from '../../../../../services/ai-rewrite.service';
 import { CommonIssue } from '../../../../../models/motor.models';
 import { LoadingSkeletonComponent } from '../../../../../components/loading-skeleton/loading-skeleton.component';
 import { EmptyStateComponent } from '../../../../../components/empty-state/empty-state.component';
@@ -26,7 +26,7 @@ export class CommonIssuesSectionComponent implements OnInit {
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
 
-    // private geminiApi = inject(GeminiService); // Removed
+    private aiRewrite = inject(AiRewriteService);
     private sanitizer = inject(DomSanitizer);
     private windowManager = inject(WindowManagerService);
     private router = inject(Router);
@@ -55,8 +55,20 @@ export class CommonIssuesSectionComponent implements OnInit {
     private loadIssues() {
         if (this.commonIssues().length > 0 || this.hasAttemptedLoad) return;
         this.hasAttemptedLoad = true;
-        // Common issues are AI-generated and no longer cached. Section left empty.
-        this.isLoading.set(false);
+        this.isLoading.set(true);
+
+        // Fetch common issues via AI rewriting service
+        this.aiRewrite.generateCommonIssues(this.vehicleName).subscribe({
+            next: (issues) => {
+                this.commonIssues.set(issues);
+                this.updateDisplayedCommonIssues();
+                this.isLoading.set(false);
+            },
+            error: (err) => {
+                console.error('Failed to load common issues', err);
+                this.isLoading.set(false);
+            }
+        });
     }
 
     private updateDisplayedCommonIssues() {

@@ -44,7 +44,9 @@ export class SearchResultsState {
                 ...tab,
                 buckets: tab.buckets?.map((bucket) => ({
                     ...bucket,
-                    children: bucket.name === 'Procedures' ? [] : bucket.children,
+                    // Clear BOTH fields so flattening works regardless of API shape
+                    children: bucket.name === 'Procedures' ? [] : (bucket.children ?? bucket.buckets ?? []),
+                    buckets: bucket.name === 'Procedures' ? [] : undefined,
                 })),
             }));
         }
@@ -72,7 +74,10 @@ export class SearchResultsState {
                 tab.buckets?.forEach((bucket) => {
                     const childrenBucketList: BucketArticles[] = [];
 
-                    bucket.children?.forEach((childBucket) => {
+                    // Normalize: legacy API uses 'buckets', new shape uses 'children'
+                    const childBuckets = bucket.children ?? bucket.buckets ?? [];
+
+                    childBuckets.forEach((childBucket) => {
                         // Use slice() to create a copy, ensuring immutability like .filter()
                         const childArticles = (articlesByBucket.get(childBucket.name ?? '') ?? []).slice();
                         childrenBucketList.push({
@@ -96,7 +101,7 @@ export class SearchResultsState {
                         sort: bucket.sort ?? 0,
                         bucketNameOverride: bucket.nameOverride,
                         bucketFilterTabType: tab.filterTabType,
-                        isParent: bucket.children && bucket.children.length > 0,
+                        isParent: childBuckets.length > 0,
                         children: childrenBucketList,
                     });
                 });
@@ -152,7 +157,9 @@ export class SearchResultsState {
         const bucketCategoryArticleCount: { [key: string]: number } = {};
         for (const [category, buckets] of Object.entries(fullBucketByFilterTab)) {
             bucketCategoryArticleCount[category] = buckets.reduce((count, bucket) => {
-                const childArticleCount = bucket.children?.reduce((childCount, childBucket) => childCount + childBucket.articles.length, 0) ?? 0;
+                // Filter magic IDs from child buckets consistently with parent articles
+                const childArticleCount = bucket.children?.reduce((childCount, childBucket) =>
+                    childCount + childBucket.articles.filter((x) => x.id !== '-999' && x.id !== '-998').length, 0) ?? 0;
                 // Filter out magic IDs like -999, -998 if they exist in data
                 const currentCount = bucket.articles.filter((x) => x.id !== '-999' && x.id !== '-998').length;
                 return count + currentCount + childArticleCount;

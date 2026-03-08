@@ -73,7 +73,7 @@ export interface FilterTab {
   type?: string;
   filterTabType?: FilterTabType;
   buckets?: Bucket[];
-  articleTrailId?: string;
+  articleTrailId?: number;
   isCountUnknown?: boolean;
   sort?: number;
 }

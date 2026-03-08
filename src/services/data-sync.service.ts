@@ -1,68 +1,41 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { forkJoin, from, lastValueFrom, of } from 'rxjs';
-import { catchError, concatMap, map, mergeMap, tap, toArray } from 'rxjs/operators';
+import { from, lastValueFrom, of } from 'rxjs';
+import { catchError, concatMap, mergeMap, tap } from 'rxjs/operators';
 import { MotorApiService } from './motor-api.service';
-import { FirebaseService } from './firebase.service';
-// import { GeminiService } from './gemini.service'; // Removed
+import { AiRewriteService } from './ai-rewrite.service';
+import { SupabaseService } from './supabase.service';
 
 @Injectable({
     providedIn: 'root'
 })
 export class DataSyncService {
     private motorApi = inject(MotorApiService);
-    private firebase = inject(FirebaseService);
-    // private geminiApi = inject(GeminiService); // Removed
+    private aiRewrite = inject(AiRewriteService);
+    private supabase = inject(SupabaseService);
 
     // Sync State
     isSyncing = signal(false);
     syncProgress = signal({ current: 0, total: 0, message: 'Ready' });
 
     async syncFullVehicle(contentSource: string, vehicleId: string, vehicleName: string): Promise<void> {
-        return; // DATABASE SYNC DISABLED - Legacy Mode
         if (this.isSyncing()) return;
 
         this.isSyncing.set(true);
         this.syncProgress.set({ current: 0, total: 100, message: 'Starting Sync...' });
 
         try {
-            // 1. Common Issues (AI)
+            // 1. Common Issues (AI) - Now async logic using Supabase
             this.syncProgress.set({ current: 1, total: 100, message: 'Analyzing Common Issues...' });
             await this.syncCommonIssues(contentSource, vehicleId, vehicleName);
 
-            // 2. Fetch All Lists
+            // 2. Fetch All Articles
             this.syncProgress.set({ current: 5, total: 100, message: 'Fetching Data Lists...' });
-            const lists = await lastValueFrom(forkJoin({
-                // dtcs: this.motorApi.getDtcs(contentSource, vehicleId), // REMOVED API
-                // tsbs: this.motorApi.getTsbs(contentSource, vehicleId), // REMOVED API
-                // procedures: this.motorApi.getProcedures(contentSource, vehicleId), // REMOVED API
-                // diagrams: this.motorApi.getAllDiagrams(contentSource, vehicleId), // REMOVED API
-                fluids: this.motorApi.getFluids(contentSource, vehicleId),
-                // specs: this.motorApi.getSpecs(contentSource, vehicleId), // REMOVED API
-                parts: this.motorApi.getParts(contentSource, vehicleId, ''),
-                // labor: this.motorApi.getLaborOperations(contentSource, vehicleId) // REMOVED API
-            }));
-
-            // 3. Save Lists to Firebase
-            await Promise.all([
-                // this.firebase.saveDtcList(contentSource, vehicleId, lists.dtcs.body.data),
-                // this.firebase.saveTsbList(contentSource, vehicleId, lists.tsbs.body.data),
-                // this.firebase.saveProcedureList(contentSource, vehicleId, lists.procedures.body.data),
-                // Add others once FirebaseService is updated
-            ]);
-
-            // 4. Calculate Total Work for Content Sync
-            const allItems: any[] = [
-                // ...lists.dtcs.body.data.map((i: any) => ({ ...i, type: 'dtc' })),
-                // ...lists.tsbs.body.data.map((i: any) => ({ ...i, type: 'tsb' })),
-                // Sync ALL procedures as per user request
-                // ...lists.procedures.body.data.map((i: any) => ({ ...i, type: 'procedure' })),
-            ];
+            const searchResults = await lastValueFrom(this.motorApi.searchArticles(contentSource, vehicleId, ''));
+            const allItems = searchResults?.body?.articleDetails || [];
 
             const totalItems = allItems.length;
             let processed = 0;
 
-            // 5. Heavy Lift: Sync Content for items
-            // We process in chunks to verify concurrency
             console.log(`Starting massive sync for ${totalItems} items...`);
 
             await lastValueFrom(from(allItems).pipe(
@@ -96,41 +69,57 @@ export class DataSyncService {
     }
 
     private async syncCommonIssues(cs: string, vid: string, name: string) {
-        return; // DATABASE SYNC DISABLED
-        /*
-        // Check cache first
-        const cached = await this.firebase.getCommonIssues(cs, vid);
+        // Attempt to see if we already generated it previously
+        const { data: cached } = await this.supabase.client
+            .from('common_issues_cache')
+            .select('*')
+            .eq('vehicle_id', vid)
+            .maybeSingle();
+
         if (!cached) {
-            // const issues = await lastValueFrom(this.geminiApi.findCommonIssues(name)); // AI DISABLED
-            // await this.firebase.saveCommonIssues(cs, vid, issues);
-            console.log('Skipping Common Issues Sync (AI Disabled)');
+            const issues = await lastValueFrom(this.aiRewrite.generateCommonIssues(name));
+            if (issues && issues.length > 0) {
+                // Upsert newly generated common issues
+                await this.supabase.client.from('common_issues_cache').upsert({
+                    vehicle_id: vid,
+                    source: cs,
+                    issues,
+                    updated_at: new Date().toISOString()
+                });
+            }
         }
-        */
     }
 
     private fetchAndSaveContent(cs: string, vid: string, item: any) {
-        // If it's already cached, skip?
-        // Ideally yes, but checking cache for 1000 items is also 1000 reads.
-        // Maybe just write-over? Or check `firebase.getArticle`?
-        // Let's blindly fetch & save for now, ensuring we have latest.
-        // Actually, `motorApi.getArticleContent` is what we need.
+        // Construct Article ID properly based on Bucket to normalize
+        const parentOrBucket = item.parentBucket || item.bucket || '';
+        let normalizedId = item.id;
 
-        // Construct Article ID properly.
-        // DTCs IDs are usually "DTC:..." in the list.
-        // TSBs IDs are "TSB:..."
-        // Procedures are "P:..."
+        if (parentOrBucket.includes('Codes') || parentOrBucket.includes('DTC')) {
+            normalizedId = `DTC:${item.code || item.id}`;
+        } else if (parentOrBucket.includes('Bulletin') || parentOrBucket.includes('TSB')) {
+            normalizedId = `TSB:${item.bulletinNumber || item.id}`;
+        } else if (parentOrBucket.includes('Procedures')) {
+            normalizedId = `P:${item.id}`;
+        }
 
+        // Write-over fetch & save logic
         return this.motorApi.getArticleContent(cs, vid, item.id).pipe(
             concatMap(contentRes => {
-                return from(this.firebase.saveArticle({
-                    id: item.id,
+                const articleData = {
+                    id: normalizedId,
+                    original_id: item.id,
                     title: item.title || item.code || '',
-                    originalContent: contentRes.body.html,
-                    enhancedContent: '',
-                    vehicleId: vid,
+                    original_content: contentRes.body?.html || '',
+                    enhanced_content: '',
+                    vehicle_id: vid,
                     source: cs,
-                    timestamp: Date.now()
-                }));
+                    bucket: item.bucket || '',
+                    parent_bucket: item.parentBucket || '',
+                    updated_at: new Date().toISOString()
+                };
+
+                return from(this.supabase.client.from('articles').upsert(articleData, { onConflict: 'vehicle_id, original_id' }));
             })
         );
     }
