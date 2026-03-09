@@ -5,15 +5,15 @@ import { of, throwError } from 'rxjs';
 const mockGet = mock((url: string, options: any) => of({ body: { data: 'test' }, status: 200, statusText: 'OK', headers: new Map() }));
 const mockPost = mock((url: string, body: any, options: any) => of({ body: { data: 'test_post' }, status: 200, statusText: 'OK', headers: new Map() }));
 
-class MockHtmlProcessingService {
+class MockMotorHtmlProcessorService {
   processHtmlContent = mock(() => 'MOCKED');
 }
 
-mock.module('./html-processing.service', () => ({
-  HtmlProcessingService: MockHtmlProcessingService
+mock.module('./motor-html-processor.service', () => ({
+  MotorHtmlProcessorService: MockMotorHtmlProcessorService
 }));
 
-class MockHttpClient {}
+class MockHttpClient { }
 mock.module('@angular/common/http', () => ({
   HttpClient: MockHttpClient,
   HttpParams: class {
@@ -33,8 +33,8 @@ mock.module('@angular/common/http', () => ({
 mock.module('@angular/core', () => ({
   Injectable: () => (target: any) => target,
   inject: (token: any) => {
-    if (token === MockHtmlProcessingService || (token && token.name === 'MockHtmlProcessingService') || token?.name === 'HtmlProcessingService') {
-      return new MockHtmlProcessingService();
+    if (token === MockMotorHtmlProcessorService || (token && token.name === 'MockMotorHtmlProcessorService') || token?.name === 'MotorHtmlProcessorService') {
+      return new MockMotorHtmlProcessorService();
     }
     if (token === MockHttpClient || (token && token.name === 'HttpClient')) {
       return {
@@ -45,13 +45,13 @@ mock.module('@angular/core', () => ({
     return {};
   },
   Component: () => (target: any) => target,
-  Input: () => (target: any, key: string) => {},
-  Output: () => (target: any, key: string) => {},
-  EventEmitter: class { emit() {} }
+  Input: () => (target: any, key: string) => { },
+  Output: () => (target: any, key: string) => { },
+  EventEmitter: class { emit() { } }
 }));
 
 mock.module('../components/orientation-selector-modal/orientation-selector-modal.component', () => ({
-    OrientationSelectorModalComponent: class {},
+  OrientationSelectorModalComponent: class { },
 }));
 
 describe('MotorApiService Integration Methods', () => {
@@ -65,10 +65,10 @@ describe('MotorApiService Integration Methods', () => {
     MotorApiService = module.MotorApiService;
     service = new MotorApiService();
 
-    spyOn(console, 'group').mockImplementation(() => {});
-    spyOn(console, 'groupEnd').mockImplementation(() => {});
-    spyOn(console, 'log').mockImplementation(() => {});
-    spyOn(console, 'error').mockImplementation(() => {});
+    spyOn(console, 'group').mockImplementation(() => { });
+    spyOn(console, 'groupEnd').mockImplementation(() => { });
+    spyOn(console, 'log').mockImplementation(() => { });
+    spyOn(console, 'error').mockImplementation(() => { });
   });
 
   test('decodeVin calls correct URL', async () => {

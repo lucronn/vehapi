@@ -45,25 +45,18 @@ import {
 } from '../models/motor.models';
 import { parsePrice } from '../utils/price-parser';
 import { MOTOR_API_BASE_URL } from '../utils/motor-api.constants';
-import { HtmlProcessingService } from './html-processing.service';
+import { MotorHtmlProcessorService } from './motor-html-processor.service';
 import { environment } from '../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class MotorApiService {
   private http = inject(HttpClient);
-  private htmlProcessingService = inject(HtmlProcessingService);
+  private motorHtml = inject(MotorHtmlProcessorService);
   // public readonly baseUrl = 'https://motorapiauthproxy-yonqvhjh7a-uc.a.run.app';
   public readonly baseUrl = MOTOR_API_BASE_URL;
 
   // Cache for article searches to prevent redundant API calls
   private articleCache = new Map<string, ApiResponse<ArticlesData>>();
-
-  // Combined regex with attribute grouping for HTML processing
-  // 1. mtr-doc-link (id optional to handle fallback stripping)
-  // 2. mtr-image
-  // 3. attributes: (src|data-src|href|srcset) = ...
-  // 4. background-image
-  private readonly combinedRegex = /(<mtr-doc-link(?:\s+id=["']?([^"'>\s]+)["']?)?[^>]*>([^<]*)<\/mtr-doc-link>)|(<mtr-image\s+([^>]*)\/?>)|((src|data-src|href|srcset)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))|(background-image\s*:\s*url\(["']?([^"')]+)["']?\))/gi;
 
   /**
    * Verbose logging helper for API requests
@@ -471,139 +464,8 @@ export class MotorApiService {
     return `${this.baseUrl}/${graphicPath}`;
   }
 
-  /**
-   * Process HTML content to fix relative URLs for images and links
-   * Comprehensive URL processing for all image and asset paths
-   * Also processes custom elements like mtr-doc-link
-   */
   processHtmlContent(html: string, contentSource?: string, vehicleId?: string): string {
-    if (!html) return '';
-
-    // Helper function to normalize and process URLs
-    const processUrl = (url: string, attrName: string = 'src'): string => {
-      // Skip if already a full URL (http/https)
-      if (url.startsWith('http://') || url.startsWith('https://')) {
-        return url;
-      }
-
-      // Skip if already processed (contains baseUrl)
-      if (url.includes(this.baseUrl)) {
-        return url;
-      }
-
-      // Skip data URLs, anchors, and javascript
-      if (url.startsWith('data:') || url.startsWith('#') || url.startsWith('javascript:')) {
-        return url;
-      }
-
-      // Handle API paths - these should go through the proxy
-      if (url.startsWith('/api/') || url.startsWith('api/')) {
-        const cleanPath = url.startsWith('/') ? url : `/${url}`;
-        return `${this.baseUrl}${cleanPath}`;
-      }
-
-      // Handle other absolute paths starting with /
-      if (url.startsWith('/')) {
-        return `${this.baseUrl}${url}`;
-      }
-
-      // Handle relative paths (like ../graphic/... or ./image.jpg)
-      // Convert to absolute path through proxy
-      if (url.startsWith('../') || url.startsWith('./')) {
-        // Normalize relative paths - for now, treat as absolute from proxy root
-        const cleanPath = url.replace(/^\.\.?\//, '');
-        return `${this.baseUrl}/${cleanPath}`;
-      }
-
-      // Default: treat as relative path from proxy root
-      return `${this.baseUrl}/${url}`;
-    };
-
-    return html.replace(this.combinedRegex, (match,
-      docLinkFull, docLinkId, docLinkText,
-      mtrImageFull, mtrImageAttrs,
-      attrFull, attrName, attrQ1, attrQ2, attrNoQ,
-      bgFull, bgUrl
-    ) => {
-      if (docLinkFull) {
-        if (contentSource && vehicleId) {
-          if (docLinkId) {
-            const linkText = docLinkText.trim() || 'View Article';
-            // Use relative hash route (Angular uses hash location strategy)
-            return `<a href="#/vehicle/${contentSource}/${vehicleId}/article/${docLinkId}" class="text-cyan-400 hover:text-cyan-300 underline">${linkText}</a>`;
-          }
-          // If context present but no ID, keep the original tag (legacy behavior)
-          return match;
-        } else {
-          // If no context, strip the tag and return text
-          return docLinkText;
-        }
-      }
-
-      if (mtrImageFull) {
-        const idMatch = mtrImageAttrs.match(/id\s*=\s*("|'|)?([^"'\s]+)\1/i);
-        if (!idMatch) return match;
-        const id = idMatch[2];
-        const graphicUrl = contentSource
-          ? `${this.baseUrl}/api/source/${contentSource}/graphic/${id}`
-          : `${this.baseUrl}/graphic/${id}`;
-
-        return `<img src="${graphicUrl}" class="article-image" ${mtrImageAttrs.replace(/id\s*=\s*(?:("|')[^"']*\1|[^"'\s]+)/i, '')}>`;
-      }
-
-      if (attrFull) {
-        const name = attrName.toLowerCase();
-        let url = attrQ1 || attrQ2 || attrNoQ;
-        // Determine original quote style for preservation where needed
-        const originalQuote = attrQ1 ? '"' : (attrQ2 ? "'" : '"');
-
-        if (name === 'srcset') {
-          if (!url) return match;
-          const processedSrcset = url.split(',').map((part: string) => {
-            const trimmed = part.trim();
-            const urlMatch = trimmed.match(/^([^\s]+)/);
-            if (urlMatch) {
-              const u = urlMatch[1];
-              const descriptor = trimmed.substring(u.length).trim();
-              const processedUrl = processUrl(u, 'srcset');
-              return descriptor ? `${processedUrl} ${descriptor}` : processedUrl;
-            }
-            return trimmed;
-          }).join(', ');
-          // srcset preserves original quotes
-          return `${name}=${originalQuote}${processedSrcset}${originalQuote}`;
-        }
-
-        url = url.trim();
-        if (!url) return match;
-
-        if (name === 'href') {
-          if (url.startsWith('#') || url.startsWith('javascript:') || url.startsWith('mailto:') || url.startsWith('tel:')) return match;
-          if (url.startsWith('http://') || url.startsWith('https://')) {
-            if (url.includes(this.baseUrl) && url.includes('#/')) {
-              const hashPart = url.substring(url.indexOf('#/'));
-              // href with hash preserves original quotes (legacy behavior)
-              return `href=${originalQuote}${hashPart}${originalQuote}`;
-            }
-            return match;
-          }
-        }
-
-        const processedUrl = processUrl(url, name);
-        // src, data-src, and standard href force double quotes (legacy behavior)
-        return `${name}="${processedUrl}"`;
-      }
-
-      if (bgFull) {
-        const processedUrl = processUrl(bgUrl, 'background');
-        const originalHadQuotes = /url\(["']/.test(match);
-        return originalHadQuotes
-          ? `background-image: url("${processedUrl}")`
-          : `background-image: url(${processedUrl})`;
-      }
-
-      return match;
-    });
+    return this.motorHtml.processHtmlContent(html, contentSource, vehicleId);
   }
 
   // ==========================================

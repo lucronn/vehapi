@@ -21,6 +21,120 @@
             <span class="text-xs font-bold tracking-[0.15em] uppercase">Overview</span>
         </button>
 
+        <button (click)="onSectionClick('dtcs')"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2 mt-1"
+            [class.border-[hsl(191,97%,50%)]]="activeSection === 'dtcs'"
+            [class.bg-gradient-to-r]="activeSection === 'dtcs'"
+            [class.from-[hsl(191,97%,50%)]/10]="activeSection === 'dtcs'"
+            [class.to-transparent]="activeSection === 'dtcs'" [class.text-white]="activeSection === 'dtcs'"
+            [class.border-transparent]="activeSection !== 'dtcs'"
+            [class.text-[hsl(215,20%,65%)]]="activeSection !== 'dtcs'"
+            [class.hover:text-white]="activeSection !== 'dtcs'"
+            [class.hover:bg-white/[0.03]]="activeSection !== 'dtcs'">
+            <lucide-icon [img]="icons.TriangleAlert" class="w-4 h-4"></lucide-icon>
+            <span class="text-xs font-bold tracking-[0.15em] uppercase">Fault Codes</span>
+        </button>
+
+        <button (click)="onSectionClick('tsbs')"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2 mt-1"
+            [class.border-[hsl(191,97%,50%)]]="activeSection === 'tsbs'"
+            [class.bg-gradient-to-r]="activeSection === 'tsbs'"
+            [class.from-[hsl(191,97%,50%)]/10]="activeSection === 'tsbs'"
+            [class.to-transparent]="activeSection === 'tsbs'" [class.text-white]="activeSection === 'tsbs'"
+            [class.border-transparent]="activeSection !== 'tsbs'"
+            [class.text-[hsl(215,20%,65%)]]="activeSection !== 'tsbs'"
+            [class.hover:text-white]="activeSection !== 'tsbs'"
+            [class.hover:bg-white/[0.03]]="activeSection !== 'tsbs'">
+            <lucide-icon [img]="icons.FileText" class="w-4 h-4"></lucide-icon>
+            <span class="text-xs font-bold tracking-[0.15em] uppercase">Bulletins</span>
+        </button>
+
+        <button (click)="onSectionClick('procedures')"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2 mt-1"
+            [class.border-[hsl(191,97%,50%)]]="activeSection === 'procedures'"
+            [class.bg-gradient-to-r]="activeSection === 'procedures'"
+            [class.from-[hsl(191,97%,50%)]/10]="activeSection === 'procedures'"
+            [class.to-transparent]="activeSection === 'procedures'" [class.text-white]="activeSection === 'procedures'"
+            [class.border-transparent]="activeSection !== 'procedures'"
+            [class.text-[hsl(215,20%,65%)]]="activeSection !== 'procedures'"
+            [class.hover:text-white]="activeSection !== 'procedures'"
+            [class.hover:bg-white/[0.03]]="activeSection !== 'procedures'">
+            <lucide-icon [img]="icons.Wrench" class="w-4 h-4"></lucide-icon>
+            <span class="text-xs font-bold tracking-[0.15em] uppercase">Procedures</span>
+        </button>
+
+        <button (click)="onSectionClick('specs')"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2 mt-1"
+            [class.border-[hsl(191,97%,50%)]]="activeSection === 'specs'"
+            [class.bg-gradient-to-r]="activeSection === 'specs'"
+            [class.from-[hsl(191,97%,50%)]/10]="activeSection === 'specs'"
+            [class.to-transparent]="activeSection === 'specs'" [class.text-white]="activeSection === 'specs'"
+            [class.border-transparent]="activeSection !== 'specs'"
+            [class.text-[hsl(215,20%,65%)]]="activeSection !== 'specs'"
+            [class.hover:text-white]="activeSection !== 'specs'"
+            [class.hover:bg-white/[0.03]]="activeSection !== 'specs'">
+            <lucide-icon [img]="icons.Settings" class="w-4 h-4"></lucide-icon>
+            <span class="text-xs font-bold tracking-[0.15em] uppercase">Specs & Fluids</span>
+        </button>
+
+        <button (click)="onSectionClick('maintenance')"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2 mt-1"
+            [class.border-[hsl(191,97%,50%)]]="activeSection === 'maintenance'"
+            [class.bg-gradient-to-r]="activeSection === 'maintenance'"
+            [class.from-[hsl(191,97%,50%)]/10]="activeSection === 'maintenance'"
+            [class.to-transparent]="activeSection === 'maintenance'"
+            [class.text-white]="activeSection === 'maintenance'"
+            [class.border-transparent]="activeSection !== 'maintenance'"
+            [class.text-[hsl(215,20%,65%)]]="activeSection !== 'maintenance'"
+            [class.hover:text-white]="activeSection !== 'maintenance'"
+            [class.hover:bg-white/[0.03]]="activeSection !== 'maintenance'">
+            <lucide-icon [img]="icons.Calendar" class="w-4 h-4"></lucide-icon>
+            <span class="text-xs font-bold tracking-[0.15em] uppercase">Maintenance</span>
+        </button>
+
+        <button (click)="onSectionClick('component-locations')"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2 mt-1"
+            [class.border-[hsl(191,97%,50%)]]="activeSection === 'component-locations'"
+            [class.bg-gradient-to-r]="activeSection === 'component-locations'"
+            [class.from-[hsl(191,97%,50%)]/10]="activeSection === 'component-locations'"
+            [class.to-transparent]="activeSection === 'component-locations'"
+            [class.text-white]="activeSection === 'component-locations'"
+            [class.border-transparent]="activeSection !== 'component-locations'"
+            [class.text-[hsl(215,20%,65%)]]="activeSection !== 'component-locations'"
+            [class.hover:text-white]="activeSection !== 'component-locations'"
+            [class.hover:bg-white/[0.03]]="activeSection !== 'component-locations'">
+            <lucide-icon [img]="icons.MapPin" class="w-4 h-4"></lucide-icon>
+            <span class="text-xs font-bold tracking-[0.15em] uppercase">Locations</span>
+        </button>
+
+        <button (click)="onSectionClick('parts')"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2 mt-1"
+            [class.border-[hsl(191,97%,50%)]]="activeSection === 'parts'"
+            [class.bg-gradient-to-r]="activeSection === 'parts'"
+            [class.from-[hsl(191,97%,50%)]/10]="activeSection === 'parts'"
+            [class.to-transparent]="activeSection === 'parts'" [class.text-white]="activeSection === 'parts'"
+            [class.border-transparent]="activeSection !== 'parts'"
+            [class.text-[hsl(215,20%,65%)]]="activeSection !== 'parts'"
+            [class.hover:text-white]="activeSection !== 'parts'"
+            [class.hover:bg-white/[0.03]]="activeSection !== 'parts'">
+            <lucide-icon [img]="icons.Box" class="w-4 h-4"></lucide-icon>
+            <span class="text-xs font-bold tracking-[0.15em] uppercase">Parts</span>
+        </button>
+
+        <button (click)="onSectionClick('browse-all')"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2 mt-1"
+            [class.border-[hsl(191,97%,50%)]]="activeSection === 'browse-all'"
+            [class.bg-gradient-to-r]="activeSection === 'browse-all'"
+            [class.from-[hsl(191,97%,50%)]/10]="activeSection === 'browse-all'"
+            [class.to-transparent]="activeSection === 'browse-all'" [class.text-white]="activeSection === 'browse-all'"
+            [class.border-transparent]="activeSection !== 'browse-all'"
+            [class.text-[hsl(215,20%,65%)]]="activeSection !== 'browse-all'"
+            [class.hover:text-white]="activeSection !== 'browse-all'"
+            [class.hover:bg-white/[0.03]]="activeSection !== 'browse-all'">
+            <lucide-icon [img]="icons.Package" class="w-4 h-4"></lucide-icon>
+            <span class="text-xs font-bold tracking-[0.15em] uppercase">All Data</span>
+        </button>
+
         <div class="pt-4 pb-2 px-3">
             <p class="text-[10px] font-mono uppercase tracking-[0.2em] text-torque-muted mb-1">Categories</p>
         </div>
@@ -29,50 +143,50 @@
         <ng-container *ngTemplateOutlet="treeNodeTemplate; context: { nodes: treeNodes(), depth: 0 }"></ng-container>
 
         <ng-template #treeNodeTemplate let-nodes="nodes" let-depth="depth">
-            <ul class="space-y-0.5" [class.pl-4]="depth > 0" [class.border-l]="depth > 0" [class.border-white/5]="depth > 0">
+            <ul class="space-y-0.5" [class.pl-4]="depth > 0" [class.border-l]="depth > 0"
+                [class.border-white/5]="depth > 0">
                 @for (node of nodes; track node.id) {
-                    <li>
-                        @if (node.type !== 'article') {
-                            <!-- Folder/Group Node -->
-                            <button (click)="toggleNode(node.id, $event)"
-                                class="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors hover:bg-white/[0.03] group"
-                                [class.text-white]="isNodeExpanded(node.id)"
-                                [class.text-[hsl(215,20%,65%)]]="!isNodeExpanded(node.id)">
+                <li>
+                    @if (node.type !== 'article') {
+                    <!-- Folder/Group Node -->
+                    <button (click)="toggleNode(node.id, $event)"
+                        class="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors hover:bg-white/[0.03] group"
+                        [class.text-white]="isNodeExpanded(node.id)"
+                        [class.text-[hsl(215,20%,65%)]]="!isNodeExpanded(node.id)">
 
-                                <lucide-icon [img]="isNodeExpanded(node.id) ? icons.ChevronDown : icons.ChevronRight"
-                                    class="w-3 h-3 transition-transform text-torque-muted group-hover:text-white"></lucide-icon>
+                        <lucide-icon [img]="isNodeExpanded(node.id) ? icons.ChevronDown : icons.ChevronRight"
+                            class="w-3 h-3 transition-transform text-torque-muted group-hover:text-white"></lucide-icon>
 
-                                <lucide-icon [img]="isNodeExpanded(node.id) ? icons.FolderOpen : icons.Folder"
-                                    class="w-3.5 h-3.5"
-                                    [class.text-torque-cyan]="node.type === 'system'"
-                                    [class.text-torque-muted]="node.type !== 'system'"></lucide-icon>
+                        <lucide-icon [img]="isNodeExpanded(node.id) ? icons.FolderOpen : icons.Folder"
+                            class="w-3.5 h-3.5" [class.text-torque-cyan]="node.type === 'system'"
+                            [class.text-torque-muted]="node.type !== 'system'"></lucide-icon>
 
-                                <span class="text-xs truncate flex-1"
-                                      [class.font-semibold]="node.type === 'system'"
-                                      [class.font-medium]="node.type !== 'system'">
-                                    {{ node.name }}
-                                </span>
+                        <span class="text-xs truncate flex-1" [class.font-semibold]="node.type === 'system'"
+                            [class.font-medium]="node.type !== 'system'">
+                            {{ node.name }}
+                        </span>
 
-                                <span class="text-[10px] bg-white/5 text-torque-muted px-1.5 rounded-md">
-                                    {{ node.children.length }}
-                                </span>
-                            </button>
+                        <span class="text-[10px] bg-white/5 text-torque-muted px-1.5 rounded-md">
+                            {{ node.children.length }}
+                        </span>
+                    </button>
 
-                            <!-- Children (Recursive) -->
-                            @if (isNodeExpanded(node.id) && node.children.length > 0) {
-                                <div class="mt-0.5">
-                                    <ng-container *ngTemplateOutlet="treeNodeTemplate; context: { nodes: node.children, depth: depth + 1 }"></ng-container>
-                                </div>
-                            }
-                        } @else {
-                            <!-- Article Leaf Node -->
-                            <button (click)="onArticleClick(node.id)"
-                                class="w-full flex items-center gap-2 pl-6 pr-2 py-1.5 rounded-lg text-left transition-colors text-[hsl(215,20%,65%)] hover:text-white hover:bg-white/[0.03]">
-                                <lucide-icon [img]="icons.FileText" class="w-3 h-3 text-torque-muted"></lucide-icon>
-                                <span class="text-[11px] truncate flex-1" [title]="node.name">{{ node.name }}</span>
-                            </button>
-                        }
-                    </li>
+                    <!-- Children (Recursive) -->
+                    @if (isNodeExpanded(node.id) && node.children.length > 0) {
+                    <div class="mt-0.5">
+                        <ng-container
+                            *ngTemplateOutlet="treeNodeTemplate; context: { nodes: node.children, depth: depth + 1 }"></ng-container>
+                    </div>
+                    }
+                    } @else {
+                    <!-- Article Leaf Node -->
+                    <button (click)="onArticleClick(node.id)"
+                        class="w-full flex items-center gap-2 pl-6 pr-2 py-1.5 rounded-lg text-left transition-colors text-[hsl(215,20%,65%)] hover:text-white hover:bg-white/[0.03]">
+                        <lucide-icon [img]="icons.FileText" class="w-3 h-3 text-torque-muted"></lucide-icon>
+                        <span class="text-[11px] truncate flex-1" [title]="node.name">{{ node.name }}</span>
+                    </button>
+                    }
+                </li>
                 }
             </ul>
         </ng-template>
@@ -83,7 +197,8 @@
     <div class="p-4 border-t border-white/5 space-y-3 shrink-0">
 
         <!-- Account link -->
-        <a routerLink="/credits" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl
+        <a routerLink="/credits"
+            class="w-full flex items-center gap-2 px-3 py-2 rounded-xl
            text-[hsl(215,20%,65%)] hover:text-white hover:bg-white/[0.03] transition-colors text-xs font-semibold border border-transparent hover:border-white/5">
             <lucide-icon [img]="icons.CreditCard" class="w-4 h-4 text-torque-cyan"></lucide-icon>
             Account &amp; Credits

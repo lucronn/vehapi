@@ -23,6 +23,30 @@ CREATE TABLE vehicles (
 CREATE INDEX idx_vehicles_external_id ON vehicles(external_id);
 CREATE INDEX idx_vehicles_ymm ON vehicles(year, make, model);
 
+-- Normalized Hierarchy Tables
+CREATE TABLE vehicle_years (
+    year INTEGER PRIMARY KEY,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE vehicle_makes (
+    id SERIAL PRIMARY KEY,
+    year INTEGER REFERENCES vehicle_years(year) ON DELETE CASCADE,
+    make_name TEXT NOT NULL,
+    make_id INTEGER, -- Optional exact ID from motor
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(year, make_name)
+);
+
+CREATE TABLE vehicle_models (
+    id SERIAL PRIMARY KEY,
+    make_id INTEGER REFERENCES vehicle_makes(id) ON DELETE CASCADE,
+    model_name TEXT NOT NULL,
+    model_id INTEGER, -- Optional exact ID from motor
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(make_id, model_name)
+);
+
 -- Categories Table (Hierarchical)
 CREATE TABLE categories (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

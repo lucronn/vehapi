@@ -24,6 +24,9 @@ export class MotorHtmlProcessorService {
     return `${this.baseUrl}/${graphicPath}`;
   }
 
+  // Combined regex with attribute grouping for HTML processing
+  private readonly combinedRegex = /(<mtr-doc-link(?:\s+id=["']?([^"'>\s]+)["']?)?[^>]*>([^<]*)<\/mtr-doc-link>)|(<mtr-image\s+([^>]*)\/?>)|((src|data-src|href|srcset)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))|(background-image\s*:\s*url\(["']?([^"')]+)["']?\))/gi;
+
   /**
    * Process HTML content to fix relative URLs for images and links
    * Comprehensive URL processing for all image and asset paths
@@ -63,7 +66,6 @@ export class MotorHtmlProcessorService {
       // Handle relative paths (like ../graphic/... or ./image.jpg)
       // Convert to absolute path through proxy
       if (url.startsWith('../') || url.startsWith('./')) {
-        // Normalize relative paths - for now, treat as absolute from proxy root
         const cleanPath = url.replace(/^\.\.?\//, '');
         return `${this.baseUrl}/${cleanPath}`;
       }
@@ -72,147 +74,83 @@ export class MotorHtmlProcessorService {
       return `${this.baseUrl}/${url}`;
     };
 
-    // Process custom mtr-doc-link elements - convert to clickable links
-    // Format: <mtr-doc-link id="2161655">Link Text</mtr-doc-link>
-    // Convert to: <a href="#/vehicle/{contentSource}/{vehicleId}/article/{id}">Link Text</a>
-    // Note: Using hash-based routing, so links start with #/
-    if (contentSource && vehicleId) {
-      html = html.replace(/<mtr-doc-link\s+id=["']?([^"'>\s]+)["']?[^>]*>([^<]*)<\/mtr-doc-link>/gi, (match, id, text) => {
-        const linkText = text.trim() || 'View Article';
-        // Use relative hash route (Angular uses hash location strategy)
-        return `<a href="#/vehicle/${contentSource}/${vehicleId}/article/${id}" class="text-cyan-400 hover:text-cyan-300 underline">${linkText}</a>`;
-      });
-    } else {
-      // If no context, just remove the custom tag and keep the text
-      html = html.replace(/<mtr-doc-link[^>]*>([^<]*)<\/mtr-doc-link>/gi, '$1');
-    }
-
-    // Process custom mtr-image elements (Client-side handling)
-    // Format: <mtr-image id='11033139'></mtr-image>
-    html = html.replace(/<mtr-image\s+([^>]*)\/?>/gi, (match, attrs) => {
-      const idMatch = attrs.match(/id\s*=\s*("|'|)?([^"'\s]+)\1/i);
-      if (!idMatch) return match;
-      const id = idMatch[2];
-      // Use the proper API endpoint via the proxy
-      // Use efficient graphic endpoint if possible, otherwise fallback to generic
-      const graphicUrl = contentSource
-        ? `${this.baseUrl}/api/source/${contentSource}/graphic/${id}`
-        : `${this.baseUrl}/graphic/${id}`;
-
-      // Fix: Correctly remove id attribute even if quoted
-      return `<img src="${graphicUrl}" class="article-image" ${attrs.replace(/id\s*=\s*(?:("|')[^"']*\1|[^"'\s]+)/i, '')}>`;
-    });
-
-    // Process src attributes (images, iframes, videos, etc.)
-    // Matches: src="..." or src='...' or src=... (handles quotes and unquoted)
-    let processed = html.replace(/src\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, (match, urlWithQuotes) => {
-      // Check if quoted
-      let url = urlWithQuotes;
-      let quote = '';
-
-      if (urlWithQuotes.startsWith('"') && urlWithQuotes.endsWith('"')) {
-        url = urlWithQuotes.substring(1, urlWithQuotes.length - 1);
-        quote = '"';
-      } else if (urlWithQuotes.startsWith("'") && urlWithQuotes.endsWith("'")) {
-        url = urlWithQuotes.substring(1, urlWithQuotes.length - 1);
-        quote = "'";
-      }
-
-      // Trim whitespace from URL
-      url = url.trim();
-      // Skip if empty
-      if (!url) return match;
-
-      const processedUrl = processUrl(url, 'src');
-
-      // If original was unquoted, we should probably quote it now to be safe, or return as is
-      // Let's force double quotes for consistency
-      return `src="${processedUrl}"`;
-    });
-
-    // Also handle img tags that might not follow standard format
-    // Handle: <img ... data-src="..." /> (lazy loading patterns)
-    processed = processed.replace(/data-src\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, (match, urlWithQuotes) => {
-      let url = urlWithQuotes;
-      if (urlWithQuotes.startsWith('"') && urlWithQuotes.endsWith('"')) {
-        url = urlWithQuotes.substring(1, urlWithQuotes.length - 1);
-      } else if (urlWithQuotes.startsWith("'") && urlWithQuotes.endsWith("'")) {
-        url = urlWithQuotes.substring(1, urlWithQuotes.length - 1);
-      }
-
-      url = url.trim();
-      if (!url) return match;
-      const processedUrl = processUrl(url, 'data-src');
-      return `data-src="${processedUrl}"`;
-    });
-
-    // Process href attributes (links)
-    processed = processed.replace(/href\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, (match, urlWithQuotes) => {
-      let url = urlWithQuotes;
-      let quote = '"'; // Default to double quote for output
-
-      if (urlWithQuotes.startsWith('"') && urlWithQuotes.endsWith('"')) {
-        url = urlWithQuotes.substring(1, urlWithQuotes.length - 1);
-        quote = '"';
-      } else if (urlWithQuotes.startsWith("'") && urlWithQuotes.endsWith("'")) {
-        url = urlWithQuotes.substring(1, urlWithQuotes.length - 1);
-        quote = "'";
-      }
-
-      url = url.trim();
-      // Skip anchors, hash routes, javascript, mailto, tel
-      if (url.startsWith('#') ||
-        url.startsWith('javascript:') ||
-        url.startsWith('mailto:') ||
-        url.startsWith('tel:')) {
-        return match;
-      }
-
-      // Skip if already a full URL (http/https) - these are external links
-      if (url.startsWith('http://') || url.startsWith('https://')) {
-        // But if it's pointing to our own baseUrl with a hash route, convert it
-        if (url.includes(this.baseUrl) && url.includes('#/')) {
-          const hashPart = url.substring(url.indexOf('#/'));
-          return `href=${quote}${hashPart}${quote}`;
+    return html.replace(this.combinedRegex, (match,
+      docLinkFull, docLinkId, docLinkText,
+      mtrImageFull, mtrImageAttrs,
+      attrFull, attrName, attrQ1, attrQ2, attrNoQ,
+      bgFull, bgUrl
+    ) => {
+      if (docLinkFull) {
+        if (contentSource && vehicleId) {
+          if (docLinkId) {
+            const linkText = docLinkText.trim() || 'View Article';
+            return `<a href="#/vehicle/${contentSource}/${vehicleId}/article/${docLinkId}" class="text-cyan-400 hover:text-cyan-300 underline">${linkText}</a>`;
+          }
+          return match;
+        } else {
+          return docLinkText;
         }
-        return match;
       }
 
-      // Process internal relative URLs
-      const processedUrl = processUrl(url, 'href');
-      return `href="${processedUrl}"`;
-    });
+      if (mtrImageFull) {
+        const idMatch = mtrImageAttrs.match(/id\s*=\s*("|'|)?([^"'\s]+)\1/i);
+        if (!idMatch) return match;
+        const id = idMatch[2];
+        const graphicUrl = contentSource
+          ? `${this.baseUrl}/api/source/${contentSource}/graphic/${id}`
+          : `${this.baseUrl}/graphic/${id}`;
 
-    // Process background-image URLs in style attributes
-    processed = processed.replace(/background-image\s*:\s*url\(["']?([^"')]+)["']?\)/gi, (match, url) => {
-      const processedUrl = processUrl(url, 'background');
-      // Remove quotes from url() if they were there
-      const originalHadQuotes = /url\(["']/.test(match);
-      return originalHadQuotes
-        ? `background-image: url("${processedUrl}")`
-        : `background-image: url(${processedUrl})`;
-    });
+        return `<img src="${graphicUrl}" class="article-image" ${mtrImageAttrs.replace(/id\s*=\s*(?:("|')[^"']*\1|[^"'\s]+)/i, '')}>`;
+      }
 
-    // Process srcset attributes (responsive images)
-    processed = processed.replace(/srcset\s*=\s*["']([^"']+)["']/gi, (match, srcset) => {
-      // srcset can have multiple URLs: "image1.jpg 1x, image2.jpg 2x"
-      const processedSrcset = srcset.split(',').map(part => {
-        const trimmed = part.trim();
-        // Extract URL (before space or descriptor like "1x", "2x", "100w")
-        const urlMatch = trimmed.match(/^([^\s]+)/);
-        if (urlMatch) {
-          const url = urlMatch[1];
-          const descriptor = trimmed.substring(url.length).trim();
-          const processedUrl = processUrl(url, 'srcset');
-          return descriptor ? `${processedUrl} ${descriptor}` : processedUrl;
+      if (attrFull) {
+        const name = attrName.toLowerCase();
+        let url = attrQ1 || attrQ2 || attrNoQ;
+        const originalQuote = attrQ1 ? '"' : (attrQ2 ? "'" : '"');
+
+        if (name === 'srcset') {
+          if (!url) return match;
+          const processedSrcset = url.split(',').map((part: string) => {
+            const trimmed = part.trim();
+            const urlMatch = trimmed.match(/^([^\s]+)/);
+            if (urlMatch) {
+              const u = urlMatch[1];
+              const descriptor = trimmed.substring(u.length).trim();
+              const processedUrl = processUrl(u, 'srcset');
+              return descriptor ? `${processedUrl} ${descriptor}` : processedUrl;
+            }
+            return trimmed;
+          }).join(', ');
+          return `${name}=${originalQuote}${processedSrcset}${originalQuote}`;
         }
-        return trimmed;
-      }).join(', ');
 
-      const quote = match.includes("'") ? "'" : '"';
-      return `srcset=${quote}${processedSrcset}${quote}`;
+        url = url.trim();
+        if (!url) return match;
+
+        if (name === 'href') {
+          if (url.startsWith('#') || url.startsWith('javascript:') || url.startsWith('mailto:') || url.startsWith('tel:')) return match;
+          if (url.startsWith('http://') || url.startsWith('https://')) {
+            if (url.includes(this.baseUrl) && url.includes('#/')) {
+              const hashPart = url.substring(url.indexOf('#/'));
+              return `href=${originalQuote}${hashPart}${originalQuote}`;
+            }
+            return match;
+          }
+        }
+
+        const processedUrl = processUrl(url, name);
+        return `${name}="${processedUrl}"`;
+      }
+
+      if (bgFull) {
+        const processedUrl = processUrl(bgUrl, 'background');
+        const originalHadQuotes = /url\(["']/.test(match);
+        return originalHadQuotes
+          ? `background-image: url("${processedUrl}")`
+          : `background-image: url(${processedUrl})`;
+      }
+
+      return match;
     });
-
-    return processed;
   }
 }

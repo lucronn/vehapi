@@ -40,11 +40,14 @@ export class WindowManagerService {
         // Truncate title to max 60 chars to prevent overflow
         const displayTitle = title.length > 60 ? title.substring(0, 60) + '...' : title;
 
+        // Ensure windowId is available to the component
+        const finalData = (data && typeof data === 'object') ? { ...data, windowId: id } : data;
+
         const newWindow: WindowInstance = {
             id,
             title: displayTitle,
             content,
-            data,
+            data: finalData,
             zIndex: ++this.zIndexCounter,
             isMinimized: false,
             isMaximized: false,
@@ -54,6 +57,13 @@ export class WindowManagerService {
 
         this.windows.update(windows => [...windows, newWindow]);
         return id;
+    }
+
+    updateTitle(id: string, title: string) {
+        const displayTitle = title.length > 60 ? title.substring(0, 60) + '...' : title;
+        this.windows.update(windows => windows.map(w =>
+            w.id === id ? { ...w, title: displayTitle } : w
+        ));
     }
 
     closeWindow(id: string) {

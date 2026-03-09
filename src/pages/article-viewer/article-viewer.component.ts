@@ -13,6 +13,7 @@ import { LucideAngularModule, ArrowLeft, Maximize2, List, X, Sparkles, BookOpen 
 import { ImageViewerModalComponent } from './components/image-viewer-modal/image-viewer-modal.component';
 import { TutorialComponent } from '../../components/tutorial/tutorial.component';
 import { TutorialStep } from '../../models/motor.models';
+import { WindowManagerService } from '../../services/window-manager.service';
 
 export interface TableOfContents {
   id: string;
@@ -48,12 +49,14 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   @Input() articleId?: string;
   @Input() articleTitleInput?: string;
   @Input() htmlContentInput?: string; // New input for direct content
+  @Input() windowId?: string; // ID of the window if in window mode
 
   private route = inject(ActivatedRoute);
   private motorApi = inject(MotorApiService);
   private motorHtml = inject(MotorHtmlProcessorService);
   private aiRewrite = inject(AiRewriteService);
   private sanitizer = inject(DomSanitizer);
+  private windowManager = inject(WindowManagerService);
 
   readonly icons = { ArrowLeft, Maximize2, List, X, Sparkles, BookOpen };
 
@@ -185,7 +188,11 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
       this.motorApi.getArticleTitle(this.contentSource, this.vehicleId, aid).subscribe({
         next: (res) => {
           const rawTitle = res.body || aid || '';
-          this.articleTitle.set(this.cleanTitle(rawTitle));
+          const cleaned = this.cleanTitle(rawTitle);
+          this.articleTitle.set(cleaned);
+          if (this.windowId) {
+            this.windowManager.updateTitle(this.windowId, cleaned);
+          }
         },
         error: () => this.articleTitle.set('Article')
       });
