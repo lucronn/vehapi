@@ -1,0 +1,154 @@
+{
+  "header": {
+    "messages": [],
+    "date": "Tue, 10 Mar 2026 16:51:08 GMT",
+    "status": "OK",
+    "statusCode": 200
+  },
+  "body": {
+    "intervals": [
+      {
+        "interval": 10000,
+        "applications": [
+          {
+            "maintenanceScheduleId": 2068,
+            "applicationID": 23188802
+          },
+          {
+            "maintenanceScheduleId": 2068,
+            "applicationID": 23239420
+          }
+        ]
+      },
+      {
+        "interval": 20000,
+        "applications": [
+          {
+            "maintenanceScheduleId": 2068,
+            "applicationID": 23188802
+          },
+          {
+            "maintenanceScheduleId": 2068,
+            "applicationID": 23239420
+          }
+        ]
+      }
+    ],
+    "applications": [
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 2068,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 16100,
+            "intervalMile": 10000,
+            "intervalMonth": 12,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 1720,
+                "text": "Reset the maintenance reminder light."
+              }
+            ],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23188802,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "R&R",
+          "commonName": "",
+          "groupID": 20,
+          "groupName": "Engine",
+          "literalName": "Engine Oil Filter R&R",
+          "subGroupID": 21,
+          "subGroupName": "Lubrication System",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11747
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 2068,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 16100,
+            "intervalMile": 10000,
+            "intervalMonth": 12,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 1720,
+                "text": "Reset the maintenance reminder light."
+              }
+            ],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23239420,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "Drain & Refill",
+          "commonName": "",
+          "groupID": 20,
+          "groupName": "Engine",
+          "literalName": "Engine Oil Drain & Refill",
+          "subGroupID": 21,
+          "subGroupName": "Lubrication System",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11785
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      }
+    ]
+  }
+}

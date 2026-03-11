@@ -1,0 +1,45 @@
+{
+  "contentSource": "MOTOR",
+  "models": [
+    {
+      "model": "Fortwo Brabus",
+      "id": "74492",
+      "engines": [
+        {
+          "id": "74492:6600",
+          "name": "1.0L L3 (132.910) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Fortwo Passion",
+      "id": "68414",
+      "engines": [
+        {
+          "id": "68414:6600",
+          "name": "1.0L L3 (132.910) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Fortwo Passion Cabrio",
+      "id": "68415",
+      "engines": [
+        {
+          "id": "68415:6600",
+          "name": "1.0L L3 (132.910) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Fortwo Pure",
+      "id": "68416",
+      "engines": [
+        {
+          "id": "68416:6600",
+          "name": "1.0L L3 (132.910) GAS Electronic"
+        }
+      ]
+    }
+  ]
+}

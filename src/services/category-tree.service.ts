@@ -71,11 +71,11 @@ export class CategoryTreeService {
         });
 
         // Sort alphabetically
-        root.sort((a, b) => a.name.localeCompare(b.name));
+        root.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         root.forEach(node => {
-            node.children.sort((a, b) => a.name.localeCompare(b.name));
+            node.children.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
             node.children.forEach(child => {
-                child.children.sort((a, b) => a.name.localeCompare(b.name));
+                child.children.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
             });
         });
 

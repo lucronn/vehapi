@@ -1,19 +1,15 @@
 <div class="min-h-screen flex flex-col md:flex-row relative">
   <!-- Sidebar Navigation - Desktop -->
-  <app-dashboard-sidebar class="hidden md:flex w-64 flex-col flex-shrink-0"
-    [vehicleName]="vehicleName()"
-    [activeSection]="activeSection()"
-    [availableSections]="availableSections()"
-    (sectionChange)="setSection($event)"
-    (openAuthModal)="showAuthModal.set(true)"
-    (articleSelected)="onArticleClick(null, {id: $event})">
+  <app-dashboard-sidebar class="hidden md:flex w-64 flex-col flex-shrink-0" [vehicleName]="vehicleName()"
+    [activeSection]="activeSection()" [availableSections]="availableSections()" (sectionChange)="setSection($event)"
+    (openAuthModal)="showAuthModal.set(true)" (articleSelected)="onArticleClick(null, {id: $event})">
   </app-dashboard-sidebar>
 
   <!-- Mobile Header -->
   <div class="md:hidden sticky top-0 w-full z-50 px-4 py-3 flex items-center justify-between
     bg-[hsl(230,35%,9%)]/90 backdrop-blur-xl border-b border-white/5"
     style="padding-top: calc(0.75rem + env(safe-area-inset-top, 0px)); padding-left: calc(1rem + env(safe-area-inset-left, 0px)); padding-right: calc(1rem + env(safe-area-inset-right, 0px));">
-      <div class="flex items-center gap-2">
+    <div class="flex items-center gap-2">
       <app-logo class="w-5 h-5"></app-logo>
       <div>
         <span class="text-xs font-mono uppercase tracking-[0.2em] text-torque-cyan block">Active</span>
@@ -340,6 +336,9 @@
 
   <!-- Global Auth Modal (desktop & mobile) -->
   @if (showAuthModal()) {
-    <app-auth-modal (close)="showAuthModal.set(false)" />
+  <app-auth-modal (close)="showAuthModal.set(false)" />
   }
+
+  <!-- Normalization Progress Overlay -->
+  <app-sync-progress-overlay />
 </div>

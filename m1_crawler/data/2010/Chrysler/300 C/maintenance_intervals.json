@@ -1,0 +1,294 @@
+{
+  "header": {
+    "messages": [],
+    "date": "Tue, 10 Mar 2026 16:44:34 GMT",
+    "status": "OK",
+    "statusCode": 200
+  },
+  "body": {
+    "intervals": [
+      {
+        "interval": 3000,
+        "applications": [
+          {
+            "maintenanceScheduleId": 198,
+            "applicationID": 23269901
+          }
+        ]
+      },
+      {
+        "interval": 6000,
+        "applications": [
+          {
+            "maintenanceScheduleId": 76,
+            "applicationID": 23188598
+          },
+          {
+            "maintenanceScheduleId": 76,
+            "applicationID": 23239215
+          },
+          {
+            "maintenanceScheduleId": 198,
+            "applicationID": 23269901
+          },
+          {
+            "maintenanceScheduleId": 728,
+            "applicationID": 23269901
+          },
+          {
+            "maintenanceScheduleId": 728,
+            "applicationID": 23208634
+          }
+        ]
+      },
+      {
+        "interval": 9000,
+        "applications": [
+          {
+            "maintenanceScheduleId": 198,
+            "applicationID": 23269901
+          }
+        ]
+      }
+    ],
+    "applications": [
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 76,
+            "documents": [],
+            "frequencyCode": "I",
+            "frequencyDescription": "Indicator Light Or Interval",
+            "indicator": "Change Oil/Oil Change Required",
+            "intervalKilometer": 10000,
+            "intervalMile": 6000,
+            "intervalMonth": 6,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23188598,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "R&R",
+          "commonName": "",
+          "groupID": 20,
+          "groupName": "Engine",
+          "literalName": "Engine Oil Filter R&R",
+          "subGroupID": 21,
+          "subGroupName": "Lubrication System",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11747
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 76,
+            "documents": [],
+            "frequencyCode": "I",
+            "frequencyDescription": "Indicator Light Or Interval",
+            "indicator": "Change Oil/Oil Change Required",
+            "intervalKilometer": 10000,
+            "intervalMile": 6000,
+            "intervalMonth": 6,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 1468,
+                "text": "If the vehicle is driven in severe conditions such as dusty conditions or repeated short trip driving, more frequent maintenance may be required."
+              }
+            ],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23239215,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "Drain & Refill",
+          "commonName": "",
+          "groupID": 20,
+          "groupName": "Engine",
+          "literalName": "Engine Oil Drain & Refill",
+          "subGroupID": 21,
+          "subGroupName": "Lubrication System",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11785
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 198,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 5000,
+            "intervalMile": 3000,
+            "intervalMonth": 3,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 1468,
+                "text": "If the vehicle is driven in severe conditions such as dusty conditions or repeated short trip driving, more frequent maintenance may be required."
+              }
+            ],
+            "severeServiceDescription": "Yes"
+          },
+          {
+            "maintenanceScheduleId": 728,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 10000,
+            "intervalMile": 6000,
+            "intervalMonth": 6,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23269901,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 24,
+          "groupName": "Hydraulic System",
+          "literalName": "Brake Line Inspect",
+          "subGroupID": 135,
+          "subGroupName": "Brake Line",
+          "systemID": 2,
+          "systemName": "Brakes",
+          "taxonomyID": 11805
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 728,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 10000,
+            "intervalMile": 6000,
+            "intervalMonth": 6,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 42176,
+                "text": "Do not rotate staggered tires from front to back. If tires are asymmetric(directional), do not rotate side to side. Follow all OEM tire rotation recommendations and pattern."
+              }
+            ],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23208634,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "Rotate",
+          "commonName": "",
+          "groupID": 9,
+          "groupName": "Tire & Wheel",
+          "literalName": "Tire Rotate",
+          "subGroupID": 141,
+          "subGroupName": "Tire & Wheel Assembly",
+          "systemID": 6,
+          "systemName": "Suspension",
+          "taxonomyID": 11782
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      }
+    ]
+  }
+}

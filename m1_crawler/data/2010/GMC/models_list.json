@@ -1,0 +1,69 @@
+{
+  "contentSource": "GeneralMotors",
+  "models": [
+    {
+      "model": "Acadia - 2WD",
+      "id": "3300"
+    },
+    {
+      "model": "Acadia - AWD",
+      "id": "3301"
+    },
+    {
+      "model": "Canyon Pickup - 2WD",
+      "id": "3308"
+    },
+    {
+      "model": "Canyon Pickup - 4WD",
+      "id": "3309"
+    },
+    {
+      "model": "Savana - 2WD",
+      "id": "3324"
+    },
+    {
+      "model": "Savana - AWD",
+      "id": "3325"
+    },
+    {
+      "model": "Sierra - 2WD",
+      "id": "3326"
+    },
+    {
+      "model": "Sierra - 4WD",
+      "id": "3327"
+    },
+    {
+      "model": "Sierra Denali - 2WD",
+      "id": "3328"
+    },
+    {
+      "model": "Terrain (VIN L)",
+      "id": "3541"
+    },
+    {
+      "model": "Yukon - 2WD",
+      "id": "3389"
+    },
+    {
+      "model": "Yukon - 4WD",
+      "id": "3390"
+    },
+    {
+      "model": "Yukon Denali",
+      "id": "3391"
+    },
+    {
+      "model": "Yukon XL - 2WD",
+      "id": "3392"
+    },
+    {
+      "model": "Yukon XL - 4WD",
+      "id": "3393"
+    },
+    {
+      "model": "Yukon XL Denali",
+      "id": "3394"
+    }
+  ]
+}

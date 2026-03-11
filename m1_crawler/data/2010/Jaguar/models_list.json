@@ -1,0 +1,125 @@
+{
+  "contentSource": "MOTOR",
+  "models": [
+    {
+      "model": "XF Base",
+      "id": "60907",
+      "engines": [
+        {
+          "id": "60907:480",
+          "name": "4.2L V8 GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "XF Premium",
+      "id": "60909",
+      "engines": [
+        {
+          "id": "60909:3646",
+          "name": "5.0L V8 GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "XF Supercharged",
+      "id": "60908",
+      "engines": [
+        {
+          "id": "60908:3647",
+          "name": "5.0L V8 Supercharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "XFR Base",
+      "id": "60912",
+      "engines": [
+        {
+          "id": "60912:3647",
+          "name": "5.0L V8 Supercharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "XJ Base",
+      "id": "87504",
+      "engines": [
+        {
+          "id": "87504:3646",
+          "name": "5.0L V8 GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "XJ L",
+      "id": "87505",
+      "engines": [
+        {
+          "id": "87505:3646",
+          "name": "5.0L V8 GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "XJ L Supercharged",
+      "id": "87506",
+      "engines": [
+        {
+          "id": "87506:3647",
+          "name": "5.0L V8 Supercharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "XJ L Supersport",
+      "id": "87507",
+      "engines": [
+        {
+          "id": "87507:3647",
+          "name": "5.0L V8 Supercharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "XJ Supercharged",
+      "id": "87508",
+      "engines": [
+        {
+          "id": "87508:3647",
+          "name": "5.0L V8 Supercharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "XJ Supersport",
+      "id": "87509",
+      "engines": [
+        {
+          "id": "87509:3647",
+          "name": "5.0L V8 Supercharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "XK Base",
+      "id": "60910",
+      "engines": [
+        {
+          "id": "60910:3646",
+          "name": "5.0L V8 GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "XKR Base",
+      "id": "60911",
+      "engines": [
+        {
+          "id": "60911:3647",
+          "name": "5.0L V8 Supercharged GAS Electronic"
+        }
+      ]
+    }
+  ]
+}

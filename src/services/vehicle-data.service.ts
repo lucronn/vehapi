@@ -2,6 +2,7 @@ import { Injectable, inject, WritableSignal, isDevMode } from '@angular/core';
 import { Observable, from, of, forkJoin } from 'rxjs';
 import { map, switchMap, tap, catchError, timeout } from 'rxjs/operators';
 import { MotorApiService } from './motor-api.service';
+import { SupabaseService } from './supabase.service';
 import { ApiResponse, Dtc, Tsb, Procedure, WiringDiagram, ComponentLocation, Spec, Fluid, MaintenanceSchedule, FilterTab, ArticlesData } from '../models/motor.models';
 
 export interface SectionAvailability {
@@ -41,6 +42,7 @@ interface SectionStrategy {
 })
 export class VehicleDataService {
     private motorApi = inject(MotorApiService);
+    private supabase = inject(SupabaseService);
 
     private readonly sectionStrategies: Record<string, SectionStrategy> = {
         dtcs: {
@@ -158,6 +160,59 @@ export class VehicleDataService {
         vehicleId: string,
         motorVehicleId?: string
     ): Observable<{ specs: Spec[], fluids: Fluid[] }> {
+        // Priority: Check Supabase if vehicle is normalized
+        return from(this.supabase.client
+            .from('vehicles')
+            .select('is_normalized')
+            .eq('external_id', vehicleId)
+            .maybeSingle()
+        ).pipe(
+            switchMap(({ data }) => {
+                if (data?.is_normalized) {
+                    console.log(`[VehicleDataService] Loading specs from Supabase for ${vehicleId}`);
+                    return from(this.supabase.client
+                        .from('specifications')
+                        .select('*')
+                        .eq('vehicle_id', vehicleId)
+                    ).pipe(
+                        map(({ data: specsData }) => {
+                            const specs: Spec[] = (specsData || [])
+                                .filter(s => s.category !== 'Fluids')
+                                .map(s => ({
+                                    id: s.id,
+                                    bucket: s.category,
+                                    title: s.name,
+                                    value: s.value
+                                }));
+                            const fluids: Fluid[] = (specsData || [])
+                                .filter(s => s.category === 'Fluids')
+                                .map(s => ({
+                                    id: s.id,
+                                    bucket: s.category,
+                                    title: s.name,
+                                    capacity: s.value,
+                                    specification: s.metadata?.specification || ''
+                                }));
+                            return { specs, fluids };
+                        }),
+                        catchError(err => {
+                            console.error('[VehicleDataService] Supabase specs fetch failed:', err);
+                            return of({ specs: [], fluids: [] });
+                        })
+                    );
+                }
+
+                // Fallback to Motor API logic if not normalized
+                return this.loadSpecsFromApi(contentSource, vehicleId, motorVehicleId);
+            })
+        );
+    }
+
+    private loadSpecsFromApi(
+        contentSource: string,
+        vehicleId: string,
+        motorVehicleId?: string
+    ): Observable<{ specs: Spec[], fluids: Fluid[] }> {
         const getFluids = () => {
             console.log('[Cache DISABLED] Fluids fetching from API...');
             // Legacy Parity: Fluids often align with "Specs/Parts" which tend to be Motor-sourced.
@@ -260,6 +315,52 @@ export class VehicleDataService {
      * Parse filter tabs and check Parts API to determine available sections
      */
     getAvailableSections(
+        contentSource: string,
+        vehicleId: string,
+        motorVehicleId?: string
+    ): Observable<SectionAvailability> {
+        // Priority: Check Supabase if vehicle is normalized
+        return from(this.supabase.client
+            .from('vehicles')
+            .select('is_normalized')
+            .eq('external_id', vehicleId)
+            .maybeSingle()
+        ).pipe(
+            switchMap(({ data }) => {
+                if (data?.is_normalized) {
+                    // If normalized, we can check specific tables or just return a default "all-available" 
+                    // or better, check the articles table for this vehicle.
+                    return from(this.supabase.client
+                        .from('articles')
+                        .select('bucket')
+                        .eq('vehicle_id', vehicleId)
+                    ).pipe(
+                        map(({ data: articles }) => {
+                            const buckets = new Set((articles || []).map(a => a.bucket?.toLowerCase()));
+                            const hasDtcs = [...buckets].some(b => b.includes('dtc') || b.includes('diagnostic'));
+                            const hasTsbs = [...buckets].some(b => b.includes('tsb') || b.includes('bulletin'));
+                            const hasDiagrams = [...buckets].some(b => b.includes('diagram') || b.includes('wiring'));
+                            const hasProcedures = [...buckets].some(b => b.includes('procedure') || b.includes('labor'));
+                            const hasSpecs = [...buckets].some(b => b.includes('spec') || b.includes('capacity'));
+                            const hasMaintenance = [...buckets].some(b => b.includes('maintenance'));
+                            const hasComponentLocations = [...buckets].some(b => b.includes('location'));
+
+                            return {
+                                hasDtcs, hasTsbs, hasDiagrams, hasProcedures,
+                                hasSpecs, hasMaintenance, hasComponentLocations,
+                                hasParts: true // Optimization: assume parts exist if normalized
+                            };
+                        })
+                    );
+                }
+
+                // Fallback to Motor API logic if not normalized
+                return this.getAvailableSectionsFromMotor(contentSource, vehicleId, motorVehicleId);
+            })
+        );
+    }
+
+    private getAvailableSectionsFromMotor(
         contentSource: string,
         vehicleId: string,
         motorVehicleId?: string
@@ -387,11 +488,53 @@ export class VehicleDataService {
         errorCallback?: (error: any) => void
     ): void {
         const strategy = this.sectionStrategies[section];
-        if (!strategy) {
-            console.error(`[VehicleData] Unknown section: ${section} `);
-            return;
-        }
+        if (!strategy) return;
 
+        loadingSignal.set(true);
+
+        // 1. Check Supabase first
+        from(this.supabase.client
+            .from('articles')
+            .select('*')
+            .eq('vehicle_id', vehicleId)
+        ).pipe(
+            map(({ data }) => {
+                if (!data || data.length === 0) return null;
+
+                const bucketNames = strategy.alwaysIncludeBuckets.map(b => b.toLowerCase());
+                return data.filter(a => {
+                    const b = (a.bucket || '').toLowerCase();
+                    return bucketNames.length === 0 || bucketNames.some(name => b.includes(name));
+                }).map(strategy.mapper);
+            })
+        ).subscribe({
+            next: (supabaseData) => {
+                if (supabaseData && supabaseData.length > 0) {
+                    console.log(`[VehicleData] Loaded ${section} from Supabase`);
+                    updateState(supabaseData);
+                    loadingSignal.set(false);
+                } else {
+                    // 2. Fallback to API if not in Supabase
+                    this.loadSectionDataFromApi(section, contentSource, vehicleId, motorVehicleId, loadingSignal, updateState, errorCallback);
+                }
+            },
+            error: (err) => {
+                console.error('[VehicleData] Supabase read failed', err);
+                this.loadSectionDataFromApi(section, contentSource, vehicleId, motorVehicleId, loadingSignal, updateState, errorCallback);
+            }
+        });
+    }
+
+    private loadSectionDataFromApi(
+        section: string,
+        contentSource: string,
+        vehicleId: string,
+        motorVehicleId: string | undefined,
+        loadingSignal: WritableSignal<boolean>,
+        updateState: (data: any[]) => void,
+        errorCallback?: (error: any) => void
+    ): void {
+        const strategy = this.sectionStrategies[section];
         // RE-IMPLEMENTING loadSectionData with direct calls to ensure access to headers/tabs
         this.motorApi.searchArticles(contentSource, vehicleId, '').subscribe({
             next: (res) => {
@@ -480,6 +623,60 @@ export class VehicleDataService {
         errorCallback?: (error: any) => void
     ): void {
         loadingSignal.set(true);
+
+        // 1. Check Supabase first
+        from(this.supabase.client
+            .from('vehicles')
+            .select('is_normalized')
+            .eq('external_id', vehicleId)
+            .maybeSingle()
+        ).pipe(
+            switchMap(({ data }) => {
+                if (data?.is_normalized) {
+                    console.log(`[VehicleDataService] Loading maintenance from Supabase for ${vehicleId}`);
+                    return from(this.supabase.client
+                        .from('maintenance_schedules')
+                        .select('*')
+                        .eq('vehicle_id', vehicleId)
+                        .eq('interval_value', interval)
+                    ).pipe(
+                        map(({ data: mbData }) => {
+                            if (!mbData || mbData.length === 0) return null;
+                            return mbData.map(s => ({
+                                id: s.id,
+                                description: s.item,
+                                action: s.action,
+                                interval: s.interval_value,
+                                frequency: s.frequency_code
+                            }));
+                        })
+                    );
+                }
+                return of(null);
+            })
+        ).subscribe({
+            next: (supabaseData) => {
+                if (supabaseData) {
+                    updateState(supabaseData);
+                    loadingSignal.set(false);
+                } else {
+                    this.loadMaintenanceSchedulesFromApi(contentSource, vehicleId, motorVehicleId, interval, loadingSignal, updateState, errorCallback);
+                }
+            },
+            error: () => this.loadMaintenanceSchedulesFromApi(contentSource, vehicleId, motorVehicleId, interval, loadingSignal, updateState, errorCallback)
+        });
+    }
+
+    private loadMaintenanceSchedulesFromApi(
+        contentSource: string,
+        vehicleId: string,
+        motorVehicleId: string | undefined,
+        interval: number,
+        loadingSignal: WritableSignal<boolean>,
+        updateState: (data: any[]) => void,
+        errorCallback?: (error: any) => void
+    ): void {
+        loadingSignal.set(true);
         const params = this.resolveSourceParams(contentSource, vehicleId, motorVehicleId, true);
 
         // Fetch By Interval
@@ -499,6 +696,80 @@ export class VehicleDataService {
                     if (errorCallback) errorCallback(err);
                 }
             });
+    }
+
+    /**
+     * Load Parts (Prefers Supabase if normalized)
+     */
+    loadParts(
+        contentSource: string,
+        vehicleId: string,
+        motorVehicleId: string | undefined,
+        searchTerm: string,
+        loadingSignal: WritableSignal<boolean>,
+        updateState: (data: any[]) => void,
+        errorCallback?: (error: any) => void
+    ): void {
+        loadingSignal.set(true);
+
+        from(this.supabase.client
+            .from('vehicles')
+            .select('is_normalized')
+            .eq('external_id', vehicleId)
+            .maybeSingle()
+        ).pipe(
+            switchMap(({ data }) => {
+                if (data?.is_normalized) {
+                    let query = this.supabase.client
+                        .from('parts')
+                        .select('*')
+                        .eq('vehicle_id', vehicleId);
+
+                    if (searchTerm) {
+                        query = query.ilike('description', `%${searchTerm}%`);
+                    }
+
+                    return from(query).pipe(
+                        map(({ data: partsData }) => {
+                            if (!partsData || partsData.length === 0) return null;
+                            return partsData.map(p => ({
+                                partNumber: p.part_number,
+                                description: p.description,
+                                manufacturer: p.manufacturer || '',
+                                listPrice: p.list_price,
+                                dealerPrice: p.dealer_price || 0,
+                                category: ''
+                            }));
+                        })
+                    );
+                }
+                return of(null);
+            })
+        ).subscribe({
+            next: (supabaseData) => {
+                if (supabaseData) {
+                    updateState(supabaseData);
+                    loadingSignal.set(false);
+                } else {
+                    this.motorApi.getParts(contentSource, vehicleId, searchTerm).subscribe({
+                        next: (res) => {
+                            updateState(res.body?.data || []);
+                            loadingSignal.set(false);
+                        },
+                        error: (err) => {
+                            console.error('[VehicleDataService] Parts API failed:', err);
+                            loadingSignal.set(false);
+                            if (errorCallback) errorCallback(err);
+                        }
+                    });
+                }
+            },
+            error: (err) => {
+                console.error('[VehicleDataService] Supabase parts read failed:', err);
+                loadingSignal.set(false);
+                if (errorCallback) errorCallback(err);
+            }
+        });
     }
 
     /**

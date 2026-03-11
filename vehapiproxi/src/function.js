@@ -9,11 +9,11 @@ import { config, validateConfig } from './config.js';
 import { authManager } from './auth.js';
 import logger, { logBuffer, logRequest, logResponse } from './logger.js';
 import swaggerUi from 'swagger-ui-express';
+import { createRequire } from 'module';
 import { createCheckoutSession, createBillingPortalSession, handleWebhook, verifyAndFulfillSession } from './stripe.js';
 import { getUserData, unlockModule, getTransactions } from './credits.js';
 import { checkParsedArticle } from './supabase.js';
 import jwt from 'jsonwebtoken';
-import swaggerDocument from './swagger.json' with { type: 'json' };
 
 // AI parser is loaded lazily to avoid cold-start crashes when GEMINI_API_KEY is absent
 let _rewriteArticleHtml = null;
@@ -45,6 +45,8 @@ async function getEnqueue() {
     return _enqueueParsingTask;
 }
 
+const require = createRequire(import.meta.url);
+const swaggerDocument = require('./swagger.json');
 
 // Validate configuration (non-blocking)
 validateConfig();
@@ -297,234 +299,6 @@ const authMiddleware = async (req, res, next) => {
     }
 };
 
-// --- NORMALIZED VEHICLE CACHING ---
-// These endpoints intercept requests for Years, Makes, and Models,
-// querying Supabase first, and falling back to Motor if missing.
-
-app.get('/api/years', authMiddleware, async (req, res, next) => {
-    try {
-        const { default: supabaseConfig } = await import('./config.js');
-        const url = process.env.SUPABASE_URL || '';
-        const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-
-        if (!url || !key) {
-            logger.warn('Supabase not configured, falling back to direct Motor API for years');
-            return next(); // Fallback to proxy
-        }
-
-        // 1. Try DB first
-        const cacheRes = await fetch(`${url}/rest/v1/vehicle_years?select=year&order=year.desc`, {
-            headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
-        });
-
-        let years = await cacheRes.json();
-
-        // 2. Fallback to Motor API if cache empty
-        if (!years || years.length === 0) {
-            logger.info('Cache miss for Years: Fetching from Motor API...');
-            const motorRes = await fetch(`${config.motorApiBase}/api/years`, {
-                headers: {
-                    'Cookie': req.headers['cookie'] || '',
-                    'User-Agent': req.headers['user-agent'] || config.userAgent,
-                    'Accept': 'application/json',
-                    'Referer': 'https://sites.motor.com/m1/'
-                }
-            });
-
-            if (!motorRes.ok) throw new Error(`Motor returned ${motorRes.status}`);
-
-            const rawData = await motorRes.json();
-            const motorYears = rawData.body || rawData; // Array of { year: 2024 }
-
-            // 3. Store in DB
-            if (motorYears && motorYears.length > 0) {
-                await fetch(`${url}/rest/v1/vehicle_years`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'apikey': key, 'Authorization': `Bearer ${key}`,
-                        'Prefer': 'return=minimal,resolution=merge-duplicates'
-                    },
-                    body: JSON.stringify(motorYears.map(y => ({ year: y.year })))
-                });
-                years = motorYears;
-                logger.info(`Cached ${years.length} years to Supabase.`);
-            }
-        } else {
-            logger.info('Cache hit for Years');
-        }
-
-        // Format for frontend
-        res.json({ header: { status: 'OK', statusCode: 200 }, body: years });
-
-    } catch (err) {
-        logger.error('Year caching failed:', err);
-        next(); // Fallback to proxy
-    }
-});
-
-app.get('/api/year/:year/makes', authMiddleware, async (req, res, next) => {
-    try {
-        const { year } = req.params;
-        const url = process.env.SUPABASE_URL || '';
-        const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-
-        if (!url || !key) return next();
-
-        // 1. Try DB first
-        const cacheRes = await fetch(`${url}/rest/v1/vehicle_makes?year=eq.${year}&select=make_id,make_name&order=make_name`, {
-            headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
-        });
-
-        let makes = await cacheRes.json();
-
-        // 2. Fallback to Motor API if cache empty
-        if (!makes || makes.length === 0) {
-            logger.info(`Cache miss for Makes (Year: ${year}): Fetching from Motor API...`);
-            const motorRes = await fetch(`${config.motorApiBase}/api/year/${year}/makes`, {
-                headers: {
-                    'Cookie': req.headers['cookie'] || '',
-                    'User-Agent': req.headers['user-agent'] || config.userAgent,
-                    'Accept': 'application/json',
-                    'Referer': 'https://sites.motor.com/m1/'
-                }
-            });
-
-            if (!motorRes.ok) throw new Error(`Motor returned ${motorRes.status}`);
-
-            const rawData = await motorRes.json();
-            const motorMakes = rawData.body || rawData; // Array of { makeId, makeName }
-
-            // 3. Store in DB
-            if (motorMakes && motorMakes.length > 0) {
-                const upsertData = motorMakes.map(m => ({
-                    year: parseInt(year, 10),
-                    make_name: m.makeName,
-                    make_id: m.makeId || null
-                }));
-
-                await fetch(`${url}/rest/v1/vehicle_makes`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'apikey': key, 'Authorization': `Bearer ${key}`,
-                        'Prefer': 'return=minimal,resolution=merge-duplicates'
-                    },
-                    body: JSON.stringify(upsertData)
-                });
-                makes = upsertData;
-                logger.info(`Cached ${makes.length} makes for year ${year} to Supabase.`);
-            }
-        } else {
-            logger.info(`Cache hit for Makes (Year: ${year})`);
-        }
-
-        // Format for frontend
-        const formattedMakes = makes.map(m => ({ makeId: m.make_id, makeName: m.make_name }));
-        res.json({ header: { status: 'OK', statusCode: 200 }, body: formattedMakes });
-
-    } catch (err) {
-        logger.error(`Makes caching failed for year ${req.params.year}:`, err);
-        next(); // Fallback to proxy
-    }
-});
-
-app.get('/api/year/:year/make/:make/models', authMiddleware, async (req, res, next) => {
-    try {
-        const { year, make } = req.params;
-        const url = process.env.SUPABASE_URL || '';
-        const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-
-        if (!url || !key) return next();
-
-        // If make is numeric, resolve to name first (handled by proxy normally, but doing it here for cache)
-        let makeName = make;
-        let makeId = null;
-
-        if (/^\d+$/.test(make)) {
-            // We need the internal make_id from our DB to query models
-            const makeRes = await fetch(`${url}/rest/v1/vehicle_makes?make_id=eq.${make}&select=id,make_name`, {
-                headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
-            });
-            const makes = await makeRes.json();
-            if (makes && makes.length > 0) {
-                makeId = makes[0].id;
-                makeName = makes[0].make_name;
-            } else {
-                return next(); // Fallback if not found in cache
-            }
-        } else {
-            // Fetch our internal make_id by name and year
-            const makeRes = await fetch(`${url}/rest/v1/vehicle_makes?year=eq.${year}&make_name=eq.${encodeURIComponent(makeName)}&select=id`, {
-                headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
-            });
-            const makes = await makeRes.json();
-            if (makes && makes.length > 0) {
-                makeId = makes[0].id;
-            } else {
-                return next(); // Fallback if make isn't cached yet
-            }
-        }
-
-        // 1. Try DB first
-        const cacheRes = await fetch(`${url}/rest/v1/vehicle_models?make_id=eq.${makeId}&select=model_id,model_name&order=model_name`, {
-            headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
-        });
-
-        let models = await cacheRes.json();
-
-        // 2. Fallback to Motor API if cache empty
-        if (!models || models.length === 0) {
-            logger.info(`Cache miss for Models (Year: ${year}, Make: ${makeName}): Fetching from Motor API...`);
-            const motorRes = await fetch(`${config.motorApiBase}/api/year/${year}/make/${encodeURIComponent(makeName)}/models`, {
-                headers: {
-                    'Cookie': req.headers['cookie'] || '',
-                    'User-Agent': req.headers['user-agent'] || config.userAgent,
-                    'Accept': 'application/json',
-                    'Origin': 'https://sites.motor.com',
-                    'Referer': 'https://sites.motor.com/m1/'
-                }
-            });
-
-            if (!motorRes.ok) throw new Error(`Motor returned ${motorRes.status}`);
-
-            const rawData = await motorRes.json();
-            const motorModels = rawData.body || rawData; // Array of { modelId, modelName }
-
-            // 3. Store in DB
-            if (motorModels && motorModels.length > 0) {
-                const upsertData = motorModels.map(m => ({
-                    make_id: makeId,
-                    model_name: m.modelName,
-                    model_id: m.modelId || null
-                }));
-
-                await fetch(`${url}/rest/v1/vehicle_models`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'apikey': key, 'Authorization': `Bearer ${key}`,
-                        'Prefer': 'return=minimal,resolution=merge-duplicates'
-                    },
-                    body: JSON.stringify(upsertData)
-                });
-                models = upsertData;
-                logger.info(`Cached ${models.length} models to Supabase.`);
-            }
-        } else {
-            logger.info(`Cache hit for Models (Year: ${year}, Make: ${makeName})`);
-        }
-
-        // Format for frontend
-        const formattedModels = models.map(m => ({ modelId: m.model_id, modelName: m.model_name }));
-        res.json({ header: { status: 'OK', statusCode: 200 }, body: formattedModels });
-
-    } catch (err) {
-        logger.error(`Models caching failed:`, err);
-        next(); // Fallback to proxy
-    }
-});
-
 // --- MOCK SHIM REMOVED ---
 // Requests to /dtcs, /tsbs, etc. will now be proxied to the upstream Motor API.
 // The proxy middleware below handles the request forwarding and HTML normalization.
@@ -770,8 +544,8 @@ app.get('/api/source/:source/vehicle/:vehicleId/article/:articleId/orientations'
 // This is required because Supabase issues ES256 (asymmetric) tokens for user sessions,
 // which cannot be verified locally using just the HS256 string secret.
 async function verifySupabaseJwt(token) {
-    const url = (process.env.SUPABASE_URL || '').trim();
-    const apiKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+    const url = process.env.SUPABASE_URL;
+    const apiKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url) {
         logger.warn('SUPABASE_URL not set; cannot verify Supabase JWT');
         return null;

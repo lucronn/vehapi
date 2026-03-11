@@ -1,0 +1,37 @@
+{
+  "contentSource": "GeneralMotors",
+  "models": [
+    {
+      "model": "CTS",
+      "id": "3292"
+    },
+    {
+      "model": "DTS",
+      "id": "3299"
+    },
+    {
+      "model": "Escalade - 2WD",
+      "id": "3383"
+    },
+    {
+      "model": "Escalade - AWD",
+      "id": "3382"
+    },
+    {
+      "model": "Escalade ESV",
+      "id": "3384"
+    },
+    {
+      "model": "Escalade EXT",
+      "id": "3318"
+    },
+    {
+      "model": "SRX",
+      "id": "3319"
+    },
+    {
+      "model": "STS",
+      "id": "3399"
+    }
+  ]
+}

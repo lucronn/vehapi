@@ -1,0 +1,614 @@
+{
+  "header": {
+    "messages": [],
+    "date": "Tue, 10 Mar 2026 16:42:50 GMT",
+    "status": "OK",
+    "statusCode": 200
+  },
+  "body": {
+    "intervals": [
+      {
+        "interval": 3750,
+        "applications": [
+          {
+            "maintenanceScheduleId": 1597,
+            "applicationID": 23188614
+          },
+          {
+            "maintenanceScheduleId": 1597,
+            "applicationID": 23239231
+          }
+        ]
+      },
+      {
+        "interval": 7500,
+        "applications": [
+          {
+            "maintenanceScheduleId": 743,
+            "applicationID": 23188614
+          },
+          {
+            "maintenanceScheduleId": 1597,
+            "applicationID": 23188614
+          },
+          {
+            "maintenanceScheduleId": 743,
+            "applicationID": 23239231
+          },
+          {
+            "maintenanceScheduleId": 1597,
+            "applicationID": 23239231
+          },
+          {
+            "maintenanceScheduleId": 1024,
+            "applicationID": 23370037
+          },
+          {
+            "maintenanceScheduleId": 1306,
+            "applicationID": 23208650
+          },
+          {
+            "maintenanceScheduleId": 1346,
+            "applicationID": 23222459
+          },
+          {
+            "maintenanceScheduleId": 1346,
+            "applicationID": 23443344
+          },
+          {
+            "maintenanceScheduleId": 1346,
+            "applicationID": 23504715
+          },
+          {
+            "maintenanceScheduleId": 1346,
+            "applicationID": 23573023
+          }
+        ]
+      },
+      {
+        "interval": 10000,
+        "applications": [
+          {
+            "maintenanceScheduleId": 1959,
+            "applicationID": 22972474
+          }
+        ]
+      }
+    ],
+    "applications": [
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 743,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 12000,
+            "intervalMile": 7500,
+            "intervalMonth": 12,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          },
+          {
+            "maintenanceScheduleId": 1597,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 6000,
+            "intervalMile": 3750,
+            "intervalMonth": 6,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 2317,
+                "text": "Repeatedly driving short distance of less than 5 miles (8km) in normal temperature or less than 10 miles(16 km) in freezing temperature. Extensive idling or low speed driving for long distances. Driving on rough, dusty, muddy, unpaved, graveled, or salt spread roads. Driving in areas using salt or other corrosive materials or in very cold weather. Driving in sandy areas/heavy dust condition."
+              },
+              {
+                "noteId": 4917,
+                "text": "Driving in heavy traffic over 90\u00b0F(32\u00b0C). Driving uphill, downhill, or mountain road. Towing a trailer, or using  a camper, or roof rack. Driving as a patrol car, taxi, other commercial use or vehicle towing.  Driving at over 106mph(170km/h). Frequently driving in stop and go conditions."
+              }
+            ],
+            "severeServiceDescription": "Yes"
+          }
+        ],
+        "applicationId": 23188614,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "R&R",
+          "commonName": "",
+          "groupID": 20,
+          "groupName": "Engine",
+          "literalName": "Engine Oil Filter R&R",
+          "subGroupID": 21,
+          "subGroupName": "Lubrication System",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11747
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 743,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 12000,
+            "intervalMile": 7500,
+            "intervalMonth": 12,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          },
+          {
+            "maintenanceScheduleId": 1597,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 6000,
+            "intervalMile": 3750,
+            "intervalMonth": 6,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 2317,
+                "text": "Repeatedly driving short distance of less than 5 miles (8km) in normal temperature or less than 10 miles(16 km) in freezing temperature. Extensive idling or low speed driving for long distances. Driving on rough, dusty, muddy, unpaved, graveled, or salt spread roads. Driving in areas using salt or other corrosive materials or in very cold weather. Driving in sandy areas/heavy dust condition."
+              },
+              {
+                "noteId": 4917,
+                "text": "Driving in heavy traffic over 90\u00b0F(32\u00b0C). Driving uphill, downhill, or mountain road. Towing a trailer, or using  a camper, or roof rack. Driving as a patrol car, taxi, other commercial use or vehicle towing.  Driving at over 106mph(170km/h). Frequently driving in stop and go conditions."
+              }
+            ],
+            "severeServiceDescription": "Yes"
+          }
+        ],
+        "applicationId": 23239231,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "Drain & Refill",
+          "commonName": "",
+          "groupID": 20,
+          "groupName": "Engine",
+          "literalName": "Engine Oil Drain & Refill",
+          "subGroupID": 21,
+          "subGroupName": "Lubrication System",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11785
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 1024,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 12000,
+            "intervalMile": 7500,
+            "intervalMonth": 6,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 1365,
+                "text": "Driving on rough, dusty, muddy, unpaved, graveled or salt-spread roads, driving in areas using salt or other corrosive materials or in very cold weather, driving in sandy areas"
+              },
+              {
+                "noteId": 3518,
+                "text": "Also inspect driveshaft."
+              }
+            ],
+            "severeServiceDescription": "Yes"
+          }
+        ],
+        "applicationId": 23370037,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 18,
+          "groupName": "Driveline",
+          "literalName": "CV Joint Boot Inspect",
+          "subGroupID": 37,
+          "subGroupName": "Axle",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11895
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 1306,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 12000,
+            "intervalMile": 7500,
+            "intervalMonth": 0,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 42176,
+                "text": "Do not rotate staggered tires from front to back. If tires are asymmetric(directional), do not rotate side to side. Follow all OEM tire rotation recommendations and pattern."
+              }
+            ],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23208650,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "Rotate",
+          "commonName": "",
+          "groupID": 9,
+          "groupName": "Tire & Wheel",
+          "literalName": "Tire Rotate",
+          "subGroupID": 141,
+          "subGroupName": "Tire & Wheel Assembly",
+          "systemID": 6,
+          "systemName": "Suspension",
+          "taxonomyID": 11782
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 1346,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 12000,
+            "intervalMile": 7500,
+            "intervalMonth": 6,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 1259,
+                "text": "Replace if necessary."
+              }
+            ],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23222459,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 20,
+          "groupName": "Engine",
+          "literalName": "Engine Air Filter Element Inspect",
+          "subGroupID": 35,
+          "subGroupName": "Air Intake System",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11784
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 1346,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 12000,
+            "intervalMile": 7500,
+            "intervalMonth": 6,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23443344,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 20,
+          "groupName": "Engine",
+          "literalName": "Exhaust System Heat Shield Inspect",
+          "subGroupID": 62,
+          "subGroupName": "Exhaust System",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11965
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 1346,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 12000,
+            "intervalMile": 7500,
+            "intervalMonth": 6,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23504715,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 20,
+          "groupName": "Engine",
+          "literalName": "Radiator Inspect",
+          "subGroupID": 56,
+          "subGroupName": "Cooling System",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 12017
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 1346,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 12000,
+            "intervalMile": 7500,
+            "intervalMonth": 6,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23573023,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 20,
+          "groupName": "Engine",
+          "literalName": "Vacuum Line Inspect",
+          "subGroupID": 180,
+          "subGroupName": "Engine",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 12081
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 1959,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 15000,
+            "intervalMile": 10000,
+            "intervalMonth": 12,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 22972474,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "R&R",
+          "commonName": "",
+          "groupID": 12,
+          "groupName": "Air Distribution",
+          "literalName": "Cabin Air Filter R&R",
+          "subGroupID": 34,
+          "subGroupName": "Air Filter",
+          "systemID": 4,
+          "systemName": "HVAC",
+          "taxonomyID": 11230
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      }
+    ]
+  }
+}

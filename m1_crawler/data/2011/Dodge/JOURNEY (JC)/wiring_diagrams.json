@@ -1,0 +1,646 @@
+[
+  {
+    "id": "W:68770",
+    "bucket": "Wiring Diagrams",
+    "title": "A/C  CONTROL  SYSTEM  -  2.4L",
+    "thumbnailHref": "api/asset/f851dc10-f2ab-4f1a-9d66-99ac994bd8b6",
+    "sort": 0
+  },
+  {
+    "id": "W:68771",
+    "bucket": "Wiring Diagrams",
+    "title": "A/C  CONTROL  SYSTEM  -  3.6L",
+    "thumbnailHref": "api/asset/80703518-3328-41f5-a33a-966df402e963",
+    "sort": 1
+  },
+  {
+    "id": "W:72855",
+    "bucket": "Wiring Diagrams",
+    "title": "A/C  CONTROL  SYSTEM  -  DIESEL",
+    "thumbnailHref": "api/asset/afa9efbf-4083-46ff-85fd-d6dacd963feb",
+    "sort": 2
+  },
+  {
+    "id": "W:68772",
+    "bucket": "Wiring Diagrams",
+    "title": "AFTERTREATMENT  SYSTEM  -  DIESEL",
+    "thumbnailHref": "api/asset/870d7135-626d-451f-bad5-b22c93d64c18",
+    "sort": 3
+  },
+  {
+    "id": "W:68798",
+    "bucket": "Wiring Diagrams",
+    "title": "AUDIO  SYSTEM  -  BASE",
+    "thumbnailHref": "api/asset/912f206a-eaad-4975-8cf6-695b637e5dea",
+    "sort": 4
+  },
+  {
+    "id": "W:68800",
+    "bucket": "Wiring Diagrams",
+    "title": "AUDIO  SYSTEM  -  PREMIUM",
+    "thumbnailHref": "api/asset/27a19120-91ef-46de-a379-0b3bd9128072",
+    "sort": 5
+  },
+  {
+    "id": "W:68803",
+    "bucket": "Wiring Diagrams",
+    "title": "AUDIO  TELEMATICS  BUS  SYSTEM  -  BASE",
+    "thumbnailHref": "api/asset/0d94a2e7-2fad-4af9-9a85-63125f173c58",
+    "sort": 6
+  },
+  {
+    "id": "W:72865",
+    "bucket": "Wiring Diagrams",
+    "title": "AUDIO  TELEMATICS  BUS  SYSTEM  -  PREMIUM",
+    "thumbnailHref": "api/asset/0a5d4fa1-02b7-40c1-b62a-c1d789148483",
+    "sort": 7
+  },
+  {
+    "id": "W:68750",
+    "bucket": "Wiring Diagrams",
+    "title": "BACK-UP  CAMERA  SYSTEM",
+    "thumbnailHref": "api/asset/4fa25360-6323-4ec6-a777-dc7648d0c492",
+    "sort": 8
+  },
+  {
+    "id": "W:68765",
+    "bucket": "Wiring Diagrams",
+    "title": "BRAKE  SYSTEM",
+    "thumbnailHref": "api/asset/c4d130c3-4613-41da-a1ed-2c4ce568f864",
+    "sort": 9
+  },
+  {
+    "id": "W:68751",
+    "bucket": "Wiring Diagrams",
+    "title": "CABIN  HEATER  SYSTEM",
+    "thumbnailHref": "api/asset/f4b46b21-1b54-4995-9a29-cad6c3db3a1c",
+    "sort": 10
+  },
+  {
+    "id": "W:68804",
+    "bucket": "Wiring Diagrams",
+    "title": "CAN  C  BUS  SYSTEM",
+    "thumbnailHref": "api/asset/9d4f2e01-4e67-4941-bc6b-687a1e543266",
+    "sort": 11
+  },
+  {
+    "id": "W:68805",
+    "bucket": "Wiring Diagrams",
+    "title": "CAN  IHS  BUS  SYSTEM",
+    "thumbnailHref": "api/asset/f444d427-2367-4016-bec7-1a82620acd8b",
+    "sort": 12
+  },
+  {
+    "id": "W:68773",
+    "bucket": "Wiring Diagrams",
+    "title": "CATALYST  MONITOR  SYSTEM  -  2.4L",
+    "thumbnailHref": "api/asset/f99a75b9-1131-4b97-99fa-bad5cc8b3abe",
+    "sort": 13
+  },
+  {
+    "id": "W:68774",
+    "bucket": "Wiring Diagrams",
+    "title": "CATALYST  MONITOR  SYSTEM  -  3.6L",
+    "thumbnailHref": "api/asset/d467af46-5ac9-4de9-881a-6306aff19981",
+    "sort": 14
+  },
+  {
+    "id": "W:68776",
+    "bucket": "Wiring Diagrams",
+    "title": "CHARGING  SYSTEM  -  2.4L",
+    "thumbnailHref": "api/asset/d57fc046-ef13-4eaf-943a-8a770a9d5e25",
+    "sort": 15
+  },
+  {
+    "id": "W:72845",
+    "bucket": "Wiring Diagrams",
+    "title": "CHARGING  SYSTEM  -  3.6L",
+    "thumbnailHref": "api/asset/c9e90287-241f-47ae-96b1-7dd75fb70473",
+    "sort": 16
+  },
+  {
+    "id": "W:68775",
+    "bucket": "Wiring Diagrams",
+    "title": "CHARGING  SYSTEM  -  DIESEL",
+    "thumbnailHref": "api/asset/67a61674-171c-4c68-bb69-6a63a95bf526",
+    "sort": 17
+  },
+  {
+    "id": "W:68778",
+    "bucket": "Wiring Diagrams",
+    "title": "COOLING  SYSTEM  -  2.4L/3.6L",
+    "thumbnailHref": "api/asset/7b287ed0-4985-4f45-a036-29f8e6c5788e",
+    "sort": 18
+  },
+  {
+    "id": "W:68777",
+    "bucket": "Wiring Diagrams",
+    "title": "COOLING  SYSTEM  -  DIESEL",
+    "thumbnailHref": "api/asset/e6296aeb-81e1-4bd4-9ae0-8e7bef43aaa5",
+    "sort": 19
+  },
+  {
+    "id": "W:68806",
+    "bucket": "Wiring Diagrams",
+    "title": "DATA  LINK  CONNECTOR",
+    "thumbnailHref": "api/asset/83cfc10f-a329-4023-bb23-91b53be2cf24",
+    "sort": 20
+  },
+  {
+    "id": "W:68811",
+    "bucket": "Wiring Diagrams",
+    "title": "DECKLID/LIFTGATE  -  LOCK  SYSTEM",
+    "thumbnailHref": "api/asset/4ea7058d-4c77-4918-aa39-289eaf2b14ca",
+    "sort": 21
+  },
+  {
+    "id": "W:68752",
+    "bucket": "Wiring Diagrams",
+    "title": "DEFOGGER  SYSTEM",
+    "thumbnailHref": "api/asset/04cc6951-da52-4884-8fe0-e1b6ac8d644f",
+    "sort": 22
+  },
+  {
+    "id": "W:68779",
+    "bucket": "Wiring Diagrams",
+    "title": "EGR  SYSTEM  -  DIESEL",
+    "thumbnailHref": "api/asset/3e38eb93-d7ec-43a7-8e82-c7fd3892b450",
+    "sort": 23
+  },
+  {
+    "id": "W:68780",
+    "bucket": "Wiring Diagrams",
+    "title": "EVAPORATIVE  EMISSIONS  SYSTEM  -  2.4L/3.6L",
+    "thumbnailHref": "api/asset/94bb8c8e-d831-4d2d-9aff-12767d0ef2ab",
+    "sort": 24
+  },
+  {
+    "id": "W:68820",
+    "bucket": "Wiring Diagrams",
+    "title": "EXTERIOR  LIGHTING  SYSTEM  -  EXCEPT  EXPORT",
+    "thumbnailHref": "api/asset/a0feb328-edbc-45c5-b4e8-b99f4081cdaa",
+    "sort": 25
+  },
+  {
+    "id": "W:68821",
+    "bucket": "Wiring Diagrams",
+    "title": "EXTERIOR  LIGHTING  SYSTEM  -  EXPORT",
+    "thumbnailHref": "api/asset/3998b768-33aa-4b5c-978e-0d76133262b8",
+    "sort": 26
+  },
+  {
+    "id": "W:68781",
+    "bucket": "Wiring Diagrams",
+    "title": "FUEL  CONTROL  SYSTEM  -  2.4L",
+    "thumbnailHref": "api/asset/ce264611-cc2b-4338-8f3e-fa84c855d4f0",
+    "sort": 27
+  },
+  {
+    "id": "W:68782",
+    "bucket": "Wiring Diagrams",
+    "title": "FUEL  CONTROL  SYSTEM  -  3.6L",
+    "thumbnailHref": "api/asset/f867e98b-8013-4f50-94c5-1dd361a38df8",
+    "sort": 28
+  },
+  {
+    "id": "W:68783",
+    "bucket": "Wiring Diagrams",
+    "title": "FUEL  CONTROL  SYSTEM  -  DIESEL",
+    "thumbnailHref": "api/asset/be420d13-6686-4d83-90c4-35d1ff718293",
+    "sort": 29
+  },
+  {
+    "id": "W:80295",
+    "bucket": "Wiring Diagrams",
+    "title": "FUEL  DELIVERY  SYSTEM  -  2.4L",
+    "thumbnailHref": "api/asset/436c9820-e735-4a3c-98c5-95ebd232869c",
+    "sort": 30
+  },
+  {
+    "id": "W:68785",
+    "bucket": "Wiring Diagrams",
+    "title": "FUEL  DELIVERY  SYSTEM  -  3.6L",
+    "thumbnailHref": "api/asset/fdd6f0c5-c61d-4bb3-a918-5c50eea8cc9e",
+    "sort": 31
+  },
+  {
+    "id": "W:68784",
+    "bucket": "Wiring Diagrams",
+    "title": "FUEL  DELIVERY  SYSTEM  -  DIESEL",
+    "thumbnailHref": "api/asset/b729aed4-bcad-4cb4-b3cc-5211b731af3a",
+    "sort": 32
+  },
+  {
+    "id": "W:68829",
+    "bucket": "Wiring Diagrams",
+    "title": "FUSES  -  BATTERY",
+    "thumbnailHref": "api/asset/e09fcaae-6cf3-451e-be15-d153c53c3536",
+    "sort": 33
+  },
+  {
+    "id": "W:68827",
+    "bucket": "Wiring Diagrams",
+    "title": "FUSES  -  BATTERY",
+    "thumbnailHref": "api/asset/c8e439ab-8a49-4d56-9cee-d9f6543f07e3",
+    "sort": 34
+  },
+  {
+    "id": "W:68824",
+    "bucket": "Wiring Diagrams",
+    "title": "FUSES/RELAY  -  ASD  -  2.4L/3.6L",
+    "thumbnailHref": "api/asset/42f69fa2-14b7-4b64-bb96-cd7f624d381b",
+    "sort": 35
+  },
+  {
+    "id": "W:68823",
+    "bucket": "Wiring Diagrams",
+    "title": "FUSES/RELAY  -  ASD  -  DIESEL",
+    "thumbnailHref": "api/asset/ed959326-127e-4b20-9714-19855577895b",
+    "sort": 36
+  },
+  {
+    "id": "W:68830",
+    "bucket": "Wiring Diagrams",
+    "title": "FUSES/RELAY  -  MISCELLANEOUS",
+    "thumbnailHref": "api/asset/85bcccb4-75a9-4c91-8818-de8a5e317223",
+    "sort": 37
+  },
+  {
+    "id": "W:68828",
+    "bucket": "Wiring Diagrams",
+    "title": "FUSES/RELAY  -  MISCELLANEOUS",
+    "thumbnailHref": "api/asset/9ff9064d-0f91-413d-a9fa-b0ca36c3a1d7",
+    "sort": 38
+  },
+  {
+    "id": "W:68826",
+    "bucket": "Wiring Diagrams",
+    "title": "FUSES/RELAY  -  RUN/START",
+    "thumbnailHref": "api/asset/cf5c0377-be7c-468e-bd2b-e9fabbb29731",
+    "sort": 39
+  },
+  {
+    "id": "W:68786",
+    "bucket": "Wiring Diagrams",
+    "title": "GLOW  PLUG  SYSTEM",
+    "thumbnailHref": "api/asset/34b20220-996b-4329-b08a-258bedb16b0a",
+    "sort": 40
+  },
+  {
+    "id": "W:68812",
+    "bucket": "Wiring Diagrams",
+    "title": "GROUNDS  -  G102/G104/G903B",
+    "thumbnailHref": "api/asset/fada76a9-c5b6-4c99-be1a-c7ecb58a4341",
+    "sort": 41
+  },
+  {
+    "id": "W:68813",
+    "bucket": "Wiring Diagrams",
+    "title": "GROUNDS  -  G901A/G101",
+    "thumbnailHref": "api/asset/6a7b1f53-64a5-4b2c-85af-9ae1230a1356",
+    "sort": 42
+  },
+  {
+    "id": "W:68814",
+    "bucket": "Wiring Diagrams",
+    "title": "GROUNDS  -  G906A/G907A/G9206",
+    "thumbnailHref": "api/asset/2ba97dd2-5afd-4d34-8baa-d9d76f82d317",
+    "sort": 43
+  },
+  {
+    "id": "W:68815",
+    "bucket": "Wiring Diagrams",
+    "title": "GROUNDS  -  G921A/G922A",
+    "thumbnailHref": "api/asset/6b80c272-9b87-4ff5-9972-70df0558e1e4",
+    "sort": 44
+  },
+  {
+    "id": "W:68816",
+    "bucket": "Wiring Diagrams",
+    "title": "GROUNDS  -  G923/G924/G926A",
+    "thumbnailHref": "api/asset/ee7ec0a4-c7fc-4626-ad36-a6b419cc8b9b",
+    "sort": 45
+  },
+  {
+    "id": "W:68817",
+    "bucket": "Wiring Diagrams",
+    "title": "GROUNDS  -  MISCELLANEOUS",
+    "thumbnailHref": "api/asset/5c61a447-987b-4e5b-a1b8-6c92e1b8dd7b",
+    "sort": 46
+  },
+  {
+    "id": "W:68753",
+    "bucket": "Wiring Diagrams",
+    "title": "HANDS  FREE  SYSTEM",
+    "thumbnailHref": "api/asset/eb343c41-374f-4bf7-abd5-f633487edb39",
+    "sort": 47
+  },
+  {
+    "id": "W:68831",
+    "bucket": "Wiring Diagrams",
+    "title": "HEATED  SEAT  SYSTEM",
+    "thumbnailHref": "api/asset/913c9bad-8a83-40a1-abca-ffedd26457a5",
+    "sort": 48
+  },
+  {
+    "id": "W:68832",
+    "bucket": "Wiring Diagrams",
+    "title": "HEATED  SEAT  SYSTEM  -  RHD",
+    "thumbnailHref": "api/asset/a4ad7082-374a-469c-be27-ac8521796634",
+    "sort": 49
+  },
+  {
+    "id": "W:68754",
+    "bucket": "Wiring Diagrams",
+    "title": "HORNS",
+    "thumbnailHref": "api/asset/eb8eee27-6628-4c11-8249-1624b6008ae5",
+    "sort": 50
+  },
+  {
+    "id": "W:68755",
+    "bucket": "Wiring Diagrams",
+    "title": "HVAC  SYSTEM",
+    "thumbnailHref": "api/asset/c272de4a-3d31-406e-a4bf-0f56f929a0a4",
+    "sort": 51
+  },
+  {
+    "id": "W:68787",
+    "bucket": "Wiring Diagrams",
+    "title": "IGNITION  SYSTEM  -  2.4L",
+    "thumbnailHref": "api/asset/9c12a6cf-e7af-4a7e-9475-9b0e250722a7",
+    "sort": 52
+  },
+  {
+    "id": "W:68788",
+    "bucket": "Wiring Diagrams",
+    "title": "IGNITION  SYSTEM  -  3.6L",
+    "thumbnailHref": "api/asset/83f51e0e-5717-4998-86e1-0bf66b652b93",
+    "sort": 53
+  },
+  {
+    "id": "W:68789",
+    "bucket": "Wiring Diagrams",
+    "title": "INTAKE  AIR  SYSTEM  -  2.4L",
+    "thumbnailHref": "api/asset/8df154b0-48f3-4b1b-8507-9f244e1b7ab5",
+    "sort": 54
+  },
+  {
+    "id": "W:68790",
+    "bucket": "Wiring Diagrams",
+    "title": "INTAKE  AIR  SYSTEM  -  3.6L",
+    "thumbnailHref": "api/asset/0b4febc6-f817-4fbb-89fd-dd9edc825402",
+    "sort": 55
+  },
+  {
+    "id": "W:68791",
+    "bucket": "Wiring Diagrams",
+    "title": "INTAKE  AIR  SYSTEM  -  DIESEL",
+    "thumbnailHref": "api/asset/22fbd739-3502-445e-8463-e9edd6d3c73c",
+    "sort": 56
+  },
+  {
+    "id": "W:68822",
+    "bucket": "Wiring Diagrams",
+    "title": "INTERIOR  LIGHTING  SYSTEM",
+    "thumbnailHref": "api/asset/2ae97c40-c626-41c2-a832-3f1f1d785e8e",
+    "sort": 57
+  },
+  {
+    "id": "W:72858",
+    "bucket": "Wiring Diagrams",
+    "title": "INTERIOR  LIGHTING  SYSTEM  -  RHD",
+    "thumbnailHref": "api/asset/2eae410f-e146-48e6-97ac-c161dfb062b1",
+    "sort": 58
+  },
+  {
+    "id": "W:68769",
+    "bucket": "Wiring Diagrams",
+    "title": "LIN  BUS  SYSTEMS",
+    "thumbnailHref": "api/asset/6136ec96-b76b-4693-ae82-aef453ec11ff",
+    "sort": 59
+  },
+  {
+    "id": "W:68807",
+    "bucket": "Wiring Diagrams",
+    "title": "LOCK  SYSTEM  -  EXCEPT  EXPORT",
+    "thumbnailHref": "api/asset/6b30c679-89aa-43ba-b216-d2c65f9b29e3",
+    "sort": 60
+  },
+  {
+    "id": "W:68808",
+    "bucket": "Wiring Diagrams",
+    "title": "LOCK  SYSTEM  -  EXPORT",
+    "thumbnailHref": "api/asset/4a642742-9a56-4d51-befc-d59ffcbb66f2",
+    "sort": 61
+  },
+  {
+    "id": "W:68802",
+    "bucket": "Wiring Diagrams",
+    "title": "MEDIA  PORT",
+    "thumbnailHref": "api/asset/cecbaa19-ea7d-47b9-b656-d9b4881463f1",
+    "sort": 62
+  },
+  {
+    "id": "W:68756",
+    "bucket": "Wiring Diagrams",
+    "title": "MESSAGE  SYSTEMS",
+    "thumbnailHref": "api/asset/39df8554-ab63-4e2e-a514-fed7588a473d",
+    "sort": 63
+  },
+  {
+    "id": "W:68757",
+    "bucket": "Wiring Diagrams",
+    "title": "MIRRORS  -  BASE",
+    "thumbnailHref": "api/asset/5eeddabe-052a-495b-8128-f61921ea6e8e",
+    "sort": 64
+  },
+  {
+    "id": "W:81076",
+    "bucket": "Wiring Diagrams",
+    "title": "MIRRORS  -  PREMIUM",
+    "thumbnailHref": "api/asset/d8da35f8-9181-4355-b9b7-41cfcf608986",
+    "sort": 65
+  },
+  {
+    "id": "W:68758",
+    "bucket": "Wiring Diagrams",
+    "title": "PARK  ASSIST  SYSTEM",
+    "thumbnailHref": "api/asset/5adf252e-4035-4041-b9bd-7c79a46d32f4",
+    "sort": 66
+  },
+  {
+    "id": "W:68759",
+    "bucket": "Wiring Diagrams",
+    "title": "PASSIVE  ENTRY  SYSTEM",
+    "thumbnailHref": "api/asset/0468bb5b-49b5-4108-b094-e8819a435562",
+    "sort": 67
+  },
+  {
+    "id": "W:68760",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER  OUTLETS",
+    "thumbnailHref": "api/asset/ba04afbe-597f-4e48-9b5e-8179385f33ad",
+    "sort": 68
+  },
+  {
+    "id": "W:68818",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER  SEAT  SYSTEM",
+    "thumbnailHref": "api/asset/6f44b481-5faf-4ac0-b45c-e1ceb4a41c67",
+    "sort": 69
+  },
+  {
+    "id": "W:68819",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER  SEAT  SYSTEM  -  RHD",
+    "thumbnailHref": "api/asset/05f4890e-b926-45b0-b53d-9f0aff980d2f",
+    "sort": 70
+  },
+  {
+    "id": "W:68840",
+    "bucket": "Wiring Diagrams",
+    "title": "RESTRAINT  SYSTEMS",
+    "thumbnailHref": "api/asset/df93b4bc-9b84-4cbf-ac37-9bfd34d7da12",
+    "sort": 71
+  },
+  {
+    "id": "W:68792",
+    "bucket": "Wiring Diagrams",
+    "title": "SPEED  CONTROL  SYSTEM",
+    "thumbnailHref": "api/asset/64b7d938-96bd-4c68-87dd-1b8c664cab09",
+    "sort": 72
+  },
+  {
+    "id": "W:68794",
+    "bucket": "Wiring Diagrams",
+    "title": "STARTING  SYSTEM  -  2.4L",
+    "thumbnailHref": "api/asset/a3cce6a3-9d53-46de-8cce-9549adba8dd9",
+    "sort": 73
+  },
+  {
+    "id": "W:72846",
+    "bucket": "Wiring Diagrams",
+    "title": "STARTING  SYSTEM  -  3.6L",
+    "thumbnailHref": "api/asset/aadf5934-827f-43bb-b545-ef7dba82f2f2",
+    "sort": 74
+  },
+  {
+    "id": "W:68793",
+    "bucket": "Wiring Diagrams",
+    "title": "STARTING  SYSTEM  -  DIESEL",
+    "thumbnailHref": "api/asset/e4fab6c8-f2a1-4917-bb9c-507fc7b42476",
+    "sort": 75
+  },
+  {
+    "id": "W:68761",
+    "bucket": "Wiring Diagrams",
+    "title": "SUNROOF/POWER  TOP  SYSTEM",
+    "thumbnailHref": "api/asset/8d41868b-945f-4b3c-97ad-75062d131214",
+    "sort": 76
+  },
+  {
+    "id": "W:68797",
+    "bucket": "Wiring Diagrams",
+    "title": "THROTTLE  CONTROL  SYSTEM  -  2.4L",
+    "thumbnailHref": "api/asset/6a3bc2e2-7693-4b6d-a7ac-a85ac67e7750",
+    "sort": 77
+  },
+  {
+    "id": "W:68795",
+    "bucket": "Wiring Diagrams",
+    "title": "THROTTLE  CONTROL  SYSTEM  -  3.6L",
+    "thumbnailHref": "api/asset/4b3d78dd-c3af-43ff-a8d9-e711e058d31f",
+    "sort": 78
+  },
+  {
+    "id": "W:68796",
+    "bucket": "Wiring Diagrams",
+    "title": "THROTTLE  CONTROL  SYSTEM  -  DIESEL",
+    "thumbnailHref": "api/asset/a98adfad-d59a-46b3-a199-0bcfcfda2200",
+    "sort": 79
+  },
+  {
+    "id": "W:68766",
+    "bucket": "Wiring Diagrams",
+    "title": "TIRE  PRESSURE  MONITORING  (TPM)  SYSTEM",
+    "thumbnailHref": "api/asset/c72e0fc9-6968-4d2f-a7b0-6dc216f24ea5",
+    "sort": 80
+  },
+  {
+    "id": "W:68767",
+    "bucket": "Wiring Diagrams",
+    "title": "TRAILER  TOW  SYSTEM",
+    "thumbnailHref": "api/asset/dae7dae7-8826-4650-b921-61fa9d829ae2",
+    "sort": 81
+  },
+  {
+    "id": "W:68768",
+    "bucket": "Wiring Diagrams",
+    "title": "TRANSFER  CASE",
+    "thumbnailHref": "api/asset/7a2befe2-2aec-496e-9cae-95d0f7a2ad13",
+    "sort": 82
+  },
+  {
+    "id": "W:68841",
+    "bucket": "Wiring Diagrams",
+    "title": "TRANSMISSION  -  40TE",
+    "thumbnailHref": "api/asset/ba07a4b0-433f-497a-ac79-aa53d34ac4da",
+    "sort": 83
+  },
+  {
+    "id": "W:68843",
+    "bucket": "Wiring Diagrams",
+    "title": "TRANSMISSION  -  62TE",
+    "thumbnailHref": "api/asset/6653ee6e-ff8f-4c10-80c1-85d2cc249e7c",
+    "sort": 84
+  },
+  {
+    "id": "W:68844",
+    "bucket": "Wiring Diagrams",
+    "title": "TRANSMISSION  -  C635  MTX",
+    "thumbnailHref": "api/asset/5d43335e-c47e-4f1d-b35b-aef76f33be07",
+    "sort": 85
+  },
+  {
+    "id": "W:68762",
+    "bucket": "Wiring Diagrams",
+    "title": "UNIVERSAL  TRANSMITTER",
+    "thumbnailHref": "api/asset/9d67b4f3-ab47-4151-bcf5-78e70ef3dfb5",
+    "sort": 86
+  },
+  {
+    "id": "W:68763",
+    "bucket": "Wiring Diagrams",
+    "title": "VEHICLE  THEFT  SECURITY  SYSTEM",
+    "thumbnailHref": "api/asset/07531b26-1478-4d3f-9e67-dd6faa54acdc",
+    "sort": 87
+  },
+  {
+    "id": "W:68764",
+    "bucket": "Wiring Diagrams",
+    "title": "VIDEO  ENTERTAINMENT  SYSTEM",
+    "thumbnailHref": "api/asset/c59abd5b-e4c5-4c57-aecb-8e68ad7a4b6b",
+    "sort": 88
+  },
+  {
+    "id": "W:68809",
+    "bucket": "Wiring Diagrams",
+    "title": "WINDOWS  -  BASE",
+    "thumbnailHref": "api/asset/4b31c565-cace-413d-9322-1aa71ed2d1c2",
+    "sort": 89
+  },
+  {
+    "id": "W:68810",
+    "bucket": "Wiring Diagrams",
+    "title": "WINDOWS  -  PREMIUM",
+    "thumbnailHref": "api/asset/32bcdaab-662f-486c-ad7b-e8c5b689d0a6",
+    "sort": 90
+  },
+  {
+    "id": "W:68834",
+    "bucket": "Wiring Diagrams",
+    "title": "WIPER/WASHER  SYSTEMS",
+    "thumbnailHref": "api/asset/9d88606d-c705-4129-89f4-e2c4960abb2d",
+    "sort": 91
+  }
+]

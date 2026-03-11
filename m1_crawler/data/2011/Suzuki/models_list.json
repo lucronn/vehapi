@@ -1,0 +1,185 @@
+{
+  "contentSource": "MOTOR",
+  "models": [
+    {
+      "model": "Equator Base",
+      "id": "69405",
+      "engines": [
+        {
+          "id": "69405:2600",
+          "name": "2.5L L4 (QR25DE) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Equator Premium",
+      "id": "69406",
+      "engines": [
+        {
+          "id": "69406:2600",
+          "name": "2.5L L4 (QR25DE) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Equator RMZ-4",
+      "id": "69407",
+      "engines": [
+        {
+          "id": "69407:7298",
+          "name": "4.0L V6 (VQ40DE) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Equator Sport",
+      "id": "69408",
+      "engines": [
+        {
+          "id": "69408:7298",
+          "name": "4.0L V6 (VQ40DE) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Grand Vitara Base",
+      "id": "69409",
+      "engines": [
+        {
+          "id": "69409:3581",
+          "name": "2.4L L4 (0) J24B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Grand Vitara Limited",
+      "id": "69410",
+      "engines": [
+        {
+          "id": "69410:3581",
+          "name": "2.4L L4 (0) J24B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Grand Vitara Premium",
+      "id": "69411",
+      "engines": [
+        {
+          "id": "69411:3581",
+          "name": "2.4L L4 (0) J24B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Kizashi S",
+      "id": "69412",
+      "engines": [
+        {
+          "id": "69412:4062",
+          "name": "2.4L L4 (9) J24B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Kizashi SE",
+      "id": "69413",
+      "engines": [
+        {
+          "id": "69413:4062",
+          "name": "2.4L L4 (9) J24B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Kizashi Sport GTS",
+      "id": "69414",
+      "engines": [
+        {
+          "id": "69414:4062",
+          "name": "2.4L L4 (9) J24B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Kizashi Sport SLS",
+      "id": "69415",
+      "engines": [
+        {
+          "id": "69415:4062",
+          "name": "2.4L L4 (9) J24B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "SX4 Crossover",
+      "id": "75477",
+      "engines": [
+        {
+          "id": "75477:3663",
+          "name": "2.0L L4 (5) J20B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "SX4 LE",
+      "id": "69416",
+      "engines": [
+        {
+          "id": "69416:3663",
+          "name": "2.0L L4 (5) J20B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "SX4 LE Anniversary Edition",
+      "id": "76059",
+      "engines": [
+        {
+          "id": "76059:3663",
+          "name": "2.0L L4 (5) J20B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "SX4 Sport GTS",
+      "id": "75478",
+      "engines": [
+        {
+          "id": "75478:3663",
+          "name": "2.0L L4 (5) J20B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "SX4 Sport S",
+      "id": "75479",
+      "engines": [
+        {
+          "id": "75479:3663",
+          "name": "2.0L L4 (5) J20B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "SX4 Sport SE",
+      "id": "75480",
+      "engines": [
+        {
+          "id": "75480:3663",
+          "name": "2.0L L4 (5) J20B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "SX4 Sportback",
+      "id": "69417",
+      "engines": [
+        {
+          "id": "69417:3663",
+          "name": "2.0L L4 (5) J20B GAS Electronic"
+        }
+      ]
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { LucideAngularModule, House, TriangleAlert, FileText, Cable, Wrench, ClipboardList, Package, LogOut, MapPin, Calendar, User, LogIn, CreditCard, ChevronRight, ChevronDown, FolderOpen, Folder } from 'lucide-angular';
+import { LucideAngularModule, House, TriangleAlert, FileText, Cable, Wrench, ClipboardList, Package, LogOut, MapPin, Calendar, User, LogIn, CreditCard, ChevronRight, ChevronDown, FolderOpen, Folder, Settings, Box } from 'lucide-angular';
 
 import { SectionAvailability } from '../../../../../services/vehicle-data.service';
 import { AuthService } from '../../../../../services/auth.service';
@@ -35,7 +35,7 @@ export class DashboardSidebarComponent {
     // Get the tree data
     treeNodes = this.categoryTreeService.categoryTree;
 
-    readonly icons = { House, TriangleAlert, FileText, Cable, Wrench, ClipboardList, Package, LogOut, MapPin, Calendar, User, LogIn, CreditCard, ChevronRight, ChevronDown, FolderOpen, Folder };
+    readonly icons = { House, TriangleAlert, FileText, Cable, Wrench, ClipboardList, Package, LogOut, MapPin, Calendar, User, LogIn, CreditCard, ChevronRight, ChevronDown, FolderOpen, Folder, Settings, Box };
 
     // Set to keep track of open nodes
     expandedNodes = signal<Set<string>>(new Set<string>());

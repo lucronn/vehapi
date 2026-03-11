@@ -12,6 +12,7 @@ import { Article } from '../../models/motor.models';
 import { VehicleDataService } from '../../services/vehicle-data.service';
 import { MotorApiService } from '../../services/motor-api.service';
 import { SearchResultsState } from '../../services/search-results.state';
+import { DataSyncService } from '../../services/data-sync.service';
 import { effect } from '@angular/core';
 
 // Components
@@ -25,6 +26,7 @@ import { DiagramsSectionComponent } from './components/sections/diagrams-section
 import { ComponentLocationsSectionComponent } from './components/sections/component-locations-section/component-locations-section.component';
 import { MaintenanceSectionComponent } from './components/sections/maintenance-section/maintenance-section.component';
 import { PartsSectionComponent } from './components/sections/parts-section/parts-section.component';
+import { SyncProgressOverlayComponent } from './components/layout/sync-progress-overlay/sync-progress-overlay.component';
 
 // Icons
 import { LucideAngularModule, Menu, X, House, TriangleAlert, FileText, Wrench, Package } from 'lucide-angular';
@@ -64,7 +66,8 @@ export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'comp
     LogoComponent,
     OrientationSelectorModalComponent,
     ThemeToggleComponent,
-    AuthModalComponent
+    AuthModalComponent,
+    SyncProgressOverlayComponent
   ],
 })
 export class VehicleDashboardComponent {
@@ -73,6 +76,7 @@ export class VehicleDashboardComponent {
   private motorApi = inject(MotorApiService);
   private vehicleData = inject(VehicleDataService);
   public searchResultsState = inject(SearchResultsState);
+  public dataSync = inject(DataSyncService);
 
   readonly icons = { Menu, X, House, TriangleAlert, FileText, Wrench, Package };
 
@@ -147,7 +151,10 @@ export class VehicleDashboardComponent {
       const mvid = this.motorVehicleId();
 
       if (cs && vid) {
-        // If it's a non-MOTOR source, try to resolve it to a MOTOR ID first
+        // 1. Check Normalization Status (One-time slow load)
+        this.checkAndTriggerNormalization(cs, vid);
+
+        // 2. If it's a non-MOTOR source, try to resolve it to a MOTOR ID first
         if (cs.toUpperCase() !== 'MOTOR') {
           this.resolveVehicleMapping(cs, vid);
         } else {
@@ -320,16 +327,29 @@ export class VehicleDashboardComponent {
   // Services
   private windowManager = inject(WindowManagerService);
 
-  // ... existing code ...
+  // Normalization Flow
+  private async checkAndTriggerNormalization(cs: string, vid: string) {
+    const isNormalized = await this.dataSync.checkNormalizationStatus(vid);
+    if (!isNormalized) {
+      console.log(`[Dashboard] Vehicle ${vid} is NOT normalized. Triggering one-time sync...`);
+      // Wait for vehicleName to be available if possible, or just use a placeholder
+      // vehicleName() is a signal driven by toSignal of vehicleInfo$
+      const name = this.vehicleName() || 'Vehicle';
+      this.dataSync.syncFullVehicle(cs, vid, name);
+    } else {
+      console.log(`[Dashboard] Vehicle ${vid} is already normalized.`);
+    }
+  }
+
   // Orientation Selection
   onArticleClick(event: Event | null, article: Article | any): void {
     // Prevent default navigation
     if (event) {
-        event.preventDefault();
+      event.preventDefault();
     }
     // Prevent default navigation
     if (event) {
-        event.preventDefault();
+      event.preventDefault();
     }
 
     const articleId = article.id || article;

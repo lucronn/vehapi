@@ -1,0 +1,321 @@
+{
+  "contentSource": "MOTOR",
+  "models": [
+    {
+      "model": "Forester X",
+      "id": "69383",
+      "engines": [
+        {
+          "id": "69383:4222",
+          "name": "2.5L H4 (FB25BA) GAS Electronic"
+        },
+        {
+          "id": "69383:4223",
+          "name": "2.5L H4 (FB25BC) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Forester X Limited",
+      "id": "69385",
+      "engines": [
+        {
+          "id": "69385:4222",
+          "name": "2.5L H4 (FB25BA) GAS Electronic"
+        },
+        {
+          "id": "69385:4223",
+          "name": "2.5L H4 (FB25BC) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Forester X Premium",
+      "id": "69386",
+      "engines": [
+        {
+          "id": "69386:4222",
+          "name": "2.5L H4 (FB25BA) GAS Electronic"
+        },
+        {
+          "id": "69386:4223",
+          "name": "2.5L H4 (FB25BC) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Forester X Touring",
+      "id": "69390",
+      "engines": [
+        {
+          "id": "69390:4222",
+          "name": "2.5L H4 (FB25BA) GAS Electronic"
+        },
+        {
+          "id": "69390:4223",
+          "name": "2.5L H4 (FB25BC) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Forester XT Premium",
+      "id": "69389",
+      "engines": [
+        {
+          "id": "69389:2620",
+          "name": "2.5L H4 (EJ255) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Forester XT Touring",
+      "id": "69391",
+      "engines": [
+        {
+          "id": "69391:2620",
+          "name": "2.5L H4 (EJ255) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Impreza 2.5i",
+      "id": "69399",
+      "engines": [
+        {
+          "id": "69399:25",
+          "name": "2.5L H4 (EJ253) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Impreza 2.5i Premium",
+      "id": "69400",
+      "engines": [
+        {
+          "id": "69400:25",
+          "name": "2.5L H4 (EJ253) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Impreza Outback Sport",
+      "id": "69401",
+      "engines": [
+        {
+          "id": "69401:25",
+          "name": "2.5L H4 (EJ253) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Impreza WRX",
+      "id": "68682",
+      "engines": [
+        {
+          "id": "68682:2620",
+          "name": "2.5L H4 (EJ255) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Impreza WRX Limited",
+      "id": "69402",
+      "engines": [
+        {
+          "id": "69402:2620",
+          "name": "2.5L H4 (EJ255) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Impreza WRX Premium",
+      "id": "68683",
+      "engines": [
+        {
+          "id": "68683:2620",
+          "name": "2.5L H4 (EJ255) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Impreza WRX STI",
+      "id": "68685",
+      "engines": [
+        {
+          "id": "68685:2625",
+          "name": "2.5L H4 (EJ257) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Impreza WRX STI Limited",
+      "id": "69403",
+      "engines": [
+        {
+          "id": "69403:2625",
+          "name": "2.5L H4 (EJ257) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Legacy 2.5GT",
+      "id": "68687",
+      "engines": [
+        {
+          "id": "68687:2620",
+          "name": "2.5L H4 (EJ255) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Legacy 2.5i",
+      "id": "68689",
+      "engines": [
+        {
+          "id": "68689:25",
+          "name": "2.5L H4 (EJ253) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Legacy 2.5i Limited",
+      "id": "76023",
+      "engines": [
+        {
+          "id": "76023:25",
+          "name": "2.5L H4 (EJ253) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Legacy 2.5i Premium",
+      "id": "76024",
+      "engines": [
+        {
+          "id": "76024:25",
+          "name": "2.5L H4 (EJ253) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Legacy 3.6R",
+      "id": "68691",
+      "engines": [
+        {
+          "id": "68691:7551",
+          "name": "3.6L H6 (EZ36D) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Legacy 3.6R Limited",
+      "id": "76025",
+      "engines": [
+        {
+          "id": "76025:7551",
+          "name": "3.6L H6 (EZ36D) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Legacy 3.6R Premium",
+      "id": "76026",
+      "engines": [
+        {
+          "id": "76026:7551",
+          "name": "3.6L H6 (EZ36D) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Outback 2.5i",
+      "id": "68692",
+      "engines": [
+        {
+          "id": "68692:25",
+          "name": "2.5L H4 (EJ253) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Outback 2.5i Limited",
+      "id": "76027",
+      "engines": [
+        {
+          "id": "76027:25",
+          "name": "2.5L H4 (EJ253) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Outback 2.5i Premium",
+      "id": "76028",
+      "engines": [
+        {
+          "id": "76028:25",
+          "name": "2.5L H4 (EJ253) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Outback 3.6R",
+      "id": "68694",
+      "engines": [
+        {
+          "id": "68694:7551",
+          "name": "3.6L H6 (EZ36D) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Outback 3.6R Limited",
+      "id": "76029",
+      "engines": [
+        {
+          "id": "76029:7551",
+          "name": "3.6L H6 (EZ36D) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Outback 3.6R Premium",
+      "id": "76030",
+      "engines": [
+        {
+          "id": "76030:7551",
+          "name": "3.6L H6 (EZ36D) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Tribeca Limited",
+      "id": "69052",
+      "engines": [
+        {
+          "id": "69052:7551",
+          "name": "3.6L H6 (EZ36D) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Tribeca Premium",
+      "id": "69054",
+      "engines": [
+        {
+          "id": "69054:7551",
+          "name": "3.6L H6 (EZ36D) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Tribeca Touring",
+      "id": "69055",
+      "engines": [
+        {
+          "id": "69055:7551",
+          "name": "3.6L H6 (EZ36D) GAS Electronic"
+        }
+      ]
+    }
+  ]
+}

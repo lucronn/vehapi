@@ -1,0 +1,211 @@
+{
+  "contentSource": "MOTOR",
+  "models": [
+    {
+      "model": "300 C",
+      "id": "60802",
+      "engines": [
+        {
+          "id": "60802:3662",
+          "name": "5.7L V8 (T) EZH GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "300 C SRT8",
+      "id": "60805",
+      "engines": [
+        {
+          "id": "60805:2778",
+          "name": "6.1L V8 (W) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "300 Limited",
+      "id": "60804",
+      "engines": [
+        {
+          "id": "60804:1065",
+          "name": "3.5L V6 (V) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "300 S",
+      "id": "68437",
+      "engines": [
+        {
+          "id": "68437:1065",
+          "name": "3.5L V6 (V) GAS Electronic"
+        },
+        {
+          "id": "68437:3662",
+          "name": "5.7L V8 (T) EZH GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "300 Touring",
+      "id": "60803",
+      "engines": [
+        {
+          "id": "60803:3548",
+          "name": "2.7L V6 (D) EER GAS Electronic"
+        },
+        {
+          "id": "60803:1065",
+          "name": "3.5L V6 (V) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "PT Cruiser Classic",
+      "id": "61030",
+      "engines": [
+        {
+          "id": "61030:3586",
+          "name": "2.4L L4 (9) EDZ GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "PT Cruiser Couture Edition",
+      "id": "68438",
+      "engines": [
+        {
+          "id": "68438:3586",
+          "name": "2.4L L4 (9) EDZ GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Sebring Limited",
+      "id": "61031",
+      "engines": [
+        {
+          "id": "61031:7534",
+          "name": "2.4L L4 (B) ED3 GAS Electronic"
+        },
+        {
+          "id": "61031:7602",
+          "name": "2.4L L4 (B) EDG GAS Electronic"
+        },
+        {
+          "id": "61031:3600",
+          "name": "2.7L V6 (D) EER FLEX Electronic"
+        },
+        {
+          "id": "61031:1065",
+          "name": "3.5L V6 (V) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Sebring LX",
+      "id": "61032",
+      "engines": [
+        {
+          "id": "61032:7534",
+          "name": "2.4L L4 (B) ED3 GAS Electronic"
+        },
+        {
+          "id": "61032:7602",
+          "name": "2.4L L4 (B) EDG GAS Electronic"
+        },
+        {
+          "id": "61032:3600",
+          "name": "2.7L V6 (D) EER FLEX Electronic"
+        },
+        {
+          "id": "61032:3548",
+          "name": "2.7L V6 (D) EER GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Sebring Touring",
+      "id": "61033",
+      "engines": [
+        {
+          "id": "61033:7534",
+          "name": "2.4L L4 (B) ED3 GAS Electronic"
+        },
+        {
+          "id": "61033:7602",
+          "name": "2.4L L4 (B) EDG GAS Electronic"
+        },
+        {
+          "id": "61033:3600",
+          "name": "2.7L V6 (D) EER FLEX Electronic"
+        },
+        {
+          "id": "61033:3548",
+          "name": "2.7L V6 (D) EER GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Town & Country Limited",
+      "id": "61034",
+      "engines": [
+        {
+          "id": "61034:3058",
+          "name": "4.0L V6 (X) EGQ GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Town & Country LX",
+      "id": "61035",
+      "engines": [
+        {
+          "id": "61035:3549",
+          "name": "3.3L V6 (E) EGV FLEX Electronic"
+        },
+        {
+          "id": "61035:14517",
+          "name": "3.8L V6 (1) EGL GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Town & Country Touring",
+      "id": "61036",
+      "engines": [
+        {
+          "id": "61036:14517",
+          "name": "3.8L V6 (1) EGL GAS Electronic"
+        },
+        {
+          "id": "61036:3058",
+          "name": "4.0L V6 (X) EGQ GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Town & Country Touring Plus",
+      "id": "194325",
+      "engines": [
+        {
+          "id": "194325:14517",
+          "name": "3.8L V6 (1) EGL GAS Electronic"
+        },
+        {
+          "id": "194325:3058",
+          "name": "4.0L V6 (X) EGQ GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Town & Country Walter P. Chrysler Signature Series",
+      "id": "68439",
+      "engines": [
+        {
+          "id": "68439:14517",
+          "name": "3.8L V6 (1) EGL GAS Electronic"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1663 @@
+openapi: 3.0.3
+info:
+  title: Vehicle Service API
+  description: |
+    Comprehensive API for accessing vehicle information, articles, maintenance schedules, parts, and related content.
+    
+    **Architecture Notes:**
+    * **Environments:** This specification covers both the upstream Motor.com service and the custom Vercel Proxy. 
+    * **Routing/Sharding:** The `{contentSource}` parameter acts as a primary shard key, routing requests to specific OEM (Toyota, Ford) or aftermarket (MOTOR) databases.
+    * **ID Hierarchy:** `{vehicleId}` represents the Base Model. `motorVehicleId` (passed as a query parameter) represents the highly specific Engine/Trim level.
+    
+    **Consumption guide (practical call flow):**
+    * **Step 1 — Resolve Year/Make/Model:** `GET /api/years` → `GET /api/year/{year}/makes` → `GET /api/year/{year}/make/{make}/models`
+      - The **models response carries `contentSource`** (this is authoritative; do not guess from make name).
+    * **Step 2 — Pick the vehicleId:** Choose a model row from `models` and use its `vehicleId` (format varies by source; treat as opaque string).
+    * **Step 3 — If engine/trim is required:** For many non-`MOTOR` sources, call
+      `GET /api/source/{contentSource}/{vehicleId}/motorvehicles` and select an engine; pass the selected engine id as `motorVehicleId` on downstream calls.
+    * **Step 4 — Content:** Use the `/api/source/{contentSource}/vehicle/{vehicleId}/...` endpoints.
+    * **Toyota Delta mode:** When comparing quarters, the client uses `contentSource=ToyotaDelta` and calls `toyotadeltaarticles`
+      with `sourceQuarter` + `targetQuarter` (instead of `articles/v2`).
+  version: 1.15.0
+  contact:
+    name: API Support
+servers:
+  - url: https://vehapiproxi.vercel.app
+    description: Production server (Vercel Proxy)
+  - url: https://sites.motor.com/m1
+    description: Upstream MOTOR Server
+
+tags:
+  - name: Proxy
+    description: Proxy-specific endpoints for health checks, authentication management, and debug logging
+  - name: Authentication
+    description: Operations for session management and authentication
+  - name: Credits
+    description: Operations for managing user credits, purchasing via Stripe, and unlocking features
+  - name: Vehicles
+    description: Operations for vehicle information and selection (Years, Makes, Models, Trims)
+  - name: Search
+    description: Operations for searching articles and content across buckets
+  - name: Assets
+    description: Operations for retrieving specific articles, graphics, and typed asset collections (TSBs, DTCs, etc.)
+  - name: Parts
+    description: Operations for retrieving parts information and catalogs
+  - name: Maintenance Schedules
+    description: Operations for maintenance schedule information (Intervals and Frequencies)
+  - name: Bookmarks
+    description: Operations for managing user bookmarks
+  - name: Track Change
+    description: Operations for tracking changes and delta reports
+  - name: Error Logging
+    description: Operations for logging client-side errors
+  - name: UI
+    description: Operations for UI configuration, assets, and settings
+
+paths:
+  # --- PROXY & DEBUG ---
+  /health:
+    get:
+      tags: [Proxy]
+      summary: Health check
+      description: Returns proxy health status including whether the upstream Motor session is valid
+      operationId: getHealth
+      responses:
+        '200':
+          description: Health status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: "ok" }
+                  sessionValid: { type: boolean }
+                  lastAuth: { type: number, description: "Epoch ms of last successful auth" }
+
+  /debug/logs:
+    get:
+      tags: [Proxy]
+      summary: Get request logs
+      description: Returns buffered proxy request/response logs with optional filtering
+      operationId: getDebugLogs
+      parameters:
+        - name: method
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: error
+          in: query
+          schema: { type: string, enum: ["true"] }
+        - name: url
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Log entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count: { type: integer }
+                  filters: { type: object }
+                  logs: { type: array, items: { type: object } }
+
+  /debug/stats:
+    get:
+      tags: [Proxy]
+      summary: Get request statistics
+      operationId: getDebugStats
+      responses:
+        '200':
+          description: Statistics
+          content:
+            application/json:
+              schema: { type: object }
+
+  /debug/clear:
+    post:
+      tags: [Proxy]
+      summary: Clear log buffer
+      operationId: clearDebugLogs
+      responses:
+        '200':
+          description: Buffer cleared
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: "success" }
+                  message: { type: string }
+
+  # --- AUTHENTICATION ---
+  /auth/status:
+    get:
+      tags: [Authentication]
+      summary: Get authentication status
+      description: Returns the current authentication status and progress.
+      operationId: getAuthStatus
+      responses:
+        '200':
+          description: Authentication status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, enum: [idle, authenticating, success, error] }
+                  step: { type: string, nullable: true }
+                  message: { type: string, nullable: true }
+                  progress: { type: integer, minimum: 0, maximum: 100 }
+                  error: { type: string, nullable: true }
+                  startedAt: { type: integer, format: int64, nullable: true }
+                  completedAt: { type: integer, format: int64, nullable: true }
+                  sessionValid: { type: boolean }
+                  lastAuth: { type: integer, format: int64, nullable: true }
+
+  /auth/start:
+    post:
+      tags: [Authentication]
+      summary: Start authentication
+      operationId: startAuth
+      responses:
+        '200':
+          description: Authentication started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, enum: [started] }
+                  message: { type: string }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+  /logout:
+    get:
+      tags: [Authentication]
+      summary: Logout
+      operationId: logout
+      responses:
+        '200': { description: "Successful response" }
+        '302': { description: "Redirect response" }
+
+  /api/logout:
+    post:
+      tags: [Authentication]
+      summary: Terminate Session (API)
+      operationId: apiLogout
+      responses:
+        '200': { description: "Session invalidated successfully." }
+
+  # --- CREDITS ---
+  /api/credits/balance:
+    get:
+      tags: [Credits]
+      summary: Get credit balance
+      operationId: getCreditBalance
+      parameters:
+        - name: x-user-id
+          in: header
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Credit balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  credits: { type: integer }
+                  unlocks:
+                    type: object
+                    additionalProperties:
+                      type: array
+                      items: { type: string }
+
+  /api/credits/checkout:
+    post:
+      tags: [Credits]
+      summary: Create checkout session
+      operationId: createCheckout
+      parameters:
+        - name: x-user-id
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount: { type: integer }
+                priceId: { type: string }
+                origin: { type: string }
+      responses:
+        '200':
+          description: Session URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url: { type: string }
+
+  /api/credits/portal:
+    post:
+      tags: [Credits]
+      summary: Create billing portal session
+      operationId: createBillingPortal
+      parameters:
+        - name: x-user-id
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                origin: { type: string }
+      responses:
+        '200':
+          description: Portal URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url: { type: string }
+        '400': { description: "No Stripe customer found." }
+
+  /api/credits/unlock:
+    post:
+      tags: [Credits]
+      summary: Unlock module
+      operationId: unlockModule
+      parameters:
+        - name: x-user-id
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                vehicleId: { type: string }
+                moduleType: { type: string }
+                cost: { type: integer }
+      responses:
+        '200':
+          description: Updated balance and unlocks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  credits: { type: integer }
+                  unlocks: { type: object }
+
+  # --- UI & SYSTEM ---
+  /api/ui/banner.html:
+    get:
+      tags: [UI]
+      summary: Get banner HTML
+      operationId: getBannerHtml
+      responses:
+        '200':
+          description: Successful response
+          content:
+            text/html:
+              schema: { type: string }
+
+  /api/ui/favicon:
+    get:
+      tags: [UI]
+      summary: Get favicon
+      operationId: getFavicon
+      responses:
+        '200':
+          description: Successful response
+          content:
+            image/x-icon:
+              schema: { type: string, format: binary }
+
+  /api/ui/css/bootstrap:
+    get:
+      tags: [UI]
+      summary: Get Bootstrap CSS
+      operationId: getBootstrapCss
+      responses:
+        '200':
+          description: Successful response
+          content:
+            text/css:
+              schema: { type: string }
+
+  /api/ui/usersettings:
+    get:
+      tags: [UI]
+      summary: Get user settings
+      operationId: getUserSettings
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UiUserSettingsResponse' }
+    put:
+      tags: [UI]
+      summary: Update user settings
+      operationId: updateUserSettings
+      responses:
+        '200': { description: "Settings updated" }
+
+  /api/ui/feedbackconfigurations:
+    get:
+      tags: [UI]
+      summary: Get feedback configurations
+      operationId: getFeedbackConfigurations
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FeedbackConfigurationResponse' }
+
+  /api/ui/savefeedback:
+    post:
+      tags: [UI]
+      summary: Save feedback
+      operationId: saveFeedback
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Feedback' }
+      responses:
+        '200': { description: "Successful response" }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /api/logError:
+    post:
+      tags: [Error Logging]
+      summary: Log error
+      description: Log client side errors without injecting the external logging url.
+      operationId: logError
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LogEntry' }
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EmptyResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /assets/locale/locale.properties:
+    get:
+      tags: [System]
+      summary: Get Localization Data
+      responses:
+        '200': { description: "Java-style properties file for i18n support." }
+
+  # --- VEHICLES ---
+  /api/years:
+    get:
+      tags: [Vehicles]
+      summary: Get years
+      operationId: getYears
+      responses:
+        '200':
+          description: Successful response
+          headers:
+            x-rate-limit-limit: { $ref: '#/components/headers/RateLimitLimit' }
+            x-rate-limit-remaining: { $ref: '#/components/headers/RateLimitRemaining' }
+            x-rate-limit-reset: { $ref: '#/components/headers/RateLimitReset' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Int32ListResponse' }
+
+  /api/year/{year}/makes:
+    get:
+      tags: [Vehicles]
+      summary: Get makes
+      operationId: getMakes
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema: { type: integer, format: int32 }
+      responses:
+        '200':
+          description: Successful response
+          headers:
+            x-rate-limit-limit: { $ref: '#/components/headers/RateLimitLimit' }
+            x-rate-limit-remaining: { $ref: '#/components/headers/RateLimitRemaining' }
+            x-rate-limit-reset: { $ref: '#/components/headers/RateLimitReset' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MakeListResponse' }
+
+  /api/year/{year}/make/{make}/models:
+    get:
+      tags: [Vehicles]
+      summary: Get models
+      description: All vehicles matching the provided year and make. Returns `contentSource`.
+      operationId: getModels
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema: { type: integer, format: int32 }
+        - name: make
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ModelsResponseResponse' }
+
+  /api/motor/year/{year}/make/{make}/models:
+    get:
+      tags: [Vehicles]
+      summary: Get motor models
+      operationId: getMotorModels
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema: { type: integer, format: int32 }
+        - name: make
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ModelAndVehicleIdListResponse' }
+
+  /api/vin/{vin}/vehicle:
+    get:
+      tags: [Vehicles]
+      summary: Get vehicle by VIN
+      operationId: getVehicleByVin
+      parameters:
+        - name: vin
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VinVehicleResponseResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/source/{contentSource}/vehicles:
+    get:
+      tags: [Vehicles]
+      summary: Get vehicles (deprecated)
+      operationId: getVehiclesDeprecated
+      deprecated: true
+      parameters:
+        - $ref: '#/components/parameters/ContentSourceParam'
+        - name: vehicleIds
+          in: query
+          schema: { type: array, items: { type: string } }
+          style: form
+          explode: false
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ModelAndVehicleIdListResponse' }
+    post:
+      tags: [Vehicles]
+      summary: Get vehicles
+      operationId: getVehicles
+      parameters:
+        - $ref: '#/components/parameters/ContentSourceParam'
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GetVehiclesRequest' }
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ModelAndVehicleIdListResponse' }
+
+  /api/source/{contentSource}/{vehicleId}/motorvehicles:
+    get:
+      tags: [Vehicles]
+      summary: Get motor vehicle details
+      description: |
+        Motor vehicle details (engine/trim variants) for a selected `vehicleId`.
+        
+        **When to call this:**
+        - If `contentSource != MOTOR`, the M1 frontend typically calls this endpoint after a model is selected
+          so the user can choose an engine/trim. The chosen engine id is then passed as `motorVehicleId` to other endpoints.
+        - If `contentSource == MOTOR`, clients usually skip this step (the `vehicleId` is already engine-specific).
+      operationId: getMotorVehicleDetails
+      parameters:
+        - $ref: '#/components/parameters/ContentSourceParam'
+        - $ref: '#/components/parameters/VehicleIdParam'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ModelAndVehicleIdListResponse' }
+
+  /api/source/{contentSource}/{vehicleId}/name:
+    get:
+      tags: [Vehicles]
+      summary: Get vehicle name
+      operationId: getVehicleName
+      parameters:
+        - $ref: '#/components/parameters/ContentSourceParam'
+        - $ref: '#/components/parameters/VehicleIdParam'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StringResponse' }
+
+  # --- SEARCH ---
+  /api/source/{contentSource}/vehicle/{vehicleId}/articles/v2:
+    get:
+      tags: [Search]
+      summary: Get search results by vehicle ID
+      description: |
+        Metadata for articles that match the provided vehicle and search term. Returns geo-blocking/entitlement data.
+        
+        **Parameters:**
+        - `searchTerm` is optional (empty means "all buckets").
+        - `motorVehicleId` is optional, but may be **required** for some `contentSource` values where `vehicleId` is model-level
+          and engine selection is separate (use `/motorvehicles` to discover valid values).
+        
+        **Toyota Delta mode:** do not use this endpoint when comparing quarters — use `toyotadeltaarticles`.
+      operationId: getSearchResultsByVehicleId
+      parameters:
+        - $ref: '#/components/parameters/ContentSourceParam'
+        - $ref: '#/components/parameters/VehicleIdParam'
+        - $ref: '#/components/parameters/SearchTermQuery'
+        - $ref: '#/components/parameters/MotorVehicleIdQuery'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SearchResultsResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/toyotadeltaarticles:
+    get:
+      tags: [Search]
+      summary: Get Toyota Delta search results by vehicle ID
+      description: |
+        Metadata for Toyota Delta articles that match the provided vehicle and search term.
+
+        The M1 frontend uses this endpoint when `sourceQuarter` and `targetQuarter` are both provided, and forces
+        `contentSource=ToyotaDelta`.
+      operationId: getSearchResultsByVehicleIdForToyotaDelta
+      parameters:
+        - $ref: '#/components/parameters/ContentSourceParam'
+        - $ref: '#/components/parameters/VehicleIdParam'
+        - $ref: '#/components/parameters/SearchTermQuery'
+        - $ref: '#/components/parameters/SourceQuarterQuery'
+        - $ref: '#/components/parameters/TargetQuarterQuery'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SearchResultsResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # --- ASSETS & ARTICLES ---
+  /api/source/{contentSource}/vehicle/{vehicleId}/article/{articleId}/title:
+    get:
+      tags: [Assets]
+      summary: Get article title
+      operationId: getArticleTitle
+      parameters:
+        - $ref: '#/components/parameters/ContentSourceParam'
+        - $ref: '#/components/parameters/VehicleIdParam'
+        - name: articleId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StringResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/article/{articleId}/orientations:
+    get:
+      tags: [Assets]
+      summary: Get article orientations
+      description: Fetches available vehicle configurations/orientations for articles that require selection (e.g. engine variants)
+      operationId: getArticleOrientations
+      parameters:
+        - $ref: '#/components/parameters/ContentSourceParam'
+        - $ref: '#/components/parameters/VehicleIdParam'
+        - name: articleId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Orientation options
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  header: { $ref: '#/components/schemas/ResponseHeader' }
+                  body:
+                    type: object
+                    properties:
+                      orientations:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id: { type: string }
+                            displayName: { type: string }
+                            qualifier: { type: string }
+                      total: { type: integer }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/article/{articleId}:
+    get:
+      tags: [Assets]
+      summary: Get article by ID
+      description: Content and relevant metadata for a specific article.
+      operationId: getArticleById
+      parameters:
+        - $ref: '#/components/parameters/ContentSourceParam'
+        - $ref: '#/components/parameters/VehicleIdParam'
+        - name: articleId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/MotorVehicleIdQuery'
+        - name: prettyPrint
+          in: query
+          schema: { type: boolean }
+        - name: bucketName
+          in: query
+          schema: { $ref: '#/components/schemas/BucketName' }
+        - name: articleSubtype
+          in: query
+          schema: { type: string }
+        - $ref: '#/components/parameters/SearchTermQuery'
+        - name: documentState
+          in: query
+          schema: { $ref: '#/components/schemas/DocumentState' }
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ArticleResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+  /api/source/{contentSource}/xml/{articleId}:
+    get:
+      tags: [Assets]
+      summary: Get XML by ID
+      description: The raw XML content of an article. Included for debugging purposes.
+      operationId: getXmlById
+      parameters:
+        - $ref: '#/components/parameters/ContentSourceParam'
+        - name: articleId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Successful response
+          content:
+            text/plain:
+              schema: { type: string }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/source/{contentSource}/graphic/{id}:
+    get:
+      tags: [Assets]
+      summary: Get graphic/image
+      operationId: getGraphic
+      parameters:
+        - $ref: '#/components/parameters/ContentSourceParam'
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: w
+          in: query
+          schema: { type: integer, format: int32 }
+        - name: h
+          in: query
+          schema: { type: integer, format: int32 }
+      responses:
+        '200':
+          description: Successful response
+          content:
+            image/*:
+              schema: { type: string, format: binary }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/manufacturer/{manufacturerId}/graphic/{id}:
+    get:
+      tags: [Assets]
+      summary: Get graphic (backwards compatible)
+      operationId: getGraphicBackwardsCompatible
+      deprecated: true
+      parameters:
+        - name: manufacturerId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: w
+          in: query
+          schema: { type: integer, format: int32 }
+        - name: h
+          in: query
+          schema: { type: integer, format: int32 }
+      responses:
+        '200':
+          description: Successful response
+          content:
+            image/*:
+              schema: { type: string, format: binary }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/asset/{handleId}:
+    get:
+      tags: [Assets]
+      summary: Get asset by handle ID
+      operationId: getAssetByHandleId
+      parameters:
+        - name: handleId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+            application/pdf:
+              schema: { type: string, format: binary }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/wiring:
+    get:
+      tags: [Assets]
+      summary: Get Wiring Diagrams
+      operationId: getWiring
+      parameters:
+        - $ref: '#/components/parameters/ContentSourceParam'
+        - $ref: '#/components/parameters/VehicleIdParam'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WiringListResponse' }
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/components:
+    get:
+      tags: [Assets]
+      summary: Get Component Locations
+      operationId: getComponents
+      parameters:
+        - $ref: '#/components/parameters/ContentSourceParam'
+        - $ref: '#/components/parameters/VehicleIdParam'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ComponentListResponse' }
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/fluids:
+    get:
+      tags: [Assets]
+      summary: Get Fluids
+      operationId: getFluids
+      parameters:
+        - $ref: '#/components/parameters/ContentSourceParam'
+        - $ref: '#/components/parameters/VehicleIdParam'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FluidListResponse' }
+
+  # --- PARTS & LABOR ---
+  /api/source/{contentSource}/vehicle/{vehicleId}/parts:
+    get:
+      tags: [Parts]
+      summary: Get parts for vehicle
+      operationId: getPartsForVehicle
+      parameters:
+        - $ref: '#/components/parameters/ContentSourceParam'
+        - $ref: '#/components/parameters/VehicleIdParam'
+        - $ref: '#/components/parameters/MotorVehicleIdQuery'
+        - $ref: '#/components/parameters/SearchTermQuery'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PartLineItemListResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/labor/{articleId}:
+    get:
+      tags: [Assets]
+      summary: Get labor details
+      description: |
+        Returns labor/estimated work time data for an article.
+        **M1 requirement:** `searchTerm` must be present (use empty string if no search).
+        **articleId:** Use `L:` prefix only. P: (Procedure) and L: (Labor) are different ID spaces;
+        procedure P:551733272 has labor at L:25760276, not L:551733272.
+      operationId: getLaborDetails
+      parameters:
+        - $ref: '#/components/parameters/ContentSourceParam'
+        - $ref: '#/components/parameters/VehicleIdParam'
+        - name: articleId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/MotorVehicleIdQuery'
+        - name: prettyPrint
+          in: query
+          schema: { type: boolean }
+        - $ref: '#/components/parameters/SearchTermQuery'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LaborResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+  # --- MAINTENANCE ---
+  /api/source/{contentSource}/vehicle/{vehicleId}/maintenanceSchedules/frequency:
+    get:
+      tags: [Maintenance Schedules]
+      summary: Get maintenance schedules by frequency
+      operationId: getMaintenanceByFrequency
+      parameters:
+        - $ref: '#/components/parameters/ContentSourceParam'
+        - $ref: '#/components/parameters/VehicleIdParam'
+        - name: frequencyTypeCode
+          in: query
+          schema: { type: string, enum: [F, N, R] }
+        - name: severity
+          in: query
+          schema: { $ref: '#/components/schemas/MaintenanceScheduleSeverity' }
+        - $ref: '#/components/parameters/SearchTermQuery'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MaintenanceSchedulesByFrequencyResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/maintenanceSchedules/intervals:
+    get:
+      tags: [Maintenance Schedules]
+      summary: Get maintenance schedules by interval
+      operationId: getMaintenanceSchedulesByInterval
+      parameters:
+        - $ref: '#/components/parameters/ContentSourceParam'
+        - $ref: '#/components/parameters/VehicleIdParam'
+        - name: intervalType
+          in: query
+          schema: { $ref: '#/components/schemas/IntervalType' }
+        - name: interval
+          in: query
+          schema: { type: integer, format: int32 }
+        - name: severity
+          in: query
+          schema: { $ref: '#/components/schemas/MaintenanceScheduleSeverity' }
+        - $ref: '#/components/parameters/SearchTermQuery'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MaintenanceSchedulesByIntervalResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/source/{contentSource}/vehicle/{vehicleId}/maintenanceSchedules/indicators:
+    get:
+      tags: [Maintenance Schedules]
+      summary: Get indicators with maintenance schedules
+      operationId: getIndicatorsWithMaintenanceSchedules
+      parameters:
+        - $ref: '#/components/parameters/ContentSourceParam'
+        - $ref: '#/components/parameters/VehicleIdParam'
+        - name: severity
+          in: query
+          schema: { $ref: '#/components/schemas/MaintenanceScheduleSeverity' }
+        - $ref: '#/components/parameters/SearchTermQuery'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IndicatorsWithMaintenanceSchedulesResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # --- BOOKMARKS ---
+  /api/source/{contentSource}/vehicle/{vehicleId}/article/{articleId}/bookmark:
+    post:
+      tags: [Bookmarks]
+      summary: Save bookmark
+      operationId: saveBookmark
+      parameters:
+        - $ref: '#/components/parameters/ContentSourceParam'
+        - $ref: '#/components/parameters/VehicleIdParam'
+        - name: articleId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                motorVehicleId: { type: string }
+                title: { type: string }
+                bucketName: { type: string }
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ArticleBookmarkResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+
+  /api/bookmark/{bookmarkId}:
+    get:
+      tags: [Bookmarks]
+      summary: Get bookmark
+      operationId: getBookmark
+      parameters:
+        - name: bookmarkId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ArticleResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Bookmarks]
+      summary: Delete Bookmark
+      operationId: deleteBookmark
+      parameters:
+        - name: bookmarkId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200': { description: "Bookmark removed" }
+
+  # --- TRACK CHANGE ---
+  /api/source/track-change/processingquarters:
+    get:
+      tags: [Track Change]
+      summary: Get processing quarters
+      operationId: getProcessingQuarters
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StringListResponse' }
+
+  /api/source/track-change/deltareport:
+    get:
+      tags: [Track Change]
+      summary: Get vehicle delta report
+      operationId: getVehicleDeltaReport
+      parameters:
+        - name: quarter
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VehicleDeltaReportListResponse' }
+
+  /api/track-change:
+    post:
+      tags: [Track Change]
+      summary: Track Article Comparison
+      description: Log comparisons between different revisions of technical documents.
+      operationId: trackChange
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                articleId: { type: string }
+                documentState: { $ref: '#/components/schemas/DocumentState' }
+      responses:
+        '200': { description: "Tracking success" }
+
+components:
+  headers:
+    RateLimitLimit:
+      description: Maximum number of requests permitted per interval.
+      schema: { type: string, example: "5000" }
+    RateLimitRemaining:
+      description: Number of requests remaining in the current interval.
+      schema: { type: string, example: "4810" }
+    RateLimitReset:
+      description: Unix timestamp indicating when the rate limit window resets.
+      schema: { type: string, example: "1773112910" }
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string, example: "Not Found" }
+              message: { type: string }
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string, example: "Bad Request" }
+              message: { type: string }
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string, example: "Internal Server Error" }
+              message: { type: string }
+
+  parameters:
+    ContentSourceParam:
+      name: contentSource
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/ContentSource' }
+      description: Content source identifier
+    VehicleIdParam:
+      name: vehicleId
+      in: path
+      required: true
+      schema: { type: string }
+      description: |
+        Vehicle ID selected from the models list.
+        
+        Treat this as an **opaque identifier**. Its internal format varies by `contentSource`:
+        - `MOTOR`: often looks like `modelId:engineId`
+        - Other sources: often model-level, with engine selection represented separately by `motorVehicleId`
+    MotorVehicleIdQuery:
+      name: motorVehicleId
+      in: query
+      required: false
+      schema: { type: string }
+      description: |
+        Engine/trim identifier for precise sharding (example: `79612:3016`).
+        
+        **How to obtain:**
+        - Call `GET /api/source/{contentSource}/{vehicleId}/motorvehicles` and select an engine `id`.
+        
+        **When to use:**
+        - Often required for non-`MOTOR` content sources.
+        - Typically omitted for `MOTOR` where `vehicleId` already encodes engine/trim.
+    SearchTermQuery:
+      name: searchTerm
+      in: query
+      required: false
+      allowEmptyValue: true
+      schema: { type: string }
+    SourceQuarterQuery:
+      name: sourceQuarter
+      in: query
+      required: false
+      schema: { type: string }
+      description: |
+        Source quarter for Toyota Delta mode (e.g. `2024Q4`).
+        
+        When both `sourceQuarter` and `targetQuarter` are provided, clients should call `toyotadeltaarticles`
+        with `contentSource=ToyotaDelta`.
+    TargetQuarterQuery:
+      name: targetQuarter
+      in: query
+      required: false
+      schema: { type: string }
+      description: |
+        Target quarter for Toyota Delta mode (e.g. `2025Q1`).
+        
+        When both `sourceQuarter` and `targetQuarter` are provided, clients should call `toyotadeltaarticles`
+        with `contentSource=ToyotaDelta`.
+
+  schemas:
+    ResponseHeader:
+      type: object
+      properties:
+        messages: { type: array, items: { type: string } }
+        date: { type: string, format: date-time }
+        status: { type: string, example: "OK" }
+        statusCode: { type: integer, example: 200 }
+
+    ContentSource:
+      type: string
+      description: |
+        Vehicle data provider enumeration.
+
+        Authoritative list comes from the M1 frontend `ContentSource` enum.
+      enum:
+        - MOTOR
+        - GeneralMotors
+        - Honda
+        - Stellantis
+        - Toyota
+        - Nissan
+        - Ford
+        - ToyotaDelta
+
+    IntervalType:
+      type: string
+      description: Interval type enumeration
+      enum: [Miles, Kilometers, Months]
+
+    MaintenanceScheduleSeverity:
+      type: string
+      description: Maintenance schedule severity enumeration
+      enum: [All, Severe, Normal]
+
+    FilterTabType:
+      type: string
+      description: Filter tab type enumeration (UI grouping)
+      enum: [Basic, All, Other]
+
+    BucketName:
+      type: string
+      description: Categories for document buckets mapping directly to the backend tags.
+      enum: 
+        - Maintenance
+        - Maintenance Schedules
+        - Labor
+        - Estimated Work Times
+        - Wiring Diagrams
+        - Procedures
+        - Other Diagnostics
+        - Diagnostic Trouble Codes
+        - Technical Service Bulletins
+        - Specifications
+        - Component Location Diagrams
+        - Special Tools and Equipment
+        - Introduction
+        - Position Statements
+        - Visual Identification
+        - Fluids
+        - Recommended Fluids
+        - Vehicle Images
+        - Part Vector Illustrations
+
+    DocumentState:
+      type: string
+      description: Represents the version of the document.
+      enum: [Current, Previous, Original]
+
+    ArticleResponse:
+      type: object
+      description: Article response containing article content and metadata
+      properties:
+        id: { type: string }
+        title: { type: string }
+        content: { type: string }
+        metadata: { type: object, additionalProperties: true }
+
+    LaborResponse:
+      type: object
+      description: Labor operation response
+      properties:
+        id: { type: string }
+        title: { type: string }
+        content: { type: string }
+        metadata: { type: object, additionalProperties: true }
+
+    StringResponse:
+      type: object
+      description: String response wrapper
+      properties:
+        value: { type: string }
+
+    MaintenanceSchedule:
+      type: object
+      properties:
+        id: { type: string }
+        description: { type: string }
+        interval: { type: number }
+        frequency: { type: string }
+        action: { type: string }
+
+    MaintenanceSchedulesByFrequencyResponse:
+      type: object
+      description: Maintenance schedules grouped by frequency
+      properties:
+        schedules:
+          type: array
+          items:
+            type: object
+            properties:
+              frequency: { type: string }
+              items: { type: array, items: { $ref: '#/components/schemas/MaintenanceSchedule' } }
+
+    MaintenanceSchedulesByIntervalResponse:
+      type: object
+      description: Maintenance schedules grouped by interval
+      properties:
+        schedules:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+
+    IndicatorsWithMaintenanceSchedulesResponse:
+      type: object
+      description: Indicators with maintenance schedules
+      properties:
+        indicators:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+
+    Int32ListResponse:
+      type: object
+      description: List of integers response
+      properties:
+        items: { type: array, items: { type: integer, format: int32 } }
+
+    MakeListResponse:
+      type: object
+      description: List of makes response
+      properties:
+        items: { type: array, items: { type: string } }
+
+    ModelsResponseResponse:
+      type: object
+      description: Models response
+      properties:
+        models:
+          type: array
+          items:
+            type: object
+            properties:
+              model: { type: string }
+              vehicleId: { type: string }
+
+    VinVehicleResponseResponse:
+      type: object
+      description: VIN vehicle response
+      properties:
+        vin: { type: string }
+        vehicleId: { type: string }
+        year: { type: integer, format: int32 }
+        make: { type: string }
+        model: { type: string }
+
+    ModelAndVehicleIdListResponse:
+      type: object
+      description: Model and vehicle ID list response (also functions as VehicleSelectionResponseBody)
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              model: { type: string }
+              vehicleId: { type: string }
+              name: { type: string }
+              contentSource: { $ref: '#/components/schemas/ContentSource' }
+
+    GetVehiclesRequest:
+      type: object
+      description: Request to get vehicles
+      properties:
+        vehicleIds: { type: array, items: { type: string } }
+
+    SearchResultsResponse:
+      type: object
+      description: Search results response
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              title: { type: string }
+              articleId: { type: string }
+              bucket: { type: string }
+              subtitle: { type: string }
+              sort: { type: integer }
+              source: { type: string }
+        totalCount: { type: integer, format: int32 }
+        vehicleGeoBlockingDetails:
+          type: object
+          properties:
+            isGeoBlocked: { type: boolean, example: false }
+            isLaborContentEntitled: { type: boolean, example: false }
+
+    PartLineItemListResponse:
+      type: object
+      description: Part line item list response
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              partNumber: { type: string }
+              description: { type: string }
+              quantity: { type: integer, format: int32 }
+
+    ArticleBookmarkResponse:
+      type: object
+      description: Article bookmark response
+      properties:
+        bookmarkId: { type: integer, format: int64 }
+        articleId: { type: string }
+        vehicleId: { type: string }
+
+    UiUserSettingsResponse:
+      type: object
+      description: UI user settings response
+      properties:
+        settings: { type: object, additionalProperties: true }
+
+    FeedbackConfigurationResponse:
+      type: object
+      description: Feedback configuration response
+      properties:
+        configurations: { type: array, items: { type: object, additionalProperties: true } }
+
+    Feedback:
+      type: object
+      description: Feedback request
+      properties:
+        message: { type: string }
+        type: { type: string }
+        metadata: { type: object, additionalProperties: true }
+
+    StringListResponse:
+      type: object
+      description: String list response
+      properties:
+        items: { type: array, items: { type: string } }
+
+    VehicleDeltaReportListResponse:
+      type: object
+      description: Vehicle delta report list response
+      properties:
+        items: { type: array, items: { type: object, additionalProperties: true } }
+
+    LogEntry:
+      type: object
+      description: Log entry request
+      properties:
+        message: { type: string }
+        level: { type: string }
+        timestamp: { type: string, format: date-time }
+        stackTrace: { type: string }
+        metadata: { type: object, additionalProperties: true }
+
+    EmptyResponse:
+      type: object
+      description: Empty response
+
+    Article:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        subtitle: { type: string }
+        code: { type: string }
+        description: { type: string }
+        bucket: { type: string }
+        parentBucket: { type: string }
+        thumbnailHref: { type: string }
+        bulletinNumber: { type: string }
+        releaseDate: { type: string }
+        sort: { type: integer }
+
+    ArticleContent:
+      type: object
+      description: "Article content containing HTML. The proxy normalizes this content."
+      properties:
+        html: { type: string }
+        content: { type: string, deprecated: true }
+        html_content: { type: string, deprecated: true }
+        id: { type: string }
+        title: { type: string }
+        metadata: { type: object }
+
+    FilterTab:
+      type: object
+      properties:
+        name: { type: string }
+        count: { type: integer }
+        articlesCount: { type: integer }
+        type: { type: string }
+        filterTabType: { $ref: '#/components/schemas/FilterTabType' }
+        buckets: { type: array, items: { $ref: '#/components/schemas/Bucket' } }
+        articleTrailId: { type: string }
+        isCountUnknown: { type: boolean }
+        sort: { type: integer }
+
+    Bucket:
+      type: object
+      properties:
+        name: { type: string }
+        nameOverride: { type: string }
+        count: { type: integer }
+        sort: { type: integer }
+        children: { type: array, items: { $ref: '#/components/schemas/Bucket' } }
+
+    ArticlesData:
+      type: object
+      properties:
+        articleDetails: { type: array, items: { $ref: '#/components/schemas/Article' } }
+        filterTabs: { type: array, items: { $ref: '#/components/schemas/FilterTab' } }
+
+    Tsb:
+      type: object
+      properties:
+        id: { type: string }
+        bulletinNumber: { type: string }
+        title: { type: string }
+        releaseDate: { type: string }
+        thumbnailHref: { type: string }
+        description: { type: string }
+
+    Procedure:
+      type: object
+      properties:
+        id: { type: string }
+        bucket: { type: string }
+        title: { type: string }
+        subtitle: { type: string }
+        parentBucket: { type: string }
+
+    WiringDiagram:
+      type: object
+      properties:
+        id: { type: string }
+        bucket: { type: string }
+        title: { type: string }
+        subtitle: { type: string }
+        thumbnailHref: { type: string }
+
+    ComponentLocation:
+      type: object
+      properties:
+        id: { type: string }
+        bucket: { type: string }
+        title: { type: string }
+        thumbnailHref: { type: string }
+
+    Spec:
+      type: object
+      properties:
+        id: { type: string }
+        bucket: { type: string }
+        title: { type: string }
+        value: { type: string }
+        description: { type: string }
+
+    Fluid:
+      type: object
+      properties:
+        id: { type: string }
+        bucket: { type: string }
+        title: { type: string }
+        capacity: { type: string }
+        specification: { type: string }
+
+    Dtc:
+      type: object
+      properties:
+        id: { type: string }
+        code: { type: string }
+        description: { type: string }
+        bucket: { type: string }
+
+    TsbListResponse:
+      type: object
+      properties:
+        tsbs: { type: array, items: { $ref: '#/components/schemas/Tsb' } }
+        total: { type: integer }
+
+    ProcedureListResponse:
+      type: object
+      properties:
+        procedures: { type: array, items: { $ref: '#/components/schemas/Procedure' } }
+        total: { type: integer }
+
+    DiagramListResponse:
+      type: object
+      properties:
+        diagrams:
+          type: array
+          items:
+            oneOf:
+              - { $ref: '#/components/schemas/WiringDiagram' }
+              - { $ref: '#/components/schemas/ComponentLocation' }
+        total: { type: integer }
+
+    SpecListResponse:
+      type: object
+      properties:
+        specs: { type: array, items: { $ref: '#/components/schemas/Spec' } }
+        total: { type: integer }
+
+    WiringListResponse:
+      type: object
+      properties:
+        wiringDiagrams: { type: array, items: { $ref: '#/components/schemas/WiringDiagram' } }
+        total: { type: integer }
+
+    ComponentListResponse:
+      type: object
+      properties:
+        componentLocations: { type: array, items: { $ref: '#/components/schemas/ComponentLocation' } }
+        total: { type: integer }
+
+    FluidListResponse:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Fluid' } }
+
+    DtcListResponse:
+      type: object
+      properties:
+        dtcs: { type: array, items: { $ref: '#/components/schemas/Dtc' } }
+        total: { type: integer }
+
+    ArrayResponseBody:
+      type: object
+      properties:
+        header: { $ref: '#/components/schemas/ResponseHeader' }
+        body: { type: array, items: {} }
+
+    StringResponseBody:
+      type: object
+      properties:
+        header: { $ref: '#/components/schemas/ResponseHeader' }
+        body: { type: string }
+
+  securitySchemes:
+    CookieAuth:
+      type: apiKey
+      in: header
+      name: cookie
+      description: Requires SessionIdentifier and AuthUserInfo cookies.

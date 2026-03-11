@@ -1,0 +1,241 @@
+{
+  "header": {
+    "messages": [],
+    "date": "Tue, 10 Mar 2026 16:47:50 GMT",
+    "status": "OK",
+    "statusCode": 200
+  },
+  "body": {
+    "intervals": [
+      {
+        "interval": 7500,
+        "applications": [
+          {
+            "maintenanceScheduleId": 1494,
+            "applicationID": 23005174
+          }
+        ]
+      },
+      {
+        "interval": 15000,
+        "applications": [
+          {
+            "maintenanceScheduleId": 402,
+            "applicationID": 22963215
+          },
+          {
+            "maintenanceScheduleId": 402,
+            "applicationID": 22972609
+          },
+          {
+            "maintenanceScheduleId": 805,
+            "applicationID": 23005174
+          }
+        ]
+      }
+    ],
+    "applications": [
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 402,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 24000,
+            "intervalMile": 15000,
+            "intervalMonth": 0,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 1277,
+                "text": "Applies If the vehicle is driven primarily in dusty conditions"
+              }
+            ],
+            "severeServiceDescription": "Yes"
+          }
+        ],
+        "applicationId": 22963215,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "R&R",
+          "commonName": "",
+          "groupID": 20,
+          "groupName": "Engine",
+          "literalName": "Engine Air Filter Element R&R",
+          "subGroupID": 35,
+          "subGroupName": "Air Intake System",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11207
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 402,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 24000,
+            "intervalMile": 15000,
+            "intervalMonth": 0,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 1387,
+                "text": "If vehicle is driven primarily in urban areas that have a high concentration of soot in the air, or it the flow from the climate control system becomes less than usual."
+              }
+            ],
+            "severeServiceDescription": "Yes"
+          }
+        ],
+        "applicationId": 22972609,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "R&R",
+          "commonName": "",
+          "groupID": 12,
+          "groupName": "Air Distribution",
+          "literalName": "Cabin Air Filter R&R",
+          "subGroupID": 34,
+          "subGroupName": "Air Filter",
+          "systemID": 4,
+          "systemName": "HVAC",
+          "taxonomyID": 11230
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 805,
+            "documents": [],
+            "frequencyCode": "2",
+            "frequencyDescription": "2nd",
+            "indicator": "",
+            "intervalKilometer": 24000,
+            "intervalMile": 15000,
+            "intervalMonth": 0,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 1305,
+                "text": "Driving mountainous areas results in a higher level of mechanical (shear) stress to fluid. This requires differential fluid changes more frequently than recommended by the maintenance minder."
+              }
+            ],
+            "severeServiceDescription": "Yes"
+          },
+          {
+            "maintenanceScheduleId": 1494,
+            "documents": [],
+            "frequencyCode": "1",
+            "frequencyDescription": "1st",
+            "indicator": "",
+            "intervalKilometer": 12000,
+            "intervalMile": 7500,
+            "intervalMonth": 0,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 1305,
+                "text": "Driving mountainous areas results in a higher level of mechanical (shear) stress to fluid. This requires differential fluid changes more frequently than recommended by the maintenance minder."
+              }
+            ],
+            "severeServiceDescription": "Yes"
+          }
+        ],
+        "applicationId": 23005174,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "position": {
+          "name": "Rear",
+          "pcdbPositionId": 30,
+          "positionId": 24,
+          "type": "MOTOR_Position"
+        },
+        "taxonomy": {
+          "action": "Drain & Refill",
+          "commonName": "",
+          "groupID": 18,
+          "groupName": "Driveline",
+          "literalName": "Drive Axle Assembly Drain & Refill",
+          "subGroupID": 37,
+          "subGroupName": "Axle",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11257
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [
+          {
+            "id": 3,
+            "type": "DT"
+          }
+        ],
+        "isActive": true
+      }
+    ]
+  }
+}

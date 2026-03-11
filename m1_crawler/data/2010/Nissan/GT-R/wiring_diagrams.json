@@ -1,0 +1,870 @@
+[
+  {
+    "id": "P:NISX0000000005059061",
+    "bucket": "Wiring Diagrams",
+    "title": "AUDIO, VISUAL NAVIGATION SYSTEM | BASE AUDIO WITH NAVIGATION | ECU DIAGNOSIS INFORMATION | AUDIO AMP. | AUDIO AMP. LH | Wiring Diagram - BASE AUDIO WITH NAVIGATION SYSTEM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005059063",
+    "bucket": "Wiring Diagrams",
+    "title": "AUDIO, VISUAL NAVIGATION SYSTEM | BASE AUDIO WITH NAVIGATION | ECU DIAGNOSIS INFORMATION | AUDIO AMP. | AUDIO AMP. RH | Wiring Diagram - BASE AUDIO WITH NAVIGATION SYSTEM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005059055",
+    "bucket": "Wiring Diagrams",
+    "title": "AUDIO, VISUAL NAVIGATION SYSTEM | BASE AUDIO WITH NAVIGATION | ECU DIAGNOSIS INFORMATION | AV CONTROL UNIT | Wiring Diagram - BASE AUDIO WITH NAVIGATION SYSTEM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005059059",
+    "bucket": "Wiring Diagrams",
+    "title": "AUDIO, VISUAL NAVIGATION SYSTEM | BASE AUDIO WITH NAVIGATION | ECU DIAGNOSIS INFORMATION | DISPLAY UNIT | Wiring Diagram - BASE AUDIO WITH NAVIGATION SYSTEM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005059101",
+    "bucket": "Wiring Diagrams",
+    "title": "AUDIO, VISUAL NAVIGATION SYSTEM | BASE AUDIO WITH NAVIGATION | REMOVAL AND INSTALLATION | ANTENNA FEEDER (GPS) | Harness layout",
+    "thumbnailHref": "api/asset/2dbe4a6d-fdfc-40fa-9f25-adbe93e0ffca",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005059099",
+    "bucket": "Wiring Diagrams",
+    "title": "AUDIO, VISUAL NAVIGATION SYSTEM | BASE AUDIO WITH NAVIGATION | REMOVAL AND INSTALLATION | ANTENNA FEEDER (RADIO) | Harness layout",
+    "thumbnailHref": "api/asset/2dbe4a6d-fdfc-40fa-9f25-adbe93e0ffca",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005059100",
+    "bucket": "Wiring Diagrams",
+    "title": "AUDIO, VISUAL NAVIGATION SYSTEM | BASE AUDIO WITH NAVIGATION | REMOVAL AND INSTALLATION | ANTENNA FEEDER (SATELLITE RADIO) | Harness layout",
+    "thumbnailHref": "api/asset/2dbe4a6d-fdfc-40fa-9f25-adbe93e0ffca",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005059208",
+    "bucket": "Wiring Diagrams",
+    "title": "AUDIO, VISUAL NAVIGATION SYSTEM | BOSE AUDIO WITH NAVIGATION | ECU DIAGNOSIS INFORMATION | AV CONTROL UNIT | Wiring Diagram - BOSE AUDIO WITH NAVIGATION SYSTEM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005059214",
+    "bucket": "Wiring Diagrams",
+    "title": "AUDIO, VISUAL NAVIGATION SYSTEM | BOSE AUDIO WITH NAVIGATION | ECU DIAGNOSIS INFORMATION | BOSE AMP. | Wiring Diagram - BOSE AUDIO WITH NAVIGATION SYSTEM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005059212",
+    "bucket": "Wiring Diagrams",
+    "title": "AUDIO, VISUAL NAVIGATION SYSTEM | BOSE AUDIO WITH NAVIGATION | ECU DIAGNOSIS INFORMATION | DISPLAY UNIT | Wiring Diagram - BOSE AUDIO WITH NAVIGATION SYSTEM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005059258",
+    "bucket": "Wiring Diagrams",
+    "title": "AUDIO, VISUAL NAVIGATION SYSTEM | BOSE AUDIO WITH NAVIGATION | REMOVAL AND INSTALLATION | ANTENNA FEEDER (GPS) | Harness layout",
+    "thumbnailHref": "api/asset/2dbe4a6d-fdfc-40fa-9f25-adbe93e0ffca",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005059256",
+    "bucket": "Wiring Diagrams",
+    "title": "AUDIO, VISUAL NAVIGATION SYSTEM | BOSE AUDIO WITH NAVIGATION | REMOVAL AND INSTALLATION | ANTENNA FEEDER (RADIO) | Harness layout",
+    "thumbnailHref": "api/asset/2dbe4a6d-fdfc-40fa-9f25-adbe93e0ffca",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005059257",
+    "bucket": "Wiring Diagrams",
+    "title": "AUDIO, VISUAL NAVIGATION SYSTEM | BOSE AUDIO WITH NAVIGATION | REMOVAL AND INSTALLATION | ANTENNA FEEDER (SATELLITE RADIO) | Harness layout",
+    "thumbnailHref": "api/asset/2dbe4a6d-fdfc-40fa-9f25-adbe93e0ffca",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005060977",
+    "bucket": "Wiring Diagrams",
+    "title": "BODY CONTROL SYSTEM | ECU DIAGNOSIS INFORMATION | BCM (BODY CONTROL MODULE) | Wiring Diagram - BCM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "W:jtkwa0622gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "BODY EXTERIOR, DOORS, ROOF & VEHICLE SECURITY | DOOR & LOCK | INTELLIGENT KEY SYSTEM",
+    "thumbnailHref": "api/asset/bde0a39e-b4e6-495f-bb0a-8abaf3d43cb8",
+    "sort": 0
+  },
+  {
+    "id": "W:jtkwa0623gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "BODY EXTERIOR, DOORS, ROOF & VEHICLE SECURITY | DOOR & LOCK | TRUNK LID OPENER",
+    "thumbnailHref": "api/asset/c154ae48-6a17-4e34-b7b7-ba4ca8816d97",
+    "sort": 0
+  },
+  {
+    "id": "W:jtkwa0624gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "BODY EXTERIOR, DOORS, ROOF & VEHICLE SECURITY | SECURITY CONTROL SYSTEM | INTELLIGENT KEY SYSTEM / ENGINE START FUNCTION",
+    "thumbnailHref": "api/asset/977ad0cd-aa34-43a7-a78b-ae4621f28861",
+    "sort": 0
+  },
+  {
+    "id": "W:jtkwa0626gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "BODY EXTERIOR, DOORS, ROOF & VEHICLE SECURITY | SECURITY CONTROL SYSTEM | NISSAN VEHICLE IMMOBILIZER SYSTEM",
+    "thumbnailHref": "api/asset/d31a0a2c-e531-4da9-a073-ac80ee3cfa8f",
+    "sort": 0
+  },
+  {
+    "id": "W:jtkwa0625gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "BODY EXTERIOR, DOORS, ROOF & VEHICLE SECURITY | SECURITY CONTROL SYSTEM | VEHICLE SECURITY SYSTEM",
+    "thumbnailHref": "api/asset/f4aac795-2cd9-4a79-aafd-4f2f9fe64ae8",
+    "sort": 0
+  },
+  {
+    "id": "W:jtjwa0114gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "BODY INTERIOR | SEAT | HEATED SEAT",
+    "thumbnailHref": "api/asset/af99ca0c-34c0-4774-b838-b81988899e92",
+    "sort": 0
+  },
+  {
+    "id": "W:jtjwa0113gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "BODY INTERIOR | SEAT | POWER SEAT FOR PASSENGER SIDE",
+    "thumbnailHref": "api/asset/b903940a-706e-4053-9b56-262033e50c7e",
+    "sort": 0
+  },
+  {
+    "id": "W:jtfwa0089gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "BRAKES | BRAKE CONTROL SYSTEM",
+    "thumbnailHref": "api/asset/9222e4e9-87b6-4dde-a232-00509c182759",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005060624",
+    "bucket": "Wiring Diagrams",
+    "title": "CHARGING SYSTEM | DTC/CIRCUIT DIAGNOSIS | Wiring Diagram - CHARGING SYSTEM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005059286",
+    "bucket": "Wiring Diagrams",
+    "title": "DEFOGGER | DTC/CIRCUIT DIAGNOSIS | REAR WINDOW DEFOGGER SYSTEM | Wiring Diagram - DEFOGGER SYSTEM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "W:jtmih0376gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "DOOR HARNESS (PASSENGER SIDE DOOR)",
+    "thumbnailHref": "api/asset/b83d37bc-cef9-4fd8-bfd1-4b0f0396592a",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005060189",
+    "bucket": "Wiring Diagrams",
+    "title": "DOOR LOCK | DTC/CIRCUIT DIAGNOSIS | INTEGRATED HOMELINK TRANSMITTER SYSTEM | Wiring Diagram - INTEGRATED HOMELINK TRANSMITTER SYSTEM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005060187",
+    "bucket": "Wiring Diagrams",
+    "title": "DOOR LOCK | DTC/CIRCUIT DIAGNOSIS | INTELLIGENT KEY SYSTEM | Wiring Diagram - INTELLIGENT KEY SYSTEM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005060186",
+    "bucket": "Wiring Diagrams",
+    "title": "DOOR LOCK | DTC/CIRCUIT DIAGNOSIS | POWER DOOR LOCK SYSTEM | Wiring Diagram - POWER DOOR LOCK SYSTEM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005060188",
+    "bucket": "Wiring Diagrams",
+    "title": "DOOR LOCK | DTC/CIRCUIT DIAGNOSIS | TRUNK LID OPENER | Wiring Diagram - TRUNK LID OPENER -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "W:jtlwa1176gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "DRIVER CONTROLS | DEFOGGER",
+    "thumbnailHref": "api/asset/a3ad3bd0-253e-495c-90e9-0347f7c584f7",
+    "sort": 0
+  },
+  {
+    "id": "W:jtlwa1170gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "DRIVER CONTROLS | EXTERIOR LIGHTING SYSTEM | DAYTIME RUNNING LIGHT SYSTEM",
+    "thumbnailHref": "api/asset/9c9161bc-42fd-43d9-8e1f-f76f2c1b02b7",
+    "sort": 0
+  },
+  {
+    "id": "W:jtlwa1169gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "DRIVER CONTROLS | EXTERIOR LIGHTING SYSTEM | HEADLAMP",
+    "thumbnailHref": "api/asset/6fbe25a5-7235-4ba6-959e-f26d58ba77ec",
+    "sort": 0
+  },
+  {
+    "id": "W:jtlwa1172gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "DRIVER CONTROLS | EXTERIOR LIGHTING SYSTEM | PARKING, LICENSE PLATE AND TAIL LAMPS",
+    "thumbnailHref": "api/asset/b5f0cb12-09dd-4ae5-8fc1-4751e4e1ada5",
+    "sort": 0
+  },
+  {
+    "id": "W:jtlwa1171gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "DRIVER CONTROLS | EXTERIOR LIGHTING SYSTEM | TURN SIGNAL AND HAZARD WARNING LAMPS",
+    "thumbnailHref": "api/asset/2f1c0be7-5476-4f09-aedd-a1f21a98ff58",
+    "sort": 0
+  },
+  {
+    "id": "W:jtlwa1177gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "DRIVER CONTROLS | HORN",
+    "thumbnailHref": "api/asset/9aff86cd-f705-47e4-a945-5b1ad3a01c22",
+    "sort": 0
+  },
+  {
+    "id": "W:jtlwa1174gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "DRIVER CONTROLS | INTERIOR LIGHTING SYSTEM | ILLUMINATION",
+    "thumbnailHref": "api/asset/cc127436-9c77-48c7-949d-c52b8af2fca3",
+    "sort": 0
+  },
+  {
+    "id": "W:jtlwa1173gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "DRIVER CONTROLS | INTERIOR LIGHTING SYSTEM | INTERIOR ROOM LAMP CONTROL",
+    "thumbnailHref": "api/asset/51cee6f9-ef96-4f7c-873f-e8c088b77360",
+    "sort": 0
+  },
+  {
+    "id": "W:jtlwa1175gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "DRIVER CONTROLS | WIPER & WASHER | FRONT WIPER AND WASHER SYSTEM",
+    "thumbnailHref": "api/asset/35e12992-6c5f-4bbf-b21f-d5e7aaf56202",
+    "sort": 0
+  },
+  {
+    "id": "W:jtnwa0375gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "DRIVER INFORMATION & MULTIMEDIA | AUDIO, VISUAL & NAVIGATION SYSTEM | BASE AUDIO WITH NAVIGATION SYSTEM",
+    "thumbnailHref": "api/asset/1122a7ae-7b1b-43a3-8938-ad055d393f12",
+    "sort": 0
+  },
+  {
+    "id": "W:jtnwa0376gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "DRIVER INFORMATION & MULTIMEDIA | AUDIO, VISUAL & NAVIGATION SYSTEM | BOSE AUDIO WITH NAVIGATION SYSTEM",
+    "thumbnailHref": "api/asset/55b8dacf-2d53-4ac0-9834-6dee8c26c3ff",
+    "sort": 0
+  },
+  {
+    "id": "W:jtnwa0373gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "DRIVER INFORMATION & MULTIMEDIA | METER, WARNING LAMP & INDICATOR | METER",
+    "thumbnailHref": "api/asset/75b9402b-e184-4721-9700-2bad44e683f2",
+    "sort": 0
+  },
+  {
+    "id": "W:jtnwa0374gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "DRIVER INFORMATION & MULTIMEDIA | WARNING CHIME SYSTEM | WARNING CHIME",
+    "thumbnailHref": "api/asset/0ba8f983-fad6-4b38-865d-c2ddf4849b36",
+    "sort": 0
+  },
+  {
+    "id": "W:jtmwa0700gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "ELECTRICAL & POWER CONTROL | BODY CONTROL SYSTEM | BCM (BODY CONTROL MODULE)",
+    "thumbnailHref": "api/asset/8c8768bd-65ab-46aa-a335-5d072affea1a",
+    "sort": 0
+  },
+  {
+    "id": "W:jtmwa0701gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "ELECTRICAL & POWER CONTROL | LAN SYSTEM | CAN SYSTEM",
+    "thumbnailHref": "api/asset/930e8e88-e895-4519-8532-4b74e9786ef6",
+    "sort": 0
+  },
+  {
+    "id": "W:jtmwa0702gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "ELECTRICAL & POWER CONTROL | POWER CONTROL SYSTEM | IPDM E/R (INTELLIGENT POWER DISTRIBUTION MODULE ENGINE ROOM)",
+    "thumbnailHref": "api/asset/7bf23e94-2a79-41a6-a332-23a567e12d99",
+    "sort": 0
+  },
+  {
+    "id": "W:jtmwa0307gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "ELECTRICAL & POWER CONTROL | POWER OUTLET | CONSOLE POWER SOCKET",
+    "thumbnailHref": "api/asset/086d1b9f-c242-49e7-8465-5f9779982e84",
+    "sort": 0
+  },
+  {
+    "id": "W:jtbwa0175gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "ENGINE | ENGINE CONTROL SYSTEM",
+    "thumbnailHref": "api/asset/c35b00eb-eeb3-477e-99a4-a4e25340c37b",
+    "sort": 0
+  },
+  {
+    "id": "W:jtmih0371gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "ENGINE CONTROL HARNESS",
+    "thumbnailHref": "api/asset/1513ea9f-264f-4096-bd9e-8f9da7219248",
+    "sort": 0
+  },
+  {
+    "id": "W:jtmih0370gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "ENGINE ROOM HARNESS",
+    "thumbnailHref": "api/asset/1720ea5d-6c84-4afd-8eed-933321377ebb",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057381",
+    "bucket": "Wiring Diagrams",
+    "title": "EXTERIOR LIGHTING SYSTEM | XENON TYPE | DTC/CIRCUIT DIAGNOSIS | BACK-UP LAMP | Wiring Diagram - BACK-UP LAMP -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057377",
+    "bucket": "Wiring Diagrams",
+    "title": "EXTERIOR LIGHTING SYSTEM | XENON TYPE | DTC/CIRCUIT DIAGNOSIS | DAYTIME RUNNING LIGHT SYSTEM | Wiring Diagram - DAYTIME LIGHT SYSTEM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057376",
+    "bucket": "Wiring Diagrams",
+    "title": "EXTERIOR LIGHTING SYSTEM | XENON TYPE | DTC/CIRCUIT DIAGNOSIS | HEADLAMP SYSTEM | Wiring Diagram - HEADLAMP -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057379",
+    "bucket": "Wiring Diagrams",
+    "title": "EXTERIOR LIGHTING SYSTEM | XENON TYPE | DTC/CIRCUIT DIAGNOSIS | PARKING, LICENSE PLATE AND TAIL LAMPS SYSTEM | Wiring Diagram - PARKING LICENSE PLATE AND TAIL LAMPS -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057380",
+    "bucket": "Wiring Diagrams",
+    "title": "EXTERIOR LIGHTING SYSTEM | XENON TYPE | DTC/CIRCUIT DIAGNOSIS | STOP LAMP | Wiring Diagram - STOP LAMP -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057378",
+    "bucket": "Wiring Diagrams",
+    "title": "EXTERIOR LIGHTING SYSTEM | XENON TYPE | DTC/CIRCUIT DIAGNOSIS | TURN SIGNAL AND HAZARD WARNING LAMP SYSTEM | Wiring Diagram - TURN AND HAZARD WARNING LAMPS -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005060860",
+    "bucket": "Wiring Diagrams",
+    "title": "GENERAL INFORMATION | BASIC INSPECTION | CONSULT-III/GST CHECKING SYSTEM | Wiring Diagram - CONSULT-III/GST CHECKING SYSTEM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "W:jtawa0044gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "GENERAL INFORMATION | CONSULT-III CHECKING SYSTEM",
+    "thumbnailHref": "api/asset/fc764aa6-3ceb-4ab4-bf52-35a1686c1438",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005060819",
+    "bucket": "Wiring Diagrams",
+    "title": "GENERAL INFORMATION | HOW TO USE THIS MANUAL | HOW TO READ WIRING DIAGRAMS | Sample/Wiring Diagram -Example-",
+    "thumbnailHref": "api/asset/5bd3c360-cacf-4156-bde4-1d43a7f67cf5",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057278",
+    "bucket": "Wiring Diagrams",
+    "title": "HEATER AIR CONDITIONING CONTROL SYSTEM | AUTOMATIC AIR CONDITIONER | ECU DIAGNOSIS INFORMATION | A/C AUTO AMP. | Wiring Diagram - AIR CONDITIONER CONTROL SYSTEM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005061237",
+    "bucket": "Wiring Diagrams",
+    "title": "HORN | DTC/CIRCUIT DIAGNOSIS | Wiring Diagram - HORN -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005060584",
+    "bucket": "Wiring Diagrams",
+    "title": "INTERIOR LIGHTING SYSTEM | DTC/CIRCUIT DIAGNOSIS | ILLUMINATION | Wiring Diagram - ILLUMINATION -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005060583",
+    "bucket": "Wiring Diagrams",
+    "title": "INTERIOR LIGHTING SYSTEM | DTC/CIRCUIT DIAGNOSIS | INTERIOR ROOM LAMP CONTROL SYSTEM | Wiring Diagram - INTERIOR ROOM LAMP -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057478",
+    "bucket": "Wiring Diagrams",
+    "title": "LAN SYSTEM | CAN | DTC/CIRCUIT DIAGNOSIS | CAN COMMUNICATION SYSTEM | Wiring Diagram - CAN SYSTEM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "W:jtmih0369gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "MAIN HARNESS",
+    "thumbnailHref": "api/asset/a82c8112-a0fd-4063-a45c-61d2e78babbb",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005060409",
+    "bucket": "Wiring Diagrams",
+    "title": "METER, WARNING LAMP INDICATOR | ECU DIAGNOSIS INFORMATION | COMBINATION METER | Wiring Diagram - METER -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057572",
+    "bucket": "Wiring Diagrams",
+    "title": "MIRRORS | DTC/CIRCUIT DIAGNOSIS | AUTO ANTI-DAZZLING INSIDE MIRROR SYSTEM | Wiring Diagram - INSIDE MIRROR SYSTEM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057571",
+    "bucket": "Wiring Diagrams",
+    "title": "MIRRORS | DTC/CIRCUIT DIAGNOSIS | DOOR MIRROR | Wiring Diagram - DOOR MIRROR SYSTEM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "W:jtmih0896gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "Outline",
+    "thumbnailHref": "api/asset/b09791c6-1e7a-46be-b671-97f2db1897ab",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005059329",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER CONTROL SYSTEM | IPDM E/R | ECU DIAGNOSIS INFORMATION | IPDM E/R (INTELLIGENT POWER DISTRIBUTION MODULE ENGINE ROOM) | Wiring Diagram - IPDM E/R -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005059380",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER CONTROL SYSTEM | POWER DISTRIBUTION SYSTEM | DTC/CIRCUIT DIAGNOSIS | Wiring Diagram - PDS (POWER DISTRIBUTION SYSTEM) -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057445",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER OUTLET | DTC/CIRCUIT DIAGNOSIS | POWER SOCKET | CONSOLE POWER SOCKET | Wiring Diagram - CONSOLE POWER SOCKET -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057444",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER OUTLET | DTC/CIRCUIT DIAGNOSIS | POWER SOCKET | INSTRUMENT POWER SOCKET | Wiring Diagram - INSTRUMENT POWER SOCKET -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "W:jtmwa0023gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SOURCE | ACCESSORY POWER SUPPLY",
+    "thumbnailHref": "images/nopreview.jpeg",
+    "sort": 0
+  },
+  {
+    "id": "W:jtmwa0734gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SOURCE | ACCESSORY POWER SUPPLY",
+    "thumbnailHref": "api/asset/8167bf29-fd0f-477a-a95b-841f946dde17",
+    "sort": 0
+  },
+  {
+    "id": "W:jtmiz0800gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SOURCE | ACCESSORY POWER SUPPLY | ACCESSORY POWER SUPPLY FUSE No. 19",
+    "thumbnailHref": "api/asset/cf86806a-5a27-4107-afcf-6eecbc69fe5a",
+    "sort": 0
+  },
+  {
+    "id": "W:jtmwa0704gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SOURCE | BATTERY POWER SUPPLY",
+    "thumbnailHref": "api/asset/a25ecdfc-f229-452c-873e-b7fa89470cf8",
+    "sort": 0
+  },
+  {
+    "id": "W:jtmwa0022gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SOURCE | BATTERY POWER SUPPLY",
+    "thumbnailHref": "images/nopreview.jpeg",
+    "sort": 0
+  },
+  {
+    "id": "W:jtmiz0349gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SOURCE | BATTERY POWER SUPPLY | BATTERY POWER SUPPLY FUSE No. 34",
+    "thumbnailHref": "api/asset/37fae19e-721e-4804-a695-1fbee397147d",
+    "sort": 0
+  },
+  {
+    "id": "W:jtmiz0799gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SOURCE | BATTERY POWER SUPPLY | BATTERY POWER SUPPLY FUSE No. 53",
+    "thumbnailHref": "api/asset/99c241af-324c-4522-9dff-5b3405ad7ff8",
+    "sort": 0
+  },
+  {
+    "id": "W:jtmiz0797gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SOURCE | BATTERY POWER SUPPLY | BATTERY POWER SUPPLY FUSIBLE LINK No. I",
+    "thumbnailHref": "api/asset/80376525-2c97-4f61-938f-c6e4737d7a5e",
+    "sort": 0
+  },
+  {
+    "id": "W:jtmia0208gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SOURCE | FUSE BLOCK-JUNCTION BOX (J/B) | Fuse,Connector and Terminal Arrangement",
+    "thumbnailHref": "api/asset/0410c5cd-44fd-4f7d-849a-962216954603",
+    "sort": 0
+  },
+  {
+    "id": "W:jtmia0031gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SOURCE | FUSE, FUSIBLE LINK AND RELAY BOX",
+    "thumbnailHref": "images/nopreview.jpeg",
+    "sort": 0
+  },
+  {
+    "id": "W:jtmwa0705gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SOURCE | IGNITION POWER SUPPLY",
+    "thumbnailHref": "api/asset/84db296a-2cad-4942-a595-83177ff51bd8",
+    "sort": 0
+  },
+  {
+    "id": "W:jtmwa0024gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SOURCE | IGNITION POWER SUPPLY",
+    "thumbnailHref": "images/nopreview.jpeg",
+    "sort": 0
+  },
+  {
+    "id": "W:jtmiz0354gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SOURCE | IGNITION POWER SUPPLY | IGNITION POWER SUPPLY FUSE No. 4",
+    "thumbnailHref": "api/asset/8a82aff4-06a7-43ae-92f1-86fb24027b2c",
+    "sort": 0
+  },
+  {
+    "id": "W:jtmia0210gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SOURCE | IPDM E/R (INTELLIGENT POWER DISTRIBUTION MODULE ENGINE ROOM) | Fuse,Connector and Terminal Arrangement",
+    "thumbnailHref": "api/asset/693420d9-0a22-4111-8171-039efbf24a07",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057543",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SUPPLY, GROUND CIRCUIT ELEMENTS | POWER SUPPLY GROUND CIRCUIT | DTC/CIRCUIT DIAGNOSIS | HARNESS LAYOUT | How To Read Harness Layout",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057533",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SUPPLY, GROUND CIRCUIT ELEMENTS | POWER SUPPLY GROUND CIRCUIT | DTC/CIRCUIT DIAGNOSIS | POWER SUPPLY ROUTING CIRCUIT | Wiring Diagram - ACCESSORY POWER SUPPLY -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057534",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SUPPLY, GROUND CIRCUIT ELEMENTS | POWER SUPPLY GROUND CIRCUIT | DTC/CIRCUIT DIAGNOSIS | POWER SUPPLY ROUTING CIRCUIT | Wiring Diagram - ACCESSORY POWER SUPPLY FUSE No. 19 -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057526",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SUPPLY, GROUND CIRCUIT ELEMENTS | POWER SUPPLY GROUND CIRCUIT | DTC/CIRCUIT DIAGNOSIS | POWER SUPPLY ROUTING CIRCUIT | Wiring Diagram - BATTERY POWER SUPPLY -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057529",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SUPPLY, GROUND CIRCUIT ELEMENTS | POWER SUPPLY GROUND CIRCUIT | DTC/CIRCUIT DIAGNOSIS | POWER SUPPLY ROUTING CIRCUIT | Wiring Diagram - BATTERY POWER SUPPLY FUSE No. 11 -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057530",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SUPPLY, GROUND CIRCUIT ELEMENTS | POWER SUPPLY GROUND CIRCUIT | DTC/CIRCUIT DIAGNOSIS | POWER SUPPLY ROUTING CIRCUIT | Wiring Diagram - BATTERY POWER SUPPLY FUSE No. 34 -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057531",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SUPPLY, GROUND CIRCUIT ELEMENTS | POWER SUPPLY GROUND CIRCUIT | DTC/CIRCUIT DIAGNOSIS | POWER SUPPLY ROUTING CIRCUIT | Wiring Diagram - BATTERY POWER SUPPLY FUSE No. 50 -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057532",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SUPPLY, GROUND CIRCUIT ELEMENTS | POWER SUPPLY GROUND CIRCUIT | DTC/CIRCUIT DIAGNOSIS | POWER SUPPLY ROUTING CIRCUIT | Wiring Diagram - BATTERY POWER SUPPLY FUSE No. 53 -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057528",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SUPPLY, GROUND CIRCUIT ELEMENTS | POWER SUPPLY GROUND CIRCUIT | DTC/CIRCUIT DIAGNOSIS | POWER SUPPLY ROUTING CIRCUIT | Wiring Diagram - BATTERY POWER SUPPLY FUSE No. 6 -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057527",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SUPPLY, GROUND CIRCUIT ELEMENTS | POWER SUPPLY GROUND CIRCUIT | DTC/CIRCUIT DIAGNOSIS | POWER SUPPLY ROUTING CIRCUIT | Wiring Diagram - BATTERY POWER SUPPLY FUSIBLE LINK No. I -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057535",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SUPPLY, GROUND CIRCUIT ELEMENTS | POWER SUPPLY GROUND CIRCUIT | DTC/CIRCUIT DIAGNOSIS | POWER SUPPLY ROUTING CIRCUIT | Wiring Diagram - IGNITION POWER SUPPLY -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057536",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SUPPLY, GROUND CIRCUIT ELEMENTS | POWER SUPPLY GROUND CIRCUIT | DTC/CIRCUIT DIAGNOSIS | POWER SUPPLY ROUTING CIRCUIT | Wiring Diagram - IGNITION POWER SUPPLY FUSE No. 3 -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057537",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SUPPLY, GROUND CIRCUIT ELEMENTS | POWER SUPPLY GROUND CIRCUIT | DTC/CIRCUIT DIAGNOSIS | POWER SUPPLY ROUTING CIRCUIT | Wiring Diagram - IGNITION POWER SUPPLY FUSE No. 4 -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057538",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SUPPLY, GROUND CIRCUIT ELEMENTS | POWER SUPPLY GROUND CIRCUIT | DTC/CIRCUIT DIAGNOSIS | POWER SUPPLY ROUTING CIRCUIT | Wiring Diagram - IGNITION POWER SUPPLY FUSE No. 44 -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057539",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER SUPPLY, GROUND CIRCUIT ELEMENTS | POWER SUPPLY GROUND CIRCUIT | DTC/CIRCUIT DIAGNOSIS | POWER SUPPLY ROUTING CIRCUIT | Wiring Diagram - IGNITION POWER SUPPLY FUSE No. 45 -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000007108113",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER WINDOW CONTROL SYSTEM | ECU DIAGNOSIS INFORMATION | BCM (BODY CONTROL MODULE) | Wiring Diagram - BCM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005059470",
+    "bucket": "Wiring Diagrams",
+    "title": "POWER WINDOW CONTROL SYSTEM | ECU DIAGNOSIS INFORMATION | POWER WINDOW MOTOR | Wiring Diagram - POWER WINDOW SYSTEM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "W:jthwa0107gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "RESTRAINTS | SEAT BELT CONTROL SYSTEM | SEAT BELT WARNING SYSTEM",
+    "thumbnailHref": "api/asset/3878e798-e5bf-44b1-a778-9e09ad801416",
+    "sort": 0
+  },
+  {
+    "id": "W:jthwa0108gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "RESTRAINTS | SRS AIRBAG CONTROL SYSTEM | SRS AIR BAG CONTROL SYSTEM",
+    "thumbnailHref": "api/asset/50484790-3dbb-42ae-8239-bfaa3e02d02b",
+    "sort": 0
+  },
+  {
+    "id": "W:jtmih0374gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "ROOM LAMP HARNESS",
+    "thumbnailHref": "api/asset/6b56d82e-4501-4526-920c-511cb6d405ea",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057838",
+    "bucket": "Wiring Diagrams",
+    "title": "SEAT | DTC/CIRCUIT DIAGNOSIS | HEATED SEAT | Wiring Diagram - HEATED SEAT -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057836",
+    "bucket": "Wiring Diagrams",
+    "title": "SEAT | DTC/CIRCUIT DIAGNOSIS | POWER SEAT | Wiring Diagram - POWER SEAT FOR DRIVER SIDE -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057837",
+    "bucket": "Wiring Diagrams",
+    "title": "SEAT | DTC/CIRCUIT DIAGNOSIS | POWER SEAT | Wiring Diagram - POWER SEAT FOR PASSENGER SIDE -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005058045",
+    "bucket": "Wiring Diagrams",
+    "title": "SEAT BELT CONTROL SYSTEM | DTC/CIRCUIT DIAGNOSIS | SEAT BELT WARNING SYSTEM | Wiring Diagram - SEAT BELT WARNING SYSTEM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005058047",
+    "bucket": "Wiring Diagrams",
+    "title": "SEAT BELT CONTROL SYSTEM | ECU DIAGNOSIS INFORMATION | DIAGNOSIS SENSOR UNIT | Wiring Diagram - SRS AIR BAG CONTROL SYSTEM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057770",
+    "bucket": "Wiring Diagrams",
+    "title": "SECURITY CONTROL SYSTEM | INTELLIGENT KEY SYSTEM | DTC/CIRCUIT DIAGNOSIS | INTELLIGENT KEY SYSTEM/ENGINE START FUNCTION | Wiring Diagram - INTELLIGENT KEY SYSTEM/ENGINE START FUNCTIO",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057771",
+    "bucket": "Wiring Diagrams",
+    "title": "SECURITY CONTROL SYSTEM | INTELLIGENT KEY SYSTEM | DTC/CIRCUIT DIAGNOSIS | NISSAN VEHICLE IMMOBILIZER SYSTEM-NATS | Wiring Diagram - NVIS -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005057772",
+    "bucket": "Wiring Diagrams",
+    "title": "SECURITY CONTROL SYSTEM | INTELLIGENT KEY SYSTEM | DTC/CIRCUIT DIAGNOSIS | VEHICLE SECURITY SYSTEM | Wiring Diagram - VEHICLE SECURITY SYSTEM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005058257",
+    "bucket": "Wiring Diagrams",
+    "title": "SRS AIRBAG CONTROL SYSTEM | ECU DIAGNOSIS INFORMATION | DIAGNOSIS SENSOR UNIT | Wiring Diagram - SRS AIR BAG CONTROL SYSTEM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "W:jtewa0042gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "SUSPENSION | ROAD WHEELS & TIRES | TIRE PRESSURE MONITORING SYSTEM",
+    "thumbnailHref": "api/asset/68477faf-88b4-4689-affa-d7b4169b980b",
+    "sort": 0
+  },
+  {
+    "id": "W:jtewa0041gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "SUSPENSION | SUSPENSION CONTROL SYSTEM | BILSTEIN DAMPTRONIC SYSTEM",
+    "thumbnailHref": "api/asset/3c02b77c-1d03-4f01-9608-9d42e42c2a82",
+    "sort": 0
+  },
+  {
+    "id": "W:jtdwa0201gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "TRANSMISSION & DRIVELINE | DRIVELINE | AWD SYSTEM",
+    "thumbnailHref": "api/asset/e9dfe3ba-428f-4c06-884b-4e356c751965",
+    "sort": 0
+  },
+  {
+    "id": "W:jtdwa0200gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "TRANSMISSION & DRIVELINE | TRANSAXLE & TRANSMISSION | TRANSMISSION CONTROL SYSTEM",
+    "thumbnailHref": "api/asset/58ee870e-2175-4397-9942-c4a75791a585",
+    "sort": 0
+  },
+  {
+    "id": "W:jtiwa0084gb:0",
+    "bucket": "Wiring Diagrams",
+    "title": "VENTILATION, HEATER & AIR CONDITIONER | HEATER & AIR CONDITIONING CONTROL SYSTEM | AUTO AIR CONDITIONER SYSTEM",
+    "thumbnailHref": "api/asset/2e0af183-860b-428f-9094-122b46ea4d2e",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005060465",
+    "bucket": "Wiring Diagrams",
+    "title": "WARNING CHIME SYSTEM | DTC/CIRCUIT DIAGNOSIS | Wiring Diagram - WARNING CHIME -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005060471",
+    "bucket": "Wiring Diagrams",
+    "title": "WARNING CHIME SYSTEM | ECU DIAGNOSIS INFORMATION | BCM (BODY CONTROL MODULE) | Wiring Diagram - BCM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005060467",
+    "bucket": "Wiring Diagrams",
+    "title": "WARNING CHIME SYSTEM | ECU DIAGNOSIS INFORMATION | COMBINATION METER | Wiring Diagram - METER -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  },
+  {
+    "id": "P:NISX0000000005060656",
+    "bucket": "Wiring Diagrams",
+    "title": "WIPER WASHER | DTC/CIRCUIT DIAGNOSIS | FRONT WIPER AND WASHER SYSTEM | Wiring Diagram - FRONT WIPER AND WASHER SYSTEM -",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 0
+  }
+]

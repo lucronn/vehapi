@@ -17,6 +17,16 @@ export class DataSyncService {
     isSyncing = signal(false);
     syncProgress = signal({ current: 0, total: 0, message: 'Ready' });
 
+    async checkNormalizationStatus(vehicleId: string): Promise<boolean> {
+        const { data } = await this.supabase.client
+            .from('vehicles')
+            .select('is_normalized')
+            .eq('external_id', vehicleId)
+            .maybeSingle();
+
+        return !!data?.is_normalized;
+    }
+
     async syncFullVehicle(contentSource: string, vehicleId: string, vehicleName: string): Promise<void> {
         if (this.isSyncing()) return;
 
@@ -24,6 +34,21 @@ export class DataSyncService {
         this.syncProgress.set({ current: 0, total: 100, message: 'Starting Sync...' });
 
         try {
+            // 0. Ensure vehicle exists in DB (or register it)
+            const parts = vehicleName.split(' ');
+            const year = parseInt(parts[0]) || 0;
+            const make = parts[1] || '';
+            const model = parts.slice(2).join(' ') || '';
+
+            await this.supabase.client.from('vehicles').upsert({
+                external_id: vehicleId,
+                content_source: contentSource,
+                year,
+                make,
+                model,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'external_id' });
+
             // 1. Common Issues (AI) - Now async logic using Supabase
             this.syncProgress.set({ current: 1, total: 100, message: 'Analyzing Common Issues...' });
             await this.syncCommonIssues(contentSource, vehicleId, vehicleName);
@@ -33,30 +58,46 @@ export class DataSyncService {
             const searchResults = await lastValueFrom(this.motorApi.searchArticles(contentSource, vehicleId, ''));
             const allItems = searchResults?.body?.articleDetails || [];
 
+            // 3. Sync Specialized Silos (Fluids, Parts, Maintenance)
+            this.syncProgress.set({ current: 10, total: 100, message: 'Syncing Fluids & Parts...' });
+            await Promise.all([
+                this.syncFluids(contentSource, vehicleId),
+                this.syncParts(contentSource, vehicleId),
+                this.syncMaintenance(contentSource, vehicleId)
+            ]);
+
             const totalItems = allItems.length;
             let processed = 0;
 
             console.log(`Starting massive sync for ${totalItems} items...`);
 
-            await lastValueFrom(from(allItems).pipe(
-                mergeMap(item => {
-                    return this.fetchAndSaveContent(contentSource, vehicleId, item).pipe(
-                        tap(() => {
-                            processed++;
-                            const percent = Math.round((processed / totalItems) * 90) + 10;
-                            this.syncProgress.set({
-                                current: percent,
-                                total: 100,
-                                message: `Downloading ${processed}/${totalItems} items...`
-                            });
-                        }),
-                        catchError(err => {
-                            console.error(`Failed to sync item ${item.id}`, err);
-                            return of(null);
-                        })
-                    );
-                }, 5) // Concurrency: 5
-            ));
+            if (totalItems > 0) {
+                await lastValueFrom(from(allItems).pipe(
+                    mergeMap(item => {
+                        return this.fetchAndSaveContent(contentSource, vehicleId, item).pipe(
+                            tap(() => {
+                                processed++;
+                                const percent = Math.round((processed / totalItems) * 90) + 10;
+                                this.syncProgress.set({
+                                    current: percent,
+                                    total: 100,
+                                    message: `Downloading ${processed}/${totalItems} items...`
+                                });
+                            }),
+                            catchError(err => {
+                                console.error(`Failed to sync item ${item.id}`, err);
+                                return of(null);
+                            })
+                        );
+                    }, 10) // Concurrency: 10 for faster normalization
+                ));
+            }
+
+            // 4. Mark as normalized
+            await this.supabase.client.from('vehicles').update({
+                is_normalized: true,
+                last_sync_at: new Date().toISOString()
+            }).eq('external_id', vehicleId);
 
             this.syncProgress.set({ current: 100, total: 100, message: 'Sync Complete!' });
             setTimeout(() => this.isSyncing.set(false), 2000);
@@ -122,5 +163,82 @@ export class DataSyncService {
                 return from(this.supabase.client.from('articles').upsert(articleData, { onConflict: 'vehicle_id, original_id' }));
             })
         );
+    }
+
+    private async syncFluids(cs: string, vid: string) {
+        try {
+            const res = await lastValueFrom(this.motorApi.getFluids(cs, vid));
+            const fluids = res.body?.data || [];
+            if (fluids.length > 0) {
+                const specData = fluids.map((f: any) => ({
+                    vehicle_id: vid,
+                    category: 'Fluids',
+                    name: f.title,
+                    value: f.capacity || '',
+                    unit: '',
+                    display_text: `${f.capacity || ''} - ${f.specification || ''} `,
+                    metadata: { id: f.id, bucket: f.bucket, specification: f.specification },
+                    updated_at: new Date().toISOString()
+                }));
+                await this.supabase.client.from('specifications').upsert(specData);
+            }
+        } catch (e) {
+            console.error('Fluids sync failed', e);
+        }
+    }
+
+    private async syncParts(cs: string, vid: string) {
+        try {
+            const res = await lastValueFrom(this.motorApi.getParts(cs, vid));
+            const parts = res.body?.data || [];
+            if (parts.length > 0) {
+                const partData = parts.map((p: any) => ({
+                    vehicle_id: vid,
+                    part_number: p.partNumber,
+                    description: p.description,
+                    manufacturer: p.manufacturer,
+                    list_price: p.listPrice,
+                    dealer_price: p.dealerPrice,
+                    updated_at: new Date().toISOString()
+                }));
+                await this.supabase.client.from('parts').upsert(partData);
+            }
+        } catch (e) {
+            console.error('Parts sync failed', e);
+        }
+    }
+
+    private async syncMaintenance(cs: string, vid: string) {
+        try {
+            const intervals = [5000, 10000, 15000, 30000, 60000, 100000];
+            const allSchedules: any[] = [];
+
+            for (const interval of intervals) {
+                try {
+                    const res = await lastValueFrom(this.motorApi.getMaintenanceByIntervals(cs, vid, 'miles', interval));
+                    const schedules = (res.body as any)?.schedules || (res.body as any)?.items || (res.body as any)?.data || [];
+
+                    schedules.forEach((s: any) => {
+                        allSchedules.push({
+                            vehicle_id: vid,
+                            interval_value: interval,
+                            interval_unit: 'Miles',
+                            action: s.action || 'Inspect/Replace',
+                            item: s.description || '',
+                            description: s.description || '',
+                            updated_at: new Date().toISOString()
+                        });
+                    });
+                } catch (err) {
+                    console.warn(`Maintenance fetch failed for interval ${interval} `, err);
+                }
+            }
+
+            if (allSchedules.length > 0) {
+                await this.supabase.client.from('maintenance_schedules').upsert(allSchedules);
+            }
+        } catch (e) {
+            console.error('Maintenance sync failed', e);
+        }
     }
 }

@@ -1,0 +1,43 @@
+[
+  {
+    "articleId": "L:23703077",
+    "title": "ABS Control Module R&R",
+    "labor": {
+      "header": {
+        "messages": [],
+        "date": "Tue, 10 Mar 2026 16:53:09 GMT",
+        "status": "OK",
+        "statusCode": 200
+      },
+      "body": {
+        "mainOperation": {
+          "subtitle": "General",
+          "id": 23703077,
+          "title": "ABS Control Module R&R",
+          "operationType": "Main Operation",
+          "position": "",
+          "qualifier": "",
+          "laborTime": 2.5,
+          "skillName": "General",
+          "parts": [
+            {
+              "partNumber": "34529813835",
+              "partDescription": "ABS Control Module",
+              "quantity": 1,
+              "price": "$1,438.91"
+            }
+          ]
+        },
+        "notes": [
+          {
+            "noteId": 53752,
+            "text": "Includes: The removal of component and all necessary components for access. Does not include: Brake Hydraulic System Bleed, system diagnosis, testing, reprogramming, or a vehicle road test."
+          }
+        ],
+        "includedOperations": [],
+        "optionalOperations": [],
+        "isPartsEntitlementActive": true
+      }
+    }
+  }
+]

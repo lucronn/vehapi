@@ -68,18 +68,17 @@ export class PartsSectionComponent implements OnInit {
 
     private loadParts(term: string = '') {
         this.isLoading.set(true);
-        this.motorApi.getParts(this.contentSource, this.vehicleId, term).subscribe({
-            next: (res) => {
-                this.parts.set(res.body?.data || []);
-                this.updateDisplayedParts();
-                this.isLoading.set(false);
-            },
-            error: (err) => {
-                console.error('Failed to load parts', err);
-                this.isLoading.set(false);
-                this.parts.set([]);
-                this.updateDisplayedParts();
-            }
+        // Using VehicleDataService which handles Supabase caching properly
+        const vehicleData = inject(VehicleDataService);
+        vehicleData.loadParts(this.contentSource, this.vehicleId, undefined, term, this.isLoading, (data) => {
+            this.parts.set(data);
+            this.updateDisplayedParts();
+            this.isLoading.set(false);
+        }, (err) => {
+            console.error('Failed to load parts', err);
+            this.isLoading.set(false);
+            this.parts.set([]);
+            this.updateDisplayedParts();
         });
     }
 

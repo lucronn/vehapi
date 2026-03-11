@@ -1,0 +1,387 @@
+{
+  "contentSource": "MOTOR",
+  "models": [
+    {
+      "model": "Accord EX",
+      "id": "61004",
+      "engines": [
+        {
+          "id": "61004:3477",
+          "name": "2.4L L4 (K24Z3) GAS Electronic"
+        },
+        {
+          "id": "61004:3476",
+          "name": "3.5L V6 (J35Z2) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Accord EX-L",
+      "id": "61005",
+      "engines": [
+        {
+          "id": "61005:3477",
+          "name": "2.4L L4 (K24Z3) GAS Electronic"
+        },
+        {
+          "id": "61005:3476",
+          "name": "3.5L V6 (J35Z2) GAS Electronic"
+        },
+        {
+          "id": "61005:3479",
+          "name": "3.5L V6 (J35Z3) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Accord LX",
+      "id": "61006",
+      "engines": [
+        {
+          "id": "61006:3478",
+          "name": "2.4L L4 (K24Z2) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Accord LX-P",
+      "id": "61007",
+      "engines": [
+        {
+          "id": "61007:3478",
+          "name": "2.4L L4 (K24Z2) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Accord LX-S",
+      "id": "61008",
+      "engines": [
+        {
+          "id": "61008:3477",
+          "name": "2.4L L4 (K24Z3) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Accord Crosstour EX",
+      "id": "66944",
+      "engines": [
+        {
+          "id": "66944:3476",
+          "name": "3.5L V6 (J35Z2) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Accord Crosstour EX-L",
+      "id": "66945",
+      "engines": [
+        {
+          "id": "66945:3476",
+          "name": "3.5L V6 (J35Z2) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Civic DX",
+      "id": "61009",
+      "engines": [
+        {
+          "id": "61009:2913",
+          "name": "1.8L L4 (R18A1) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Civic EX",
+      "id": "61010",
+      "engines": [
+        {
+          "id": "61010:2913",
+          "name": "1.8L L4 (R18A1) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Civic EX-L",
+      "id": "84454",
+      "engines": [
+        {
+          "id": "84454:2913",
+          "name": "1.8L L4 (R18A1) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Civic GX",
+      "id": "61011",
+      "engines": [
+        {
+          "id": "61011:3041",
+          "name": "1.8L L4 (R18A4) CNG Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Civic Hybrid",
+      "id": "61012",
+      "engines": [
+        {
+          "id": "61012:2914",
+          "name": "1.3L L4 (LDA2) FULL HYBRID EV-GAS (FHEV) Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Civic Hybrid-L",
+      "id": "76723",
+      "engines": [
+        {
+          "id": "76723:2914",
+          "name": "1.3L L4 (LDA2) FULL HYBRID EV-GAS (FHEV) Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Civic LX",
+      "id": "61013",
+      "engines": [
+        {
+          "id": "61013:2913",
+          "name": "1.8L L4 (R18A1) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Civic LX-S",
+      "id": "79423",
+      "engines": [
+        {
+          "id": "79423:2913",
+          "name": "1.8L L4 (R18A1) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Civic Si",
+      "id": "61014",
+      "engines": [
+        {
+          "id": "61014:2939",
+          "name": "2.0L L4 (K20Z3) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "CR-V EX",
+      "id": "61015",
+      "engines": [
+        {
+          "id": "61015:3653",
+          "name": "2.4L L4 (K24Z6) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "CR-V EX-L",
+      "id": "61016",
+      "engines": [
+        {
+          "id": "61016:3653",
+          "name": "2.4L L4 (K24Z6) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "CR-V LX",
+      "id": "61017",
+      "engines": [
+        {
+          "id": "61017:3653",
+          "name": "2.4L L4 (K24Z6) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Element EX",
+      "id": "66939",
+      "engines": [
+        {
+          "id": "66939:2911",
+          "name": "2.4L L4 (K24A8) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Element LX",
+      "id": "66938",
+      "engines": [
+        {
+          "id": "66938:2911",
+          "name": "2.4L L4 (K24A8) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Element SC",
+      "id": "66937",
+      "engines": [
+        {
+          "id": "66937:2911",
+          "name": "2.4L L4 (K24A8) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Fit Base",
+      "id": "61018",
+      "engines": [
+        {
+          "id": "61018:3550",
+          "name": "1.5L L4 (L15A7) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Fit Sport",
+      "id": "61019",
+      "engines": [
+        {
+          "id": "61019:3550",
+          "name": "1.5L L4 (L15A7) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Insight EX",
+      "id": "60664",
+      "engines": [
+        {
+          "id": "60664:3644",
+          "name": "1.3L L4 (LDA3) FULL HYBRID EV-GAS (FHEV) Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Insight LX",
+      "id": "60665",
+      "engines": [
+        {
+          "id": "60665:3644",
+          "name": "1.3L L4 (LDA3) FULL HYBRID EV-GAS (FHEV) Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Odyssey EX",
+      "id": "60662",
+      "engines": [
+        {
+          "id": "60662:2734",
+          "name": "3.5L V6 (J35A6) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Odyssey EX-L",
+      "id": "60663",
+      "engines": [
+        {
+          "id": "60663:2735",
+          "name": "3.5L V6 (J35A7) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Odyssey LX",
+      "id": "60660",
+      "engines": [
+        {
+          "id": "60660:2734",
+          "name": "3.5L V6 (J35A6) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Odyssey Touring",
+      "id": "60661",
+      "engines": [
+        {
+          "id": "60661:2735",
+          "name": "3.5L V6 (J35A7) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Pilot EX",
+      "id": "54721",
+      "engines": [
+        {
+          "id": "54721:3532",
+          "name": "3.5L V6 (J35Z4) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Pilot EX-L",
+      "id": "54722",
+      "engines": [
+        {
+          "id": "54722:3532",
+          "name": "3.5L V6 (J35Z4) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Pilot LX",
+      "id": "54723",
+      "engines": [
+        {
+          "id": "54723:3532",
+          "name": "3.5L V6 (J35Z4) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Pilot Touring",
+      "id": "54724",
+      "engines": [
+        {
+          "id": "54724:3532",
+          "name": "3.5L V6 (J35Z4) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Ridgeline RT",
+      "id": "61020",
+      "engines": [
+        {
+          "id": "61020:3551",
+          "name": "3.5L V6 (J35Z5) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Ridgeline RTL",
+      "id": "61021",
+      "engines": [
+        {
+          "id": "61021:3551",
+          "name": "3.5L V6 (J35Z5) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Ridgeline RTS",
+      "id": "61022",
+      "engines": [
+        {
+          "id": "61022:3551",
+          "name": "3.5L V6 (J35Z5) GAS Electronic"
+        }
+      ]
+    }
+  ]
+}

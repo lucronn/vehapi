@@ -203,9 +203,19 @@ export class HomeComponent implements OnInit {
     }
 
     if (step === 'Make') {
-      const makesData = this.makes().sort((a, b) => a.makeName.localeCompare(b.makeName));
-      if (!term) return makesData.map(m => ({ type: 'Make', value: m, display: m.makeName }));
-      return makesData.filter(m => m.makeName.toLowerCase().includes(term)).map(m => ({ type: 'Make', value: m, display: m.makeName }));
+      const makesData = this.makes();
+      if (!Array.isArray(makesData)) return [];
+
+      const sortedMakes = [...makesData].sort((a, b) => {
+        const nameA = a?.makeName || '';
+        const nameB = b?.makeName || '';
+        return nameA.localeCompare(nameB);
+      });
+
+      if (!term) return sortedMakes.map(m => ({ type: 'Make', value: m, display: m.makeName || 'Unknown Make' }));
+      return sortedMakes
+        .filter(m => (m.makeName || '').toLowerCase().includes(term))
+        .map(m => ({ type: 'Make', value: m, display: m.makeName || 'Unknown Make' }));
     }
 
     if (step === 'Model') {
@@ -224,18 +234,17 @@ export class HomeComponent implements OnInit {
 
     if (step === 'Engine') {
       const enginesData = this.engines();
-      // Only show engine suggestions if there are actually engines available
-      if (enginesData.length === 0) {
+      if (!Array.isArray(enginesData) || enginesData.length === 0) {
         return [];
       }
       let filtered = enginesData;
       if (term) {
-        filtered = enginesData.filter(e => e.name.toLowerCase().includes(term));
+        filtered = enginesData.filter(e => (e.name || '').toLowerCase().includes(term));
       }
       return filtered.map(e => ({
         type: 'Engine',
-        value: { vehicleId: e.id, displayName: `${this.selectedModel()?.model} - ${e.name}` },
-        display: e.name
+        value: { vehicleId: e.id, displayName: `${this.selectedModel()?.model || 'Vehicle'} - ${e.name || 'Unknown Engine'}` },
+        display: e.name || 'Unknown Engine'
       }));
     }
 

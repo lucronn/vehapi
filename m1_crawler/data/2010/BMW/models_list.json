@@ -1,0 +1,367 @@
+{
+  "contentSource": "MOTOR",
+  "models": [
+    {
+      "model": "128i Base",
+      "id": "61163",
+      "engines": [
+        {
+          "id": "61163:3525",
+          "name": "3.0L L6 (N51B30A) GAS Electronic"
+        },
+        {
+          "id": "61163:3176",
+          "name": "3.0L L6 (N52B30A) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "135i Base",
+      "id": "61164",
+      "engines": [
+        {
+          "id": "61164:8017",
+          "name": "3.0L L6 (N54B30A) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "328i Base",
+      "id": "61165",
+      "engines": [
+        {
+          "id": "61165:3525",
+          "name": "3.0L L6 (N51B30A) GAS Electronic"
+        },
+        {
+          "id": "61165:2842",
+          "name": "3.0L L6 (N52) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "328i xDrive Base",
+      "id": "61166",
+      "engines": [
+        {
+          "id": "61166:3525",
+          "name": "3.0L L6 (N51B30A) GAS Electronic"
+        },
+        {
+          "id": "61166:2842",
+          "name": "3.0L L6 (N52) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "335d Base",
+      "id": "61167",
+      "engines": [
+        {
+          "id": "61167:3543",
+          "name": "3.0L L6 (M57T2D30) Turbocharged DIESEL Electronic"
+        }
+      ]
+    },
+    {
+      "model": "335i Base",
+      "id": "61168",
+      "engines": [
+        {
+          "id": "61168:8017",
+          "name": "3.0L L6 (N54B30A) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "335i xDrive Base",
+      "id": "61169",
+      "engines": [
+        {
+          "id": "61169:8017",
+          "name": "3.0L L6 (N54B30A) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "528i Base",
+      "id": "54715",
+      "engines": [
+        {
+          "id": "54715:3176",
+          "name": "3.0L L6 (N52B30A) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "528i xDrive Base",
+      "id": "54714",
+      "engines": [
+        {
+          "id": "54714:3176",
+          "name": "3.0L L6 (N52B30A) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "535i Base",
+      "id": "54716",
+      "engines": [
+        {
+          "id": "54716:8017",
+          "name": "3.0L L6 (N54B30A) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "535i GT Base",
+      "id": "69585",
+      "engines": [
+        {
+          "id": "69585:7781",
+          "name": "3.0L L6 (N55B30A) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "535i xDrive Base",
+      "id": "54713",
+      "engines": [
+        {
+          "id": "54713:8017",
+          "name": "3.0L L6 (N54B30A) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "550i Base",
+      "id": "54717",
+      "engines": [
+        {
+          "id": "54717:2923",
+          "name": "4.8L V8 (N62B48B) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "550i GT Base",
+      "id": "61175",
+      "engines": [
+        {
+          "id": "61175:8340",
+          "name": "4.4L V8 (N63B44A) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "550i GT xDrive Base",
+      "id": "69586",
+      "engines": [
+        {
+          "id": "69586:8340",
+          "name": "4.4L V8 (N63B44A) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "650i Base",
+      "id": "54719",
+      "engines": [
+        {
+          "id": "54719:2923",
+          "name": "4.8L V8 (N62B48B) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "750i Base",
+      "id": "61170",
+      "engines": [
+        {
+          "id": "61170:8340",
+          "name": "4.4L V8 (N63B44A) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "750i xDrive Base",
+      "id": "61172",
+      "engines": [
+        {
+          "id": "61172:8340",
+          "name": "4.4L V8 (N63B44A) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "750Li Base",
+      "id": "61171",
+      "engines": [
+        {
+          "id": "61171:8340",
+          "name": "4.4L V8 (N63B44A) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "750Li xDrive Base",
+      "id": "61173",
+      "engines": [
+        {
+          "id": "61173:8340",
+          "name": "4.4L V8 (N63B44A) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "760Li Base",
+      "id": "61174",
+      "engines": [
+        {
+          "id": "61174:3658",
+          "name": "6.0L V12 (N74B60A) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "M3 Base",
+      "id": "67095",
+      "engines": [
+        {
+          "id": "67095:3493",
+          "name": "4.0L V8 (S65B40A) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "M5 Base",
+      "id": "54718",
+      "engines": [
+        {
+          "id": "54718:2924",
+          "name": "5.0L V10 (S85B50A) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "M6 Base",
+      "id": "54720",
+      "engines": [
+        {
+          "id": "54720:2924",
+          "name": "5.0L V10 (S85B50A) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "X3 xDrive30i",
+      "id": "61176",
+      "engines": [
+        {
+          "id": "61176:2842",
+          "name": "3.0L L6 (N52) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "X5 M",
+      "id": "61184",
+      "engines": [
+        {
+          "id": "61184:3659",
+          "name": "4.4L V8 (S63B44A) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "X5 xDrive30i",
+      "id": "61177",
+      "engines": [
+        {
+          "id": "61177:3176",
+          "name": "3.0L L6 (N52B30A) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "X5 xDrive35d",
+      "id": "61178",
+      "engines": [
+        {
+          "id": "61178:3543",
+          "name": "3.0L L6 (M57T2D30) Turbocharged DIESEL Electronic"
+        }
+      ]
+    },
+    {
+      "model": "X5 xDrive48i",
+      "id": "61179",
+      "engines": [
+        {
+          "id": "61179:2923",
+          "name": "4.8L V8 (N62B48B) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "X6 ActiveHybrid",
+      "id": "66998",
+      "engines": [
+        {
+          "id": "66998:8343",
+          "name": "4.4L V8 (N63B44A) Turbocharged FULL HYBRID EV-GAS (FHEV) Electronic"
+        }
+      ]
+    },
+    {
+      "model": "X6 M",
+      "id": "61185",
+      "engines": [
+        {
+          "id": "61185:3659",
+          "name": "4.4L V8 (S63B44A) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "X6 xDrive35i",
+      "id": "61180",
+      "engines": [
+        {
+          "id": "61180:8017",
+          "name": "3.0L L6 (N54B30A) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "X6 xDrive50i",
+      "id": "61181",
+      "engines": [
+        {
+          "id": "61181:8340",
+          "name": "4.4L V8 (N63B44A) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Z4 sDrive30i",
+      "id": "61182",
+      "engines": [
+        {
+          "id": "61182:3176",
+          "name": "3.0L L6 (N52B30A) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Z4 sDrive35i",
+      "id": "61183",
+      "engines": [
+        {
+          "id": "61183:8017",
+          "name": "3.0L L6 (N54B30A) Turbocharged GAS Electronic"
+        }
+      ]
+    }
+  ]
+}

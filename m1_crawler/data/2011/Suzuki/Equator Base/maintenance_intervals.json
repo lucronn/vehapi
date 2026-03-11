@@ -1,0 +1,480 @@
+{
+  "header": {
+    "messages": [],
+    "date": "Tue, 10 Mar 2026 16:51:17 GMT",
+    "status": "OK",
+    "statusCode": 200
+  },
+  "body": {
+    "intervals": [
+      {
+        "interval": 3750,
+        "applications": [
+          {
+            "maintenanceScheduleId": 86,
+            "applicationID": 23189042
+          },
+          {
+            "maintenanceScheduleId": 86,
+            "applicationID": 23239656
+          }
+        ]
+      },
+      {
+        "interval": 7500,
+        "applications": [
+          {
+            "maintenanceScheduleId": 86,
+            "applicationID": 23189042
+          },
+          {
+            "maintenanceScheduleId": 1346,
+            "applicationID": 23189042
+          },
+          {
+            "maintenanceScheduleId": 86,
+            "applicationID": 23239656
+          },
+          {
+            "maintenanceScheduleId": 1346,
+            "applicationID": 23239656
+          },
+          {
+            "maintenanceScheduleId": 1024,
+            "applicationID": 23389555
+          },
+          {
+            "maintenanceScheduleId": 1024,
+            "applicationID": 23398456
+          },
+          {
+            "maintenanceScheduleId": 1024,
+            "applicationID": 23524102
+          },
+          {
+            "maintenanceScheduleId": 1306,
+            "applicationID": 23208988
+          },
+          {
+            "maintenanceScheduleId": 1396,
+            "applicationID": 23208988
+          }
+        ]
+      },
+      {
+        "interval": 11250,
+        "applications": [
+          {
+            "maintenanceScheduleId": 86,
+            "applicationID": 23189042
+          },
+          {
+            "maintenanceScheduleId": 86,
+            "applicationID": 23239656
+          }
+        ]
+      }
+    ],
+    "applications": [
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 86,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 6000,
+            "intervalMile": 3750,
+            "intervalMonth": 3,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 1477,
+                "text": "Repeated short trips of less than 5 miles, repeated short trips of less than 10 miles in temperatures below freezing, operating in hot weather in stop-and-go traffic, extensive idling and/or low speed driving for long distances, such as police, taxi, or door-to-door delivery service, driving in dusty conditions, driving on rough, muddy, or salt spread roads, towing a trailer, using a camper, or a car-top carrier."
+              }
+            ],
+            "severeServiceDescription": "Yes"
+          },
+          {
+            "maintenanceScheduleId": 1346,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 12000,
+            "intervalMile": 7500,
+            "intervalMonth": 6,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23189042,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "R&R",
+          "commonName": "",
+          "groupID": 20,
+          "groupName": "Engine",
+          "literalName": "Engine Oil Filter R&R",
+          "subGroupID": 21,
+          "subGroupName": "Lubrication System",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11747
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 86,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 6000,
+            "intervalMile": 3750,
+            "intervalMonth": 3,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 1477,
+                "text": "Repeated short trips of less than 5 miles, repeated short trips of less than 10 miles in temperatures below freezing, operating in hot weather in stop-and-go traffic, extensive idling and/or low speed driving for long distances, such as police, taxi, or door-to-door delivery service, driving in dusty conditions, driving on rough, muddy, or salt spread roads, towing a trailer, using a camper, or a car-top carrier."
+              }
+            ],
+            "severeServiceDescription": "Yes"
+          },
+          {
+            "maintenanceScheduleId": 1346,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 12000,
+            "intervalMile": 7500,
+            "intervalMonth": 6,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23239656,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "Drain & Refill",
+          "commonName": "",
+          "groupID": 20,
+          "groupName": "Engine",
+          "literalName": "Engine Oil Drain & Refill",
+          "subGroupID": 21,
+          "subGroupName": "Lubrication System",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11785
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 1024,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 12000,
+            "intervalMile": 7500,
+            "intervalMonth": 6,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 1477,
+                "text": "Repeated short trips of less than 5 miles, repeated short trips of less than 10 miles in temperatures below freezing, operating in hot weather in stop-and-go traffic, extensive idling and/or low speed driving for long distances, such as police, taxi, or door-to-door delivery service, driving in dusty conditions, driving on rough, muddy, or salt spread roads, towing a trailer, using a camper, or a car-top carrier."
+              }
+            ],
+            "severeServiceDescription": "Yes"
+          }
+        ],
+        "applicationId": 23389555,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "position": {
+          "name": "Rear",
+          "pcdbPositionId": 30,
+          "positionId": 24,
+          "type": "MOTOR_Position"
+        },
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 18,
+          "groupName": "Driveline",
+          "literalName": "Drive Axle Assembly Inspect",
+          "subGroupID": 37,
+          "subGroupName": "Axle",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11951
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 1024,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 12000,
+            "intervalMile": 7500,
+            "intervalMonth": 6,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 1477,
+                "text": "Repeated short trips of less than 5 miles, repeated short trips of less than 10 miles in temperatures below freezing, operating in hot weather in stop-and-go traffic, extensive idling and/or low speed driving for long distances, such as police, taxi, or door-to-door delivery service, driving in dusty conditions, driving on rough, muddy, or salt spread roads, towing a trailer, using a camper, or a car-top carrier."
+              }
+            ],
+            "severeServiceDescription": "Yes"
+          }
+        ],
+        "applicationId": 23398456,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 1,
+          "groupName": "@ALL",
+          "literalName": "Suspension System Inspect",
+          "subGroupID": 1,
+          "subGroupName": "@ALL",
+          "systemID": 6,
+          "systemName": "Suspension",
+          "taxonomyID": 11952
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 1024,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 12000,
+            "intervalMile": 7500,
+            "intervalMonth": 6,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 1477,
+                "text": "Repeated short trips of less than 5 miles, repeated short trips of less than 10 miles in temperatures below freezing, operating in hot weather in stop-and-go traffic, extensive idling and/or low speed driving for long distances, such as police, taxi, or door-to-door delivery service, driving in dusty conditions, driving on rough, muddy, or salt spread roads, towing a trailer, using a camper, or a car-top carrier."
+              }
+            ],
+            "severeServiceDescription": "Yes"
+          }
+        ],
+        "applicationId": 23524102,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 1,
+          "groupName": "@ALL",
+          "literalName": "Steering System Inspect",
+          "subGroupID": 1,
+          "subGroupName": "@ALL",
+          "systemID": 5,
+          "systemName": "Steering",
+          "taxonomyID": 12026
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 1306,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 12000,
+            "intervalMile": 7500,
+            "intervalMonth": 0,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 42176,
+                "text": "Do not rotate staggered tires from front to back. If tires are asymmetric(directional), do not rotate side to side. Follow all OEM tire rotation recommendations and pattern."
+              }
+            ],
+            "severeServiceDescription": "No"
+          },
+          {
+            "maintenanceScheduleId": 1396,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 12000,
+            "intervalMile": 7500,
+            "intervalMonth": 0,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 1477,
+                "text": "Repeated short trips of less than 5 miles, repeated short trips of less than 10 miles in temperatures below freezing, operating in hot weather in stop-and-go traffic, extensive idling and/or low speed driving for long distances, such as police, taxi, or door-to-door delivery service, driving in dusty conditions, driving on rough, muddy, or salt spread roads, towing a trailer, using a camper, or a car-top carrier."
+              },
+              {
+                "noteId": 42208,
+                "text": "Do not rotate staggered tires from front to back. If tires are asymmetric(directional), do not rotate side to side. Follow all OEM tire rotation recommendations and pattern."
+              }
+            ],
+            "severeServiceDescription": "Yes"
+          }
+        ],
+        "applicationId": 23208988,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "Rotate",
+          "commonName": "",
+          "groupID": 9,
+          "groupName": "Tire & Wheel",
+          "literalName": "Tire Rotate",
+          "subGroupID": 141,
+          "subGroupName": "Tire & Wheel Assembly",
+          "systemID": 6,
+          "systemName": "Suspension",
+          "taxonomyID": 11782
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      }
+    ]
+  }
+}
