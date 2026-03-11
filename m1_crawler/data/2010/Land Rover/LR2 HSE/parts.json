@@ -1,7 +1,7 @@
 {
   "header": {
     "messages": [],
-    "date": "Tue, 10 Mar 2026 16:42:59 GMT",
+    "date": "Wed, 11 Mar 2026 21:26:41 GMT",
     "status": "OK",
     "statusCode": 200
   },
@@ -67,10 +67,10 @@
       "price": "$282.99"
     },
     {
-      "partNumber": "LR002720",
+      "partNumber": "LR002724",
       "partDescription": "A/C Line O-Ring - 3.2 liter",
       "quantity": 2,
-      "price": "$6.29"
+      "price": "$5.79"
     },
     {
       "partNumber": "LR001924",
@@ -83,12 +83,6 @@
       "partDescription": "A/C Line O-Ring - 3.2 liter, #2",
       "quantity": 1,
       "price": "$5.27"
-    },
-    {
-      "partNumber": "LR002724",
-      "partDescription": "A/C Line O-Ring - 3.2 liter, #3",
-      "quantity": 1,
-      "price": "$5.79"
     },
     {
       "partNumber": "LR002942",
@@ -2911,6 +2905,12 @@
       "price": "$13.15"
     },
     {
+      "partNumber": "LR001504",
+      "partDescription": "Engine Coolant Bypass Hose Seal - 3.2 liter",
+      "quantity": 1,
+      "price": "$1.30"
+    },
+    {
       "partNumber": "LR005563",
       "partDescription": "Engine Coolant Hose - Cooler to Pipe, Incl.Pipe, Engine Oil Cooling",
       "quantity": 1,
@@ -2959,10 +2959,10 @@
       "price": "$5.55"
     },
     {
-      "partNumber": "LR001504",
+      "partNumber": "LR002795",
       "partDescription": "Engine Coolant Pipe O-Ring - All Required",
-      "quantity": 2,
-      "price": "$1.30"
+      "quantity": 1,
+      "price": "$9.48"
     },
     {
       "partNumber": "LR004080",
@@ -3649,12 +3649,6 @@
       "price": "$0.97"
     },
     {
-      "partNumber": "LR000958",
-      "partDescription": "Exhaust Mount Bushing - Front - 3.2 liter, front",
-      "quantity": 1,
-      "price": "$20.29"
-    },
-    {
       "partNumber": "LR041444",
       "partDescription": "Exhaust Muffler",
       "quantity": 1,
@@ -3673,10 +3667,10 @@
       "price": "$132.85"
     },
     {
-      "partNumber": "LR000593",
+      "partNumber": "LR000958",
       "partDescription": "Exhaust System Hanger",
       "quantity": 2,
-      "price": "$13.94"
+      "price": "$20.29"
     },
     {
       "partNumber": "LR000956",
@@ -3725,12 +3719,6 @@
       "partDescription": "Exterior Door Handle Gasket - Front",
       "quantity": 1,
       "price": "$30.22"
-    },
-    {
-      "partNumber": "CXE500050",
-      "partDescription": "Exterior Door Handle Gasket - Rear",
-      "quantity": 1,
-      "price": "$29.36"
     },
     {
       "partNumber": "LR018296",
@@ -5341,7 +5329,7 @@
       "price": "$161.49"
     },
     {
-      "partNumber": "LR008252",
+      "partNumber": "LR008258",
       "partDescription": "Instrument Panel Molding - metallic",
       "quantity": 1,
       "price": "$130.97"
@@ -7333,10 +7321,10 @@
       "price": "$59.35"
     },
     {
-      "partNumber": "LR012537",
+      "partNumber": "LR012547",
       "partDescription": "Seat Trim Panel - Front Left - Gray",
       "quantity": 1,
-      "price": "$23.64"
+      "price": "$61.58"
     },
     {
       "partNumber": "LR009431",
@@ -7351,10 +7339,10 @@
       "price": "$59.35"
     },
     {
-      "partNumber": "LR012534",
+      "partNumber": "LR012538",
       "partDescription": "Seat Trim Panel - Front Right - Gray",
       "quantity": 1,
-      "price": "$56.49"
+      "price": "$59.98"
     },
     {
       "partNumber": "LR009214",

@@ -1,7 +1,7 @@
 {
   "header": {
     "messages": [],
-    "date": "Tue, 10 Mar 2026 16:43:23 GMT",
+    "date": "Wed, 11 Mar 2026 21:27:02 GMT",
     "status": "OK",
     "statusCode": 200
   },
@@ -4915,12 +4915,6 @@
       "price": "$29.55"
     },
     {
-      "partNumber": "C2C22174",
-      "partDescription": "Fender Liner Bolt",
-      "quantity": 9,
-      "price": "$1.37"
-    },
-    {
       "partNumber": "C2Z4742",
       "partDescription": "Fender Liner Screw",
       "quantity": 1,
@@ -7807,10 +7801,10 @@
       "price": "$651.92"
     },
     {
-      "partNumber": "XR838379",
+      "partNumber": "XR822422",
       "partDescription": "Radiator Air Seal - 4.2 LITER W/O SUPERCHARGER",
       "quantity": 1,
-      "price": "$14.27"
+      "price": "$154.69"
     },
     {
       "partNumber": "C2Z4081",
@@ -9619,10 +9613,10 @@
       "price": "$11.55"
     },
     {
-      "partNumber": "C2P7444",
+      "partNumber": "XR848057",
       "partDescription": "Steering Tie Rod Nut - Rear",
       "quantity": 1,
-      "price": "$4.71"
+      "price": "$5.62"
     },
     {
       "partNumber": "C2Z17877AMT",
@@ -10075,12 +10069,6 @@
       "price": "$2.39"
     },
     {
-      "partNumber": "C2Z3376",
-      "partDescription": "Suspension Control Arm Nut - w/o AWD",
-      "quantity": 1,
-      "price": "$5.82"
-    },
-    {
       "partNumber": "C2D4472",
       "partDescription": "Suspension Control Arm Stop",
       "quantity": 1,
@@ -10241,12 +10229,6 @@
       "partDescription": "Suspension Stabilizer Bar Link Kit - Rear Right",
       "quantity": 1,
       "price": "$129.09"
-    },
-    {
-      "partNumber": "XR848057",
-      "partDescription": "Suspension Stabilizer Bar Link Nut - Front",
-      "quantity": 4,
-      "price": "$5.62"
     },
     {
       "partNumber": "C2P3211",
