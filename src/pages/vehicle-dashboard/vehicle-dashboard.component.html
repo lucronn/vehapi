@@ -154,7 +154,7 @@
           <h2 class="section-title">Common Issues & AI Solutions</h2>
         </div>
         <app-common-issues-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
-          [vehicleName]="vehicleName">
+          [vehicleName]="vehicleName()">
         </app-common-issues-section>
       </div>
       }
@@ -347,9 +347,9 @@
 
   <!-- Global Auth Modal (desktop & mobile) -->
   @if (showAuthModal()) {
-  <app-auth-modal (close)="showAuthModal.set(false)" />
+  <app-auth-modal (close)="showAuthModal.set(false)"></app-auth-modal>
   }
 
   <!-- Normalization Progress Overlay -->
-  <app-sync-progress-overlay />
+  <app-sync-progress-overlay></app-sync-progress-overlay>
 </div>
