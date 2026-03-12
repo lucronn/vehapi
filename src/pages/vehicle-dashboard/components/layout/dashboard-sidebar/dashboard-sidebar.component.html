@@ -49,6 +49,20 @@
             <span class="text-xs font-bold tracking-[0.15em] uppercase">Bulletins</span>
         </button>
 
+        <button (click)="onSectionClick('common-issues')"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2 mt-1"
+            [class.border-[hsl(191,97%,50%)]]="activeSection === 'common-issues'"
+            [class.bg-gradient-to-r]="activeSection === 'common-issues'"
+            [class.from-[hsl(191,97%,50%)]/10]="activeSection === 'common-issues'"
+            [class.to-transparent]="activeSection === 'common-issues'" [class.text-white]="activeSection === 'common-issues'"
+            [class.border-transparent]="activeSection !== 'common-issues'"
+            [class.text-[hsl(215,20%,65%)]]="activeSection !== 'common-issues'"
+            [class.hover:text-white]="activeSection !== 'common-issues'"
+            [class.hover:bg-white/[0.03]]="activeSection !== 'common-issues'">
+            <lucide-icon [img]="icons.Lightbulb" class="w-4 h-4"></lucide-icon>
+            <span class="text-xs font-bold tracking-[0.15em] uppercase">Common Issues</span>
+        </button>
+
         <button (click)="onSectionClick('procedures')"
             class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2 mt-1"
             [class.border-[hsl(191,97%,50%)]]="activeSection === 'procedures'"

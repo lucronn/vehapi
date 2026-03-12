@@ -21,17 +21,21 @@ export class WindowManagerService {
 
     // Responsive state
     isDesktop = signal<boolean>(typeof window !== 'undefined' ? window.innerWidth >= 1024 : true);
+    isDesktop = signal<boolean>(typeof window !== 'undefined' ? window.innerWidth >= 768 : true);
 
     constructor() {
         if (typeof window !== 'undefined') {
-            const mediaQuery = window.matchMedia('(min-width: 1024px)');
-            // Use modern addEventListener if available
-            if (mediaQuery.addEventListener) {
-                mediaQuery.addEventListener('change', (e) => this.isDesktop.set(e.matches));
-            } else {
-                // Fallback for older browsers
-                mediaQuery.addListener((e) => this.isDesktop.set(e.matches));
-            }
+            // Initialize based on current width (md breakpoint 768px)
+            this.isDesktop.set(window.innerWidth >= 768);
+
+            // Watch for resize events
+            fromEvent(window, 'resize')
+                .pipe(
+                    map(() => window.innerWidth >= 768),
+                    distinctUntilChanged(),
+                    takeUntilDestroyed()
+                )
+                .subscribe(isDesktop => this.isDesktop.set(isDesktop));
         }
     }
 

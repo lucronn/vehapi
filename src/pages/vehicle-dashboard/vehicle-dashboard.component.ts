@@ -26,10 +26,11 @@ import { DiagramsSectionComponent } from './components/sections/diagrams-section
 import { ComponentLocationsSectionComponent } from './components/sections/component-locations-section/component-locations-section.component';
 import { MaintenanceSectionComponent } from './components/sections/maintenance-section/maintenance-section.component';
 import { PartsSectionComponent } from './components/sections/parts-section/parts-section.component';
+import { CommonIssuesSectionComponent } from './components/sections/common-issues-section/common-issues-section.component';
 import { SyncProgressOverlayComponent } from './components/layout/sync-progress-overlay/sync-progress-overlay.component';
 
 // Icons
-import { LucideAngularModule, Menu, X, House, TriangleAlert, FileText, Wrench, Package } from 'lucide-angular';
+import { LucideAngularModule, Menu, X, House, TriangleAlert, FileText, Wrench, Package, Lightbulb } from 'lucide-angular';
 
 // Local Components
 import { LogoComponent } from '../../components/logo/logo.component';
@@ -39,7 +40,7 @@ import { ArticleViewerComponent } from '../article-viewer/article-viewer.compone
 import { WindowManagerService } from '../../services/window-manager.service';
 import { AuthModalComponent } from '../../components/auth-modal/auth-modal.component';
 
-export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'component-locations' | 'procedures' | 'parts' | 'specs' | 'maintenance' | 'browse-all';
+export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'component-locations' | 'procedures' | 'parts' | 'specs' | 'maintenance' | 'browse-all' | 'common-issues';
 
 /**
  * Main vehicle dashboard orchestrator component
@@ -67,7 +68,8 @@ export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'comp
     OrientationSelectorModalComponent,
     ThemeToggleComponent,
     AuthModalComponent,
-    SyncProgressOverlayComponent
+    SyncProgressOverlayComponent,
+    CommonIssuesSectionComponent
   ],
 })
 export class VehicleDashboardComponent {
@@ -78,7 +80,7 @@ export class VehicleDashboardComponent {
   public searchResultsState = inject(SearchResultsState);
   public dataSync = inject(DataSyncService);
 
-  readonly icons = { Menu, X, House, TriangleAlert, FileText, Wrench, Package };
+  readonly icons = { Menu, X, House, TriangleAlert, FileText, Wrench, Package, Lightbulb };
 
   // Route parameters
   params = toSignal(this.route.paramMap);

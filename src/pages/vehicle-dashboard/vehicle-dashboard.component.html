@@ -147,6 +147,17 @@
         </app-tsb-section>
       </div>
       }
+      @case ('common-issues') {
+      <div class="space-y-6 animate-fade-in-up">
+        <div class="pb-4 border-b border-white/5">
+          <p class="section-label">Intelligence</p>
+          <h2 class="section-title">Common Issues & AI Solutions</h2>
+        </div>
+        <app-common-issues-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
+          [vehicleName]="vehicleName">
+        </app-common-issues-section>
+      </div>
+      }
       @case ('diagrams') {
       <div class="space-y-6 animate-fade-in-up">
         <div class="pb-4 border-b border-white/5">

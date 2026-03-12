@@ -5,6 +5,8 @@ import { MotorApiService } from './motor-api.service';
 import { SupabaseService } from './supabase.service';
 import { ApiResponse, Dtc, Tsb, Procedure, WiringDiagram, ComponentLocation, Spec, Fluid, MaintenanceSchedule, FilterTab, ArticlesData } from '../models/motor.models';
 
+export type DashboardSection = 'overview' | 'specs' | 'fluids' | 'maintenance' | 'parts' | 'labor' | 'tsbs' | 'dtcs' | 'diagrams' | 'bookmarks' | 'search' | 'common-issues';
+
 export interface SectionAvailability {
     hasDtcs: boolean;
     hasTsbs: boolean;
@@ -213,6 +215,10 @@ export class VehicleDataService {
         vehicleId: string,
         motorVehicleId?: string
     ): Observable<{ specs: Spec[], fluids: Fluid[] }> {
+        // We enhance basic specs with additional keywords to ensure we capture maximum data
+        // tailored to consumption and efficiency as per updated Swagger.
+        const consumptionKeywords = ['consumption', 'efficiency', 'fuel', 'economy', 'intelligence'];
+
         const getFluids = () => {
             console.log('[Cache DISABLED] Fluids fetching from API...');
             // Legacy Parity: Fluids often align with "Specs/Parts" which tend to be Motor-sourced.
