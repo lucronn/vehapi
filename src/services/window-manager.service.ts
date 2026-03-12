@@ -1,4 +1,7 @@
 import { Injectable, signal, Type, TemplateRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { fromEvent } from 'rxjs';
+import { map, distinctUntilChanged } from 'rxjs/operators';
 
 export interface WindowInstance {
     id: string;
@@ -20,7 +23,6 @@ export class WindowManagerService {
     private zIndexCounter = 1000;
 
     // Responsive state
-    isDesktop = signal<boolean>(typeof window !== 'undefined' ? window.innerWidth >= 1024 : true);
     isDesktop = signal<boolean>(typeof window !== 'undefined' ? window.innerWidth >= 768 : true);
 
     constructor() {
