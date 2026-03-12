@@ -234,23 +234,19 @@
         <div class="flex flex-wrap gap-2 pb-4 border-b border-white/5">
           <button (click)="setBrowseFilter(null)"
             class="px-4 py-2 rounded-xl text-xs font-mono font-semibold tracking-wider transition-all border"
-            [class.bg-[hsl(191,97%,50%)]/10]="selectedBrowseFilter() === null"
-            [class.border-[hsl(191,97%,50%)]/30]="selectedBrowseFilter() === null"
-            [class.text-torque-cyan]="selectedBrowseFilter() === null"
-            [class.bg-white/[0.03]]="selectedBrowseFilter() !== null"
-            [class.border-white/5]="selectedBrowseFilter() !== null"
-            [class.text-torque-secondary]="selectedBrowseFilter() !== null">
+            [ngClass]="{
+              'bg-[hsl(191,97%,50%)]/10 border-[hsl(191,97%,50%)]/30 text-torque-cyan': selectedBrowseFilter() === null,
+              'bg-white/[0.03] border-white/5 text-torque-secondary': selectedBrowseFilter() !== null
+            }">
             All <span class="opacity-50 ml-1">({{ searchResultsState.filterTabsAndTheirFullBuckets().length }})</span>
           </button>
           @for (tab of searchResultsState.filterTabsAndTheirFullBuckets(); track tab.filterTab) {
           <button (click)="setBrowseFilter(tab.filterTab)"
             class="px-4 py-2 rounded-xl text-xs font-mono font-semibold tracking-wider transition-all border"
-            [class.bg-[hsl(191,97%,50%)]/10]="selectedBrowseFilter() === tab.filterTab"
-            [class.border-[hsl(191,97%,50%)]/30]="selectedBrowseFilter() === tab.filterTab"
-            [class.text-torque-cyan]="selectedBrowseFilter() === tab.filterTab"
-            [class.bg-white/[0.03]]="selectedBrowseFilter() !== tab.filterTab"
-            [class.border-white/5]="selectedBrowseFilter() !== tab.filterTab"
-            [class.text-torque-secondary]="selectedBrowseFilter() !== tab.filterTab">
+            [ngClass]="{
+              'bg-[hsl(191,97%,50%)]/10 border-[hsl(191,97%,50%)]/30 text-torque-cyan': selectedBrowseFilter() === tab.filterTab,
+              'bg-white/[0.03] border-white/5 text-torque-secondary': selectedBrowseFilter() !== tab.filterTab
+            }">
             {{ tab.filterTab }} <span class="opacity-50 ml-1">({{ tab.articlesCount }})</span>
           </button>
           }
