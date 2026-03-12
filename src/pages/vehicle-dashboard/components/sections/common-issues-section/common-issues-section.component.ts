@@ -93,7 +93,7 @@ export class CommonIssuesSectionComponent implements OnInit {
 
         if (confirm(`Unlock Common Issues & AI Solutions for ${cost} credits?`)) {
             this.isUnlocking.set(true);
-            const success = await this.creditsService.unlockModule(this.vehicleId, 'common_issues', cost);
+            const success = await this.creditsService.unlockModule(this.vehicleId, this.vehicleName, 'common_issues', cost);
             this.isUnlocking.set(false);
 
             if (!success) {

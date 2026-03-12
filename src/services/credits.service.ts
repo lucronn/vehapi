@@ -58,6 +58,7 @@ export class CreditsService {
         PROCEDURES: 10,
         DIAGRAMS: 10,
         PARTS: 10,
+        COMMON_ISSUES: 5,
         FULL_ACCESS: 25
     };
 
