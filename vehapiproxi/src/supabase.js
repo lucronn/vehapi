@@ -15,7 +15,8 @@ const UPSERT_CONFLICT_COLUMNS = {
     tsbs: 'vehicle_id,bulletin_number',
     dtcs: 'vehicle_id,code',
     specifications: 'vehicle_id,category,name',
-    categories: 'name,type'
+    categories: 'name,type',
+    vehicle_metadata: 'path'
 };
 
 /**
@@ -170,5 +171,45 @@ export async function wasAlreadyParsed(sourcePath) {
         return rows && rows.length > 0;
     } catch {
         return false;
+    }
+}
+
+/**
+ * Upserts vehicle metadata into the vehicle_metadata table.
+ * @param {string} path The request path (e.g., /api/years)
+ * @param {Object} data The response JSON
+ */
+export async function insertMetadata(path, data) {
+    const cfg = getSupabaseConfig();
+    if (!cfg) return { success: false };
+
+    try {
+        const url = `${cfg.url}/rest/v1/vehicle_metadata?on_conflict=path`;
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': cfg.key,
+                'Authorization': `Bearer ${cfg.key}`,
+                'Prefer': 'return=minimal,resolution=merge-duplicates'
+            },
+            body: JSON.stringify({
+                path,
+                data,
+                updated_at: new Date().toISOString()
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            logger.error(`Failed to upsert metadata for ${path}: ${errorText}`);
+            return { success: false, error: errorText };
+        }
+
+        logger.info(`✓ Persisted vehicle metadata for: ${path}`);
+        return { success: true };
+    } catch (err) {
+        logger.error(`Error persisting metadata for ${path}:`, err);
+        return { success: false, error: err.message };
     }
 }

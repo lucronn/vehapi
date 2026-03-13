@@ -40,7 +40,18 @@ def main():
     
     # 4. Vercel Deploy
     print("\nStarting Vercel Deployment...")
-    run_command("vercel --prod --confirm", cwd=repo_dir)
+    # Check if Vercel CLI is available
+    if not run_command("vercel --version", cwd=repo_dir):
+        print("Vercel CLI not found. Please install with 'npm i -g vercel'")
+        sys.exit(1)
+        
+    print("Pushing to production...")
+    if run_command("vercel --prod --confirm", cwd=repo_dir):
+        print("\n✅ Deployment triggered successfully!")
+        print("Check https://vercel.com/dashboard to monitor progress.")
+    else:
+        print("\n❌ Deployment failed.")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

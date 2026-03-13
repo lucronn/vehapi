@@ -966,8 +966,10 @@ app.use('/', authMiddleware, createProxyMiddleware({
                 // DTCs/TSBs may appear past index 500. Since each item is ~200 bytes,
                 // even 5000 items is only ~1MB — safe for iOS.
                 const isArticleCatalog = req.path.includes('/articles/v2');
+                const isMetadata = req.path.includes('/years') || req.path.includes('/makes') || req.path.includes('/models') || req.path.includes('/engines');
+                const isCatalog = isArticleCatalog || isMetadata;
 
-                if (!isArticleCatalog && normalizedData && normalizedData.length >= 1000) {
+                if (!isCatalog && normalizedData && normalizedData.length >= 1000) {
                     // Fast heuristic to avoid JSON.parse entirely if there's no possibility of a 500-element array.
                     // Does the string contain 500 commas?
                     let commaCount = 0;

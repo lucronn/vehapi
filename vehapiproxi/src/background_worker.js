@@ -1,12 +1,13 @@
 import logger from './logger.js';
 import { parseWithAI } from './ai_parser.js';
-import { insertParsedData, logAiProcessing, wasAlreadyParsed } from './supabase.js';
+import { insertParsedData, logAiProcessing, wasAlreadyParsed, insertMetadata } from './supabase.js';
 
 function determineSchemaType(urlPath) {
     if (urlPath.includes('/dtcs') || urlPath.includes('/dtc/')) return 'dtcs';
     if (urlPath.includes('/tsbs') || urlPath.includes('/tsb/')) return 'tsbs';
     if (urlPath.includes('/specifications') || urlPath.includes('/specs')) return 'specifications';
     if (/\/article\/[^/]+$/.test(urlPath) || urlPath.includes('/repair')) return 'procedures';
+    if (urlPath.includes('/years') || urlPath.includes('/makes') || urlPath.includes('/models') || urlPath.includes('/engines')) return 'metadata';
     return null;
 }
 
@@ -123,6 +124,17 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
     let errorMessage = null;
 
     try {
+        if (targetSchema === 'metadata') {
+            // No AI parsing needed for raw metadata json
+            const parsedJson = JSON.parse(rawData);
+            const result = await insertMetadata(urlPath, parsedJson);
+            if (!result.success) {
+                status = 'FAILED';
+                errorMessage = result.error?.message || result.error || 'Metadata Insert Failed';
+            }
+            return;
+        }
+
         const parsedData = await parseWithAI(rawData, targetSchema);
 
         const vehicleIdStr = extractVehicleId(urlPath);
