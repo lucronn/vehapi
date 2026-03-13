@@ -18,56 +18,90 @@ export class CategoryTreeService {
 
     // This converts the flat articles array into a hierarchical tree based on taxonomy
     readonly categoryTree = computed<TreeNode[]>(() => {
+        const normalized = this.searchState.normalizedMenu();
+        
+        // If we have a normalized menu from the proxy, use it!
+        if (normalized && normalized.categories) {
+            return this.mapNormalizedToTree(normalized.categories);
+        }
+
+        // Fallback to legacy synthetic tree logic for other sources or non-normalized responses
         const articles = this.searchState.articleDetails();
+        return this.buildSyntheticTree(articles);
+    });
 
-        // Since we don't have explicit taxonomy data on the articles in the current response,
-        // we'll build a synthetic tree based on the existing buckets, but structured deeply
-        // to support the reorganised view.
+    private mapNormalizedToTree(categories: any[]): TreeNode[] {
+        return categories.map(cat => ({
+            id: cat.id,
+            name: cat.name,
+            type: cat.type,
+            children: [
+                ...(cat.children ? this.mapNormalizedToTree(cat.children) : []),
+                ...(cat.articles ? cat.articles.map((a: Article) => ({
+                    id: a.id,
+                    name: a.title,
+                    type: 'article' as const,
+                    children: [],
+                    article: a
+                })) : [])
+            ]
+        }));
+    }
 
+    private buildSyntheticTree(articles: Article[]): TreeNode[] {
         const root: TreeNode[] = [];
-
-        // Map to quickly find nodes
         const bucketNodes = new Map<string, TreeNode>();
 
         articles.forEach(article => {
             const parentBucket = article.parentBucket || 'Other';
             const bucket = article.bucket || 'Uncategorized';
 
-            // 1. Ensure Parent Bucket Node exists
-            let parentNode = bucketNodes.get(parentBucket);
-            if (!parentNode) {
-                parentNode = {
-                    id: parentBucket,
-                    name: parentBucket,
+            const isOther = parentBucket === 'Other';
+            const rootBucketName = isOther ? bucket : parentBucket;
+            const subBucketName = isOther ? null : bucket;
+
+            let rootNode = bucketNodes.get(rootBucketName);
+            if (!rootNode) {
+                rootNode = {
+                    id: rootBucketName,
+                    name: rootBucketName,
                     type: 'system',
                     children: []
                 };
-                bucketNodes.set(parentBucket, parentNode);
-                root.push(parentNode);
+                bucketNodes.set(rootBucketName, rootNode);
+                root.push(rootNode);
             }
 
-            // 2. Ensure Bucket Node exists
-            const bucketId = `${parentBucket}-${bucket}`;
-            let bucketNode = bucketNodes.get(bucketId);
-            if (!bucketNode) {
-                bucketNode = {
-                    id: bucketId,
-                    name: bucket,
-                    type: 'group',
-                    children: []
-                };
-                bucketNodes.set(bucketId, bucketNode);
-                parentNode.children.push(bucketNode);
+            if (subBucketName) {
+                const subBucketId = `${rootBucketName}-${subBucketName}`;
+                let subNode = bucketNodes.get(subBucketId);
+                if (!subNode) {
+                    subNode = {
+                        id: subBucketId,
+                        name: subBucketName,
+                        type: 'group',
+                        children: []
+                    };
+                    bucketNodes.set(subBucketId, subNode);
+                    rootNode.children.push(subNode);
+                }
+                
+                subNode.children.push({
+                    id: article.id,
+                    name: article.title,
+                    type: 'article',
+                    children: [],
+                    article: article
+                });
+            } else {
+                rootNode.children.push({
+                    id: article.id,
+                    name: article.title,
+                    type: 'article',
+                    children: [],
+                    article: article
+                });
             }
-
-            // 3. Add Article Node
-            bucketNode.children.push({
-                id: article.id,
-                name: article.title,
-                type: 'article',
-                children: [],
-                article: article
-            });
         });
 
         // Sort alphabetically
@@ -80,5 +114,5 @@ export class CategoryTreeService {
         });
 
         return root;
-    });
+    }
 }

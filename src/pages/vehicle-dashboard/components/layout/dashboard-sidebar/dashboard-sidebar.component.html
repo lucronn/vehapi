@@ -115,53 +115,59 @@
         <ng-container *ngTemplateOutlet="treeNodeTemplate; context: { nodes: treeNodes(), depth: 0 }"></ng-container>
 
         <ng-template #treeNodeTemplate let-nodes="nodes" let-depth="depth">
-            <ul class="space-y-0.5" [ngClass]="{'pl-4 border-l border-white/5': depth > 0}">
+            <ul class="space-y-1" [ngClass]="{'pl-4 ml-2 border-l border-white/5': depth > 0}">
                 @for (node of nodes; track node.id) {
                 <li>
                     @if (node.type !== 'article') {
-                    <!-- Folder/Group Node -->
-                    <button (click)="toggleNode(node.id, $event)"
-                        class="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors hover:bg-white/[0.03] group"
-                        [ngClass]="{
-                            'text-white': isNodeExpanded(node.id),
-                            'text-[hsl(215,20%,65%)]': !isNodeExpanded(node.id)
-                        }">
+                        <!-- Root/System Node (Large Button) vs Nested Folder -->
+                        @if (depth === 0) {
+                            <button (click)="toggleNode(node.id, $event)"
+                                class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
+                                [ngClass]="{
+                                    'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': isNodeExpanded(node.id),
+                                    'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': !isNodeExpanded(node.id)
+                                }">
+                                <lucide-icon [img]="getIcon(node)" class="w-4 h-4"></lucide-icon>
+                                <span class="text-xs font-bold tracking-[0.15em] uppercase flex-1 truncate">{{ node.name }}</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[9px] font-mono bg-white/5 px-1.5 py-0.5 rounded border border-white/5 text-torque-muted group-hover:text-torque-cyan transition-colors">
+                                        {{ node.children.length }}
+                                    </span>
+                                    <lucide-icon [img]="isNodeExpanded(node.id) ? icons.ChevronDown : icons.ChevronRight"
+                                        class="w-3 h-3 text-torque-muted transition-transform"></lucide-icon>
+                                </div>
+                            </button>
+                        } @else {
+                            <button (click)="toggleNode(node.id, $event)"
+                                class="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors hover:bg-white/[0.03] group"
+                                [ngClass]="{
+                                    'text-white': isNodeExpanded(node.id),
+                                    'text-torque-muted': !isNodeExpanded(node.id)
+                                }">
+                                <lucide-icon [img]="isNodeExpanded(node.id) ? icons.ChevronDown : icons.ChevronRight"
+                                    class="w-3 h-3 transition-transform text-torque-muted group-hover:text-white"></lucide-icon>
+                                <lucide-icon [img]="isNodeExpanded(node.id) ? icons.FolderOpen : icons.Folder"
+                                    class="w-3.5 h-3.5 text-torque-cyan/70"></lucide-icon>
+                                <span class="text-xs truncate flex-1 font-medium">{{ node.name }}</span>
+                                <span class="text-[10px] bg-white/5 text-torque-muted px-1.5 rounded-md">
+                                    {{ node.children.length }}
+                                </span>
+                            </button>
+                        }
 
-                        <lucide-icon [img]="isNodeExpanded(node.id) ? icons.ChevronDown : icons.ChevronRight"
-                            class="w-3 h-3 transition-transform text-torque-muted group-hover:text-white"></lucide-icon>
-
-                        <lucide-icon [img]="isNodeExpanded(node.id) ? icons.FolderOpen : icons.Folder"
-                            class="w-3.5 h-3.5" [ngClass]="{
-                                'text-torque-cyan': node.type === 'system',
-                                'text-torque-muted': node.type !== 'system'
-                            }"></lucide-icon>
-
-                        <span class="text-xs truncate flex-1" [ngClass]="{
-                                'font-semibold': node.type === 'system',
-                                'font-medium': node.type !== 'system'
-                            }">
-                            {{ node.name }}
-                        </span>
-
-                        <span class="text-[10px] bg-white/5 text-torque-muted px-1.5 rounded-md">
-                            {{ node.children.length }}
-                        </span>
-                    </button>
-
-                    <!-- Children (Recursive) -->
-                    @if (isNodeExpanded(node.id) && node.children.length > 0) {
-                    <div class="mt-0.5">
-                        <ng-container
-                            *ngTemplateOutlet="treeNodeTemplate; context: { nodes: node.children, depth: depth + 1 }"></ng-container>
-                    </div>
-                    }
+                        <!-- Nested Children -->
+                        @if (isNodeExpanded(node.id) && node.children.length > 0) {
+                            <div class="mt-1">
+                                <ng-container *ngTemplateOutlet="treeNodeTemplate; context: { nodes: node.children, depth: depth + 1 }"></ng-container>
+                            </div>
+                        }
                     } @else {
-                    <!-- Article Leaf Node -->
-                    <button (click)="onArticleClick(node.id)"
-                        class="w-full flex items-center gap-2 pl-6 pr-2 py-1.5 rounded-lg text-left transition-colors text-[hsl(215,20%,65%)] hover:text-white hover:bg-white/[0.03]">
-                        <lucide-icon [img]="icons.FileText" class="w-3 h-3 text-torque-muted"></lucide-icon>
-                        <span class="text-[11px] truncate flex-1" [title]="node.name">{{ node.name }}</span>
-                    </button>
+                        <!-- Article/File Node -->
+                        <button (click)="onArticleClick(node.id)"
+                            class="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-left transition-colors text-torque-muted hover:text-white hover:bg-white/[0.03] group pl-7">
+                            <lucide-icon [img]="icons.FileText" class="w-3 h-3 text-torque-muted group-hover:text-torque-cyan transition-colors"></lucide-icon>
+                            <span class="text-[11px] truncate flex-1" [title]="node.name">{{ node.name }}</span>
+                        </button>
                     }
                 </li>
                 }

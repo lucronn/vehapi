@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { LucideAngularModule, House, TriangleAlert, FileText, Cable, Wrench, ClipboardList, Package, LogOut, MapPin, Calendar, User, LogIn, CreditCard, ChevronRight, ChevronDown, FolderOpen, Folder, Settings, Box, Lightbulb } from 'lucide-angular';
+import { LucideAngularModule, House, TriangleAlert, FileText, Cable, Wrench, ClipboardList, Package, LogOut, MapPin, Calendar, User, LogIn, CreditCard, ChevronRight, ChevronDown, FolderOpen, Folder, Settings, Box, Lightbulb, Info } from 'lucide-angular';
 
 import { SectionAvailability } from '../../../../../services/vehicle-data.service';
 import { AuthService } from '../../../../../services/auth.service';
@@ -35,7 +35,23 @@ export class DashboardSidebarComponent {
     // Get the tree data
     treeNodes = this.categoryTreeService.categoryTree;
 
-    readonly icons = { House, TriangleAlert, FileText, Cable, Wrench, ClipboardList, Package, LogOut, MapPin, Calendar, User, LogIn, CreditCard, ChevronRight, ChevronDown, FolderOpen, Folder, Settings, Box, Lightbulb };
+    readonly icons = { House, TriangleAlert, FileText, Cable, Wrench, ClipboardList, Package, LogOut, MapPin, Calendar, User, LogIn, CreditCard, ChevronRight, ChevronDown, FolderOpen, Folder, Settings, Box, Lightbulb, Info };
+
+    getIcon(nodeOrName: TreeNode | string): any {
+        const name = typeof nodeOrName === 'string' ? nodeOrName.toLowerCase() : nodeOrName.name.toLowerCase();
+        
+        if (name.includes('dtc') || name.includes('fault') || name.includes('trouble')) return TriangleAlert;
+        if (name.includes('bulletin') || name.includes('tsb')) return FileText;
+        if (name.includes('procedure') || name.includes('repair') || name.includes('labor') || name.includes('wrench')) return Wrench;
+        if (name.includes('spec') || name.includes('fluid') || name.includes('setting')) return Settings;
+        if (name.includes('location')) return MapPin;
+        if (name.includes('maintenance') || name.includes('service') || name.includes('calendar')) return Calendar;
+        if (name.includes('part') || name.includes('box')) return Box;
+        if (name.includes('issue') || name.includes('bulb')) return Lightbulb;
+        if (name.includes('diagram') || name.includes('cable')) return Cable;
+        
+        return ClipboardList; // Default icon
+    }
 
     // Set to keep track of open nodes
     expandedNodes = signal<Set<string>>(new Set<string>());

@@ -13,6 +13,7 @@ export class SearchResultsState {
     // State
     readonly articleDetails = signal<Article[]>([]);
     readonly filterTabs = signal<FilterTab[]>([]);
+    readonly normalizedMenu = signal<any | null>(null);
     readonly isLoading = signal<boolean>(false);
     readonly error = signal<string | null>(null);
 
@@ -191,7 +192,14 @@ export class SearchResultsState {
                 catchError((err) => {
                     this.error.set(err.message || 'Search failed');
                     this.isLoading.set(false);
-                    return of({ body: { articleDetails: [], filterTabs: [] }, header: { status: 'error', statusCode: 500 } });
+                    return of({
+                        body: {
+                            articleDetails: [],
+                            filterTabs: [],
+                            normalizedMenu: null
+                        } as any,
+                        header: { status: 'error', statusCode: 500 }
+                    });
                 })
             )
             .subscribe((res) => {
@@ -200,6 +208,7 @@ export class SearchResultsState {
                 if (data) {
                     this.articleDetails.set(data.articleDetails || []);
                     this.filterTabs.set(data.filterTabs || []);
+                    this.normalizedMenu.set(data.normalizedMenu || null);
                 }
                 this.isLoading.set(false);
             });

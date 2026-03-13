@@ -324,6 +324,20 @@ export interface SearchResultsResponse {
   articleDetails: Article[];
   filterTabs: FilterTab[];
   vehicleGeoBlockingDetails?: any;
+  normalizedMenu?: NormalizedMenu;
+}
+
+export interface NormalizedMenu {
+  categories: NormalizedCategory[];
+}
+
+export interface NormalizedCategory {
+  id: string;
+  name: string;
+  count: number;
+  type: 'system' | 'group' | 'article';
+  articles?: Article[];
+  children?: NormalizedCategory[];
 }
 
 export interface Bucket {

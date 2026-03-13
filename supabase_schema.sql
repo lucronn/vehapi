@@ -1,274 +1,149 @@
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- 1. Ensure vehicles.external_id is unique
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'vehicles_external_id_key') THEN
+        ALTER TABLE public.vehicles ADD CONSTRAINT vehicles_external_id_key UNIQUE (external_id);
+    END IF;
+END $$;
 
--- ==========================================
--- 1. Core Vehicle Tables
--- ==========================================
-
--- Vehicles Table
-CREATE TABLE vehicles (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    year INTEGER NOT NULL,
-    make TEXT NOT NULL,
-    model TEXT NOT NULL,
-    submodel TEXT,
-    engine TEXT,
-    vin TEXT,
-    external_id TEXT, -- e.g., "66966:2600"
-    content_source TEXT, -- e.g., "MOTOR", "OEM"
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE INDEX idx_vehicles_external_id ON vehicles(external_id);
-CREATE INDEX idx_vehicles_ymm ON vehicles(year, make, model);
-
--- Normalized Hierarchy Tables
-CREATE TABLE vehicle_years (
-    year INTEGER PRIMARY KEY,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE TABLE vehicle_makes (
-    id SERIAL PRIMARY KEY,
-    year INTEGER REFERENCES vehicle_years(year) ON DELETE CASCADE,
-    make_name TEXT NOT NULL,
-    make_id INTEGER, -- Optional exact ID from motor
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(year, make_name)
-);
-
-CREATE TABLE vehicle_models (
-    id SERIAL PRIMARY KEY,
-    make_id INTEGER REFERENCES vehicle_makes(id) ON DELETE CASCADE,
-    model_name TEXT NOT NULL,
-    model_id INTEGER, -- Optional exact ID from motor
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(make_id, model_name)
-);
-
--- Categories Table (Hierarchical)
-CREATE TABLE categories (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    parent_id UUID REFERENCES categories(id) ON DELETE CASCADE,
-    name TEXT NOT NULL,
-    type TEXT NOT NULL, -- e.g., "Procedures", "Diagrams", "Specs", "Maintenance"
-    sort_order INTEGER DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE INDEX idx_categories_parent_id ON categories(parent_id);
-
--- ==========================================
--- 2. Technical Data Tables (Standardized)
--- ==========================================
-
--- Procedures Table
--- Standardized format for repair instructions
-CREATE TABLE procedures (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    vehicle_id TEXT NOT NULL, -- external_id from Motor (e.g., "66966:2600")
-    category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
-    external_id TEXT,
+-- 2. ARTICLES TABLE (Cached Normalized Content)
+CREATE TABLE IF NOT EXISTS public.articles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vehicle_id TEXT REFERENCES public.vehicles(external_id),
+    article_id TEXT NOT NULL,
     title TEXT NOT NULL,
-    description TEXT,
-    steps JSONB, -- Array of objects: { "order": 1, "text": "...", "image_url": "...", "warning": "..." }
-    tools_required JSONB, -- Array of strings: ["10mm Socket", "Lift"]
-    parts_required JSONB, -- Array of objects: { "part_number": "...", "quantity": 1 }
-    time_estimate_hours NUMERIC(4, 2),
-    cautions TEXT, -- General warnings/cautions for the procedure
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    content_html TEXT,
+    category TEXT,
+    source TEXT DEFAULT 'MOTOR',
+    is_parsed BOOLEAN DEFAULT FALSE,
+    tutorial_steps JSONB DEFAULT '[]'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(vehicle_id, article_id)
 );
 
-CREATE INDEX idx_procedures_vehicle_id ON procedures(vehicle_id);
-
--- Technical Service Bulletins (TSBs) Table
-CREATE TABLE tsbs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    vehicle_id TEXT NOT NULL,
-    bulletin_number TEXT NOT NULL,
-    issue_date DATE,
-    title TEXT NOT NULL,
-    summary TEXT,
-    content TEXT, -- Full content (HTML or Text)
-    affected_components JSONB, -- Array of strings
-    models_affected JSONB, -- Array of strings if multi-model
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- 3. SYSTEM SESSIONS TABLE (Proxy Auth Persistence)
+CREATE TABLE IF NOT EXISTS public.system_sessions (
+    id TEXT PRIMARY KEY,
+    data JSONB NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_tsbs_vehicle_id ON tsbs(vehicle_id);
-CREATE INDEX idx_tsbs_bulletin_number ON tsbs(bulletin_number);
-
--- Diagnostic Trouble Codes (DTCs) Table
-CREATE TABLE dtcs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    vehicle_id TEXT NOT NULL,
-    code TEXT NOT NULL, -- e.g., "P0300"
-    description TEXT NOT NULL,
-    possible_causes JSONB, -- Array of strings
-    symptoms JSONB, -- Array of strings
-    diagnostic_steps JSONB, -- Structured steps similar to procedures
-    monitor_strategy TEXT, -- How the ECU monitors this
-    malfunction_criteria TEXT, -- What triggers the code
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE INDEX idx_dtcs_vehicle_id ON dtcs(vehicle_id);
-CREATE INDEX idx_dtcs_code ON dtcs(code);
-
--- Specifications Table
-CREATE TABLE specifications (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    vehicle_id TEXT NOT NULL,
-    category TEXT NOT NULL, -- e.g., "Torque", "Fluids", "Engine"
-    name TEXT NOT NULL, -- e.g., "Cylinder Head Torque"
-    value TEXT NOT NULL, -- e.g., "50"
-    unit TEXT, -- e.g., "ft-lbs", "liters"
-    display_text TEXT, -- e.g., "50 ft-lbs"
-    metadata JSONB,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE INDEX idx_specifications_vehicle_id ON specifications(vehicle_id);
-
--- Maintenance Schedules Table
-CREATE TABLE maintenance_schedules (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    vehicle_id TEXT NOT NULL,
-    interval_value INTEGER, -- The numeric interval (e.g., 10000)
-    interval_unit TEXT, -- "Miles", "Kilometers", "Months", "Hours"
-    action TEXT NOT NULL, -- "Inspect", "Replace", "Change", "Rotate"
-    item TEXT NOT NULL, -- "Engine Oil", "Tires", "Air Filter"
-    description TEXT, -- Full description line
-    frequency_code TEXT, -- e.g., "A", "B", "I", "R"
-    is_severe_service BOOLEAN DEFAULT FALSE,
-    labor_time_hours NUMERIC(4, 2),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE INDEX idx_maintenance_vehicle_id ON maintenance_schedules(vehicle_id);
-
--- Labor Estimates Table
-CREATE TABLE labor (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    vehicle_id TEXT NOT NULL,
-    operation_code TEXT,
-    description TEXT NOT NULL,
-    hours NUMERIC(5, 2),
-    skill_level TEXT, -- "A", "B", "C"
-    category_id UUID REFERENCES categories(id),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE INDEX idx_labor_vehicle_id ON labor(vehicle_id);
-
--- Parts Table
-CREATE TABLE parts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    vehicle_id TEXT NOT NULL,
-    part_number TEXT NOT NULL,
-    description TEXT NOT NULL,
-    manufacturer TEXT,
-    list_price NUMERIC(10, 2),
-    dealer_price NUMERIC(10, 2),
-    quantity INTEGER DEFAULT 1,
-    fitment_notes TEXT, -- Specific fitment details for this vehicle
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE INDEX idx_parts_vehicle_id ON parts(vehicle_id);
-CREATE INDEX idx_parts_part_number ON parts(part_number);
-
--- Wiring Diagrams & Component Locations
-CREATE TABLE diagrams (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    vehicle_id TEXT NOT NULL,
-    category_id UUID REFERENCES categories(id),
-    title TEXT NOT NULL,
-    description TEXT,
-    image_url TEXT NOT NULL,
-    thumbnail_url TEXT,
-    diagram_type TEXT, -- "Wiring", "Component Location", "Vacuum"
-    interactive_points JSONB, -- For interactive diagrams: [{ "x": 10, "y": 20, "label": "Fuse 1" }]
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE INDEX idx_diagrams_vehicle_id ON diagrams(vehicle_id);
-
--- ==========================================
--- 3. Processing Logs
--- ==========================================
-
-CREATE TABLE ai_processing_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    vehicle_id TEXT,
-    source_file TEXT,
-    category TEXT, -- "Procedures", "TSBs", etc.
-    status TEXT, -- "PENDING", "PROCESSING", "COMPLETED", "FAILED"
-    error_message TEXT,
-    tokens_used INTEGER,
-    processed_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- ==========================================
--- 4. Security (RLS)
--- ==========================================
-
--- Enable Row Level Security on all tables
-ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
-ALTER TABLE procedures ENABLE ROW LEVEL SECURITY;
-ALTER TABLE tsbs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE dtcs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE specifications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE maintenance_schedules ENABLE ROW LEVEL SECURITY;
-ALTER TABLE labor ENABLE ROW LEVEL SECURITY;
-ALTER TABLE parts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE diagrams ENABLE ROW LEVEL SECURITY;
-ALTER TABLE ai_processing_logs ENABLE ROW LEVEL SECURITY;
-
--- Create simple read-only policy for authenticated users (example)
--- CREATE POLICY "Enable read access for all users" ON vehicles FOR SELECT USING (true);
-
--- Enable Row Level Security (RLS) for AI logs
--- Policy to allow the service role (backend) to perform operations on logs
-CREATE POLICY "Allow full access to service_role"
-    ON ai_processing_logs
-    FOR ALL
-    TO service_role
-    USING (true)
-    WITH CHECK (true);
-
--- Policy to allow authenticated users to view logs (if needed)
-CREATE POLICY "Allow read access to authenticated users"
-    ON ai_processing_logs
-    FOR SELECT
-    TO authenticated
-    USING (true);
-
--- -----------------------------------------------------------------------------
--- USERS TABLE (Stripe Credits & Unlocks)
--- -----------------------------------------------------------------------------
+-- 4. USERS TABLE (Credit System)
 CREATE TABLE IF NOT EXISTS public.users (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY, -- Maps to Supabase User ID
     credits INTEGER DEFAULT 0,
     unlocks JSONB DEFAULT '{}'::jsonb,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+    stripe_customer_id TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Turn on Row Level Security
-ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+-- 5. TRANSACTIONS TABLE (Credit Logs)
+CREATE TABLE IF NOT EXISTS public.transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id TEXT REFERENCES public.users(id),
+    amount INTEGER NOT NULL,
+    type TEXT NOT NULL, -- 'purchase' | 'unlock'
+    stripe_session_id TEXT,
+    stripe_payment_intent TEXT,
+    usd_cents INTEGER,
+    vehicle_id TEXT,
+    vehicle_name TEXT,
+    module_type TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
 
--- Policy: Users can view their own profile
-CREATE POLICY "Users can view own profile" 
-ON public.users FOR SELECT 
-USING (auth.uid() = id);
+-- 6. AI PROCESSING LOGS (Background Parsing Progress)
+CREATE TABLE IF NOT EXISTS public.ai_processing_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    source_file TEXT NOT NULL,
+    status TEXT NOT NULL, -- 'PENDING' | 'COMPLETED' | 'FAILED'
+    error_message TEXT,
+    tokens_used INTEGER,
+    processed_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 7. LEGACY/SPECIALIZED CONTENT TABLES
+-- (Used by original proxy implementation in supabase.js)
+
+CREATE TABLE IF NOT EXISTS public.procedures (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vehicle_id TEXT REFERENCES public.vehicles(external_id),
+    external_id TEXT, -- Motor Article ID
+    title TEXT NOT NULL,
+    content_html TEXT,
+    is_parsed BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(vehicle_id, title)
+);
+
+CREATE TABLE IF NOT EXISTS public.tsbs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vehicle_id TEXT REFERENCES public.vehicles(external_id),
+    bulletin_number TEXT NOT NULL,
+    title TEXT NOT NULL,
+    content_html TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(vehicle_id, bulletin_number)
+);
+
+CREATE TABLE IF NOT EXISTS public.dtcs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vehicle_id TEXT REFERENCES public.vehicles(external_id),
+    code TEXT NOT NULL,
+    description TEXT,
+    content_html TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(vehicle_id, code)
+);
+
+CREATE TABLE IF NOT EXISTS public.specifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vehicle_id TEXT REFERENCES public.vehicles(external_id),
+    category TEXT NOT NULL,
+    name TEXT NOT NULL,
+    value TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(vehicle_id, category, name)
+);
+
+CREATE TABLE IF NOT EXISTS public.categories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(name, type)
+);
+
+-- ENABLE RLS ON ALL TABLES
+ALTER TABLE public.articles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.system_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ai_processing_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.procedures ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tsbs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.dtcs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.specifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+
+-- POLICIES (Public Read/Write for MVP - Tighten later)
+-- Note: These are permissive to ensure flow works; in production use proper Auth.
+
+CREATE POLICY "Public articles read" ON public.articles FOR SELECT USING (true);
+CREATE POLICY "Public articles insert" ON public.articles FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public articles update" ON public.articles FOR UPDATE USING (true);
+
+CREATE POLICY "Public system_sessions access" ON public.system_sessions FOR ALL USING (true);
+
+CREATE POLICY "Public users access" ON public.users FOR ALL USING (true);
+CREATE POLICY "Public transactions access" ON public.transactions FOR ALL USING (true);
+CREATE POLICY "Public ai_logs access" ON public.ai_processing_logs FOR ALL USING (true);
+
+CREATE POLICY "Public procedures access" ON public.procedures FOR ALL USING (true);
+CREATE POLICY "Public tsbs access" ON public.tsbs FOR ALL USING (true);
+CREATE POLICY "Public dtcs access" ON public.dtcs FOR ALL USING (true);
+CREATE POLICY "Public specs access" ON public.specifications FOR ALL USING (true);
+CREATE POLICY "Public categories access" ON public.categories FOR ALL USING (true);

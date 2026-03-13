@@ -45,6 +45,90 @@ async function getEnqueue() {
     return _enqueueParsingTask;
 }
 
+/**
+ * Normalizes the Motor API /articles/v2 response into a structured menu.
+ */
+function normalizeMotorResponse(data) {
+    if (!data || !data.body || !data.body.articleDetails) return data;
+
+    const articles = data.body.articleDetails;
+    const categoriesMap = new Map();
+    const result = { categories: [] };
+
+    // Standard mapping for root level categories to ensure consistency
+    const rootNameMap = {
+        'Procedures': 'Service Procedures',
+        'Wiring Diagrams': 'Wiring Diagrams',
+        'Component Locations': 'Component Locations',
+        'Labor': 'Labor & Estimating',
+        'Fluids': 'Fluids & Capacities',
+        'Specifications': 'Specifications',
+        'Parts': 'Parts Catalog',
+        'TSBs': 'Service Bulletins (TSB)',
+        'DTCs': 'Diagnostic Codes (DTC)'
+    };
+
+    articles.forEach(article => {
+        const parentBucket = article.parentBucket || 'Other';
+        const bucket = article.bucket || 'Uncategorized';
+
+        // Flatten logic: If parentBucket is 'Other', we treat the 'bucket' as root
+        const isOther = parentBucket === 'Other';
+        let rootName = isOther ? bucket : parentBucket;
+        rootName = rootNameMap[rootName] || rootName;
+        
+        const subName = isOther ? null : bucket;
+
+        // 1. Ensure Root Category exists
+        let rootCat = categoriesMap.get(rootName);
+        if (!rootCat) {
+            rootCat = {
+                id: rootName.toLowerCase().replace(/\s+/g, '-'),
+                name: rootName,
+                count: 0,
+                type: 'system',
+                children: []
+            };
+            categoriesMap.set(rootName, rootCat);
+            result.categories.push(rootCat);
+        }
+
+        // 2. Add to Subcategory or Direct
+        if (subName) {
+            const subId = `${rootCat.id}-${subName.toLowerCase().replace(/\s+/g, '-')}`;
+            let subCat = categoriesMap.get(subId);
+            if (!subCat) {
+                subCat = {
+                    id: subId,
+                    name: subName,
+                    count: 0,
+                    type: 'group',
+                    articles: []
+                };
+                categoriesMap.set(subId, subCat);
+                rootCat.children.push(subCat);
+            }
+            subCat.articles.push(article);
+            subCat.count++;
+        } else {
+            if (!rootCat.articles) rootCat.articles = [];
+            rootCat.articles.push(article);
+        }
+        rootCat.count++;
+    });
+
+    // Sort categories and clean up empty ones
+    result.categories.sort((a, b) => a.name.localeCompare(b.name));
+    result.categories.forEach(cat => {
+        if (cat.children && cat.children.length > 0) {
+            cat.children.sort((a, b) => a.name.localeCompare(b.name));
+        }
+    });
+
+    data.body.normalizedMenu = result;
+    return data;
+}
+
 const require = createRequire(import.meta.url);
 const swaggerDocument = require('./swagger.json');
 
@@ -926,9 +1010,18 @@ app.use('/', authMiddleware, createProxyMiddleware({
 
                             truncateArrays(parsedJson);
 
-                            if (didTruncate) {
+                            if (isArticleCatalog) {
+                                parsedJson = normalizeMotorResponse(parsedJson);
+                            }
+
+                            if (didTruncate || isArticleCatalog) {
                                 normalizedData = JSON.stringify(parsedJson);
-                                logger.info(`Truncated massive JSON arrays to prevent iOS/Vercel OOM crashes on ${req.path}`);
+                                if (didTruncate) {
+                                    logger.info(`Truncated massive JSON arrays to prevent iOS/Vercel OOM crashes on ${req.path}`);
+                                }
+                                if (isArticleCatalog) {
+                                    logger.info(`Normalized menu structure for ${req.path}`);
+                                }
                             }
                         } catch (e) {
                             logger.warn('Failed to parse or truncate JSON for performance protections:', e);

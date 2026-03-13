@@ -20,4 +20,21 @@ import { WindowContainerComponent } from './components/window-container/window-c
 })
 export class AppComponent {
   private themeService = inject(ThemeService);
+
+  constructor() {
+    // Silence AbortError spam in the console. 
+    // This happens when fetch/http requests are aborted (intentional on component unmount)
+    // but the underlying promises rejected without a catch.
+    if (typeof window !== 'undefined') {
+      window.addEventListener('unhandledrejection', (event) => {
+        if (event.reason?.name === 'AbortError' || event.reason?.message?.includes('user aborted')) {
+          event.preventDefault();
+          // Log it silently if in dev, but don't let it crash/spam
+          if (typeof process !== 'undefined' && process.env?.['NODE_ENV'] === 'development') {
+            console.debug('Suppressed AbortError:', event.reason);
+          }
+        }
+      });
+    }
+  }
 }
