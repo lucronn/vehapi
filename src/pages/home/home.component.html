@@ -189,13 +189,10 @@
                 @for (suggestion of suggestions(); track suggestion.display; let i = $index) {
                 <button (mousedown)="selectSuggestion($event, suggestion)"
                   class="py-2.5 px-2 rounded-xl text-sm font-mono transition-all border"
-                  [class.bg-[hsl(191,97%,50%)]/10]="selectedSuggestionIndex() === i"
-                  [class.border-[hsl(191,97%,50%)]/30]="selectedSuggestionIndex() === i"
-                  [class.text-torque-cyan]="selectedSuggestionIndex() === i"
-                  [class.bg-white/[0.03]]="selectedSuggestionIndex() !== i"
-                  [class.border-white/5]="selectedSuggestionIndex() !== i"
-                  [class.text-white/80]="selectedSuggestionIndex() !== i"
-                  [class.font-bold]="selectedSuggestionIndex() === i">
+                  [ngClass]="{
+                    'bg-[hsl(191,97%,50%)]/10 border-[hsl(191,97%,50%)]/30 text-torque-cyan font-bold': selectedSuggestionIndex() === i,
+                    'bg-white/[0.03] border-white/5 text-white/80': selectedSuggestionIndex() !== i
+                  }">
                   {{ suggestion.display }}
                 </button>
                 }
