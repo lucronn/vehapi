@@ -3,7 +3,7 @@ import '@angular/compiler';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import { provideRouter, withHashLocation } from '@angular/router';
-import { provideZonelessChangeDetection } from '@angular/core';
+import { provideExperimentalZonelessChangeDetection } from '@angular/core';
 
 import { AppComponent } from './src/app.component';
 import { HomeComponent } from './src/pages/home/home.component';
@@ -13,7 +13,7 @@ import { CreditsDashboardComponent } from './src/pages/credits-dashboard/credits
 
 bootstrapApplication(AppComponent, {
   providers: [
-    provideZonelessChangeDetection(),
+    provideExperimentalZonelessChangeDetection(),
     provideHttpClient(withFetch()),
     provideRouter([
       { path: '', component: HomeComponent },

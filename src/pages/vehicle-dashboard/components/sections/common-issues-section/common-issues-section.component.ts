@@ -18,7 +18,7 @@ import { CreditsService } from '../../../../../services/credits.service';
     selector: 'app-common-issues-section',
     templateUrl: './common-issues-section.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, LoadingSkeletonComponent, EmptyStateComponent, LucideAngularModule],
+    imports: [CommonModule, LoadingSkeletonComponent, LucideAngularModule],
     standalone: true
 })
 export class CommonIssuesSectionComponent implements OnInit {
