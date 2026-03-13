@@ -14,6 +14,7 @@ import { ImageViewerModalComponent } from './components/image-viewer-modal/image
 import { TutorialComponent } from '../../components/tutorial/tutorial.component';
 import { TutorialStep } from '../../models/motor.models';
 import { WindowManagerService } from '../../services/window-manager.service';
+import { DataSyncService } from '../../services/data-sync.service';
 
 export interface TableOfContents {
   id: string;
@@ -57,6 +58,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   private aiRewrite = inject(AiRewriteService);
   private sanitizer = inject(DomSanitizer);
   private windowManager = inject(WindowManagerService);
+  private dataSync = inject(DataSyncService);
 
   readonly icons = { ArrowLeft, Maximize2, List, X, Sparkles, BookOpen };
 
@@ -223,14 +225,18 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
         if (!htmlString || htmlString.trim() === '') {
           this.articleContent.set('');
         } else {
-          // Show original content immediately (progressive enhancement)
+          // Show original content immediately
           this.articleContent.set(safeHtml);
           // Store for tutorial generation
           this.rawHtmlForTutorial = htmlString;
-          // Reset tutorial state when loading a new article
-          this.tutorialSteps.set([]);
-          this.showTutorial.set(false);
-          // Trigger AI rewriting in the background
+          // Trigger lazy normalization (save to Supabase for future use)
+          this.dataSync.syncSingleArticle(this.contentSource!, this.vehicleId!, {
+            id: aid,
+            title: this.articleTitle(),
+            bucket: (content.body as any)?.bucket || '',
+            parentBucket: (content.body as any)?.parentBucket || ''
+          });
+          // Background AI rewrite
           this.triggerAiRewrite(htmlString);
         }
 

@@ -30,6 +30,8 @@ export class DataSyncService {
     async syncFullVehicle(contentSource: string, vehicleId: string, vehicleName: string): Promise<void> {
         if (this.isSyncing()) return;
 
+        // Note: Full sync is largely deprecated in favor of lazy sync, 
+        // but we keep a "lite" version for core metadata and essential silos.
         this.isSyncing.set(true);
         this.syncProgress.set({ current: 0, total: 100, message: 'Starting Sync...' });
 
@@ -49,64 +51,82 @@ export class DataSyncService {
                 updated_at: new Date().toISOString()
             }, { onConflict: 'external_id' });
 
-            // 1. Common Issues (AI) - Now async logic using Supabase
-            this.syncProgress.set({ current: 1, total: 100, message: 'Analyzing Common Issues...' });
+            // 1. Common Issues (AI) - Keep eager as it's a dashboard feature
+            this.syncProgress.set({ current: 20, total: 100, message: 'Analyzing Common Issues...' });
             await this.syncCommonIssues(contentSource, vehicleId, vehicleName);
 
-            // 2. Fetch All Articles
-            this.syncProgress.set({ current: 5, total: 100, message: 'Fetching Data Lists...' });
-            const searchResults = await lastValueFrom(this.motorApi.searchArticles(contentSource, vehicleId, ''));
-            const allItems = searchResults?.body?.articleDetails || [];
-
-            // 3. Sync Specialized Silos (Fluids, Parts, Maintenance)
-            this.syncProgress.set({ current: 10, total: 100, message: 'Syncing Fluids & Parts...' });
+            // 2. Sync Specialized Silos (Fluids, Parts, Maintenance) - Keep eager/semi-eager for now
+            this.syncProgress.set({ current: 50, total: 100, message: 'Syncing Specs & Maintenance...' });
             await Promise.all([
                 this.syncFluids(contentSource, vehicleId),
-                this.syncParts(contentSource, vehicleId),
                 this.syncMaintenance(contentSource, vehicleId)
             ]);
 
-            const totalItems = allItems.length;
-            let processed = 0;
-
-            console.log(`Starting massive sync for ${totalItems} items...`);
-
-            if (totalItems > 0) {
-                await lastValueFrom(from(allItems).pipe(
-                    mergeMap(item => {
-                        return this.fetchAndSaveContent(contentSource, vehicleId, item).pipe(
-                            tap(() => {
-                                processed++;
-                                const percent = Math.round((processed / totalItems) * 90) + 10;
-                                this.syncProgress.set({
-                                    current: percent,
-                                    total: 100,
-                                    message: `Downloading ${processed}/${totalItems} items...`
-                                });
-                            }),
-                            catchError(err => {
-                                console.error(`Failed to sync item ${item.id}`, err);
-                                return of(null);
-                            })
-                        );
-                    }, 10) // Concurrency: 10 for faster normalization
-                ));
-            }
-
-            // 4. Mark as normalized
+            // 3. Mark as metadata-ready (not necessarily fully normalized yet)
             await this.supabase.client.from('vehicles').update({
-                is_normalized: true,
-                last_sync_at: new Date().toISOString()
+                updated_at: new Date().toISOString()
             }).eq('external_id', vehicleId);
 
             this.syncProgress.set({ current: 100, total: 100, message: 'Sync Complete!' });
-            setTimeout(() => this.isSyncing.set(false), 2000);
+            setTimeout(() => this.isSyncing.set(false), 1000);
 
         } catch (error) {
             console.error('Sync failed', error);
-            this.syncProgress.set({ current: 0, total: 100, message: 'Sync Failed!' });
             this.isSyncing.set(false);
         }
+    }
+
+    /**
+     * Lazy synchronization: Fetches, processes, and saves a single article 
+     * ONLY if it doesn't already exist in Supabase articles table.
+     */
+    async syncSingleArticle(cs: string, vid: string, item: any): Promise<any> {
+        // Construct Article ID properly based on Bucket to normalize
+        const parentOrBucket = item.parentBucket || item.bucket || '';
+        let normalizedId = item.id;
+
+        if (parentOrBucket.includes('Codes') || parentOrBucket.includes('DTC')) {
+            normalizedId = `DTC:${item.code || item.id}`;
+        } else if (parentOrBucket.includes('Bulletin') || parentOrBucket.includes('TSB')) {
+            normalizedId = `TSB:${item.bulletinNumber || item.id}`;
+        } else if (parentOrBucket.includes('Procedures')) {
+            normalizedId = `P:${item.id}`;
+        }
+
+        // 1. Check if we already have it in Supabase
+        const { data: existing } = await this.supabase.client
+            .from('articles')
+            .select('*')
+            .eq('vehicle_id', vid)
+            .eq('original_id', item.id)
+            .maybeSingle();
+
+        if (existing) {
+            console.log(`[DataSync] Serving ${item.id} from Supabase cache`);
+            return existing;
+        }
+
+        // 2. Fallback to API and Save
+        console.log(`[DataSync] Fetching ${item.id} from Motor API for lazy normalization...`);
+        const contentRes = await lastValueFrom(this.motorApi.getArticleContent(cs, vid, item.id));
+        const rawHtml = (contentRes?.body as any)?.html || '';
+
+        const articleData = {
+            id: normalizedId,
+            original_id: item.id,
+            title: item.title || item.code || '',
+            original_content: rawHtml,
+            enhanced_content: '',
+            vehicle_id: vid,
+            source: cs,
+            bucket: item.bucket || '',
+            parent_bucket: item.parentBucket || '',
+            updated_at: new Date().toISOString()
+        };
+
+        await this.supabase.client.from('articles').upsert(articleData, { onConflict: 'vehicle_id, original_id' });
+        
+        return articleData;
     }
 
     private async syncCommonIssues(cs: string, vid: string, name: string) {
@@ -131,39 +151,6 @@ export class DataSyncService {
         }
     }
 
-    private fetchAndSaveContent(cs: string, vid: string, item: any) {
-        // Construct Article ID properly based on Bucket to normalize
-        const parentOrBucket = item.parentBucket || item.bucket || '';
-        let normalizedId = item.id;
-
-        if (parentOrBucket.includes('Codes') || parentOrBucket.includes('DTC')) {
-            normalizedId = `DTC:${item.code || item.id}`;
-        } else if (parentOrBucket.includes('Bulletin') || parentOrBucket.includes('TSB')) {
-            normalizedId = `TSB:${item.bulletinNumber || item.id}`;
-        } else if (parentOrBucket.includes('Procedures')) {
-            normalizedId = `P:${item.id}`;
-        }
-
-        // Write-over fetch & save logic
-        return this.motorApi.getArticleContent(cs, vid, item.id).pipe(
-            concatMap(contentRes => {
-                const articleData = {
-                    id: normalizedId,
-                    original_id: item.id,
-                    title: item.title || item.code || '',
-                    original_content: contentRes.body?.html || '',
-                    enhanced_content: '',
-                    vehicle_id: vid,
-                    source: cs,
-                    bucket: item.bucket || '',
-                    parent_bucket: item.parentBucket || '',
-                    updated_at: new Date().toISOString()
-                };
-
-                return from(this.supabase.client.from('articles').upsert(articleData, { onConflict: 'vehicle_id, original_id' }));
-            })
-        );
-    }
 
     private async syncFluids(cs: string, vid: string) {
         try {

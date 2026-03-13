@@ -331,16 +331,10 @@ export class VehicleDashboardComponent {
 
   // Normalization Flow
   private async checkAndTriggerNormalization(cs: string, vid: string) {
-    const isNormalized = await this.dataSync.checkNormalizationStatus(vid);
-    if (!isNormalized) {
-      console.log(`[Dashboard] Vehicle ${vid} is NOT normalized. Triggering one-time sync...`);
-      // Wait for vehicleName to be available if possible, or just use a placeholder
-      // vehicleName() is a signal driven by toSignal of vehicleInfo$
-      const name = this.vehicleName() || 'Vehicle';
-      this.dataSync.syncFullVehicle(cs, vid, name);
-    } else {
-      console.log(`[Dashboard] Vehicle ${vid} is already normalized.`);
-    }
+    // We only trigger "Full" sync for core metadata and essential features (Common Issues, Specs)
+    // Deep article content is now handled lazily in ArticleViewer
+    const name = this.vehicleName() || 'Vehicle';
+    // this.dataSync.syncFullVehicle(cs, vid, name);
   }
 
   // Orientation Selection
