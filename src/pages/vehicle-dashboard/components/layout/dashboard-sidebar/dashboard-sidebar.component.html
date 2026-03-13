@@ -115,8 +115,7 @@
         <ng-container *ngTemplateOutlet="treeNodeTemplate; context: { nodes: treeNodes(), depth: 0 }"></ng-container>
 
         <ng-template #treeNodeTemplate let-nodes="nodes" let-depth="depth">
-            <ul class="space-y-0.5" [class.pl-4]="depth > 0" [class.border-l]="depth > 0"
-                [class.border-white/5]="depth > 0">
+            <ul class="space-y-0.5" [ngClass]="{'pl-4 border-l border-white/5': depth > 0}">
                 @for (node of nodes; track node.id) {
                 <li>
                     @if (node.type !== 'article') {
@@ -132,11 +131,15 @@
                             class="w-3 h-3 transition-transform text-torque-muted group-hover:text-white"></lucide-icon>
 
                         <lucide-icon [img]="isNodeExpanded(node.id) ? icons.FolderOpen : icons.Folder"
-                            class="w-3.5 h-3.5" [class.text-torque-cyan]="node.type === 'system'"
-                            [class.text-torque-muted]="node.type !== 'system'"></lucide-icon>
+                            class="w-3.5 h-3.5" [ngClass]="{
+                                'text-torque-cyan': node.type === 'system',
+                                'text-torque-muted': node.type !== 'system'
+                            }"></lucide-icon>
 
-                        <span class="text-xs truncate flex-1" [class.font-semibold]="node.type === 'system'"
-                            [class.font-medium]="node.type !== 'system'">
+                        <span class="text-xs truncate flex-1" [ngClass]="{
+                                'font-semibold': node.type === 'system',
+                                'font-medium': node.type !== 'system'
+                            }">
                             {{ node.name }}
                         </span>
 
