@@ -89,15 +89,15 @@ function normalizeMotorResponse(data) {
         
         let subName = isOther ? null : bucket;
 
-        // Custom logic for better categorization when parent is Other
-        if (isOther) {
+        // Custom logic for better categorization when parent is Other or when it evaluates to a flat list
+        if (isOther || subName === rootName || subName === parentBucket || !subName) {
             if (bucket === 'Procedures' && article.title.includes(':')) {
                 // "Engine: Cooling System"
                 const parts = article.title.split(':');
                 if (parts.length > 1) {
                     subName = parts[0].trim();
                 }
-            } else if (bucket === 'DTCs') {
+            } else if (bucket === 'DTCs' || rootName === 'Diagnostic Codes (DTC)' || parentBucket === 'DTCs') {
                 const codeMatch = article.title.match(/^([PCBU])\d+/i);
                 if (codeMatch) {
                     const prefix = codeMatch[1].toUpperCase();
