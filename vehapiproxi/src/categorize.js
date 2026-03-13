@@ -20,14 +20,16 @@ export function normalizeCategoryParams(title, parentBucketRaw, bucketRaw) {
     
     let subName = isOther ? null : bucket;
 
+    let safeTitle = title || '';
+
     if (isOther || subName === rootName || subName === parentBucket || !subName) {
-        if (bucket === 'Procedures' && title.includes(':')) {
-            const parts = title.split(':');
+        if (bucket === 'Procedures' && safeTitle.includes(':')) {
+            const parts = safeTitle.split(':');
             if (parts.length > 1) {
                 subName = parts[0].trim();
             }
         } else if (bucket === 'DTCs' || rootName === 'Diagnostic Codes (DTC)' || parentBucket === 'DTCs') {
-            const codeMatch = title.match(/^([PCBU])\d+/i);
+            const codeMatch = safeTitle.match(/^([PCBU])\d+/i);
             if (codeMatch) {
                 const prefix = codeMatch[1].toUpperCase();
                 if (prefix === 'P') subName = 'Powertrain (P-Codes)';
@@ -38,7 +40,7 @@ export function normalizeCategoryParams(title, parentBucketRaw, bucketRaw) {
                 subName = 'Other Codes';
             }
         } else {
-            const lowerTitle = title.toLowerCase();
+            const lowerTitle = safeTitle.toLowerCase();
             if (lowerTitle.includes('brake') || lowerTitle.includes('abs')) subName = 'Brakes';
             else if (lowerTitle.includes('air conditioning') || lowerTitle.includes('hvac') || lowerTitle.includes('heater') || lowerTitle.includes('refrigerant')) subName = 'HVAC';
             else if (lowerTitle.includes('engine') || lowerTitle.includes('cylinder') || lowerTitle.includes('crankshaft') || lowerTitle.includes('camshaft') || lowerTitle.includes('valve') || lowerTitle.includes('piston') || lowerTitle.includes('block') || lowerTitle.includes('timing')) subName = 'Engine Mechanical';
