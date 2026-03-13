@@ -4,6 +4,8 @@ export interface ApiResponse<T> {
     statusCode: number;
     date?: string;
     messages?: any[];
+    dataSource?: string;
+    isCached?: boolean;
   };
   body: T;
 }

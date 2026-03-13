@@ -74,6 +74,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   isLoading = signal(false);
   error = signal<string | null>(null);
   articleSubtitle = signal<string>('');
+  isCached = signal<boolean>(false);
 
   selectedImageUrl = signal<string | null>(null);
   pdfDataUri = signal<SafeResourceUrl | null>(null); // Set when article is a PDF
@@ -184,6 +185,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
 
     this.isLoading.set(true);
     this.error.set(null);
+    this.isCached.set(false);
 
     // Fetch Title if not provided
     if (!this.articleTitleInput) {
@@ -206,6 +208,8 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
         if (!content || !content.body || !(content.body as any).html) {
           console.error('[ArticleViewer] API returned empty content body or html');
         }
+
+        this.isCached.set(content.header?.isCached || false);
 
         const rawHtml = (content.body as any)?.html || '';
         const pdfUri = (content.body as any)?.pdfDataUri || null;

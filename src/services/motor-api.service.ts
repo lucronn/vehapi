@@ -153,7 +153,17 @@ export class MotorApiService {
           duration
         );
       }),
-      map(response => response.body as T),
+      map(response => {
+        const body = response.body as any;
+        // Enrich body with cache headers if present
+        if (body && body.header) {
+          const dataSource = response.headers.get('x-data-source');
+          const isCached = response.headers.get('x-cache-hit') === 'true';
+          if (dataSource) body.header.dataSource = dataSource;
+          if (isCached) body.header.isCached = isCached;
+        }
+        return body as T;
+      }),
       catchError(error => {
         const duration = Math.round(performance.now() - startTime);
         this.logApiError(url, error, duration);

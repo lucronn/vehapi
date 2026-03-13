@@ -16,6 +16,7 @@ export class SearchResultsState {
     readonly normalizedMenu = signal<any | null>(null);
     readonly isLoading = signal<boolean>(false);
     readonly error = signal<string | null>(null);
+    readonly isCached = signal<boolean>(false);
 
     // User Settings (Placeholder for now, assuming defaulting to true/false as appropriate)
     readonly showProcedureSilo = signal<boolean>(true);
@@ -185,6 +186,7 @@ export class SearchResultsState {
     search(contentSource: string, vehicleId: string, searchTerm: string = '', motorVehicleId?: string): void {
         this.isLoading.set(true);
         this.error.set(null);
+        this.isCached.set(false); // Reset cache status on new search
 
         // Call API (using getSearchResultsByVehicleId to match legacy flow)
         this.motorApi.getSearchResultsByVehicleId(contentSource, vehicleId, searchTerm, motorVehicleId)
@@ -192,25 +194,34 @@ export class SearchResultsState {
                 catchError((err) => {
                     this.error.set(err.message || 'Search failed');
                     this.isLoading.set(false);
+                    this.isCached.set(false);
                     return of({
                         body: {
                             articleDetails: [],
                             filterTabs: [],
                             normalizedMenu: null
                         } as any,
-                        header: { status: 'error', statusCode: 500 }
+                        header: { status: 'error', statusCode: 500, isCached: false }
                     });
                 })
             )
             .subscribe((res) => {
-                // According to model update, res.body has keys articleDetails and filterTabs directly
                 const data = res.body;
                 if (data) {
                     this.articleDetails.set(data.articleDetails || []);
                     this.filterTabs.set(data.filterTabs || []);
                     this.normalizedMenu.set(data.normalizedMenu || null);
+                    this.isCached.set(res.header.isCached || false);
                 }
                 this.isLoading.set(false);
             });
+    }
+
+    reset() {
+        this.articleDetails.set([]);
+        this.filterTabs.set([]);
+        this.error.set(null);
+        this.isLoading.set(false);
+        this.isCached.set(false);
     }
 }

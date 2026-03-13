@@ -8,6 +8,7 @@ function determineSchemaType(urlPath) {
     if (urlPath.includes('/specifications') || urlPath.includes('/specs')) return 'specifications';
     if (/\/article\/[^/]+$/.test(urlPath) || urlPath.includes('/repair')) return 'procedures';
     if (urlPath.includes('/years') || urlPath.includes('/makes') || urlPath.includes('/models') || urlPath.includes('/engines')) return 'metadata';
+    if (urlPath.includes('/articles/v2')) return 'articles';
     return null;
 }
 
@@ -131,6 +132,29 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
             if (!result.success) {
                 status = 'FAILED';
                 errorMessage = result.error?.message || result.error || 'Metadata Insert Failed';
+            }
+            return;
+        }
+
+        if (targetSchema === 'articles') {
+            const parsedJson = JSON.parse(rawData);
+            if (parsedJson?.body?.articleDetails) {
+                const vehicleId = extractVehicleId(urlPath);
+                const articles = parsedJson.body.articleDetails.map(a => ({
+                    vehicle_id: vehicleId,
+                    original_id: a.id,
+                    title: a.title,
+                    subtitle: a.subtitle,
+                    bucket: a.bucket,
+                    parent_bucket: a.parentBucket,
+                    thumbnail_href: a.thumbnailHref,
+                    content_source: a.contentSource || 'MOTOR'
+                }));
+                const result = await insertParsedData('articles', articles);
+                if (!result.success) {
+                    status = 'FAILED';
+                    errorMessage = result.error?.message || result.error || 'Articles Insert Failed';
+                }
             }
             return;
         }

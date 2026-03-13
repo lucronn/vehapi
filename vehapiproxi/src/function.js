@@ -12,7 +12,14 @@ import swaggerUi from 'swagger-ui-express';
 import { createRequire } from 'module';
 import { createCheckoutSession, createBillingPortalSession, handleWebhook, verifyAndFulfillSession } from './stripe.js';
 import { getUserData, unlockModule, getTransactions } from './credits.js';
-import { checkParsedArticle, getMetadata } from './supabase.js';
+import { 
+    insertParsedData, 
+    checkParsedArticle, 
+    insertMetadata, 
+    getMetadata,
+    getVehicleArticles,
+    getVehicleArticlesCount
+} from './supabase.js';
 import jwt from 'jsonwebtoken';
 import { generateCommonIssues } from './ai_parser.js';
 
@@ -861,6 +868,8 @@ const metadataCacheMiddleware = async (req, res, next) => {
             const cachedData = await getMetadata(path);
             if (cachedData) {
                 logger.info(`Serving metadata from cache: ${path}`);
+                res.setHeader('x-data-source', 'supabase');
+                res.setHeader('x-cache-hit', 'true');
                 return res.json(cachedData);
             }
         } catch (err) {
@@ -870,7 +879,108 @@ const metadataCacheMiddleware = async (req, res, next) => {
     next();
 };
 
+// Articles Cache-First Middleware
+const articlesCacheMiddleware = async (req, res, next) => {
+    const path = req.path;
+    // Example: /api/source/Ford/vehicle/2013:Ford:Explorer/articles/v2
+    const isArticlesCatalog = path.includes('/articles/v2');
+    
+    if (isArticlesCatalog && req.method === 'GET') {
+        try {
+            // Extract vehicleId from path
+            const pathParts = path.split('/');
+            const vehicleIdx = pathParts.indexOf('vehicle');
+            if (vehicleIdx !== -1 && pathParts.length > vehicleIdx + 1) {
+                const vehicleId = decodeURIComponent(pathParts[vehicleIdx + 1]);
+                
+                // Get count first (fast)
+                const count = await getVehicleArticlesCount(vehicleId);
+                if (count > 0) {
+                    logger.info(`✓ Found ${count} cached articles for ${vehicleId}. Serving from Supabase.`);
+                    const articles = await getVehicleArticles(vehicleId);
+                    
+                    if (articles && articles.length > 0) {
+                        // We need to transform these Supabase rows back into the shape Motor API returns
+                        // or at least what our normalizeMotorResponse expects.
+                        const motorShape = {
+                            header: { status: 'OK', statusCode: 200 },
+                            body: {
+                                // We store them slightly flattened in Supabase, but our UI expects 
+                                // the Motor format which we then normalize.
+                                // Actually, if we just return the "normalized" version it might be better,
+                                // but the frontend SearchResultsState expects the full Motor response to then call its own normalization.
+                                // TO AVOID FRONEND CHANGES: Return a mock Motor response that our ResponseInterceptor will then normalize.
+                                articleDetails: articles.map(a => ({
+                                    id: a.original_id,
+                                    title: a.title,
+                                    subtitle: a.subtitle,
+                                    bucket: a.bucket,
+                                    parentBucket: a.parent_bucket,
+                                    thumbnailHref: a.thumbnail_href,
+                                    contentSource: a.content_source || 'MOTOR'
+                                })),
+                                filterTabs: [] // The response interceptor will generate these if missing, or we can mock them
+                            }
+                        };
+                        
+                        // We set a flag so the response interceptor doesn't try to normalize AGAIN if we already did it
+                        // Or better: just return it and let the response interceptor handle it as if it came from Motor.
+                        res.setHeader('x-data-source', 'supabase');
+                        res.setHeader('x-cache-hit', 'true');
+                        return res.json(motorShape);
+                    }
+                }
+            }
+        } catch (err) {
+            logger.warn(`Failed to fetch articles from cache for ${path}:`, err.message);
+        }
+    }
+    next();
+};
+
 app.use('/api', metadataCacheMiddleware);
+app.use('/api', articlesCacheMiddleware);
+
+// Article Content Cache-First Middleware
+const articleContentCacheMiddleware = async (req, res, next) => {
+    const path = req.path;
+    // Example: /api/source/Ford/vehicle/2013:Ford:Explorer/article/12345/html
+    const isArticleHtml = path.includes('/article/') && path.endsWith('/html');
+    
+    if (isArticleHtml && req.method === 'GET') {
+        try {
+            const pathParts = path.split('/');
+            const articleIdx = pathParts.indexOf('article');
+            if (articleIdx !== -1 && pathParts.length > articleIdx + 1) {
+                const articleId = pathParts[articleIdx + 1];
+                
+                // Attempt to find in ANY of the content tables
+                // This is a bit brute-force but since we don't know the type from the URL alone,
+                // we check the most likely one first (procedures)
+                const cached = await checkParsedArticle(articleId);
+                if (cached) {
+                    logger.info(`✓ Serving article content from cache: ${articleId}`);
+                    res.setHeader('x-data-source', 'supabase');
+                    res.setHeader('x-cache-hit', 'true');
+                    // Wrap in the shape the UI expects (Motor typically returns { body: { html: "..." } })
+                    return res.json({
+                        header: { status: 'OK', statusCode: 200 },
+                        body: {
+                            html: cached.html || cached.description || cached.content || '',
+                            title: cached.title,
+                            id: articleId
+                        }
+                    });
+                }
+            }
+        } catch (err) {
+            logger.warn(`Failed to fetch article content from cache for ${path}:`, err.message);
+        }
+    }
+    next();
+};
+
+app.use('/api', articleContentCacheMiddleware);
 
 
 // Mount at root '/' to handle ALL requests (api, graphic, assets, v1, etc.)

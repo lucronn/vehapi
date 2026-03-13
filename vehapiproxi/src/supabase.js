@@ -107,7 +107,7 @@ export async function logAiProcessing(logData) {
 }
 
 /**
- * Checks for a cached article in the procedures table by its external_id (Motor Article ID).
+ * Checks for a cached article in any of the content tables by its external_id (Motor Article ID).
  * @param {string} articleId The Motor API article ID
  * @returns {Object|null} The cached article data or null if not found
  */
@@ -118,33 +118,37 @@ export async function checkParsedArticle(articleId) {
         return null;
     }
 
-    try {
-        const url = `${cfg.url}/rest/v1/procedures?external_id=eq.${articleId}`;
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': cfg.key,
-                'Authorization': `Bearer ${cfg.key}`,
-            },
-        });
+    const tables = ['procedures', 'tsbs', 'dtcs', 'specifications'];
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            logger.error(`Supabase REST error checking article ${articleId} [${response.status}]: ${errorText}`);
-            return null;
-        }
+    for (const table of tables) {
+        try {
+            const url = `${cfg.url}/rest/v1/${table}?external_id=eq.${articleId}`;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': cfg.key,
+                    'Authorization': `Bearer ${cfg.key}`,
+                },
+            });
 
-        const data = await response.json();
-        if (data && data.length > 0) {
-            logger.info(`✓ Found cached procedure for article ${articleId}`);
-            return data[0];
+            if (!response.ok) {
+                const errorText = await response.text();
+                logger.error(`Supabase REST error checking article ${articleId} in ${table} [${response.status}]: ${errorText}`);
+                continue;
+            }
+
+            const data = await response.json();
+            if (data && data.length > 0) {
+                logger.info(`✓ Found cached content for article ${articleId} in table: ${table}`);
+                return { ...data[0], _table: table };
+            }
+        } catch (err) {
+            logger.error(`Unexpected error checking Supabase table ${table} for article ${articleId}:`, err);
         }
-        return null;
-    } catch (err) {
-        logger.error(`Unexpected error checking Supabase for article ${articleId}:`, err);
-        return null;
     }
+
+    return null;
 }
 
 /**
@@ -250,5 +254,74 @@ export async function getMetadata(path) {
     } catch (err) {
         logger.error(`Error retrieving metadata for ${path}:`, err);
         return null;
+    }
+}
+/**
+ * Retrieves all cached articles for a specific vehicle from the articles table.
+ * @param {string} vehicleId The vehicle ID
+ * @returns {Array|null} Array of articles or null if error
+ */
+export async function getVehicleArticles(vehicleId) {
+    const cfg = getSupabaseConfig();
+    if (!cfg) return null;
+
+    try {
+        const url = `${cfg.url}/rest/v1/articles?vehicle_id=eq.${encodeURIComponent(vehicleId)}&select=*`;
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': cfg.key,
+                'Authorization': `Bearer ${cfg.key}`,
+            },
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            logger.error(`Supabase REST error getting articles for ${vehicleId} [${response.status}]: ${errorText}`);
+            return null;
+        }
+
+        const articles = await response.json();
+        // Recalculate original IDs to match Motor API titles/subtitles if needed
+        // but the table should already have these mapped.
+        return articles;
+    } catch (err) {
+        logger.error(`Error retrieving articles for ${vehicleId}:`, err);
+        return null;
+    }
+}
+
+/**
+ * Gets a quick count of articles for a vehicle to determine if we should hit the cache.
+ * @param {string} vehicleId 
+ * @returns {number}
+ */
+export async function getVehicleArticlesCount(vehicleId) {
+    const cfg = getSupabaseConfig();
+    if (!cfg) return 0;
+
+    try {
+        const url = `${cfg.url}/rest/v1/articles?vehicle_id=eq.${encodeURIComponent(vehicleId)}&select=count&limit=1`;
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'apikey': cfg.key,
+                'Authorization': `Bearer ${cfg.key}`,
+                'Prefer': 'count=exact'
+            },
+        });
+
+        if (!response.ok) return 0;
+        
+        // Supabase returns count in Content-Range header if using exact
+        const contentRange = response.headers.get('content-range');
+        if (contentRange) {
+            const count = parseInt(contentRange.split('/')[1], 10);
+            return isNaN(count) ? 0 : count;
+        }
+        return 0;
+    } catch {
+        return 0;
     }
 }
