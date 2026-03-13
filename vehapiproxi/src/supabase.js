@@ -16,7 +16,8 @@ const UPSERT_CONFLICT_COLUMNS = {
     dtcs: 'vehicle_id,code',
     specifications: 'vehicle_id,category,name',
     categories: 'name,type',
-    vehicle_metadata: 'path'
+    vehicle_metadata: 'path',
+    articles: 'vehicle_id,original_id'
 };
 
 /**
@@ -211,5 +212,43 @@ export async function insertMetadata(path, data) {
     } catch (err) {
         logger.error(`Error persisting metadata for ${path}:`, err);
         return { success: false, error: err.message };
+    }
+}
+
+/**
+ * Retrieves vehicle metadata from the vehicle_metadata table.
+ * @param {string} path The request path (e.g., /api/years)
+ * @returns {Object|null} The cached metadata or null if not found
+ */
+export async function getMetadata(path) {
+    const cfg = getSupabaseConfig();
+    if (!cfg) return null;
+
+    try {
+        const url = `${cfg.url}/rest/v1/vehicle_metadata?path=eq.${encodeURIComponent(path)}&select=data`;
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': cfg.key,
+                'Authorization': `Bearer ${cfg.key}`,
+            },
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            logger.error(`Supabase REST error getting metadata for ${path} [${response.status}]: ${errorText}`);
+            return null;
+        }
+
+        const data = await response.json();
+        if (data && data.length > 0) {
+            logger.info(`✓ Found cached metadata for: ${path}`);
+            return data[0].data;
+        }
+        return null;
+    } catch (err) {
+        logger.error(`Error retrieving metadata for ${path}:`, err);
+        return null;
     }
 }

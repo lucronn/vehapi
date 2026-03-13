@@ -29,30 +29,6 @@
   <!-- Mobile Navigation Overlay -->
   @if (isMobileMenuOpen()) {
   <div class="fixed inset-0 z-40 md:hidden pt-16 px-4 animate-fade-in bg-[hsl(230,35%,7%)]/95 backdrop-blur-xl">
-    <div class="grid grid-cols-2 gap-3 mt-4">
-      <button (click)="setSection('overview')"
-        class="glass-card p-5 flex flex-col items-center gap-2 text-sm font-semibold"
-        [class.neon-border-cyan]="activeSection() === 'overview'">
-        <lucide-icon [img]="icons.House" class="w-5 h-5"></lucide-icon>
-        <span class="text-xs font-mono uppercase tracking-wider text-white">Overview</span>
-      </button>
-      <button (click)="setSection('dtcs')" class="glass-card p-5 flex flex-col items-center gap-2 text-sm font-semibold"
-        [class.neon-border-cyan]="activeSection() === 'dtcs'">
-        <lucide-icon [img]="icons.TriangleAlert" class="w-5 h-5"></lucide-icon>
-        <span class="text-xs font-mono uppercase tracking-wider text-white">Fault Codes</span>
-      </button>
-      <button (click)="setSection('tsbs')" class="glass-card p-5 flex flex-col items-center gap-2 text-sm font-semibold"
-        [class.neon-border-cyan]="activeSection() === 'tsbs'">
-        <lucide-icon [img]="icons.FileText" class="w-5 h-5"></lucide-icon>
-        <span class="text-xs font-mono uppercase tracking-wider text-white">Bulletins</span>
-      </button>
-      <button (click)="setSection('procedures')"
-        class="glass-card p-5 flex flex-col items-center gap-2 text-sm font-semibold"
-        [class.neon-border-cyan]="activeSection() === 'procedures'">
-        <lucide-icon [img]="icons.Wrench" class="w-5 h-5"></lucide-icon>
-        <span class="text-xs font-mono uppercase tracking-wider text-white">Procedures</span>
-      </button>
-    </div>
     <div class="mt-6 space-y-3">
       <a routerLink="/credits" (click)="toggleMobileMenu()"
         class="flex items-center justify-center gap-2 w-full py-3 text-sm font-medium text-torque-cyan hover:text-white border border-torque-cyan/30 hover:bg-torque-cyan/10 rounded-xl transition-colors">

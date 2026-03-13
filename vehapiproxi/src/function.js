@@ -12,8 +12,9 @@ import swaggerUi from 'swagger-ui-express';
 import { createRequire } from 'module';
 import { createCheckoutSession, createBillingPortalSession, handleWebhook, verifyAndFulfillSession } from './stripe.js';
 import { getUserData, unlockModule, getTransactions } from './credits.js';
-import { checkParsedArticle } from './supabase.js';
+import { checkParsedArticle, getMetadata } from './supabase.js';
 import jwt from 'jsonwebtoken';
+import { generateCommonIssues } from './ai_parser.js';
 
 // AI parser is loaded lazily to avoid cold-start crashes when GEMINI_API_KEY is absent
 let _rewriteArticleHtml = null;
@@ -69,15 +70,26 @@ function normalizeMotorResponse(data) {
     };
 
     articles.forEach(article => {
-        const parentBucket = article.parentBucket || 'Other';
-        const bucket = article.bucket || 'Uncategorized';
+        let parentBucket = article.parentBucket || 'Other';
+        let bucket = article.bucket || 'Uncategorized';
 
-        // Flatten logic: If parentBucket is 'Other', we treat the 'bucket' as root
+        // Some silos have 'Other' as parent but useful categorization in the title or a virtual bucket
+        // If it's a TSB or DTC, we might want to group by system if possible, but for now let's ensure root mapping.
+        
         const isOther = parentBucket === 'Other';
         let rootName = isOther ? bucket : parentBucket;
         rootName = rootNameMap[rootName] || rootName;
         
-        const subName = isOther ? null : bucket;
+        let subName = isOther ? null : bucket;
+
+        // Custom logic for better categorization when parent is Other
+        if (isOther && bucket === 'Procedures' && article.title.includes(':')) {
+            // "Engine: Cooling System"
+            const parts = article.title.split(':');
+            if (parts.length > 1) {
+                subName = parts[0].trim();
+            }
+        }
 
         // 1. Ensure Root Category exists
         let rootCat = categoriesMap.get(rootName);
@@ -94,7 +106,7 @@ function normalizeMotorResponse(data) {
         }
 
         // 2. Add to Subcategory or Direct
-        if (subName) {
+        if (subName && subName !== rootName) {
             const subId = `${rootCat.id}-${subName.toLowerCase().replace(/\s+/g, '-')}`;
             let subCat = categoriesMap.get(subId);
             if (!subCat) {
@@ -820,6 +832,46 @@ app.post('/api/tutorials/generate', express.json({ limit: '256kb' }), async (req
     }
 });
 
+// POST /api/common-issues/generate — generates common issues via Gemini
+// Body: { vehicleName: string }
+app.post('/api/common-issues/generate', express.json(), async (req, res) => {
+    const { vehicleMetadata } = req.body || {};
+    const vehicleName = vehicleMetadata?.vehicleName;
+    
+    if (!vehicleName) {
+        return res.status(400).json({ error: 'vehicleName field is required inside vehicleMetadata' });
+    }
+
+    try {
+        const issues = await generateCommonIssues(vehicleName);
+        res.json({ issues }); // Return { issues: [...] } as expected by frontend
+    } catch (err) {
+        logger.error('AI common issues generation error:', err);
+        res.status(500).json({ error: 'Common issues generation failed', message: err.message });
+    }
+});
+
+// Metadata Cache-First Middleware
+const metadataCacheMiddleware = async (req, res, next) => {
+    const path = req.path;
+    const isMetadata = path.includes('/years') || path.includes('/makes') || path.includes('/models') || path.includes('/engines');
+    
+    if (isMetadata && req.method === 'GET') {
+        try {
+            const cachedData = await getMetadata(path);
+            if (cachedData) {
+                logger.info(`Serving metadata from cache: ${path}`);
+                return res.json(cachedData);
+            }
+        } catch (err) {
+            logger.warn(`Failed to fetch metadata from cache for ${path}:`, err.message);
+        }
+    }
+    next();
+};
+
+app.use('/api', metadataCacheMiddleware);
+
 
 // Mount at root '/' to handle ALL requests (api, graphic, assets, v1, etc.)
 app.use('/', authMiddleware, createProxyMiddleware({
@@ -967,7 +1019,8 @@ app.use('/', authMiddleware, createProxyMiddleware({
                 // even 5000 items is only ~1MB — safe for iOS.
                 const isArticleCatalog = req.path.includes('/articles/v2');
                 const isMetadata = req.path.includes('/years') || req.path.includes('/makes') || req.path.includes('/models') || req.path.includes('/engines');
-                const isCatalog = isArticleCatalog || isMetadata;
+                const isSilo = req.path.includes('/parts') || req.path.includes('/fluids') || req.path.includes('/specifications') || req.path.includes('/dtcs') || req.path.includes('/tsbs');
+                const isCatalog = isArticleCatalog || isMetadata || isSilo;
 
                 if (!isCatalog && normalizedData && normalizedData.length >= 1000) {
                     // Fast heuristic to avoid JSON.parse entirely if there's no possibility of a 500-element array.

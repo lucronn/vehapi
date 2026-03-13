@@ -105,6 +105,20 @@ const SCHEMAS = {
             },
             required: ['name', 'value', 'category']
         }
+    },
+    common_issues: {
+        type: 'ARRAY',
+        items: {
+            type: 'OBJECT',
+            properties: {
+                title: { type: 'STRING' },
+                description: { type: 'STRING' },
+                symptoms: { type: 'ARRAY', items: { type: 'STRING' } },
+                severity: { type: 'STRING', enum: ['High', 'Medium', 'Low'] },
+                fixComplexity: { type: 'STRING', enum: ['Easy', 'Moderate', 'Hard'] }
+            },
+            required: ['title', 'description', 'severity', 'fixComplexity']
+        }
     }
 };
 
@@ -272,4 +286,34 @@ export async function parseWithAI(rawData, targetSchema) {
 
     const text = await callGemini(prompt, SCHEMAS[targetSchema]);
     return JSON.parse(text);
+}
+
+/**
+ * Generates common issues for a given vehicle using Gemini.
+ * @param {string} vehicleName The year make model of the vehicle.
+ * @returns {Promise<Array>} Array of CommonIssue objects.
+ */
+export async function generateCommonIssues(vehicleName) {
+    if (!vehicleName || !vehicleName.trim()) return [];
+
+    const prompt = `You are an automotive service advisor. Generate a list of common issues, failures, and known patterns for the following vehicle:
+    
+Vehicle: ${vehicleName}
+
+For each issue, provide:
+- title: Short name of the issue.
+- description: Brief technical explanation of why it happens.
+- symptoms: List of signs the driver might notice.
+- severity: High (safety/breakdown), Medium (performance/repair soon), or Low (nuisance/maintenance).
+- fixComplexity: Easy (DIY), Moderate (Special tools/shop), or Hard (Engine/Trans tear down).
+
+Create 4-8 high-quality common issues tailored to this specific vehicle.`;
+
+    try {
+        const text = await callGemini(prompt, SCHEMAS.common_issues);
+        return JSON.parse(text);
+    } catch (err) {
+        logger.error(`generateCommonIssues failed for ${vehicleName}:`, err);
+        return [];
+    }
 }
