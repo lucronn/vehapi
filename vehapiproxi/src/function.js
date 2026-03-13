@@ -22,7 +22,7 @@ import {
 } from './supabase.js';
 import jwt from 'jsonwebtoken';
 import { generateCommonIssues } from './ai_parser.js';
-
+import { normalizeCategoryParams } from './categorize.js';
 // AI parser is loaded lazily to avoid cold-start crashes when GEMINI_API_KEY is absent
 let _rewriteArticleHtml = null;
 let _generateTutorialSteps = null;
@@ -77,54 +77,10 @@ function normalizeMotorResponse(data) {
     };
 
     articles.forEach(article => {
-        let parentBucket = article.parentBucket || 'Other';
-        let bucket = article.bucket || 'Uncategorized';
+        let parentBucketRaw = article.parentBucket || 'Other';
+        let bucketRaw = article.bucket || 'Uncategorized';
 
-        // Some silos have 'Other' as parent but useful categorization in the title or a virtual bucket
-        // If it's a TSB or DTC, we might want to group by system if possible, but for now let's ensure root mapping.
-        
-        const isOther = parentBucket === 'Other';
-        let rootName = isOther ? bucket : parentBucket;
-        rootName = rootNameMap[rootName] || rootName;
-        
-        let subName = isOther ? null : bucket;
-
-        // Custom logic for better categorization when parent is Other or when it evaluates to a flat list
-        if (isOther || subName === rootName || subName === parentBucket || !subName) {
-            if (bucket === 'Procedures' && article.title.includes(':')) {
-                // "Engine: Cooling System"
-                const parts = article.title.split(':');
-                if (parts.length > 1) {
-                    subName = parts[0].trim();
-                }
-            } else if (bucket === 'DTCs' || rootName === 'Diagnostic Codes (DTC)' || parentBucket === 'DTCs') {
-                const codeMatch = article.title.match(/^([PCBU])\d+/i);
-                if (codeMatch) {
-                    const prefix = codeMatch[1].toUpperCase();
-                    if (prefix === 'P') subName = 'Powertrain (P-Codes)';
-                    else if (prefix === 'C') subName = 'Chassis (C-Codes)';
-                    else if (prefix === 'B') subName = 'Body (B-Codes)';
-                    else if (prefix === 'U') subName = 'Network (U-Codes)';
-                } else {
-                    subName = 'Other Codes';
-                }
-            } else {
-                // Keyword-based fallback for Specifications, Parts, Labor, TSBs and flat Procedures
-                const lowerTitle = article.title.toLowerCase();
-                if (lowerTitle.includes('brake') || lowerTitle.includes('abs')) subName = 'Brakes';
-                else if (lowerTitle.includes('air conditioning') || lowerTitle.includes('hvac') || lowerTitle.includes('heater') || lowerTitle.includes('refrigerant')) subName = 'HVAC';
-                else if (lowerTitle.includes('engine') || lowerTitle.includes('cylinder') || lowerTitle.includes('crankshaft') || lowerTitle.includes('camshaft') || lowerTitle.includes('valve') || lowerTitle.includes('piston') || lowerTitle.includes('block') || lowerTitle.includes('timing')) subName = 'Engine Mechanical';
-                else if (lowerTitle.includes('transmission') || lowerTitle.includes('clutch') || lowerTitle.includes('differential') || lowerTitle.includes('axle') || lowerTitle.includes('driveline') || lowerTitle.includes('transfer case')) subName = 'Transmission & Driveline';
-                else if (lowerTitle.includes('sensor') || lowerTitle.includes('module') || lowerTitle.includes('ignition') || lowerTitle.includes('spark') || lowerTitle.includes('battery') || lowerTitle.includes('alternator') || lowerTitle.includes('starter') || lowerTitle.includes('wire') || lowerTitle.includes('electrical') || lowerTitle.includes('relay') || lowerTitle.includes('fuse')) subName = 'Electrical & Sensors';
-                else if (lowerTitle.includes('fuel') || lowerTitle.includes('intake') || lowerTitle.includes('exhaust') || lowerTitle.includes('emission') || lowerTitle.includes('throttle')) subName = 'Fuel & Emissions';
-                else if (lowerTitle.includes('steering') || lowerTitle.includes('suspension') || lowerTitle.includes('wheel') || lowerTitle.includes('tire') || lowerTitle.includes('alignment') || lowerTitle.includes('strut') || lowerTitle.includes('shock')) subName = 'Steering & Suspension';
-                else if (lowerTitle.includes('coolant') || lowerTitle.includes('cooling') || lowerTitle.includes('radiator') || lowerTitle.includes('water pump') || lowerTitle.includes('thermostat')) subName = 'Cooling System';
-                else if (lowerTitle.includes('fluid') || lowerTitle.includes('oil') || lowerTitle.includes('lubricant') || lowerTitle.includes('capacity')) subName = 'Fluids & Maintenance';
-                else if (lowerTitle.includes('body') || lowerTitle.includes('door') || lowerTitle.includes('window') || lowerTitle.includes('mirror') || lowerTitle.includes('seat') || lowerTitle.includes('interior') || lowerTitle.includes('exterior') || lowerTitle.includes('bumper') || lowerTitle.includes('glass') || lowerTitle.includes('panel')) subName = 'Body & Interior';
-                else if (lowerTitle.includes('air bag') || lowerTitle.includes('restraint') || lowerTitle.includes('seat belt')) subName = 'Restraints & Safety';
-                else subName = 'General';
-            }
-        }
+        const { rootName, subName } = normalizeCategoryParams(article.title, parentBucketRaw, bucketRaw);
 
         // 1. Ensure Root Category exists
         let rootCat = categoriesMap.get(rootName);

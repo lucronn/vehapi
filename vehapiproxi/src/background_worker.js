@@ -1,6 +1,7 @@
 import logger from './logger.js';
 import { parseWithAI } from './ai_parser.js';
 import { insertParsedData, logAiProcessing, wasAlreadyParsed, insertMetadata } from './supabase.js';
+import { normalizeCategoryParams } from './categorize.js';
 
 function determineSchemaType(urlPath) {
     if (urlPath.includes('/dtcs') || urlPath.includes('/dtc/')) return 'dtcs';
@@ -140,16 +141,19 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
             const parsedJson = JSON.parse(rawData);
             if (parsedJson?.body?.articleDetails) {
                 const vehicleId = extractVehicleId(urlPath);
-                const articles = parsedJson.body.articleDetails.map(a => ({
-                    vehicle_id: vehicleId,
-                    original_id: a.id,
-                    title: a.title,
-                    subtitle: a.subtitle,
-                    bucket: a.bucket,
-                    parent_bucket: a.parentBucket,
-                    thumbnail_href: a.thumbnailHref,
-                    content_source: a.contentSource || 'MOTOR'
-                }));
+                const articles = parsedJson.body.articleDetails.map(a => {
+                    const { rootName, subName } = normalizeCategoryParams(a.title, a.parentBucket, a.bucket);
+                    return {
+                        vehicle_id: vehicleId,
+                        original_id: a.id,
+                        title: a.title,
+                        subtitle: a.subtitle,
+                        bucket: subName,
+                        parent_bucket: rootName,
+                        thumbnail_href: a.thumbnailHref,
+                        content_source: a.contentSource || 'MOTOR'
+                    };
+                });
                 const result = await insertParsedData('articles', articles);
                 if (!result.success) {
                     status = 'FAILED';
