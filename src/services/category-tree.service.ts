@@ -57,8 +57,9 @@ export class CategoryTreeService {
             const rawParent = article.parentBucket || 'Other';
             const rawBucket = article.bucket || 'Uncategorized';
             
+            const titleText = article.title || (article as any).code || (article as any).description || article.id || 'Unknown Article';
             // Client-side categorization for robust fallback
-            const { rootName: rootBucketName, subName: subBucketName } = normalizeCategoryParams(article.title, rawParent, rawBucket);
+            const { rootName: rootBucketName, subName: subBucketName } = normalizeCategoryParams(titleText, rawParent, rawBucket);
 
             let rootNode = bucketNodes.get(rootBucketName);
             if (!rootNode) {
@@ -88,7 +89,7 @@ export class CategoryTreeService {
                 
                 subNode.children.push({
                     id: article.id,
-                    name: article.title,
+                    name: titleText,
                     type: 'article',
                     children: [],
                     article: article
@@ -96,7 +97,7 @@ export class CategoryTreeService {
             } else {
                 rootNode.children.push({
                     id: article.id,
-                    name: article.title,
+                    name: titleText,
                     type: 'article',
                     children: [],
                     article: article

@@ -1098,6 +1098,13 @@ app.use('/', authMiddleware, createProxyMiddleware({
             let normalizedData = responseData;
 
             if (contentType.includes('text/html')) {
+                // Motor API returns its SPA fallback HTML for missing REST endpoints (e.g. 404s on /fluids)
+                if (req.path.includes('/api/source/') && !req.path.includes('/article/')) {
+                    logger.warn(`Motor API returned HTML for REST endpoint ${req.path}. Rewriting to empty JSON.`);
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');
+                    return Buffer.from(JSON.stringify({ header: { status: 'Not Found', statusCode: 404 }, body: { data: [] } }), 'utf8');
+                }
                 // HTML is inherently whitespace-agnostic; skip costly regex cleanup to improve performance.
                 logger.info('Skipping HTML whitespace normalization for performance');
             } else if (contentType.includes('application/json')) {

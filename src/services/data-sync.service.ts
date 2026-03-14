@@ -16,6 +16,7 @@ export class DataSyncService {
     // Sync State
     isSyncing = signal(false);
     syncProgress = signal({ current: 0, total: 0, message: 'Ready' });
+    private inProgressArticleSyncs = new Set<string>();
 
     async checkNormalizationStatus(vehicleId: string): Promise<boolean> {
         const { data } = await this.supabase.client
@@ -93,6 +94,16 @@ export class DataSyncService {
             normalizedId = `P:${item.id}`;
         }
 
+        const syncKey = `${vid}:${normalizedId}`;
+        if (this.inProgressArticleSyncs.has(syncKey)) {
+            // Already syncing this exact article in the background right now. Wait briefly or just return empty structure to avoid 409 Conflict overlapping upserts.
+            console.log(`[DataSync] Debouncing concurrent sync for ${normalizedId}`);
+            return Promise.resolve(null);
+        }
+        this.inProgressArticleSyncs.add(syncKey);
+
+        try {
+
         // 1. Check if we already have it in Supabase
         const { data: existing } = await this.supabase.client
             .from('articles')
@@ -127,6 +138,9 @@ export class DataSyncService {
         await this.supabase.client.from('articles').upsert(articleData, { onConflict: 'vehicle_id, original_id' });
         
         return articleData;
+        } finally {
+            this.inProgressArticleSyncs.delete(syncKey);
+        }
     }
 
     private async syncCommonIssues(cs: string, vid: string, name: string) {
