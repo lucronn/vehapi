@@ -11,7 +11,7 @@ export function normalizeCategoryParams(title: string, parentBucket: string, buc
             if (parts.length > 1) {
                 subName = parts[0].trim();
             }
-        } else if (bucket === 'DTCs' || rootName === 'Diagnostic Codes (DTC)' || parentBucket === 'DTCs') {
+        } else if (bucket === 'DTCs' || bucket === 'Diagnostic Trouble Codes' || rootName.includes('Diagnostic') || parentBucket.includes('DTC')) {
             const codeMatch = safeTitle.match(/^([PCBU])\d+/i);
             if (codeMatch) {
                 const prefix = codeMatch[1].toUpperCase();
