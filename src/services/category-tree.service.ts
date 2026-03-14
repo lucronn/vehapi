@@ -1,6 +1,7 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { SearchResultsState } from './search-results.state';
 import { Article } from '../models/motor.models';
+import { normalizeCategoryParams } from '../utils/categorize.util';
 
 export interface TreeNode {
     id: string;
@@ -53,12 +54,11 @@ export class CategoryTreeService {
         const bucketNodes = new Map<string, TreeNode>();
 
         articles.forEach(article => {
-            const parentBucket = article.parentBucket || 'Other';
-            const bucket = article.bucket || 'Uncategorized';
-
-            const isOther = parentBucket === 'Other';
-            const rootBucketName = isOther ? bucket : parentBucket;
-            const subBucketName = isOther ? null : bucket;
+            const rawParent = article.parentBucket || 'Other';
+            const rawBucket = article.bucket || 'Uncategorized';
+            
+            // Client-side categorization for robust fallback
+            const { rootName: rootBucketName, subName: subBucketName } = normalizeCategoryParams(article.title, rawParent, rawBucket);
 
             let rootNode = bucketNodes.get(rootBucketName);
             if (!rootNode) {
