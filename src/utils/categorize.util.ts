@@ -12,7 +12,7 @@ export function normalizeCategoryParams(title: string, parentBucket: string, buc
                 subName = parts[0].trim();
             }
         } else if (bucket === 'DTCs' || bucket === 'Diagnostic Trouble Codes' || rootName.includes('Diagnostic') || parentBucket.includes('DTC')) {
-            const codeMatch = safeTitle.match(/^([PCBU])\d+/i);
+            const codeMatch = safeTitle.match(/\b([PCBU])\d{4}\b/i);
             if (codeMatch) {
                 const prefix = codeMatch[1].toUpperCase();
                 if (prefix === 'P') subName = 'Powertrain (P-Codes)';
