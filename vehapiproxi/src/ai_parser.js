@@ -1,9 +1,11 @@
 import logger from './logger.js';
 
-// Use the Gemini REST API directly via fetch - no SDK needed, works everywhere
-const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
-// 2.0-flash: fast, cheap, ideal for structured extraction. Upgrade to gemini-3-flash when GA.
-const MODEL = 'gemini-2.0-flash';
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  apiKey: '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',
+  baseURL: 'https://integrate.api.nvidia.com/v1',
+});
 
 // Schema definitions aligned with Supabase/TypeScript for maximum retention and accessibility.
 // Single source of truth for AI output structure.
@@ -141,58 +143,59 @@ const TUTORIAL_SCHEMA = {
 const MAX_RETRIES = 3;
 
 /**
- * Internal helper that calls the Gemini generateContent endpoint.
- * Retries automatically on 429 (rate limit) with exponential backoff.
+ * Internal helper that calls the Nemotron API via OpenAI SDK.
  * @param {string} prompt Text prompt to send
  * @param {object|null} schema Optional JSON schema for structured output
- * @returns {string} Raw text response from Gemini
+ * @returns {string} Raw text response
  */
-async function callGemini(prompt, schema = null) {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-        throw new Error('GEMINI_API_KEY environment variable is not set');
+async function callAI(prompt, schema = null) {
+    let finalPrompt = prompt;
+    if (schema) {
+        finalPrompt += `\n\nCRITICAL: You MUST return ONLY valid JSON matching this exact schema structure (no markdown formatting, no comments):\n${JSON.stringify(schema, null, 2)}`;
     }
-
-    const generationConfig = schema
-        ? { responseMimeType: 'application/json', responseSchema: schema }
-        : {};
-
-    const requestBody = {
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig
-    };
-
-    const url = `${GEMINI_API_BASE}/${MODEL}:generateContent?key=${apiKey}`;
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
-        });
+        try {
+            const completion = await openai.chat.completions.create({
+                model: "nvidia/nemotron-3-super-120b-a12b",
+                messages: [{"role":"user","content":finalPrompt}],
+                temperature: 1,
+                top_p: 0.95,
+                max_tokens: 16384,
+                reasoning_budget: 16384,
+                chat_template_kwargs: {"enable_thinking":true},
+                stream: true
+            });
 
-        if (response.status === 429 && attempt < MAX_RETRIES) {
-            const retryMatch = (await response.text()).match(/retryDelay.*?(\d+)/);
-            const delaySec = retryMatch ? Math.min(parseInt(retryMatch[1], 10), 60) : (10 * (attempt + 1));
-            logger.info(`Gemini 429 rate-limited, retrying in ${delaySec}s (attempt ${attempt + 1}/${MAX_RETRIES})`);
-            await new Promise(r => setTimeout(r, delaySec * 1000));
-            continue;
-        }
+            let fullContent = '';
+            for await (const chunk of completion) {
+                const reasoning = chunk.choices[0]?.delta?.reasoning_content;
+                if (reasoning) process.stdout.write(reasoning);
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Gemini API error ${response.status}: ${errorText}`);
-        }
+                if (chunk.choices[0]?.delta?.content) {
+                    fullContent += chunk.choices[0].delta.content;
+                }
+            }
 
-        const result = await response.json();
-        const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!text) {
-            throw new Error('Gemini returned no text in response');
+            if (!fullContent) {
+                throw new Error('Nemotron returned no text in response');
+            }
+
+            if (schema) {
+                fullContent = fullContent.trim();
+                if (fullContent.startsWith('```json')) fullContent = fullContent.replace(/^```json\n?/, '');
+                else if (fullContent.startsWith('```')) fullContent = fullContent.replace(/^```\n?/, '');
+                if (fullContent.endsWith('```')) fullContent = fullContent.replace(/\n?```$/, '');
+                fullContent = fullContent.trim();
+            }
+
+            return fullContent;
+        } catch (error) {
+            logger.warn(`Nemotron API error (attempt ${attempt + 1}): ${error.message}`);
+            if (attempt === MAX_RETRIES) throw error;
+            await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
         }
-        return text;
     }
-
-    throw new Error('Gemini API: max retries exceeded on 429');
 }
 
 /**
@@ -221,7 +224,7 @@ Rules:
 Original HTML:
 ${trimmed}`;
 
-    const rewritten = await callGemini(prompt, null);
+    const rewritten = await callAI(prompt, null);
     return rewritten.trim();
 }
 
@@ -253,7 +256,7 @@ Requirements for each step:
 
 Create between 3 and 12 meaningful steps covering the full procedure. Only include steps that are genuinely actionable. Preserve safety warnings and technical accuracy.`;
 
-    const text = await callGemini(prompt, TUTORIAL_SCHEMA);
+    const text = await callAI(prompt, TUTORIAL_SCHEMA);
     return JSON.parse(text);
 }
 
@@ -284,7 +287,7 @@ export async function parseWithAI(rawData, targetSchema) {
     const hint = schemaHints[targetSchema] ? `\n\nSchema-specific: ${schemaHints[targetSchema]}` : '';
     const prompt = `You are an automotive data parser. Extract ALL relevant technical information from the provided raw JSON response and map it strictly to the output schema. Capture every item — do not skip any. If some optional fields are not present, omit them or provide empty arrays/strings. Do not hallucinate data.${hint}${wasTruncated ? '\n\nNote: The data below was truncated. Extract everything that IS present.' : ''}\n\nRaw Data:\n${trimmedData}`;
 
-    const text = await callGemini(prompt, SCHEMAS[targetSchema]);
+    const text = await callAI(prompt, SCHEMAS[targetSchema]);
     return JSON.parse(text);
 }
 
@@ -310,7 +313,7 @@ For each issue, provide:
 Create 4-8 high-quality common issues tailored to this specific vehicle.`;
 
     try {
-        const text = await callGemini(prompt, SCHEMAS.common_issues);
+        const text = await callAI(prompt, SCHEMAS.common_issues);
         return JSON.parse(text);
     } catch (err) {
         logger.error(`generateCommonIssues failed for ${vehicleName}:`, err);
