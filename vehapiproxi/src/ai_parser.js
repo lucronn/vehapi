@@ -2,10 +2,20 @@ import logger from './logger.js';
 
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: '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',
-  baseURL: 'https://integrate.api.nvidia.com/v1',
-});
+const NEMOTRON_BASE_URL = 'https://integrate.api.nvidia.com/v1';
+const NEMOTRON_MODEL = 'nvidia/nemotron-3-super-120b-a12b';
+
+let _openaiClient = null;
+function getNemotronClient() {
+    if (_openaiClient) return _openaiClient;
+    const apiKey = (process.env.NVIDIA_API_KEY || process.env.NVAPI_KEY || '').trim();
+    if (!apiKey) return null;
+    _openaiClient = new OpenAI({
+        apiKey,
+        baseURL: NEMOTRON_BASE_URL,
+    });
+    return _openaiClient;
+}
 
 // Schema definitions aligned with Supabase/TypeScript for maximum retention and accessibility.
 // Single source of truth for AI output structure.
@@ -149,6 +159,11 @@ const MAX_RETRIES = 3;
  * @returns {string} Raw text response
  */
 async function callAI(prompt, schema = null) {
+    const openai = getNemotronClient();
+    if (!openai) {
+        throw new Error('Nemotron unavailable — NVIDIA_API_KEY (or NVAPI_KEY) not configured');
+    }
+
     let finalPrompt = prompt;
     if (schema) {
         finalPrompt += `\n\nCRITICAL: You MUST return ONLY valid JSON matching this exact schema structure (no markdown formatting, no comments):\n${JSON.stringify(schema, null, 2)}`;
@@ -157,7 +172,7 @@ async function callAI(prompt, schema = null) {
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         try {
             const completion = await openai.chat.completions.create({
-                model: "nvidia/nemotron-3-super-120b-a12b",
+                model: NEMOTRON_MODEL,
                 messages: [{"role":"user","content":finalPrompt}],
                 temperature: 1,
                 top_p: 0.95,
@@ -261,7 +276,7 @@ Create between 3 and 12 meaningful steps covering the full procedure. Only inclu
 }
 
 /**
- * Parses raw JSON from the Motor API into a structured format via Gemini REST API.
+ * Parses raw JSON from the Motor API into a structured format via Nemotron (NVIDIA).
  * @param {string} rawData JSON string of the raw response
  * @param {string} targetSchema The key in SCHEMAS (e.g. 'dtcs' or 'tsbs')
  */
@@ -292,7 +307,7 @@ export async function parseWithAI(rawData, targetSchema) {
 }
 
 /**
- * Generates common issues for a given vehicle using Gemini.
+ * Generates common issues for a given vehicle using Nemotron (NVIDIA).
  * @param {string} vehicleName The year make model of the vehicle.
  * @returns {Promise<Array>} Array of CommonIssue objects.
  */

@@ -23,7 +23,7 @@ import {
 import jwt from 'jsonwebtoken';
 import { generateCommonIssues } from './ai_parser.js';
 import { normalizeCategoryParams } from './categorize.js';
-// AI parser is loaded lazily to avoid cold-start crashes when GEMINI_API_KEY is absent
+// AI parser is loaded lazily to avoid cold-start crashes when NVIDIA_API_KEY is absent
 let _rewriteArticleHtml = null;
 let _generateTutorialSteps = null;
 async function getAiFunctions() {
@@ -777,7 +777,7 @@ app.post('/api/credits/webhook', express.raw({ type: 'application/json' }), hand
 
 // --- AI ENDPOINTS ---
 
-// POST /api/rewrite — rewrites article HTML text content via Gemini
+// POST /api/rewrite — rewrites article HTML text content via Nemotron (NVIDIA)
 // Body: { html: string, title?: string }
 // Returns: { html: string } or error
 app.post('/api/rewrite', express.json({ limit: '256kb' }), async (req, res) => {
@@ -788,7 +788,7 @@ app.post('/api/rewrite', express.json({ limit: '256kb' }), async (req, res) => {
 
     const { rewriteArticleHtml } = await getAiFunctions();
     if (!rewriteArticleHtml) {
-        return res.status(503).json({ error: 'AI rewriting unavailable — GEMINI_API_KEY not configured' });
+        return res.status(503).json({ error: 'AI rewriting unavailable — NVIDIA_API_KEY not configured' });
     }
 
     try {
@@ -800,7 +800,7 @@ app.post('/api/rewrite', express.json({ limit: '256kb' }), async (req, res) => {
     }
 });
 
-// POST /api/tutorials/generate — generates tutorial steps from article HTML via Gemini
+// POST /api/tutorials/generate — generates tutorial steps from article HTML via Nemotron (NVIDIA)
 // Body: { html: string, title?: string }
 // Returns: { steps: TutorialStep[] } or error
 app.post('/api/tutorials/generate', express.json({ limit: '256kb' }), async (req, res) => {
@@ -811,7 +811,7 @@ app.post('/api/tutorials/generate', express.json({ limit: '256kb' }), async (req
 
     const { generateTutorialSteps } = await getAiFunctions();
     if (!generateTutorialSteps) {
-        return res.status(503).json({ error: 'AI tutorial generation unavailable — GEMINI_API_KEY not configured' });
+        return res.status(503).json({ error: 'AI tutorial generation unavailable — NVIDIA_API_KEY not configured' });
     }
 
     try {
@@ -823,7 +823,7 @@ app.post('/api/tutorials/generate', express.json({ limit: '256kb' }), async (req
     }
 });
 
-// POST /api/common-issues/generate — generates common issues via Gemini
+// POST /api/common-issues/generate — generates common issues via Nemotron (NVIDIA)
 // Body: { vehicleName: string }
 app.post('/api/common-issues/generate', express.json(), async (req, res) => {
     const { vehicleMetadata } = req.body || {};

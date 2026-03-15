@@ -66,3 +66,10 @@ VEHICLE_ID=2854 node vehapiproxi/scripts/test-normalization-one-per-category.js
 Or from `vehapiproxi`: `npm run test:normalization` (set `VEHICLE_ID` in `.env`).
 
 The script: (1) clears that vehicle’s data from Supabase, (2) ensures the vehicle row exists, (3) fetches the articles catalog, (4) picks one article per bucket, (5) requests each article’s HTML (proxy enqueues background normalization), (6) waits ~35s, (7) prints row counts per table.
+
+## Vercel deployment (proxy)
+
+When deploying the proxy to Vercel (from repo root, with rewrites to `/api/index.js`):
+
+- Set **Environment variables** in the Vercel project: `NVIDIA_API_KEY` (for all AI: parsing, rewrite, tutorials, common-issues), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and any other vars from `vehapiproxi/.env.example`.
+- AI is **Nemotron (NVIDIA)** only; do not set `GEMINI_API_KEY`.

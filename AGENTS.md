@@ -49,7 +49,7 @@
 | Backend | Node.js / Express (`vehapiproxi/`) |
 | Database | Supabase (PostgreSQL) — auth, article cache, users, credits, transactions |
 | Payments | Stripe (checkout, billing portal, webhooks) |
-| AI | Google GenAI (`@google/genai`) — content rewriting, tutorial generation |
+| AI | NVIDIA Nemotron (OpenAI-compatible API) — parsing, rewrite, tutorials, common-issues |
 | 3D | Three.js 0.160 (logo torus-knot component) |
 | Deployment | Vercel (primary), Netlify, Firebase Hosting (alternatives) |
 | CI | GitHub Actions → build + deploy to Vercel on push to `main` |
@@ -82,7 +82,7 @@ node src/index.js        # Express on port 3001
 | `SUPABASE_JWT_SECRET` | JWT verification secret |
 | `STRIPE_SANDBOX_SKEY` | Stripe secret key |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
-| `GEMINI_API_KEY` | Google GenAI API key |
+| `NVIDIA_API_KEY` | NVIDIA API key (Nemotron — parsing, rewrite, tutorials, common-issues) |
 | `LIBRARY_BARCODE` / `EBSCO_USER` / `EBSCO_PASSWORD` | Motor API auth credentials |
 
 ### Frontend environments
