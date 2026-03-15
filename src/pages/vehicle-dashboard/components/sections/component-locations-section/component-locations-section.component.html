@@ -39,7 +39,7 @@
     </div>
 
     <!-- Lock Overlay -->
-    @if (!creditsService.hasAccess(vehicleId, 'component-locations')) {
+    @if (!creditsService.hasAccess(vehicleId, 'diagrams')) {
     <div class="absolute inset-0 z-10 flex flex-col p-6 text-center rounded-xl overflow-hidden mt-0!"
         style="min-height: 350px;">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-[2px]"></div>

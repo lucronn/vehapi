@@ -130,12 +130,13 @@ export class DiagramsSectionComponent implements OnInit {
                     contentSource: this.contentSource,
                     vehicleId: this.vehicleId,
                     articleId: diagram.id,
-                    articleTitleInput: diagram.title
+                    articleTitleInput: diagram.title,
+                    moduleType: 'diagrams'
                 }
             );
         } else {
             this.router.navigate(['/vehicle', this.contentSource, this.vehicleId, 'article', diagram.id], {
-                queryParams: { title: diagram.title }
+                queryParams: { title: diagram.title, moduleType: 'diagrams' }
             });
         }
     }

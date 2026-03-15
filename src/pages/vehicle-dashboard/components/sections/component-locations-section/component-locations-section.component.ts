@@ -103,12 +103,13 @@ export class ComponentLocationsSectionComponent implements OnInit {
                     contentSource: this.contentSource,
                     vehicleId: this.vehicleId,
                     articleId: item.id,
-                    articleTitleInput: item.title
+                    articleTitleInput: item.title,
+                    moduleType: 'diagrams'
                 }
             );
         } else {
             this.router.navigate(['/vehicle', this.contentSource, this.vehicleId, 'article', item.id], {
-                queryParams: { title: item.title }
+                queryParams: { title: item.title, moduleType: 'diagrams' }
             });
         }
     }
