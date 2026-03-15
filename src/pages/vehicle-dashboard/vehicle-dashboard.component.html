@@ -34,18 +34,14 @@
       <p class="text-[10px] font-mono uppercase tracking-[0.2em] text-torque-muted px-2 mb-2">Sections</p>
       <button (click)="setSection('overview')"
         class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
-        [class.bg-torque-cyan/10]="activeSection() === 'overview'"
-        [class.text-torque-cyan]="activeSection() === 'overview'"
-        [class.text-white/80]="activeSection() !== 'overview'">
+        [ngClass]="activeSection() === 'overview' ? 'bg-white/10 text-torque-cyan' : 'text-white/80'">
         <lucide-icon [img]="icons.House" class="w-4.5 h-4.5"></lucide-icon>
         Overview
       </button>
       @if (availableSections()?.hasDtcs) {
       <button (click)="setSection('dtcs')"
         class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
-        [class.bg-torque-cyan/10]="activeSection() === 'dtcs'"
-        [class.text-torque-cyan]="activeSection() === 'dtcs'"
-        [class.text-white/80]="activeSection() !== 'dtcs'">
+        [ngClass]="activeSection() === 'dtcs' ? 'bg-white/10 text-torque-cyan' : 'text-white/80'">
         <lucide-icon [img]="icons.TriangleAlert" class="w-4.5 h-4.5"></lucide-icon>
         Diagnostic Trouble Codes
       </button>
@@ -53,9 +49,7 @@
       @if (availableSections()?.hasTsbs) {
       <button (click)="setSection('tsbs')"
         class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
-        [class.bg-torque-cyan/10]="activeSection() === 'tsbs'"
-        [class.text-torque-cyan]="activeSection() === 'tsbs'"
-        [class.text-white/80]="activeSection() !== 'tsbs'">
+        [ngClass]="activeSection() === 'tsbs' ? 'bg-white/10 text-torque-cyan' : 'text-white/80'">
         <lucide-icon [img]="icons.FileText" class="w-4.5 h-4.5"></lucide-icon>
         Service Bulletins
       </button>
@@ -63,9 +57,7 @@
       @if (availableSections()?.hasProcedures) {
       <button (click)="setSection('procedures')"
         class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
-        [class.bg-torque-cyan/10]="activeSection() === 'procedures'"
-        [class.text-torque-cyan]="activeSection() === 'procedures'"
-        [class.text-white/80]="activeSection() !== 'procedures'">
+        [ngClass]="activeSection() === 'procedures' ? 'bg-white/10 text-torque-cyan' : 'text-white/80'">
         <lucide-icon [img]="icons.Wrench" class="w-4.5 h-4.5"></lucide-icon>
         Service Procedures
       </button>
@@ -73,9 +65,7 @@
       @if (availableSections()?.hasDiagrams) {
       <button (click)="setSection('diagrams')"
         class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
-        [class.bg-torque-cyan/10]="activeSection() === 'diagrams'"
-        [class.text-torque-cyan]="activeSection() === 'diagrams'"
-        [class.text-white/80]="activeSection() !== 'diagrams'">
+        [ngClass]="activeSection() === 'diagrams' ? 'bg-white/10 text-torque-cyan' : 'text-white/80'">
         <lucide-icon [img]="icons.Package" class="w-4.5 h-4.5"></lucide-icon>
         Wiring Diagrams
       </button>
@@ -83,9 +73,7 @@
       @if (availableSections()?.hasSpecs) {
       <button (click)="setSection('specs')"
         class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
-        [class.bg-torque-cyan/10]="activeSection() === 'specs'"
-        [class.text-torque-cyan]="activeSection() === 'specs'"
-        [class.text-white/80]="activeSection() !== 'specs'">
+        [ngClass]="activeSection() === 'specs' ? 'bg-white/10 text-torque-cyan' : 'text-white/80'">
         <lucide-icon [img]="icons.FileText" class="w-4.5 h-4.5"></lucide-icon>
         Specifications &amp; Fluids
       </button>
@@ -93,9 +81,7 @@
       @if (availableSections()?.hasComponentLocations) {
       <button (click)="setSection('component-locations')"
         class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
-        [class.bg-torque-cyan/10]="activeSection() === 'component-locations'"
-        [class.text-torque-cyan]="activeSection() === 'component-locations'"
-        [class.text-white/80]="activeSection() !== 'component-locations'">
+        [ngClass]="activeSection() === 'component-locations' ? 'bg-white/10 text-torque-cyan' : 'text-white/80'">
         <lucide-icon [img]="icons.Package" class="w-4.5 h-4.5"></lucide-icon>
         Component Locations
       </button>
@@ -103,9 +89,7 @@
       @if (availableSections()?.hasMaintenance) {
       <button (click)="setSection('maintenance')"
         class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
-        [class.bg-torque-cyan/10]="activeSection() === 'maintenance'"
-        [class.text-torque-cyan]="activeSection() === 'maintenance'"
-        [class.text-white/80]="activeSection() !== 'maintenance'">
+        [ngClass]="activeSection() === 'maintenance' ? 'bg-white/10 text-torque-cyan' : 'text-white/80'">
         <lucide-icon [img]="icons.FileText" class="w-4.5 h-4.5"></lucide-icon>
         Maintenance Schedules
       </button>
@@ -113,26 +97,20 @@
       @if (availableSections()?.hasParts) {
       <button (click)="setSection('parts')"
         class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
-        [class.bg-torque-cyan/10]="activeSection() === 'parts'"
-        [class.text-torque-cyan]="activeSection() === 'parts'"
-        [class.text-white/80]="activeSection() !== 'parts'">
+        [ngClass]="activeSection() === 'parts' ? 'bg-white/10 text-torque-cyan' : 'text-white/80'">
         <lucide-icon [img]="icons.Package" class="w-4.5 h-4.5"></lucide-icon>
         Parts Catalog
       </button>
       }
       <button (click)="setSection('common-issues')"
         class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
-        [class.bg-torque-cyan/10]="activeSection() === 'common-issues'"
-        [class.text-torque-cyan]="activeSection() === 'common-issues'"
-        [class.text-white/80]="activeSection() !== 'common-issues'">
+        [ngClass]="activeSection() === 'common-issues' ? 'bg-white/10 text-torque-cyan' : 'text-white/80'">
         <lucide-icon [img]="icons.Lightbulb" class="w-4.5 h-4.5"></lucide-icon>
         Common Issues &amp; AI
       </button>
       <button (click)="setSection('browse-all')"
         class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
-        [class.bg-torque-cyan/10]="activeSection() === 'browse-all'"
-        [class.text-torque-cyan]="activeSection() === 'browse-all'"
-        [class.text-white/80]="activeSection() !== 'browse-all'">
+        [ngClass]="activeSection() === 'browse-all' ? 'bg-white/10 text-torque-cyan' : 'text-white/80'">
         <lucide-icon [img]="icons.Package" class="w-4.5 h-4.5"></lucide-icon>
         Browse All Data
       </button>
