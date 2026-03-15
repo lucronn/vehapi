@@ -10,7 +10,8 @@
     "scripts": {
         "start": "node src/index.js",
         "dev": "node --watch src/index.js",
-        "debug": "NODE_ENV=development node src/index.js"
+        "debug": "NODE_ENV=development node src/index.js",
+        "migrate:schema": "node scripts/run-migrate-schema.js"
     },
     "keywords": [
         "proxy",
