@@ -47,13 +47,14 @@ export class VehicleDataService {
     private supabase = inject(SupabaseService);
 
     private readonly sectionStrategies: Record<string, SectionStrategy> = {
+        // id for list items must be the Motor article id (original_id from articles, external_id from procedures/dtcs/tsbs) for correct article content resolution.
         dtcs: {
             type: 'DTCs',
             alwaysIncludeBuckets: ['Diagnostic Trouble Codes', 'Diagnostic Codes', 'DTCs'],
             mapper: (a: any) => ({
-                id: a.id,
-                code: a.code || a.title, // Fallback to title if code is missing
-                description: a.description || a.subtitle || a.title || '', // meaningful fallback order
+                id: a.original_id ?? a.id,
+                code: a.code || a.title,
+                description: a.description || a.subtitle || a.title || '',
                 bucket: a.bucket
             } as Dtc),
             enableFallbackSearch: true
@@ -62,11 +63,11 @@ export class VehicleDataService {
             type: 'TSBs',
             alwaysIncludeBuckets: [],
             mapper: (a: any) => ({
-                id: a.id,
+                id: a.original_id ?? a.id,
                 bulletinNumber: a.bulletinNumber || '',
                 title: a.title,
                 releaseDate: a.releaseDate || '',
-                description: a.description || a.subtitle || '', // Added description mapping
+                description: a.description || a.subtitle || '',
                 thumbnailHref: a.thumbnailHref
             } as Tsb)
         },
@@ -74,18 +75,19 @@ export class VehicleDataService {
             type: 'Procedures',
             alwaysIncludeBuckets: ['Labor'],
             mapper: (a: any) => ({
-                id: a.id,
+                id: a.original_id ?? a.id,
                 bucket: a.bucket,
                 title: a.title,
                 subtitle: a.subtitle,
                 parentBucket: a.parentBucket
             } as Procedure)
         },
+        // Diagrams and component-locations: no normalized table in schema; section lists from articles only.
         diagrams: {
             type: 'Diagrams',
             alwaysIncludeBuckets: ['Wiring Diagrams', 'Component Locations'],
             mapper: (a: any) => ({
-                id: a.id,
+                id: a.original_id ?? a.id,
                 bucket: a.bucket,
                 title: a.title,
                 subtitle: a.subtitle,
@@ -96,7 +98,7 @@ export class VehicleDataService {
             type: 'Component Locations',
             alwaysIncludeBuckets: ['Component Locations'],
             mapper: (a: any) => ({
-                id: a.id,
+                id: a.original_id ?? a.id,
                 bucket: a.bucket,
                 title: a.title,
                 thumbnailHref: a.thumbnailHref || ''
@@ -498,21 +500,39 @@ export class VehicleDataService {
 
         loadingSignal.set(true);
 
-        // 1. Check Supabase first
-        from(this.supabase.client
-            .from('articles')
-            .select('*')
-            .eq('vehicle_id', vehicleId)
-        ).pipe(
-            map(({ data }) => {
-                if (!data || data.length === 0) return null;
-
-                const bucketNames = strategy.alwaysIncludeBuckets.map(b => b.toLowerCase());
-                return data.filter(a => {
-                    const b = (a.bucket || '').toLowerCase();
-                    return bucketNames.length === 0 || bucketNames.some(name => b.includes(name));
-                }).map(strategy.mapper);
-            })
+        // Optional path: when vehicle has normalized data (is_normalized), try procedures/dtcs/tsbs tables first for section lists.
+        // Diagrams and component-locations have no normalized table in schema; they always use articles then API.
+        // Default path: articles table, then API fallback. Logic is backward compatible.
+        from(this.supabase.client.from('vehicles').select('is_normalized').eq('external_id', vehicleId).maybeSingle()).pipe(
+            switchMap(({ data: vehicle }) => {
+                const useNormalizedTables = vehicle?.is_normalized && (section === 'procedures' || section === 'dtcs' || section === 'tsbs');
+                if (!useNormalizedTables) return of(null);
+                const table = section as 'procedures' | 'dtcs' | 'tsbs';
+                return from(this.supabase.client.from(table).select('*').eq('vehicle_id', vehicleId)).pipe(
+                    map(({ data: rows }) => {
+                        if (!rows?.length) return null;
+                        // Use external_id as id so article viewer / proxy can resolve content (checkParsedArticle).
+                        if (section === 'procedures') return rows.map((r: any) => ({ id: r.external_id ?? String(r.id), bucket: 'Procedures', title: r.title ?? '', subtitle: undefined, parentBucket: 'Procedures' } as Procedure));
+                        if (section === 'dtcs') return rows.map((r: any) => ({ id: r.external_id ?? String(r.id), code: r.code ?? '', description: r.description ?? '', bucket: 'DTCs' } as Dtc));
+                        return rows.map((r: any) => ({ id: r.external_id ?? String(r.id), bulletinNumber: r.bulletin_number ?? '', title: r.title ?? '', releaseDate: r.issue_date ?? '', description: '', thumbnailHref: undefined } as Tsb));
+                    }),
+                    catchError(() => of(null))
+                );
+            }),
+            switchMap((normalizedList) => {
+                if (normalizedList && normalizedList.length > 0) return of(normalizedList);
+                return from(this.supabase.client.from('articles').select('*').eq('vehicle_id', vehicleId)).pipe(
+                    map(({ data }) => {
+                        if (!data || data.length === 0) return null;
+                        const bucketNames = strategy.alwaysIncludeBuckets.map(b => b.toLowerCase());
+                        return data.filter((a: any) => {
+                            const b = (a.bucket || '').toLowerCase();
+                            return bucketNames.length === 0 || bucketNames.some(name => b.includes(name));
+                        }).map(strategy.mapper);
+                    })
+                );
+            }),
+            catchError(() => of(null))
         ).subscribe({
             next: (supabaseData) => {
                 if (supabaseData && supabaseData.length > 0) {
@@ -520,7 +540,6 @@ export class VehicleDataService {
                     updateState(supabaseData);
                     loadingSignal.set(false);
                 } else {
-                    // 2. Fallback to API if not in Supabase
                     this.loadSectionDataFromApi(section, contentSource, vehicleId, motorVehicleId, loadingSignal, updateState, errorCallback);
                 }
             },
@@ -648,7 +667,7 @@ export class VehicleDataService {
                     ).pipe(
                         map(({ data: mbData }) => {
                             if (!mbData || mbData.length === 0) return null;
-                            return mbData.map(s => ({
+                            return mbData.map((s: any) => ({
                                 id: s.id,
                                 description: s.item,
                                 action: s.action,

@@ -947,10 +947,11 @@ const articleContentCacheMiddleware = async (req, res, next) => {
                     res.setHeader('x-data-source', 'supabase');
                     res.setHeader('x-cache-hit', 'true');
                     // Wrap in the shape the UI expects (Motor typically returns { body: { html: "..." } })
+                    // DB column for full HTML is content_html (procedures, tsbs, dtcs tables).
                     return res.json({
                         header: { status: 'OK', statusCode: 200 },
                         body: {
-                            html: cached.html || cached.description || cached.content || '',
+                            html: cached.content_html || cached.html || cached.description || cached.content || '',
                             title: cached.title,
                             id: articleId
                         }

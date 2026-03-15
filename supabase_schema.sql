@@ -1,149 +1,275 @@
--- 1. Ensure vehicles.external_id is unique
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'vehicles_external_id_key') THEN
-        ALTER TABLE public.vehicles ADD CONSTRAINT vehicles_external_id_key UNIQUE (external_id);
-    END IF;
-END $$;
+-- =============================================================================
+-- Vehicle Data Normalization Schema (Supabase)
+-- Aligned with src/models/normalized_schema.ts and vehapiproxi pipeline.
+-- Run this to wipe and recreate vehicle/content tables. Keeps users, transactions,
+-- system_sessions intact. To wipe those too, uncomment the optional DROP block.
+-- =============================================================================
 
--- 2. ARTICLES TABLE (Cached Normalized Content)
-CREATE TABLE IF NOT EXISTS public.articles (
+-- Optional: uncomment to also drop app/auth tables (full wipe)
+-- DROP TABLE IF EXISTS public.transactions CASCADE;
+-- DROP TABLE IF EXISTS public.users CASCADE;
+-- DROP TABLE IF EXISTS public.system_sessions CASCADE;
+
+-- Drop vehicle/content tables (reverse dependency order)
+DROP TABLE IF EXISTS public.ai_processing_logs CASCADE;
+DROP TABLE IF EXISTS public.vehicle_metadata CASCADE;
+DROP TABLE IF EXISTS public.common_issues_cache CASCADE;
+DROP TABLE IF EXISTS public.maintenance_schedules CASCADE;
+DROP TABLE IF EXISTS public.parts CASCADE;
+DROP TABLE IF EXISTS public.specifications CASCADE;
+DROP TABLE IF EXISTS public.categories CASCADE;
+DROP TABLE IF EXISTS public.dtcs CASCADE;
+DROP TABLE IF EXISTS public.tsbs CASCADE;
+DROP TABLE IF EXISTS public.procedures CASCADE;
+DROP TABLE IF EXISTS public.articles CASCADE;
+DROP TABLE IF EXISTS public.vehicles CASCADE;
+
+-- -----------------------------------------------------------------------------
+-- 1. VEHICLES (root; no FK to other app tables)
+-- -----------------------------------------------------------------------------
+CREATE TABLE public.vehicles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    vehicle_id TEXT REFERENCES public.vehicles(external_id),
-    article_id TEXT NOT NULL,
-    title TEXT NOT NULL,
-    content_html TEXT,
-    category TEXT,
+    external_id TEXT NOT NULL UNIQUE,
+    content_source TEXT DEFAULT 'MOTOR',
+    year INTEGER,
+    make TEXT,
+    model TEXT,
+    is_normalized BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- -----------------------------------------------------------------------------
+-- 2. ARTICLES (list/catalog from Motor articles/v2; section lists)
+-- Pipeline: background_worker (articles), data-sync (syncSingleArticle).
+-- -----------------------------------------------------------------------------
+CREATE TABLE public.articles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vehicle_id TEXT NOT NULL REFERENCES public.vehicles(external_id) ON DELETE CASCADE,
+    original_id TEXT NOT NULL,
+    title TEXT,
+    subtitle TEXT,
+    bucket TEXT,
+    parent_bucket TEXT,
+    thumbnail_href TEXT,
+    content_source TEXT DEFAULT 'MOTOR',
+    original_content TEXT,
+    enhanced_content TEXT,
     source TEXT DEFAULT 'MOTOR',
-    is_parsed BOOLEAN DEFAULT FALSE,
-    tutorial_steps JSONB DEFAULT '[]'::jsonb,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),
-    UNIQUE(vehicle_id, article_id)
+    UNIQUE(vehicle_id, original_id)
 );
 
--- 3. SYSTEM SESSIONS TABLE (Proxy Auth Persistence)
-CREATE TABLE IF NOT EXISTS public.system_sessions (
-    id TEXT PRIMARY KEY,
-    data JSONB NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now()
-);
+CREATE INDEX idx_articles_vehicle_id ON public.articles(vehicle_id);
+CREATE INDEX idx_articles_bucket ON public.articles(vehicle_id, bucket);
 
--- 4. USERS TABLE (Credit System)
-CREATE TABLE IF NOT EXISTS public.users (
-    id TEXT PRIMARY KEY, -- Maps to Supabase User ID
-    credits INTEGER DEFAULT 0,
-    unlocks JSONB DEFAULT '{}'::jsonb,
-    stripe_customer_id TEXT,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now()
-);
-
--- 5. TRANSACTIONS TABLE (Credit Logs)
-CREATE TABLE IF NOT EXISTS public.transactions (
+-- -----------------------------------------------------------------------------
+-- 3. PROCEDURES (normalized repair procedures; cache for article content)
+-- Conflict: vehicle_id + external_id (Motor article id) for one row per article.
+-- -----------------------------------------------------------------------------
+CREATE TABLE public.procedures (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id TEXT REFERENCES public.users(id),
-    amount INTEGER NOT NULL,
-    type TEXT NOT NULL, -- 'purchase' | 'unlock'
-    stripe_session_id TEXT,
-    stripe_payment_intent TEXT,
-    usd_cents INTEGER,
-    vehicle_id TEXT,
-    vehicle_name TEXT,
-    module_type TEXT,
-    created_at TIMESTAMPTZ DEFAULT now()
+    vehicle_id TEXT NOT NULL REFERENCES public.vehicles(external_id) ON DELETE CASCADE,
+    external_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    content_html TEXT,
+    steps JSONB DEFAULT '[]'::jsonb,
+    tools_required JSONB DEFAULT '[]'::jsonb,
+    parts_required JSONB DEFAULT '[]'::jsonb,
+    time_estimate_hours NUMERIC,
+    cautions TEXT,
+    category_id UUID,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(vehicle_id, external_id)
 );
 
--- 6. AI PROCESSING LOGS (Background Parsing Progress)
-CREATE TABLE IF NOT EXISTS public.ai_processing_logs (
+CREATE INDEX idx_procedures_vehicle_id ON public.procedures(vehicle_id);
+CREATE INDEX idx_procedures_external_id ON public.procedures(external_id);
+
+-- -----------------------------------------------------------------------------
+-- 4. TSBS (Technical Service Bulletins)
+-- -----------------------------------------------------------------------------
+CREATE TABLE public.tsbs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vehicle_id TEXT NOT NULL REFERENCES public.vehicles(external_id) ON DELETE CASCADE,
+    bulletin_number TEXT NOT NULL,
+    title TEXT NOT NULL,
+    summary TEXT,
+    content TEXT,
+    content_html TEXT,
+    issue_date DATE,
+    affected_components JSONB DEFAULT '[]'::jsonb,
+    models_affected JSONB DEFAULT '[]'::jsonb,
+    external_id TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(vehicle_id, bulletin_number)
+);
+
+CREATE INDEX idx_tsbs_vehicle_id ON public.tsbs(vehicle_id);
+CREATE INDEX idx_tsbs_external_id ON public.tsbs(external_id) WHERE external_id IS NOT NULL;
+
+-- -----------------------------------------------------------------------------
+-- 5. DTCS (Diagnostic Trouble Codes)
+-- -----------------------------------------------------------------------------
+CREATE TABLE public.dtcs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vehicle_id TEXT NOT NULL REFERENCES public.vehicles(external_id) ON DELETE CASCADE,
+    code TEXT NOT NULL,
+    description TEXT,
+    content_html TEXT,
+    possible_causes JSONB DEFAULT '[]'::jsonb,
+    symptoms JSONB DEFAULT '[]'::jsonb,
+    diagnostic_steps JSONB DEFAULT '[]'::jsonb,
+    monitor_strategy TEXT,
+    malfunction_criteria TEXT,
+    external_id TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(vehicle_id, code)
+);
+
+CREATE INDEX idx_dtcs_vehicle_id ON public.dtcs(vehicle_id);
+CREATE INDEX idx_dtcs_external_id ON public.dtcs(external_id) WHERE external_id IS NOT NULL;
+
+-- -----------------------------------------------------------------------------
+-- 6. SPECIFICATIONS (fluids, torque, etc.)
+-- -----------------------------------------------------------------------------
+CREATE TABLE public.specifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vehicle_id TEXT NOT NULL REFERENCES public.vehicles(external_id) ON DELETE CASCADE,
+    category TEXT NOT NULL,
+    name TEXT NOT NULL,
+    value TEXT,
+    unit TEXT,
+    display_text TEXT,
+    metadata JSONB,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(vehicle_id, category, name)
+);
+
+CREATE INDEX idx_specifications_vehicle_id ON public.specifications(vehicle_id);
+
+-- -----------------------------------------------------------------------------
+-- 7. CATEGORIES (hierarchical buckets)
+-- -----------------------------------------------------------------------------
+CREATE TABLE public.categories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    parent_id UUID REFERENCES public.categories(id),
+    name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    sort_order INTEGER,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(name, type)
+);
+
+-- -----------------------------------------------------------------------------
+-- 8. VEHICLE_METADATA (cached API responses: years, makes, models)
+-- -----------------------------------------------------------------------------
+CREATE TABLE public.vehicle_metadata (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    path TEXT NOT NULL UNIQUE,
+    data JSONB NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- -----------------------------------------------------------------------------
+-- 9. AI_PROCESSING_LOGS (parse status for dedup / monitoring)
+-- -----------------------------------------------------------------------------
+CREATE TABLE public.ai_processing_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     source_file TEXT NOT NULL,
-    status TEXT NOT NULL, -- 'PENDING' | 'COMPLETED' | 'FAILED'
+    category TEXT,
+    status TEXT NOT NULL,
     error_message TEXT,
     tokens_used INTEGER,
     processed_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 7. LEGACY/SPECIALIZED CONTENT TABLES
--- (Used by original proxy implementation in supabase.js)
+CREATE INDEX idx_ai_processing_logs_source_status ON public.ai_processing_logs(source_file, status);
 
-CREATE TABLE IF NOT EXISTS public.procedures (
+-- -----------------------------------------------------------------------------
+-- 10. COMMON_ISSUES_CACHE (AI-generated common issues per vehicle)
+-- -----------------------------------------------------------------------------
+CREATE TABLE public.common_issues_cache (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    vehicle_id TEXT REFERENCES public.vehicles(external_id),
-    external_id TEXT, -- Motor Article ID
-    title TEXT NOT NULL,
-    content_html TEXT,
-    is_parsed BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    UNIQUE(vehicle_id, title)
+    vehicle_id TEXT NOT NULL REFERENCES public.vehicles(external_id) ON DELETE CASCADE,
+    source TEXT DEFAULT 'MOTOR',
+    issues JSONB NOT NULL DEFAULT '[]'::jsonb,
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(vehicle_id)
 );
 
-CREATE TABLE IF NOT EXISTS public.tsbs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    vehicle_id TEXT REFERENCES public.vehicles(external_id),
-    bulletin_number TEXT NOT NULL,
-    title TEXT NOT NULL,
-    content_html TEXT,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    UNIQUE(vehicle_id, bulletin_number)
-);
+CREATE INDEX idx_common_issues_vehicle_id ON public.common_issues_cache(vehicle_id);
 
-CREATE TABLE IF NOT EXISTS public.dtcs (
+-- -----------------------------------------------------------------------------
+-- 11. PARTS (parts catalog sync)
+-- -----------------------------------------------------------------------------
+CREATE TABLE public.parts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    vehicle_id TEXT REFERENCES public.vehicles(external_id),
-    code TEXT NOT NULL,
+    vehicle_id TEXT NOT NULL REFERENCES public.vehicles(external_id) ON DELETE CASCADE,
+    part_number TEXT NOT NULL,
     description TEXT,
-    content_html TEXT,
+    manufacturer TEXT,
+    list_price NUMERIC,
+    dealer_price NUMERIC,
     created_at TIMESTAMPTZ DEFAULT now(),
-    UNIQUE(vehicle_id, code)
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(vehicle_id, part_number)
 );
 
-CREATE TABLE IF NOT EXISTS public.specifications (
+CREATE INDEX idx_parts_vehicle_id ON public.parts(vehicle_id);
+
+-- -----------------------------------------------------------------------------
+-- 12. MAINTENANCE_SCHEDULES
+-- -----------------------------------------------------------------------------
+CREATE TABLE public.maintenance_schedules (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    vehicle_id TEXT REFERENCES public.vehicles(external_id),
-    category TEXT NOT NULL,
-    name TEXT NOT NULL,
-    value TEXT,
+    vehicle_id TEXT NOT NULL REFERENCES public.vehicles(external_id) ON DELETE CASCADE,
+    interval_value INTEGER NOT NULL,
+    interval_unit TEXT DEFAULT 'Miles',
+    action TEXT,
+    item TEXT NOT NULL,
+    description TEXT,
+    frequency_code TEXT,
     created_at TIMESTAMPTZ DEFAULT now(),
-    UNIQUE(vehicle_id, category, name)
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(vehicle_id, interval_value, action, item)
 );
 
-CREATE TABLE IF NOT EXISTS public.categories (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL,
-    type TEXT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    UNIQUE(name, type)
-);
+CREATE INDEX idx_maintenance_schedules_vehicle_id ON public.maintenance_schedules(vehicle_id);
+CREATE INDEX idx_maintenance_schedules_vehicle_interval ON public.maintenance_schedules(vehicle_id, interval_value);
 
--- ENABLE RLS ON ALL TABLES
+-- -----------------------------------------------------------------------------
+-- RLS (enable on all new tables)
+-- -----------------------------------------------------------------------------
+ALTER TABLE public.vehicles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.articles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.system_sessions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.ai_processing_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.procedures ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tsbs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.dtcs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.specifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vehicle_metadata ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ai_processing_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.common_issues_cache ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.parts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.maintenance_schedules ENABLE ROW LEVEL SECURITY;
 
--- POLICIES (Public Read/Write for MVP - Tighten later)
--- Note: These are permissive to ensure flow works; in production use proper Auth.
-
-CREATE POLICY "Public articles read" ON public.articles FOR SELECT USING (true);
-CREATE POLICY "Public articles insert" ON public.articles FOR INSERT WITH CHECK (true);
-CREATE POLICY "Public articles update" ON public.articles FOR UPDATE USING (true);
-
-CREATE POLICY "Public system_sessions access" ON public.system_sessions FOR ALL USING (true);
-
-CREATE POLICY "Public users access" ON public.users FOR ALL USING (true);
-CREATE POLICY "Public transactions access" ON public.transactions FOR ALL USING (true);
-CREATE POLICY "Public ai_logs access" ON public.ai_processing_logs FOR ALL USING (true);
-
-CREATE POLICY "Public procedures access" ON public.procedures FOR ALL USING (true);
-CREATE POLICY "Public tsbs access" ON public.tsbs FOR ALL USING (true);
-CREATE POLICY "Public dtcs access" ON public.dtcs FOR ALL USING (true);
-CREATE POLICY "Public specs access" ON public.specifications FOR ALL USING (true);
-CREATE POLICY "Public categories access" ON public.categories FOR ALL USING (true);
+-- Permissive policies (MVP; tighten for production)
+CREATE POLICY "Allow all vehicles" ON public.vehicles FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all articles" ON public.articles FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all procedures" ON public.procedures FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all tsbs" ON public.tsbs FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all dtcs" ON public.dtcs FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all specifications" ON public.specifications FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all categories" ON public.categories FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all vehicle_metadata" ON public.vehicle_metadata FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all ai_processing_logs" ON public.ai_processing_logs FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all common_issues_cache" ON public.common_issues_cache FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all parts" ON public.parts FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all maintenance_schedules" ON public.maintenance_schedules FOR ALL USING (true) WITH CHECK (true);

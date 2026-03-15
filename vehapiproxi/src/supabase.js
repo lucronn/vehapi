@@ -10,8 +10,11 @@ function getSupabaseConfig() {
     return { url, key };
 }
 
+// Conflict keys for upsert; must match DB unique constraints.
+// Procedures: DB has UNIQUE(vehicle_id, external_id) — one row per Motor article id.
+const PROCEDURES_CONFLICT_COLUMNS = 'vehicle_id,external_id';
 const UPSERT_CONFLICT_COLUMNS = {
-    procedures: 'vehicle_id,title',
+    procedures: PROCEDURES_CONFLICT_COLUMNS,
     tsbs: 'vehicle_id,bulletin_number',
     dtcs: 'vehicle_id,code',
     specifications: 'vehicle_id,category,name',
@@ -77,12 +80,22 @@ export async function insertParsedData(table, data) {
 
 /**
  * Logs the AI processing task to monitor accuracy and failures.
+ * Table ai_processing_logs has: source_file, category, status, error_message, tokens_used, processed_at (no vehicle_id).
+ * Worker sends source_file, category, status, error_message, tokens_used; we add processed_at here.
  */
 export async function logAiProcessing(logData) {
     const cfg = getSupabaseConfig();
     if (!cfg) return;
 
     try {
+        const payload = {
+            source_file: logData.source_file,
+            category: logData.category ?? null,
+            status: logData.status,
+            error_message: logData.error_message ?? null,
+            tokens_used: logData.tokens_used ?? null,
+            processed_at: new Date().toISOString()
+        };
         const response = await fetch(`${cfg.url}/rest/v1/ai_processing_logs`, {
             method: 'POST',
             headers: {
@@ -91,10 +104,7 @@ export async function logAiProcessing(logData) {
                 'Authorization': `Bearer ${cfg.key}`,
                 'Prefer': 'return=minimal'
             },
-            body: JSON.stringify({
-                ...logData,
-                processed_at: new Date().toISOString()
-            })
+            body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
