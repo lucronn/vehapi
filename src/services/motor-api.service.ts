@@ -438,9 +438,8 @@ export class MotorApiService {
 
 
   getArticleXml(contentSource: string, articleId: string): Observable<string> {
-    // Returns raw XML text, not wrapped in ApiResponse
     const url = `${this.baseUrl}/api/source/${contentSource}/xml/${articleId}`;
-    return this.http.get(url, { responseType: 'text' });
+    return this.http.get(url, { responseType: 'text', withCredentials: true });
   }
 
   getArticleTitle(contentSource: string, vehicleId: string, articleId: string): Observable<ApiResponse<string>> {
@@ -528,7 +527,7 @@ export class MotorApiService {
   getAssetByHandleId(handleId: string): Observable<Blob> {
     return this.http.get(
       `${this.baseUrl}/api/asset/${handleId}`,
-      { responseType: 'blob' }
+      { responseType: 'blob', withCredentials: true }
     );
   }
 
@@ -618,7 +617,7 @@ export class MotorApiService {
     return this.http.post<ApiResponse<ModelAndVehicleIdListResponse>>(
       `${this.baseUrl}/api/source/${contentSource}/vehicles`,
       request,
-      { withCredentials: true }
+      { withCredentials: true  }
     );
   }
 
@@ -675,7 +674,7 @@ export class MotorApiService {
 
     return this.http.get<ApiResponse<PartLineItemListResponse>>(
       `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/parts`,
-      { params }
+      { params, withCredentials: true }
     );
   }
 
@@ -693,7 +692,8 @@ export class MotorApiService {
   saveBookmark(contentSource: string, vehicleId: string, articleId: string): Observable<ApiResponse<ArticleBookmarkResponse>> {
     return this.http.post<ApiResponse<ArticleBookmarkResponse>>(
       `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/article/${articleId}/bookmark`,
-      null
+      null,
+      { withCredentials: true }
     );
   }
 
@@ -728,7 +728,8 @@ export class MotorApiService {
    */
   getBookmark(bookmarkId: number): Observable<ApiResponse<ArticleResponse>> {
     return this.http.get<ApiResponse<ArticleResponse>>(
-      `${this.baseUrl}/api/bookmark/${bookmarkId}`
+      `${this.baseUrl}/api/bookmark/${bookmarkId}`,
+      { withCredentials: true }
     );
   }
 
@@ -743,7 +744,7 @@ export class MotorApiService {
   getFavicon(): Observable<Blob> {
     return this.http.get(
       `${this.baseUrl}/api/ui/favicon`,
-      { responseType: 'blob' }
+      { responseType: 'blob', withCredentials: true }
     );
   }
 
@@ -754,7 +755,7 @@ export class MotorApiService {
   getBootstrapCss(): Observable<string> {
     return this.http.get(
       `${this.baseUrl}/api/ui/css/bootstrap`,
-      { responseType: 'text' }
+      { responseType: 'text', withCredentials: true }
     );
   }
 
@@ -765,7 +766,7 @@ export class MotorApiService {
   getBannerHtml(): Observable<string> {
     return this.http.get(
       `${this.baseUrl}/api/ui/banner.html`,
-      { responseType: 'text' }
+      { responseType: 'text', withCredentials: true }
     );
   }
 
@@ -775,7 +776,8 @@ export class MotorApiService {
    */
   getUserSettings(): Observable<ApiResponse<UiUserSettingsResponse>> {
     return this.http.get<ApiResponse<UiUserSettingsResponse>>(
-      `${this.baseUrl}/api/ui/usersettings`
+      `${this.baseUrl}/api/ui/usersettings`,
+      { withCredentials: true }
     );
   }
 
@@ -785,7 +787,8 @@ export class MotorApiService {
    */
   getFeedbackConfigurations(): Observable<ApiResponse<FeedbackConfigurationResponse>> {
     return this.http.get<ApiResponse<FeedbackConfigurationResponse>>(
-      `${this.baseUrl}/api/ui/feedbackconfigurations`
+      `${this.baseUrl}/api/ui/feedbackconfigurations`,
+      { withCredentials: true }
     );
   }
 
@@ -797,7 +800,8 @@ export class MotorApiService {
   saveFeedback(feedback: Feedback): Observable<ApiResponse<EmptyResponse>> {
     return this.http.post<ApiResponse<EmptyResponse>>(
       `${this.baseUrl}/api/ui/savefeedback`,
-      feedback
+      feedback,
+      { withCredentials: true }
     );
   }
 
@@ -811,7 +815,8 @@ export class MotorApiService {
    */
   getProcessingQuarters(): Observable<ApiResponse<StringListResponse>> {
     return this.http.get<ApiResponse<StringListResponse>>(
-      `${this.baseUrl}/api/source/track-change/processingquarters`
+      `${this.baseUrl}/api/source/track-change/processingquarters`,
+      { withCredentials: true }
     );
   }
 
@@ -826,7 +831,7 @@ export class MotorApiService {
 
     return this.http.get<ApiResponse<VehicleDeltaReportListResponse>>(
       `${this.baseUrl}/api/source/track-change/deltareport`,
-      { params }
+      { params, withCredentials: true }
     );
   }
 
@@ -842,7 +847,8 @@ export class MotorApiService {
   logError(logEntry: LogEntry): Observable<ApiResponse<EmptyResponse>> {
     return this.http.post<ApiResponse<EmptyResponse>>(
       `${this.baseUrl}/api/logError`,
-      logEntry
+      logEntry,
+      { withCredentials: true }
     );
   }
 

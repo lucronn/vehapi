@@ -28,15 +28,125 @@
 
   <!-- Mobile Navigation Overlay -->
   @if (isMobileMenuOpen()) {
-  <div class="fixed inset-0 z-40 md:hidden pt-16 px-4 animate-fade-in bg-[hsl(230,35%,7%)]/95 backdrop-blur-xl">
-    <div class="mt-6 space-y-3">
-      <a routerLink="/credits" (click)="toggleMobileMenu()"
-        class="flex items-center justify-center gap-2 w-full py-3 text-sm font-medium text-torque-cyan hover:text-white border border-torque-cyan/30 hover:bg-torque-cyan/10 rounded-xl transition-colors">
-        Account &amp; Credits
-      </a>
-      <button (click)="setSection('browse-all')" class="w-full btn-secondary py-3 text-sm">All Data</button>
-      <a routerLink="/" (click)="toggleMobileMenu()"
-        class="block w-full text-center py-3 text-sm text-torque-muted hover:text-white transition-colors">Exit</a>
+  <div class="fixed inset-0 z-40 md:hidden pt-16 px-4 animate-fade-in bg-[hsl(230,35%,7%)]/95 backdrop-blur-xl overflow-y-auto"
+    style="padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));">
+    <div class="mt-4 space-y-2">
+      <p class="text-[10px] font-mono uppercase tracking-[0.2em] text-torque-muted px-2 mb-2">Sections</p>
+      <button (click)="setSection('overview')"
+        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
+        [class.bg-torque-cyan/10]="activeSection() === 'overview'"
+        [class.text-torque-cyan]="activeSection() === 'overview'"
+        [class.text-white/80]="activeSection() !== 'overview'">
+        <lucide-icon [img]="icons.House" class="w-4.5 h-4.5"></lucide-icon>
+        Overview
+      </button>
+      @if (availableSections()?.hasDtcs) {
+      <button (click)="setSection('dtcs')"
+        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
+        [class.bg-torque-cyan/10]="activeSection() === 'dtcs'"
+        [class.text-torque-cyan]="activeSection() === 'dtcs'"
+        [class.text-white/80]="activeSection() !== 'dtcs'">
+        <lucide-icon [img]="icons.TriangleAlert" class="w-4.5 h-4.5"></lucide-icon>
+        Diagnostic Trouble Codes
+      </button>
+      }
+      @if (availableSections()?.hasTsbs) {
+      <button (click)="setSection('tsbs')"
+        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
+        [class.bg-torque-cyan/10]="activeSection() === 'tsbs'"
+        [class.text-torque-cyan]="activeSection() === 'tsbs'"
+        [class.text-white/80]="activeSection() !== 'tsbs'">
+        <lucide-icon [img]="icons.FileText" class="w-4.5 h-4.5"></lucide-icon>
+        Service Bulletins
+      </button>
+      }
+      @if (availableSections()?.hasProcedures) {
+      <button (click)="setSection('procedures')"
+        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
+        [class.bg-torque-cyan/10]="activeSection() === 'procedures'"
+        [class.text-torque-cyan]="activeSection() === 'procedures'"
+        [class.text-white/80]="activeSection() !== 'procedures'">
+        <lucide-icon [img]="icons.Wrench" class="w-4.5 h-4.5"></lucide-icon>
+        Service Procedures
+      </button>
+      }
+      @if (availableSections()?.hasDiagrams) {
+      <button (click)="setSection('diagrams')"
+        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
+        [class.bg-torque-cyan/10]="activeSection() === 'diagrams'"
+        [class.text-torque-cyan]="activeSection() === 'diagrams'"
+        [class.text-white/80]="activeSection() !== 'diagrams'">
+        <lucide-icon [img]="icons.Package" class="w-4.5 h-4.5"></lucide-icon>
+        Wiring Diagrams
+      </button>
+      }
+      @if (availableSections()?.hasSpecs) {
+      <button (click)="setSection('specs')"
+        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
+        [class.bg-torque-cyan/10]="activeSection() === 'specs'"
+        [class.text-torque-cyan]="activeSection() === 'specs'"
+        [class.text-white/80]="activeSection() !== 'specs'">
+        <lucide-icon [img]="icons.FileText" class="w-4.5 h-4.5"></lucide-icon>
+        Specifications &amp; Fluids
+      </button>
+      }
+      @if (availableSections()?.hasComponentLocations) {
+      <button (click)="setSection('component-locations')"
+        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
+        [class.bg-torque-cyan/10]="activeSection() === 'component-locations'"
+        [class.text-torque-cyan]="activeSection() === 'component-locations'"
+        [class.text-white/80]="activeSection() !== 'component-locations'">
+        <lucide-icon [img]="icons.Package" class="w-4.5 h-4.5"></lucide-icon>
+        Component Locations
+      </button>
+      }
+      @if (availableSections()?.hasMaintenance) {
+      <button (click)="setSection('maintenance')"
+        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
+        [class.bg-torque-cyan/10]="activeSection() === 'maintenance'"
+        [class.text-torque-cyan]="activeSection() === 'maintenance'"
+        [class.text-white/80]="activeSection() !== 'maintenance'">
+        <lucide-icon [img]="icons.FileText" class="w-4.5 h-4.5"></lucide-icon>
+        Maintenance Schedules
+      </button>
+      }
+      @if (availableSections()?.hasParts) {
+      <button (click)="setSection('parts')"
+        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
+        [class.bg-torque-cyan/10]="activeSection() === 'parts'"
+        [class.text-torque-cyan]="activeSection() === 'parts'"
+        [class.text-white/80]="activeSection() !== 'parts'">
+        <lucide-icon [img]="icons.Package" class="w-4.5 h-4.5"></lucide-icon>
+        Parts Catalog
+      </button>
+      }
+      <button (click)="setSection('common-issues')"
+        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
+        [class.bg-torque-cyan/10]="activeSection() === 'common-issues'"
+        [class.text-torque-cyan]="activeSection() === 'common-issues'"
+        [class.text-white/80]="activeSection() !== 'common-issues'">
+        <lucide-icon [img]="icons.Lightbulb" class="w-4.5 h-4.5"></lucide-icon>
+        Common Issues &amp; AI
+      </button>
+      <button (click)="setSection('browse-all')"
+        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
+        [class.bg-torque-cyan/10]="activeSection() === 'browse-all'"
+        [class.text-torque-cyan]="activeSection() === 'browse-all'"
+        [class.text-white/80]="activeSection() !== 'browse-all'">
+        <lucide-icon [img]="icons.Package" class="w-4.5 h-4.5"></lucide-icon>
+        Browse All Data
+      </button>
+
+      <div class="pt-4 mt-2 border-t border-white/5 space-y-2">
+        <a routerLink="/credits" (click)="toggleMobileMenu()"
+          class="flex items-center justify-center gap-2 w-full py-3 text-sm font-medium text-torque-cyan hover:text-white border border-torque-cyan/30 hover:bg-torque-cyan/10 rounded-xl transition-colors">
+          Account &amp; Credits
+        </a>
+        <a routerLink="/" (click)="toggleMobileMenu()"
+          class="block w-full text-center py-3 text-sm text-torque-muted hover:text-white transition-colors">
+          Exit to Home
+        </a>
+      </div>
     </div>
   </div>
   }
@@ -55,23 +165,47 @@
       </app-dashboard-search>
 
       <!-- Search Results -->
-      @if (searchTerm() && filteredArticles().length > 0) {
+      @if (searchTerm() && searchTerm().length >= 2) {
       <div class="mt-3 glass-card overflow-hidden animate-fade-in">
         <div class="px-4 py-2.5 flex justify-between items-center border-b border-white/5 bg-white/[0.03]">
+          @if (searchResultsState.isLoading()) {
+          <div class="flex items-center gap-2">
+            <div class="w-3 h-3 border-2 rounded-full animate-spin"
+              style="border-color:rgba(255,255,255,0.1);border-top-color:hsl(191,97%,50%)"></div>
+            <h3 class="text-[10px] font-mono uppercase tracking-[0.2em] text-torque-muted">Searching...</h3>
+          </div>
+          } @else {
           <h3 class="text-[10px] font-mono uppercase tracking-[0.2em] text-torque-cyan">Results ({{
             filteredArticles().length }})</h3>
+          }
           <button (click)="onSearch('')"
             class="text-xs text-torque-muted hover:text-white transition-colors">Clear</button>
         </div>
-        <div class="overflow-y-auto">
-          @for (article of filteredArticles().slice(0, 15); track article.id) {
+        @if (filteredArticles().length > 0) {
+        <div class="overflow-y-auto max-h-[400px]">
+          @for (article of filteredArticles().slice(0, 25); track article.id) {
           <a href="javascript:void(0)" (click)="onArticleClick($event, article)"
             class="flex items-center gap-3 px-4 py-3 transition-all group hover:bg-white/[0.03] border-b border-white/[0.03]">
             <lucide-icon [img]="icons.FileText" class="w-4 h-4 flex-shrink-0 text-torque-muted"></lucide-icon>
-            <span class="text-sm font-medium text-white/80 group-hover:text-white">{{ article.title }}</span>
+            <div class="flex-1 min-w-0">
+              <span class="text-sm font-medium text-white/80 group-hover:text-white block truncate">{{ article.title }}</span>
+              @if (article.bucket) {
+              <span class="text-[10px] text-torque-muted font-mono uppercase tracking-wider">{{ article.bucket }}</span>
+              }
+            </div>
           </a>
           }
+          @if (filteredArticles().length > 25) {
+          <div class="px-4 py-2 text-center text-xs text-torque-muted border-t border-white/5">
+            Showing 25 of {{ filteredArticles().length }} results
+          </div>
+          }
         </div>
+        } @else if (!searchResultsState.isLoading()) {
+        <div class="px-4 py-8 text-center text-sm text-torque-muted">
+          No results found for "{{ searchTerm() }}"
+        </div>
+        }
       </div>
       }
     </div>
@@ -89,16 +223,124 @@
       <div class="space-y-6 animate-fade-in-up">
         <div class="pb-4 border-b border-white/5">
           <p class="section-label">Tactical Overview</p>
+          <h2 class="section-title">{{ vehicleName() || 'Vehicle Dashboard' }}</h2>
           <p class="text-sm mt-1 text-torque-secondary">Primary systems and vital statistics</p>
         </div>
 
+        <!-- Quick Access Section Cards -->
+        @if (availableSections(); as avail) {
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          @if (avail.hasDtcs) {
+          <button (click)="setSection('dtcs')"
+            class="glass-card p-4 text-left group hover:border-red-500/20 transition-all">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center bg-red-500/10 mb-3">
+              <lucide-icon [img]="icons.TriangleAlert" class="w-4.5 h-4.5 text-red-400"></lucide-icon>
+            </div>
+            <p class="text-xs font-mono uppercase tracking-wider text-torque-muted mb-0.5">Diagnostics</p>
+            <p class="text-sm font-semibold text-white group-hover:text-red-300 transition-colors">Trouble Codes</p>
+          </button>
+          }
+          @if (avail.hasTsbs) {
+          <button (click)="setSection('tsbs')"
+            class="glass-card p-4 text-left group hover:border-amber-500/20 transition-all">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center bg-amber-500/10 mb-3">
+              <lucide-icon [img]="icons.FileText" class="w-4.5 h-4.5 text-amber-400"></lucide-icon>
+            </div>
+            <p class="text-xs font-mono uppercase tracking-wider text-torque-muted mb-0.5">Service Info</p>
+            <p class="text-sm font-semibold text-white group-hover:text-amber-300 transition-colors">Bulletins</p>
+          </button>
+          }
+          @if (avail.hasProcedures) {
+          <button (click)="setSection('procedures')"
+            class="glass-card p-4 text-left group hover:border-blue-500/20 transition-all">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center bg-blue-500/10 mb-3">
+              <lucide-icon [img]="icons.Wrench" class="w-4.5 h-4.5 text-blue-400"></lucide-icon>
+            </div>
+            <p class="text-xs font-mono uppercase tracking-wider text-torque-muted mb-0.5">Service</p>
+            <p class="text-sm font-semibold text-white group-hover:text-blue-300 transition-colors">Procedures</p>
+          </button>
+          }
+          @if (avail.hasDiagrams) {
+          <button (click)="setSection('diagrams')"
+            class="glass-card p-4 text-left group hover:border-purple-500/20 transition-all">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center bg-purple-500/10 mb-3">
+              <lucide-icon [img]="icons.Package" class="w-4.5 h-4.5 text-purple-400"></lucide-icon>
+            </div>
+            <p class="text-xs font-mono uppercase tracking-wider text-torque-muted mb-0.5">Wiring</p>
+            <p class="text-sm font-semibold text-white group-hover:text-purple-300 transition-colors">Diagrams</p>
+          </button>
+          }
+          @if (avail.hasSpecs) {
+          <button (click)="setSection('specs')"
+            class="glass-card p-4 text-left group hover:border-emerald-500/20 transition-all">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center bg-emerald-500/10 mb-3">
+              <lucide-icon [img]="icons.FileText" class="w-4.5 h-4.5 text-emerald-400"></lucide-icon>
+            </div>
+            <p class="text-xs font-mono uppercase tracking-wider text-torque-muted mb-0.5">Tech Specs</p>
+            <p class="text-sm font-semibold text-white group-hover:text-emerald-300 transition-colors">Specs &amp; Fluids</p>
+          </button>
+          }
+          @if (avail.hasMaintenance) {
+          <button (click)="setSection('maintenance')"
+            class="glass-card p-4 text-left group hover:border-cyan-500/20 transition-all">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center bg-cyan-500/10 mb-3">
+              <lucide-icon [img]="icons.FileText" class="w-4.5 h-4.5 text-cyan-400"></lucide-icon>
+            </div>
+            <p class="text-xs font-mono uppercase tracking-wider text-torque-muted mb-0.5">Scheduled</p>
+            <p class="text-sm font-semibold text-white group-hover:text-cyan-300 transition-colors">Maintenance</p>
+          </button>
+          }
+          @if (avail.hasParts) {
+          <button (click)="setSection('parts')"
+            class="glass-card p-4 text-left group hover:border-orange-500/20 transition-all">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center bg-orange-500/10 mb-3">
+              <lucide-icon [img]="icons.Package" class="w-4.5 h-4.5 text-orange-400"></lucide-icon>
+            </div>
+            <p class="text-xs font-mono uppercase tracking-wider text-torque-muted mb-0.5">Inventory</p>
+            <p class="text-sm font-semibold text-white group-hover:text-orange-300 transition-colors">Parts</p>
+          </button>
+          }
+          <button (click)="setSection('common-issues')"
+            class="glass-card p-4 text-left group hover:border-[hsl(191,97%,50%)]/20 transition-all">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center bg-[hsl(191,97%,50%)]/10 mb-3">
+              <lucide-icon [img]="icons.Lightbulb" class="w-4.5 h-4.5 text-torque-cyan"></lucide-icon>
+            </div>
+            <p class="text-xs font-mono uppercase tracking-wider text-torque-muted mb-0.5">Intelligence</p>
+            <p class="text-sm font-semibold text-white group-hover:text-torque-cyan transition-colors">AI Solutions</p>
+          </button>
+        </div>
+        } @else {
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          @for (i of [1,2,3,4,5,6]; track i) {
+          <div class="glass-card p-4 animate-pulse">
+            <div class="w-9 h-9 rounded-lg bg-white/5 mb-3"></div>
+            <div class="h-3 w-16 bg-white/5 rounded mb-1.5"></div>
+            <div class="h-4 w-24 bg-white/5 rounded"></div>
+          </div>
+          }
+        </div>
+        }
+
         @if (availableSections()?.hasSpecs) {
         <app-specs-fluids-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
-          [motorVehicleId]="motorVehicleId()">
+          [motorVehicleId]="motorVehicleId()" [vehicleName]="vehicleName()">
         </app-specs-fluids-section>
         }
 
-
+        <!-- Browse All Link -->
+        <button (click)="setSection('browse-all')"
+          class="w-full glass-card p-4 flex items-center justify-between group hover:border-[hsl(191,97%,50%)]/20 transition-all">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center bg-[hsl(191,97%,50%)]/10">
+              <lucide-icon [img]="icons.Package" class="w-4.5 h-4.5 text-torque-cyan"></lucide-icon>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-white group-hover:text-torque-cyan transition-colors">Browse All Data</p>
+              <p class="text-xs text-torque-muted">View the complete reference catalog</p>
+            </div>
+          </div>
+          <lucide-icon [img]="icons.Package" class="w-4 h-4 text-torque-muted group-hover:text-torque-cyan transition-colors"></lucide-icon>
+        </button>
       </div>
       }
       @case ('dtcs') {
@@ -108,7 +350,7 @@
           <h2 class="section-title">Diagnostic Trouble Codes</h2>
         </div>
         <app-dtc-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
-          [motorVehicleId]="motorVehicleId()">
+          [motorVehicleId]="motorVehicleId()" [vehicleName]="vehicleName()">
         </app-dtc-section>
       </div>
       }
@@ -119,7 +361,7 @@
           <h2 class="section-title">Technical Service Bulletins</h2>
         </div>
         <app-tsb-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
-          [motorVehicleId]="motorVehicleId()">
+          [motorVehicleId]="motorVehicleId()" [vehicleName]="vehicleName()">
         </app-tsb-section>
       </div>
       }
@@ -141,7 +383,7 @@
           <h2 class="section-title">Wiring Diagrams</h2>
         </div>
         <app-diagrams-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
-          [motorVehicleId]="motorVehicleId()">
+          [motorVehicleId]="motorVehicleId()" [vehicleName]="vehicleName()">
         </app-diagrams-section>
       </div>
       }
@@ -152,7 +394,7 @@
           <h2 class="section-title">Repair & Service Procedures</h2>
         </div>
         <app-procedures-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
-          [motorVehicleId]="motorVehicleId()">
+          [motorVehicleId]="motorVehicleId()" [vehicleName]="vehicleName()">
         </app-procedures-section>
       </div>
       }
@@ -162,7 +404,8 @@
           <p class="section-label">Parts</p>
           <h2 class="section-title">Component Inventory</h2>
         </div>
-        <app-parts-section [contentSource]="contentSource()" [vehicleId]="vehicleId()">
+        <app-parts-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
+          [vehicleName]="vehicleName()">
         </app-parts-section>
       </div>
       }
@@ -184,7 +427,7 @@
           <h2 class="section-title">Component Locations</h2>
         </div>
         <app-component-locations-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
-          [motorVehicleId]="motorVehicleId()">
+          [motorVehicleId]="motorVehicleId()" [vehicleName]="vehicleName()">
         </app-component-locations-section>
       </div>
       }
@@ -195,7 +438,7 @@
           <h2 class="section-title">Maintenance Schedules</h2>
         </div>
         <app-maintenance-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
-          [motorVehicleId]="motorVehicleId()">
+          [motorVehicleId]="motorVehicleId()" [vehicleName]="vehicleName()">
         </app-maintenance-section>
       </div>
       }
@@ -260,8 +503,8 @@
                 <ul class="space-y-1.5">
                   @for (article of bucket.articles; track article.id) {
                   <li>
-                    <a [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', article.id]"
-                      class="block text-sm py-1 text-torque-secondary hover:text-white transition-colors">
+                    <a href="javascript:void(0)" (click)="onArticleClick($event, article)"
+                      class="block text-sm py-1 text-torque-secondary hover:text-white transition-colors cursor-pointer">
                       {{ article.title }}
                     </a>
                   </li>
@@ -279,8 +522,8 @@
                     <ul class="space-y-1 pl-2">
                       @for (art of child.articles; track art.id) {
                       <li>
-                        <a [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', art.id]"
-                          class="block text-xs py-0.5 text-torque-secondary hover:text-white transition-colors">
+                        <a href="javascript:void(0)" (click)="onArticleClick($event, art)"
+                          class="block text-xs py-0.5 text-torque-secondary hover:text-white transition-colors cursor-pointer">
                           {{ art.title }}
                         </a>
                       </li>
