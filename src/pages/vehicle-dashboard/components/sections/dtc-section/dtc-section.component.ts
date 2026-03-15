@@ -113,12 +113,13 @@ export class DtcSectionComponent implements OnInit {
                     contentSource: this.contentSource,
                     vehicleId: this.vehicleId,
                     articleId: dtc.id,
-                    articleTitleInput: `${dtc.code} - ${dtc.description}`
+                    articleTitleInput: `${dtc.code} - ${dtc.description}`,
+                    moduleType: 'dtcs'
                 }
             );
         } else {
             this.router.navigate(['/vehicle', this.contentSource, this.vehicleId, 'article', dtc.id], {
-                queryParams: { title: `${dtc.code} - ${dtc.description}` }
+                queryParams: { title: `${dtc.code} - ${dtc.description}`, moduleType: 'dtcs' }
             });
         }
     }

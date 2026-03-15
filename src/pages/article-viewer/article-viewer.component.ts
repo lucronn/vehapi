@@ -9,12 +9,14 @@ import { HttpClient } from '@angular/common/http';
 import { MotorApiService } from '../../services/motor-api.service';
 import { MotorHtmlProcessorService } from '../../services/motor-html-processor.service';
 import { AiRewriteService } from '../../services/ai-rewrite.service';
-import { LucideAngularModule, ArrowLeft, Maximize2, List, X, Sparkles, BookOpen } from 'lucide-angular';
+import { LucideAngularModule, ArrowLeft, Maximize2, List, X, Sparkles, BookOpen, Lock } from 'lucide-angular';
 import { ImageViewerModalComponent } from './components/image-viewer-modal/image-viewer-modal.component';
 import { TutorialComponent } from '../../components/tutorial/tutorial.component';
 import { TutorialStep } from '../../models/motor.models';
 import { WindowManagerService } from '../../services/window-manager.service';
 import { DataSyncService } from '../../services/data-sync.service';
+import { CreditsService } from '../../services/credits.service';
+import { Router } from '@angular/router';
 
 export interface TableOfContents {
   id: string;
@@ -49,8 +51,9 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   @Input() vehicleId?: string;
   @Input() articleId?: string;
   @Input() articleTitleInput?: string;
-  @Input() htmlContentInput?: string; // New input for direct content
-  @Input() windowId?: string; // ID of the window if in window mode
+  @Input() htmlContentInput?: string;
+  @Input() windowId?: string;
+  @Input() moduleType?: string;
 
   private route = inject(ActivatedRoute);
   private motorApi = inject(MotorApiService);
@@ -59,8 +62,10 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   private sanitizer = inject(DomSanitizer);
   private windowManager = inject(WindowManagerService);
   private dataSync = inject(DataSyncService);
+  protected creditsService = inject(CreditsService);
+  private router = inject(Router);
 
-  readonly icons = { ArrowLeft, Maximize2, List, X, Sparkles, BookOpen };
+  readonly icons = { ArrowLeft, Maximize2, List, X, Sparkles, BookOpen, Lock };
 
   // Use a Subject to trigger data loading when inputs change or on init
   private loadTrigger = new Subject<void>();
@@ -91,6 +96,16 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   /** Raw processed HTML kept for tutorial generation */
   protected rawHtmlForTutorial = '';
 
+  /** Whether content is locked behind a credit paywall */
+  isLocked = computed(() => {
+    const mod = this.resolvedModuleType();
+    const vid = this.vehicleIdSig();
+    if (!mod || !vid) return false;
+    return !this.creditsService.hasAccess(vid, mod);
+  });
+
+  resolvedModuleType = signal<string | null>(null);
+
   private http = inject(HttpClient);
 
   // Signal-safe accessors for template — fall back to route params when inputs are undefined
@@ -116,23 +131,18 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   }
 
   ngOnInit() {
-    // Check if we have inputs or need to read from route
-    console.log('[ArticleViewer] Init with inputs:', {
-      source: this.contentSource,
-      vehicle: this.vehicleId,
-      article: this.articleId
-    });
+    if (this.moduleType) {
+      this.resolvedModuleType.set(this.moduleType);
+    }
 
     if (this.articleId) {
       this.internalArticleId.set(this.articleId);
     }
 
-    // Check for passed state (from direct navigation on mobile)
     const state = typeof window !== 'undefined' ? window.history.state : null;
     if (state && state.content) {
       this.htmlContentInput = state.content;
       if (state.title) this.articleTitleInput = state.title;
-      console.log('[ArticleViewer] Loaded content from history state');
     }
 
     if (!this.contentSource || !this.vehicleId || !this.internalArticleId()) {
@@ -142,18 +152,15 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
         const aid = params.get('articleId') ?? '';
         this.internalArticleId.set(aid);
 
-        console.log('[ArticleViewer] Loaded params from route:', {
-          source: this.contentSource,
-          vehicle: this.vehicleId,
-          article: aid
-        });
-
-        // Also check query params for title
         this.route.queryParamMap.subscribe(qp => {
           const title = qp.get('title');
           if (title && !this.articleTitleInput) {
             this.articleTitleInput = title;
             this.articleTitle.set(this.cleanTitle(title));
+          }
+          const mod = qp.get('moduleType');
+          if (mod && !this.resolvedModuleType()) {
+            this.resolvedModuleType.set(mod);
           }
           this.loadData();
         });
@@ -175,13 +182,17 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
 
   loadData() {
     if (this.htmlContentInput) {
-      // If we have content input, we might still need to parse sections
       const { sections } = this.processHtml(this.htmlContentInput, this.contentSource || '', this.vehicleId || '');
       this.sections.set(sections);
       return;
     }
     const aid = this.internalArticleId();
     if (!this.contentSource || !this.vehicleId || !aid) return;
+
+    if (this.isLocked()) {
+      this.isLoading.set(false);
+      return;
+    }
 
     this.isLoading.set(true);
     this.error.set(null);
@@ -464,6 +475,10 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
 
   closeImageViewer() {
     this.selectedImageUrl.set(null);
+  }
+
+  navigateToCredits() {
+    this.router.navigate(['/credits']);
   }
 
   scrollToSection(id: string) {

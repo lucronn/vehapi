@@ -117,12 +117,13 @@ export class TsbSectionComponent implements OnInit {
                     contentSource: this.contentSource,
                     vehicleId: this.vehicleId,
                     articleId: tsb.id,
-                    articleTitleInput: tsb.title
+                    articleTitleInput: tsb.title,
+                    moduleType: 'tsbs'
                 }
             );
         } else {
             this.router.navigate(['/vehicle', this.contentSource, this.vehicleId, 'article', tsb.id], {
-                queryParams: { title: tsb.title }
+                queryParams: { title: tsb.title, moduleType: 'tsbs' }
             });
         }
     }

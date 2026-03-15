@@ -132,12 +132,13 @@ export class ProceduresSectionComponent implements OnInit {
                     contentSource: this.contentSource,
                     vehicleId: this.vehicleId,
                     articleId: procedure.id,
-                    articleTitleInput: procedure.title
+                    articleTitleInput: procedure.title,
+                    moduleType: 'procedures'
                 }
             );
         } else {
             this.router.navigate(['/vehicle', this.contentSource, this.vehicleId, 'article', procedure.id], {
-                queryParams: { title: procedure.title }
+                queryParams: { title: procedure.title, moduleType: 'procedures' }
             });
         }
     }

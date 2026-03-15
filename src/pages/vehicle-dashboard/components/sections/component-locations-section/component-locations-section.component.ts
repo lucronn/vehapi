@@ -73,20 +73,11 @@ export class ComponentLocationsSectionComponent implements OnInit {
         if (this.isUnlocking()) return;
 
         const cost = this.creditsService.COSTS.DIAGRAMS;
-        if (this.creditsService.balance() < cost) {
-            alert('Insufficient credits. Please purchase more.');
-            return;
-        }
+        if (this.creditsService.balance() < cost) return;
 
-        if (confirm(`Unlock Component Locations for ${cost} credits?`)) {
-            this.isUnlocking.set(true);
-            const success = await this.creditsService.unlockModule(this.vehicleId, this.vehicleName, 'diagrams', cost);
-            this.isUnlocking.set(false);
-
-            if (!success) {
-                alert('Unlock failed. Please try again.');
-            }
-        }
+        this.isUnlocking.set(true);
+        await this.creditsService.unlockModule(this.vehicleId, this.vehicleName, 'diagrams', cost);
+        this.isUnlocking.set(false);
     }
 
     viewLocation(item: ComponentLocation) {
@@ -103,12 +94,13 @@ export class ComponentLocationsSectionComponent implements OnInit {
                     contentSource: this.contentSource,
                     vehicleId: this.vehicleId,
                     articleId: item.id,
-                    articleTitleInput: item.title
+                    articleTitleInput: item.title,
+                    moduleType: 'diagrams'
                 }
             );
         } else {
             this.router.navigate(['/vehicle', this.contentSource, this.vehicleId, 'article', item.id], {
-                queryParams: { title: item.title }
+                queryParams: { title: item.title, moduleType: 'diagrams' }
             });
         }
     }
