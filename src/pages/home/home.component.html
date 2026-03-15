@@ -220,10 +220,22 @@
           </div>
         </div>
 
+        <!-- VIN Hint / Status -->
+        @if (isPartialVin()) {
+        <p class="text-center text-sm mt-4 font-mono animate-fade-in text-amber-400">
+          Looks like a VIN — enter all 17 characters ({{ searchInput().trim().length }}/17)
+        </p>
+        } @else if (isVin()) {
+        <p class="text-center text-sm mt-4 font-mono animate-fade-in text-emerald-400">
+          VIN detected — press Continue to search
+        </p>
+        } @else {
+        <p class="text-center text-sm text-torque-secondary mt-4 font-mono opacity-0 animate-fade-in stagger-3"
         <p class="text-center text-xs text-torque-muted mt-4 opacity-0 animate-fade-in stagger-3"
           style="animation-fill-mode: forwards">
           You can also enter a 17-character VIN
         </p>
+        }
 
         <!-- Mobile Go Button -->
         <button (click)="submitSearch()"

@@ -175,7 +175,15 @@ export class HomeComponent implements OnInit {
     return 'Model';
   });
 
-  isVin = computed(() => this.searchTerm().length > 10 && /^[A-HJ-NPR-Z0-9]{17}$/i.test(this.searchTerm()));
+  isVin = computed(() => {
+    const term = this.searchTerm().trim();
+    return term.length === 17 && /^[A-HJ-NPR-Z0-9]{17}$/i.test(term);
+  });
+
+  isPartialVin = computed(() => {
+    const term = this.searchTerm().trim();
+    return term.length >= 10 && term.length < 17 && /^[A-HJ-NPR-Z0-9]+$/i.test(term);
+  });
 
   currentPlaceholder = computed(() => {
     if (this.selectedVehicle()) return this.selectedVehicle()?.displayName;
