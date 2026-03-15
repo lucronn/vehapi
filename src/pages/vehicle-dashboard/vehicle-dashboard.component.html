@@ -11,11 +11,8 @@
     style="padding-top: calc(0.75rem + env(safe-area-inset-top, 0px)); padding-left: calc(1rem + env(safe-area-inset-left, 0px)); padding-right: calc(1rem + env(safe-area-inset-right, 0px));">
     <div class="flex items-center gap-2">
       <app-logo class="w-5 h-5"></app-logo>
-      <div>
-        <span class="text-xs font-mono uppercase tracking-[0.2em] text-torque-cyan block">Active</span>
-        <h1 class="text-sm font-heading font-bold tracking-tight truncate max-w-[200px] text-white">{{
-          vehicleName() || 'TORQUE' }}</h1>
-      </div>
+      <h1 class="text-sm font-heading font-bold tracking-tight truncate max-w-[220px] text-white">{{
+        vehicleName() || 'TORQUE' }}</h1>
     </div>
     <div class="flex items-center gap-1">
       <app-theme-toggle></app-theme-toggle>
@@ -88,8 +85,7 @@
       @case ('overview') {
       <div class="space-y-6 animate-fade-in-up">
         <div class="pb-4 border-b border-white/5">
-          <p class="section-label">Tactical Overview</p>
-          <p class="text-sm mt-1 text-torque-secondary">Primary systems and vital statistics</p>
+          <h2 class="section-title">Overview</h2>
         </div>
 
         @if (availableSections()?.hasSpecs) {
@@ -104,7 +100,6 @@
       @case ('dtcs') {
       <div class="space-y-6 animate-fade-in-up">
         <div class="pb-4 border-b border-white/5">
-          <p class="section-label">Diagnostics</p>
           <h2 class="section-title">Diagnostic Trouble Codes</h2>
         </div>
         <app-dtc-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
@@ -115,7 +110,6 @@
       @case ('tsbs') {
       <div class="space-y-6 animate-fade-in-up">
         <div class="pb-4 border-b border-white/5">
-          <p class="section-label">Service Info</p>
           <h2 class="section-title">Technical Service Bulletins</h2>
         </div>
         <app-tsb-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
@@ -126,8 +120,7 @@
       @case ('common-issues') {
       <div class="space-y-6 animate-fade-in-up">
         <div class="pb-4 border-b border-white/5">
-          <p class="section-label">Intelligence</p>
-          <h2 class="section-title">Common Issues & AI Solutions</h2>
+          <h2 class="section-title">Common Issues</h2>
         </div>
         <app-common-issues-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [vehicleName]="vehicleName()">
@@ -137,7 +130,6 @@
       @case ('diagrams') {
       <div class="space-y-6 animate-fade-in-up">
         <div class="pb-4 border-b border-white/5">
-          <p class="section-label">Wiring & Components</p>
           <h2 class="section-title">Wiring Diagrams</h2>
         </div>
         <app-diagrams-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
@@ -148,8 +140,7 @@
       @case ('procedures') {
       <div class="space-y-6 animate-fade-in-up">
         <div class="pb-4 border-b border-white/5">
-          <p class="section-label">Service</p>
-          <h2 class="section-title">Repair & Service Procedures</h2>
+          <h2 class="section-title">Service Procedures</h2>
         </div>
         <app-procedures-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
           [motorVehicleId]="motorVehicleId()">
@@ -159,8 +150,7 @@
       @case ('parts') {
       <div class="space-y-6 animate-fade-in-up">
         <div class="pb-4 border-b border-white/5">
-          <p class="section-label">Parts</p>
-          <h2 class="section-title">Component Inventory</h2>
+          <h2 class="section-title">Parts Catalog</h2>
         </div>
         <app-parts-section [contentSource]="contentSource()" [vehicleId]="vehicleId()">
         </app-parts-section>
@@ -169,7 +159,6 @@
       @case ('specs') {
       <div class="space-y-6 animate-fade-in-up">
         <div class="pb-4 border-b border-white/5">
-          <p class="section-label">Tech Specs</p>
           <h2 class="section-title">Specifications & Fluids</h2>
         </div>
         <app-specs-fluids-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
@@ -180,7 +169,6 @@
       @case ('component-locations') {
       <div class="space-y-6 animate-fade-in-up">
         <div class="pb-4 border-b border-white/5">
-          <p class="section-label">Locations</p>
           <h2 class="section-title">Component Locations</h2>
         </div>
         <app-component-locations-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
@@ -191,7 +179,6 @@
       @case ('maintenance') {
       <div class="space-y-6 animate-fade-in-up">
         <div class="pb-4 border-b border-white/5">
-          <p class="section-label">Maintenance</p>
           <h2 class="section-title">Maintenance Schedules</h2>
         </div>
         <app-maintenance-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
@@ -203,8 +190,7 @@
       <div class="space-y-6 animate-fade-in-up">
         <div class="pb-4 border-b border-white/5 flex items-center justify-between">
           <div>
-            <p class="section-label">All Data</p>
-            <h2 class="section-title">Reference Catalog</h2>
+            <h2 class="section-title">All Data</h2>
           </div>
           @if (searchResultsState.isCached()) {
           <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1.5" 

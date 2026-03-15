@@ -93,12 +93,7 @@ const MODULE_LABELS: Record<string, string> = {
         <!-- Not signed in: prompt to sign in or register -->
         @if (!authService.user()) {
         <div class="mb-6 p-5 rounded-xl bg-white/[0.04] border border-white/10">
-          <p class="text-sm text-gray-400 mb-1">Sign in or create an account to:</p>
-          <ul class="text-sm text-gray-300 list-disc list-inside space-y-0.5 mb-4">
-            <li>View your credit balance and purchase history</li>
-            <li>Buy credits and manage payment methods</li>
-            <li>See which vehicles and modules you’ve unlocked with credits</li>
-          </ul>
+          <p class="text-sm text-gray-400 mb-4">Sign in to view your balance, purchase credits, and manage unlocked vehicles.</p>
           <div class="flex flex-wrap gap-2">
             <button (click)="openAuthModal('signin')" class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-white text-sm font-medium">Sign in</button>
             <button (click)="openAuthModal('signup')" class="px-4 py-2 rounded-lg bg-torque-cyan text-black text-sm font-semibold hover:bg-torque-cyan/90">Create account</button>
@@ -199,7 +194,6 @@ const MODULE_LABELS: Record<string, string> = {
             <p class="text-xs text-gray-500 mt-4">
               <button (click)="openBillingPortal()" [disabled]="creditsService.portalLoading()"
                 class="text-torque-cyan hover:underline disabled:opacity-50">Manage payment methods and invoices</button>
-              (Stripe billing portal)
             </p>
           </div>
 
@@ -244,7 +238,7 @@ const MODULE_LABELS: Record<string, string> = {
             </div>
             <h3 class="text-lg font-semibold mb-2">No vehicles unlocked yet</h3>
             <p class="text-gray-500 text-sm max-w-xs mb-6">
-              When you unlock modules for a vehicle, it will appear here with a summary of your access.
+              Vehicles you unlock will appear here.
             </p>
             <a routerLink="/" class="px-5 py-2 bg-torque-cyan text-black text-sm font-bold rounded-full hover:bg-torque-cyan/90 transition-colors">
               Search Vehicles
@@ -282,7 +276,7 @@ const MODULE_LABELS: Record<string, string> = {
         <!-- ══════════════════════ HISTORY TAB (purchases + credit usage) ══════════════════════ -->
         @if (activeTab() === 'receipts') {
         <div class="animate-fade-in-up">
-          <p class="text-xs text-gray-500 mb-4">Credit purchases (top-ups) and credit usage (unlocks for vehicles).</p>
+          <p class="text-xs text-gray-500 mb-4">Purchases and usage history.</p>
           @if (creditsService.transactionsLoading()) {
           <div class="space-y-3">
             @for (i of [1,2,3,4,5]; track i) {
@@ -295,7 +289,7 @@ const MODULE_LABELS: Record<string, string> = {
               <lucide-icon [img]="icons.Receipt" class="w-8 h-8 text-gray-500"></lucide-icon>
             </div>
             <h3 class="text-lg font-semibold mb-2">No transactions yet</h3>
-            <p class="text-gray-500 text-sm">Credit purchases and unlocks (items purchased with credits) will appear here.</p>
+            <p class="text-gray-500 text-sm">Your transactions will appear here.</p>
           </div>
           } @else {
           <!-- Mobile: card layout -->
@@ -381,7 +375,7 @@ const MODULE_LABELS: Record<string, string> = {
                 <p class="text-sm text-gray-400 mb-1">Starter</p>
                 <p class="text-4xl font-mono font-bold text-torque-cyan mb-1">1,000</p>
                 <p class="text-sm text-gray-500 mb-5">credits</p>
-                <p class="text-xs text-gray-500 mb-6">Good for unlocking full specs on multiple vehicles.</p>
+                <p class="text-xs text-gray-500 mb-6">Unlock specs on a few vehicles.</p>
                 <div class="flex items-center justify-between">
                   <span class="text-xl font-bold">$10.00</span>
                   <span class="text-xs uppercase tracking-wider font-bold bg-white/10 px-3 py-1.5 rounded-full group-hover:bg-torque-cyan group-hover:text-black transition-colors">Buy Now</span>
@@ -398,7 +392,7 @@ const MODULE_LABELS: Record<string, string> = {
                 <p class="text-sm text-gray-400 mb-1">Standard</p>
                 <p class="text-4xl font-mono font-bold text-torque-cyan mb-1">2,500</p>
                 <p class="text-sm text-gray-500 mb-5">credits</p>
-                <p class="text-xs text-gray-500 mb-6">Best value for enthusiasts working on complex diagnostics.</p>
+                <p class="text-xs text-gray-500 mb-6">Full access to several vehicles.</p>
                 <div class="flex items-center justify-between">
                   <span class="text-xl font-bold">$25.00</span>
                   <span class="text-xs uppercase tracking-wider font-bold bg-torque-cyan/20 text-torque-cyan px-3 py-1.5 rounded-full group-hover:bg-torque-cyan group-hover:text-black transition-colors">Buy Now</span>
@@ -414,7 +408,7 @@ const MODULE_LABELS: Record<string, string> = {
                 <p class="text-sm text-gray-400 mb-1">Pro</p>
                 <p class="text-4xl font-mono font-bold text-torque-purple mb-1">5,000</p>
                 <p class="text-sm text-gray-500 mb-5">credits</p>
-                <p class="text-xs text-gray-500 mb-6">For professionals who need full access across many vehicles.</p>
+                <p class="text-xs text-gray-500 mb-6">Unlimited access across many vehicles.</p>
                 <div class="flex items-center justify-between">
                   <span class="text-xl font-bold">$50.00</span>
                   <span class="text-xs uppercase tracking-wider font-bold bg-white/10 px-3 py-1.5 rounded-full group-hover:bg-torque-purple group-hover:text-white transition-colors">Buy Now</span>
@@ -434,7 +428,7 @@ const MODULE_LABELS: Record<string, string> = {
               </div>
               }
             </div>
-            <p class="text-xs text-gray-600 mt-6 text-center">Secure payments via Stripe. All purchases are final.</p>
+            <p class="text-xs text-gray-600 mt-6 text-center">All purchases are final.</p>
           </div>
         </div>
         }
