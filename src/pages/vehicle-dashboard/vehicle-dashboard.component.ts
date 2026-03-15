@@ -13,6 +13,7 @@ import { VehicleDataService } from '../../services/vehicle-data.service';
 import { MotorApiService } from '../../services/motor-api.service';
 import { SearchResultsState } from '../../services/search-results.state';
 import { DataSyncService } from '../../services/data-sync.service';
+import { VehiclePersistenceService } from '../../services/vehicle-persistence.service';
 import { effect } from '@angular/core';
 
 // Components
@@ -79,6 +80,7 @@ export class VehicleDashboardComponent {
   private vehicleData = inject(VehicleDataService);
   public searchResultsState = inject(SearchResultsState);
   public dataSync = inject(DataSyncService);
+  private persistence = inject(VehiclePersistenceService);
 
   readonly icons = { Menu, X, House, TriangleAlert, FileText, Wrench, Package, Lightbulb };
 
@@ -162,6 +164,16 @@ export class VehicleDashboardComponent {
         } else {
           this.searchResultsState.search(cs, vid, '', mvid);
         }
+      }
+    });
+
+    // Persist vehicle for "welcome back" on home page
+    effect(() => {
+      const name = this.vehicleName();
+      const cs = this.contentSource();
+      const vid = this.vehicleId();
+      if (name && cs && vid && name !== 'Unknown Vehicle') {
+        this.persistence.saveVehicle({ name, contentSource: cs, vehicleId: vid });
       }
     });
 
