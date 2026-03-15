@@ -73,20 +73,11 @@ export class ComponentLocationsSectionComponent implements OnInit {
         if (this.isUnlocking()) return;
 
         const cost = this.creditsService.COSTS.DIAGRAMS;
-        if (this.creditsService.balance() < cost) {
-            alert('Insufficient credits. Please purchase more.');
-            return;
-        }
+        if (this.creditsService.balance() < cost) return;
 
-        if (confirm(`Unlock Component Locations for ${cost} credits?`)) {
-            this.isUnlocking.set(true);
-            const success = await this.creditsService.unlockModule(this.vehicleId, this.vehicleName, 'diagrams', cost);
-            this.isUnlocking.set(false);
-
-            if (!success) {
-                alert('Unlock failed. Please try again.');
-            }
-        }
+        this.isUnlocking.set(true);
+        await this.creditsService.unlockModule(this.vehicleId, this.vehicleName, 'diagrams', cost);
+        this.isUnlocking.set(false);
     }
 
     viewLocation(item: ComponentLocation) {

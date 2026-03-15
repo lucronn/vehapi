@@ -103,22 +103,14 @@ export class SpecsFluidsSectionComponent implements OnInit {
         if (this.isUnlocking()) return;
 
         const cost = this.creditsService.COSTS.SPECS;
-        if (this.creditsService.balance() < cost) {
-            alert('Insufficient credits. Please purchase more.');
-            return;
-        }
+        if (this.creditsService.balance() < cost) return;
 
-        if (confirm(`Unlock Specifications & Fluids for ${cost} credits?`)) {
-            this.isUnlocking.set(true);
-            const success = await this.creditsService.unlockModule(this.vehicleId, this.vehicleName, 'specs', cost);
-            this.isUnlocking.set(false);
+        this.isUnlocking.set(true);
+        const success = await this.creditsService.unlockModule(this.vehicleId, this.vehicleName, 'specs', cost);
+        this.isUnlocking.set(false);
 
-            if (!success) {
-                alert('Unlock failed. Please try again.');
-            } else {
-                // Update display since we are now unlocked
-                this.updateDisplayedItems();
-            }
+        if (success) {
+            this.updateDisplayedItems();
         }
     }
 

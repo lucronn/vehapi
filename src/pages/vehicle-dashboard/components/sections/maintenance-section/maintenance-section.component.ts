@@ -90,22 +90,14 @@ export class MaintenanceSectionComponent implements OnInit {
         if (this.isUnlocking()) return;
 
         const cost = this.creditsService.COSTS.MAINTENANCE;
-        if (this.creditsService.balance() < cost) {
-            alert('Insufficient credits. Please purchase more.');
-            return;
-        }
+        if (this.creditsService.balance() < cost) return;
 
-        if (confirm(`Unlock Maintenance Schedules for ${cost} credits?`)) {
-            this.isUnlocking.set(true);
-            const success = await this.creditsService.unlockModule(this.vehicleId, this.vehicleName, 'maintenance', cost);
-            this.isUnlocking.set(false);
+        this.isUnlocking.set(true);
+        const success = await this.creditsService.unlockModule(this.vehicleId, this.vehicleName, 'maintenance', cost);
+        this.isUnlocking.set(false);
 
-            if (!success) {
-                alert('Unlock failed. Please try again.');
-            } else {
-                // Update display since we are now unlocked
-                this.updateDisplayedSchedules();
-            }
+        if (success) {
+            this.updateDisplayedSchedules();
         }
     }
 }
