@@ -53,3 +53,16 @@ The script reads `supabase_schema.sql` from the repo root and executes it agains
 | `specifications`     | `vehicle_id, category, name`    | Specs/fluids                     |
 | `parts`              | `vehicle_id, part_number`        | Parts catalog                   |
 | `maintenance_schedules` | `vehicle_id, interval_value, action, item` | Maintenance intervals |
+
+## Test: one article per category
+
+To verify the pipeline without flooding the API, run the normalization test (one article per bucket only):
+
+```bash
+# From repo root; proxy must be running (e.g. npm run dev in vehapiproxi)
+VEHICLE_ID=2854 node vehapiproxi/scripts/test-normalization-one-per-category.js
+```
+
+Or from `vehapiproxi`: `npm run test:normalization` (set `VEHICLE_ID` in `.env`).
+
+The script: (1) clears that vehicle’s data from Supabase, (2) ensures the vehicle row exists, (3) fetches the articles catalog, (4) picks one article per bucket, (5) requests each article’s HTML (proxy enqueues background normalization), (6) waits ~35s, (7) prints row counts per table.
