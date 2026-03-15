@@ -45,19 +45,13 @@
     <!-- Welcome Back -->
     <div class="space-y-6 animate-fade-in-up" style="animation-fill-mode: both">
       <div class="text-center space-y-2 mb-8">
-        <h2 class="text-3xl sm:text-4xl md:text-5xl font-heading font-bold tracking-tight text-white">System Ready<span
+        <h2 class="text-3xl sm:text-4xl md:text-5xl font-heading font-bold tracking-tight text-white">Welcome Back<span
             class="text-torque-cyan">.</span></h2>
-        <p class="text-torque-secondary text-lg">Welcome back. Your vehicle session is currently active and
-          synchronized.</p>
       </div>
 
       <div class="glass-card neon-border-cyan p-6 space-y-5">
-        <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between">
           <div class="space-y-1">
-            <div class="flex items-center gap-2">
-              <div class="w-1 h-3 bg-[hsl(191,97%,50%)] rounded-full"></div>
-              <p class="text-[10px] font-mono uppercase tracking-[0.2em] text-torque-cyan">Active Vehicle</p>
-            </div>
             <h3 class="text-lg font-heading font-bold text-white">{{ vehicle.name }}</h3>
           </div>
           <div class="w-10 h-10 rounded-lg flex items-center justify-center bg-[hsl(191,97%,50%)]/10">
@@ -65,7 +59,7 @@
           </div>
         </div>
         <button (click)="continueToVehicle()" class="w-full btn-primary py-3 font-semibold">
-          Initialize Dashboard
+          Open Dashboard
         </button>
         <!-- Animated scan line -->
         <div class="absolute bottom-0 left-0 right-0 h-[2px] overflow-hidden">
@@ -86,19 +80,14 @@
     <!-- Search Experience -->
     <div class="space-y-6">
       <div class="text-center mb-10 animate-fade-in-up" style="animation-fill-mode: both">
-        <!-- Status Badge -->
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.03] border border-white/5 mb-6">
-          <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-          <span class="text-[10px] font-mono uppercase tracking-[0.2em] text-torque-secondary">Database Connected</span>
-        </div>
         <h2
           class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-heading font-bold tracking-tight leading-[1.1] text-white mb-4">
-          Professional <span
-            class="text-transparent bg-clip-text bg-gradient-to-r from-[hsl(191,97%,50%)] to-[hsl(263,83%,58%)]">Intelligence</span>
-          <br class="hidden sm:block" /> for your vehicle.
+          Repair <span
+            class="text-transparent bg-clip-text bg-gradient-to-r from-[hsl(191,97%,50%)] to-[hsl(263,83%,58%)]">data</span>,
+          <br class="hidden sm:block" /> instantly.
         </h2>
         <p class="text-torque-secondary text-base md:text-lg max-w-xl mx-auto leading-relaxed">
-          Access manufacturer specs, diagrams, and AI&#8209;powered troubleshooting instantly.
+          OEM specifications, wiring diagrams, diagnostic codes, and service procedures.
         </p>
       </div>
 
@@ -242,8 +231,9 @@
         </p>
         } @else {
         <p class="text-center text-sm text-torque-secondary mt-4 font-mono opacity-0 animate-fade-in stagger-3"
+        <p class="text-center text-xs text-torque-muted mt-4 opacity-0 animate-fade-in stagger-3"
           style="animation-fill-mode: forwards">
-          TIP: Enter a 17-character VIN for instant vehicle identification
+          You can also enter a 17-character VIN
         </p>
         }
 
@@ -277,12 +267,10 @@
     }
   </main>
 
-  <!-- Footer -->
   <footer class="relative z-10 py-6 text-center">
     <div class="flex items-center justify-center gap-3">
       <div class="h-px w-16 bg-gradient-to-r from-transparent to-white/10"></div>
-      <span class="text-[10px] font-mono uppercase tracking-[0.2em] text-torque-muted">Powered by Gemini & MOTOR®
-        Data</span>
+      <span class="text-[10px] font-mono uppercase tracking-[0.2em] text-torque-muted">MOTOR® Data</span>
       <div class="h-px w-16 bg-gradient-to-l from-transparent to-white/10"></div>
     </div>
   </footer>

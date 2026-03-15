@@ -7,7 +7,8 @@ function determineSchemaType(urlPath) {
     if (urlPath.includes('/dtcs') || urlPath.includes('/dtc/')) return 'dtcs';
     if (urlPath.includes('/tsbs') || urlPath.includes('/tsb/')) return 'tsbs';
     if (urlPath.includes('/specifications') || urlPath.includes('/specs')) return 'specifications';
-    if (/\/article\/[^/]+$/.test(urlPath) || urlPath.includes('/repair')) return 'procedures';
+    // Match /article/:id or /article/:id/html (single-article content → procedures table; AI parses structure)
+    if (/\/article\/[^/?]+(\/html)?$/.test(urlPath) || urlPath.includes('/repair')) return 'procedures';
     if (urlPath.includes('/years') || urlPath.includes('/makes') || urlPath.includes('/models') || urlPath.includes('/engines')) return 'metadata';
     if (urlPath.includes('/articles/v2')) return 'articles';
     return null;
@@ -37,6 +38,9 @@ function normalizeForSupabase(data, schemaType) {
     const out = { ...data };
 
     if (schemaType === 'dtcs') {
+        out.description = (out.description != null && typeof out.description === 'string') ? out.description : '';
+        out.monitor_strategy = (out.monitor_strategy != null && typeof out.monitor_strategy === 'string') ? out.monitor_strategy : null;
+        out.malfunction_criteria = (out.malfunction_criteria != null && typeof out.malfunction_criteria === 'string') ? out.malfunction_criteria : null;
         out.possible_causes = ensureArray(out.possible_causes);
         out.symptoms = ensureArray(out.symptoms);
         out.diagnostic_steps = ensureArray(out.diagnostic_steps).map(s => ({
@@ -48,13 +52,18 @@ function normalizeForSupabase(data, schemaType) {
             warning: s.warning ?? ''
         }));
     } else if (schemaType === 'tsbs') {
+        out.summary = (out.summary != null && typeof out.summary === 'string') ? out.summary : null;
+        out.content = (out.content != null && typeof out.content === 'string') ? out.content : null;
         out.affected_components = ensureArray(out.affected_components);
         out.models_affected = ensureArray(out.models_affected);
+        out.content_html = (out.content != null && typeof out.content === 'string') ? out.content : null;
         if (out.issue_date && typeof out.issue_date === 'string') {
             const parsed = new Date(out.issue_date);
             out.issue_date = isNaN(parsed.getTime()) ? null : parsed.toISOString().slice(0, 10);
         }
     } else if (schemaType === 'procedures') {
+        out.description = (out.description != null && typeof out.description === 'string') ? out.description : null;
+        out.cautions = (out.cautions != null && typeof out.cautions === 'string') ? out.cautions : null;
         out.steps = ensureArray(out.steps).map(s => ({
             order: s.order ?? 0,
             text: s.text ?? '',
@@ -70,6 +79,11 @@ function normalizeForSupabase(data, schemaType) {
         }));
         out.time_estimate_hours = ensureNum(out.time_estimate_hours);
     } else if (schemaType === 'specifications') {
+        out.category = out.category != null ? String(out.category) : '';
+        out.name = out.name != null ? String(out.name) : '';
+        out.value = out.value != null ? String(out.value) : '';
+        out.unit = (out.unit != null && typeof out.unit === 'string') ? out.unit : null;
+        out.display_text = (out.display_text != null && typeof out.display_text === 'string') ? out.display_text : null;
         out.metadata = out.metadata && typeof out.metadata === 'object' ? out.metadata : null;
     }
 
@@ -175,6 +189,7 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
             return;
         }
 
+        // external_id is always set for procedures (article id from URL) so future conflict key vehicle_id,external_id is ready.
         const attachMeta = (item) => {
             item.vehicle_id = vehicleIdStr;
             if (externalIdStr) {
@@ -189,6 +204,14 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
         }
 
         const normalized = normalizeForSupabase(parsedData, targetSchema);
+        // Content tables store full HTML in content_html for cache response. Use raw when it's HTML.
+        const rawIsHtml = typeof rawData === 'string' && rawData.trim().startsWith('<');
+        if (rawIsHtml) {
+            const payload = Array.isArray(normalized) ? normalized : [normalized];
+            payload.forEach(row => {
+                row.content_html = row.content_html || rawData;
+            });
+        }
         const result = await insertParsedData(targetSchema, normalized);
 
         if (!result.success) {

@@ -52,6 +52,7 @@ export interface RequiredPart {
 
 /**
  * Standardized Repair Procedure
+ * DB table uses content_html for full article HTML (cache response).
  */
 export interface NormalizedProcedure {
   id?: string;
@@ -60,6 +61,8 @@ export interface NormalizedProcedure {
   external_id?: string;
   title: string;
   description?: string;
+  /** Full article HTML when available; maps to DB column content_html. */
+  content_html?: string;
   steps: ProcedureStep[];
   tools_required: string[];
   parts_required: RequiredPart[];
@@ -69,6 +72,7 @@ export interface NormalizedProcedure {
 
 /**
  * Technical Service Bulletin (TSB)
+ * DB column for full HTML is content_html; AI/output uses content (pipeline maps content → content_html).
  */
 export interface NormalizedTSB {
   id?: string;
@@ -77,13 +81,16 @@ export interface NormalizedTSB {
   issue_date?: string; // ISO Date string
   title: string;
   summary?: string;
-  content: string; // Full HTML or Text content
+  content: string; // Full HTML or text from AI; pipeline copies to content_html for DB
+  /** Maps to DB column content_html; set from content in normalizeForSupabase. */
+  content_html?: string;
   affected_components: string[];
   models_affected?: string[];
 }
 
 /**
  * Diagnostic Step for DTCs
+ * Aligned with ai_parser SCHEMAS.dtcs.diagnostic_steps and normalizeForSupabase output.
  */
 export interface DiagnosticStep {
   order: number;
@@ -91,10 +98,12 @@ export interface DiagnosticStep {
   result_match: string; // e.g. "Voltage > 12V"
   action_if_match: string; // e.g. "Go to Step 5"
   action_if_not_match: string; // e.g. "Replace Sensor"
+  warning?: string; // Optional safety/warning text; retained from AI and pipeline
 }
 
 /**
  * Diagnostic Trouble Code (DTC)
+ * DB table has content_html for full article HTML (cache response).
  */
 export interface NormalizedDTC {
   id?: string;
@@ -106,10 +115,14 @@ export interface NormalizedDTC {
   diagnostic_steps?: DiagnosticStep[];
   monitor_strategy?: string;
   malfunction_criteria?: string;
+  /** Full article HTML when available; maps to DB column content_html. */
+  content_html?: string;
 }
 
 /**
  * Vehicle Specification
+ * Aligned with ai_parser SCHEMAS.specifications. DB table may only have category, name, value;
+ * unit, display_text, metadata are in the contract for pipeline/API and future columns.
  */
 export interface NormalizedSpecification {
   id?: string;
@@ -124,6 +137,8 @@ export interface NormalizedSpecification {
 
 /**
  * Maintenance Schedule Item
+ * DB columns: vehicle_id, interval_value, interval_unit, action, item, description, frequency_code.
+ * is_severe_service, labor_time_hours are in contract for future API/schema use.
  */
 export interface NormalizedMaintenanceSchedule {
   id?: string;
@@ -153,6 +168,8 @@ export interface NormalizedLabor {
 
 /**
  * Vehicle Part
+ * DB columns: vehicle_id, part_number, description, manufacturer, list_price, dealer_price.
+ * quantity, fitment_notes are in contract for when API/DB support them.
  */
 export interface NormalizedPart {
   id?: string;
@@ -188,10 +205,11 @@ export interface NormalizedDiagram {
 
 /**
  * AI Processing Log Status
+ * DB table ai_processing_logs has: source_file, category, status, error_message, tokens_used, processed_at (no vehicle_id).
  */
 export interface AIProcessingLog {
   id?: string;
-  vehicle_id: string;
+  vehicle_id?: string; // Optional; current schema does not have this column
   source_file: string;
   category: string;
   status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';

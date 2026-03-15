@@ -123,21 +123,22 @@ export class DataSyncService {
         const rawHtml = (contentRes?.body as any)?.html || '';
 
         const articleData = {
-            id: normalizedId,
             original_id: item.id,
             title: item.title || item.code || '',
+            subtitle: item.subtitle ?? null,
+            thumbnail_href: item.thumbnailHref ?? null,
             original_content: rawHtml,
             enhanced_content: '',
             vehicle_id: vid,
+            content_source: cs,
             source: cs,
             bucket: item.bucket || '',
             parent_bucket: item.parentBucket || '',
             updated_at: new Date().toISOString()
         };
 
-        await this.supabase.client.from('articles').upsert(articleData, { onConflict: 'vehicle_id, original_id' });
-        
-        return articleData;
+        const { data: upserted } = await this.supabase.client.from('articles').upsert(articleData, { onConflict: 'vehicle_id,original_id' }).select().single();
+        return upserted ?? articleData;
         } finally {
             this.inProgressArticleSyncs.delete(syncKey);
         }
@@ -160,7 +161,7 @@ export class DataSyncService {
                     source: cs,
                     issues,
                     updated_at: new Date().toISOString()
-                });
+                }, { onConflict: 'vehicle_id' });
             }
         }
     }
@@ -174,20 +175,21 @@ export class DataSyncService {
                 const specData = fluids.map((f: any) => ({
                     vehicle_id: vid,
                     category: 'Fluids',
-                    name: f.title,
-                    value: f.capacity || '',
-                    unit: '',
-                    display_text: `${f.capacity || ''} - ${f.specification || ''} `,
-                    metadata: { id: f.id, bucket: f.bucket, specification: f.specification },
+                    name: f.title ?? '',
+                    value: f.capacity ?? '',
+                    unit: f.unit ?? null,
+                    display_text: (f.capacity || f.specification) ? `${f.capacity || ''} - ${f.specification || ''}`.trim() : null,
+                    metadata: (f.id != null || f.bucket != null || f.specification != null) ? { id: f.id, bucket: f.bucket, specification: f.specification } : null,
                     updated_at: new Date().toISOString()
                 }));
-                await this.supabase.client.from('specifications').upsert(specData);
+                await this.supabase.client.from('specifications').upsert(specData, { onConflict: 'vehicle_id,category,name' });
             }
         } catch (e) {
             console.error('Fluids sync failed', e);
         }
     }
 
+    /** Parts: payload matches DB columns (vehicle_id, part_number, description, manufacturer, list_price, dealer_price). NormalizedPart also has quantity, fitment_notes for when API/DB support them. */
     private async syncParts(cs: string, vid: string) {
         try {
             const res = await lastValueFrom(this.motorApi.getParts(cs, vid));
@@ -195,14 +197,14 @@ export class DataSyncService {
             if (parts.length > 0) {
                 const partData = parts.map((p: any) => ({
                     vehicle_id: vid,
-                    part_number: p.partNumber,
-                    description: p.description,
-                    manufacturer: p.manufacturer,
-                    list_price: p.listPrice,
-                    dealer_price: p.dealerPrice,
+                    part_number: p.partNumber ?? '',
+                    description: p.description ?? null,
+                    manufacturer: p.manufacturer ?? null,
+                    list_price: p.listPrice ?? null,
+                    dealer_price: p.dealerPrice ?? null,
                     updated_at: new Date().toISOString()
                 }));
-                await this.supabase.client.from('parts').upsert(partData);
+                await this.supabase.client.from('parts').upsert(partData, { onConflict: 'vehicle_id,part_number' });
             }
         } catch (e) {
             console.error('Parts sync failed', e);
@@ -225,8 +227,9 @@ export class DataSyncService {
                             interval_value: interval,
                             interval_unit: 'Miles',
                             action: s.action || 'Inspect/Replace',
-                            item: s.description || '',
-                            description: s.description || '',
+                            item: s.description || s.item || '',
+                            description: s.description ?? null,
+                            frequency_code: s.frequency_code ?? s.frequency ?? null,
                             updated_at: new Date().toISOString()
                         });
                     });
@@ -236,7 +239,7 @@ export class DataSyncService {
             }
 
             if (allSchedules.length > 0) {
-                await this.supabase.client.from('maintenance_schedules').upsert(allSchedules);
+                await this.supabase.client.from('maintenance_schedules').upsert(allSchedules, { onConflict: 'vehicle_id,interval_value,action,item' });
             }
         } catch (e) {
             console.error('Maintenance sync failed', e);

@@ -1,131 +1,72 @@
-# PROGRESS — Vehicle Service API Frontend (Torque)
+# PROGRESS
 
 **Last updated**: 2026-03-15
 
----
-
 ## Summary
 
-| Area                | Status       |
-|---------------------|-------------|
-| Home / Search       | Working     |
-| Vehicle Dashboard   | Working     |
-| Article Viewer      | Working     |
-| Credits Dashboard   | Working     |
-| Motor API Service   | Working     |
-| Vehicle Data Service| Working     |
-| Mobile UX           | Improved    |
-| Swagger/API Parity  | Improved    |
-
----
+| Area | Status |
+|------|--------|
+| Stripe Integration (Checkout, Portal, Webhooks) | Complete |
+| Credits Service (Balance, Unlocks, Transactions) | Complete |
+| Section-Level Content Locking | Complete |
+| Article-Level Content Locking | Complete |
+| UI/UX Copy Cleanup | Complete |
+| Lock Overlay UX | Complete |
 
 ## Implementation Checklist
 
-### Core Infrastructure
-- [x] Angular 19 standalone components with signals
-- [x] Motor API proxy integration (`vehapiproxi`)
-- [x] Supabase auth and data storage
-- [x] Hash-based routing configuration
-- [x] Environment configurations (dev/prod)
+### Stripe & Credits
+- [x] Stripe Checkout flow (backend + frontend)
+- [x] Webhook handling for `checkout.session.completed`
+- [x] Billing portal (payment methods, invoices)
+- [x] Session verification after redirect
+- [x] Credits balance & unlocks persistence (Supabase)
+- [x] Transaction history
+- [x] Credit pack purchase UI (1000/2500/5000)
 
-### Home Page
-- [x] Year → Make → Model → Engine selection flow
-- [x] VIN decode with progressive detection feedback
-- [x] Smart input parsing ("2011 Ford F-150")
-- [x] Mobile wizard for vehicle selection
-- [x] Persisted vehicle "welcome back" card
-- [x] Keyboard navigation (Arrow keys, Enter, Escape)
-- [x] Feature badges display
+### Content Access Control
+- [x] Section-level locking (blur + overlay) on all sections
+- [x] Article viewer access gating via `moduleType` input/query param
+- [x] All section components propagate `moduleType` when opening articles
+- [x] Component-locations module type aligned to `diagrams` (was mismatched)
+- [x] Locked sections show limited preview items (max 8)
+- [x] Direct URL access to articles is blocked when section is locked
 
-### Vehicle Dashboard
-- [x] Route-driven vehicle context (contentSource, vehicleId)
-- [x] Overview section with quick-access cards for all available sections
-- [x] Section availability detection (from filter tabs + parts API)
-- [x] Desktop sidebar navigation
-- [x] Mobile bottom tab bar
-- [x] Comprehensive mobile navigation overlay with all sections
-- [x] Search with loading indicator and max-height scrollable results
-- [x] Browse-all section with filter tabs and article listing
-- [x] Browse-all articles open in desktop window via onArticleClick
-- [x] Orientation selector modal for non-MOTOR sources
-- [x] Vehicle name display with "Unknown Vehicle" fallback
-- [x] Vehicle persistence to localStorage for welcome-back experience
-- [x] vehicleName passed to all section components for credit unlock display
-
-### Dashboard Sections
-- [x] DTCs section (Diagnostic Trouble Codes)
-- [x] TSBs section (Technical Service Bulletins)
-- [x] Procedures section
-- [x] Diagrams section (Wiring Diagrams)
-- [x] Component Locations section
-- [x] Specs & Fluids section
-- [x] Maintenance Schedules section
-- [x] Parts section
-- [x] Common Issues & AI section
-
-### Article Viewer
-- [x] Article content loading with HTML processing
-- [x] PDF viewer (desktop inline iframe + mobile card)
-- [x] Table of contents (desktop sidebar + mobile overlay)
-- [x] Image viewer modal
-- [x] AI rewrite (background)
-- [x] Step-by-step tutorial generation
-- [x] Auth retry on 401/403 with polling
-- [x] Error states with friendly messages
-- [x] Re-authentication indicator
-- [x] Lazy sync to Supabase
-
-### API / Swagger Parity
-- [x] All endpoints mapped in MotorApiService
-- [x] `withCredentials: true` on all HTTP calls for session consistency
-- [x] Response unwrapping (header/body pattern)
-- [x] Article search caching
-- [x] Maintenance schedules by frequency, interval, indicators
-- [x] Parts endpoint with Motor compatibility mapping
-- [x] Bookmark save/get
-- [x] Vehicle name endpoint with fallback handling
-- [x] Auth status polling
-- [x] Track change / delta report endpoints
-- [x] UI settings, feedback, error logging endpoints
-
-### Credits & Auth
-- [x] Supabase auth (sign in, sign up, sign out)
-- [x] Credits balance and unlock flow
-- [x] Stripe checkout and billing portal
-- [x] Auth modal component
-- [x] Section lock/unlock with credit costs
-
-### Shared Components
-- [x] Loading skeleton (list, card, text, grid)
-- [x] Empty state (alert, info, package icons)
-- [x] Theme toggle (light/dark)
-- [x] Logo component
-- [x] Auth modal
-- [x] Orientation selector modal
-- [x] Image viewer modal
-- [x] Tutorial stepper
-- [x] Window manager (desktop windowed mode)
-
----
+### UI/UX Cleanup
+- [x] Removed verbose marketing copy from home page
+- [x] Removed fluff section labels from dashboard (Tactical Overview, Intelligence, etc.)
+- [x] Tightened lock overlay descriptions to concise one-liners
+- [x] Simplified credits dashboard text (pack descriptions, billing portal, empty states)
+- [x] Removed alert()/confirm() dialogs from unlock flows
+- [x] Removed internal status badges (Supabase Cached, Connected, version number)
+- [x] Cleaned up sidebar and mobile nav labels
 
 ## Bugs & Known Issues
 
-_(none currently tracked)_
-
----
-
-## Unfinished / Stub Components
-
-- Data sync progress overlay (present but sync disabled in dashboard constructor)
-- Category tree service (used by sidebar, may need further tuning)
-
----
+_None currently tracked._
 
 ## What's Left to Do
 
-| Priority | Item                                                    |
-|----------|---------------------------------------------------------|
-| Medium   | End-to-end testing with live Motor API proxy            |
-| Medium   | Performance audit on large article lists                |
-| Low      | Accessibility audit (ARIA labels, focus management)     |
-| Low      | Dark/light theme refinements for article content        |
+| Priority | Task |
+|----------|------|
+| Medium | Backend-side access enforcement (currently client-side only) |
+| Medium | Rate limiting on article content API |
+| Low | Add moduleType to browse-all article links |
+| Low | Full-vehicle unlock option from lock overlay |
+# Progress
+
+**Last updated:** 2025-03-15
+
+## Vehicle data normalization / migration
+
+- [x] **normalized_schema.ts** – Interfaces aligned with Supabase (procedures, tsbs, dtcs, specifications, maintenance_schedules, parts, ai_processing_logs). Optional fields and DB column notes documented.
+- [x] **background_worker.js** – determineSchemaType, extractVehicleId, extractExternalId; normalizeForSupabase sets all fields with safe defaults (no undefined) for procedures, tsbs, dtcs, specifications.
+- [x] **ai_parser.js** – SCHEMAS for dtcs, tsbs, procedures, specifications aligned with normalized types.
+- [x] **supabase.js** – UPSERT_CONFLICT_COLUMNS (procedures: vehicle_id,external_id; articles: vehicle_id,original_id; specifications; parts; maintenance_schedules). logAiProcessing sends only schema columns (no vehicle_id).
+- [x] **vehicle-data.service.ts** – Section strategies and mappers (original_id/external_id for list item ids); loadMaintenance reads maintenance_schedules columns (interval_value, action, item, frequency_code).
+- [x] **data-sync.service.ts** – Articles upsert (original_id, no client id); syncFluids (specs with unit, display_text, metadata); syncMaintenance (frequency_code); syncParts (nullable fields, conflict vehicle_id,part_number).
+
+## What's left (optional)
+
+- **Diagrams/component-locations** – No normalized table; section lists use articles only (see `supabase_schema.sql`).
+- **Future API fields** – Parts: quantity, fitment_notes. Maintenance: is_severe_service, labor_time_hours (in contract when API/DB support them).
