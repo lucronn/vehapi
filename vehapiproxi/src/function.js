@@ -887,7 +887,7 @@ const articlesCacheMiddleware = async (req, res, next) => {
                     if (articles && articles.length > 0) {
                         // We need to transform these Supabase rows back into the shape Motor API returns
                         // or at least what our normalizeMotorResponse expects.
-                        const motorShape = {
+                        let motorShape = {
                             header: { status: 'OK', statusCode: 200 },
                             body: {
                                 articleDetails: articles.map(a => ({
@@ -907,9 +907,9 @@ const articlesCacheMiddleware = async (req, res, next) => {
                                 filterTabs: []
                             }
                         };
+
+                        motorShape = normalizeMotorResponse(motorShape);
                         
-                        // We set a flag so the response interceptor doesn't try to normalize AGAIN if we already did it
-                        // Or better: just return it and let the response interceptor handle it as if it came from Motor.
                         res.setHeader('x-data-source', 'supabase');
                         res.setHeader('x-cache-hit', 'true');
                         return res.json(motorShape);
