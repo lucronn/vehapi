@@ -31,13 +31,11 @@ export class DataSyncService {
     async syncFullVehicle(contentSource: string, vehicleId: string, vehicleName: string): Promise<void> {
         if (this.isSyncing()) return;
 
-        // Note: Full sync is largely deprecated in favor of lazy sync, 
-        // but we keep a "lite" version for core metadata and essential silos.
         this.isSyncing.set(true);
         this.syncProgress.set({ current: 0, total: 100, message: 'Starting Sync...' });
 
         try {
-            // 0. Ensure vehicle exists in DB (or register it)
+            // 0. Ensure vehicle record exists
             const parts = vehicleName.split(' ');
             const year = parseInt(parts[0]) || 0;
             const make = parts[1] || '';
@@ -52,19 +50,23 @@ export class DataSyncService {
                 updated_at: new Date().toISOString()
             }, { onConflict: 'external_id' });
 
-            // 1. Common Issues (AI) - Keep eager as it's a dashboard feature
-            this.syncProgress.set({ current: 20, total: 100, message: 'Analyzing Common Issues...' });
+            // 1. Common Issues (AI)
+            this.syncProgress.set({ current: 15, total: 100, message: 'Analyzing Common Issues...' });
             await this.syncCommonIssues(contentSource, vehicleId, vehicleName);
 
-            // 2. Sync Specialized Silos (Fluids, Parts, Maintenance) - Keep eager/semi-eager for now
-            this.syncProgress.set({ current: 50, total: 100, message: 'Syncing Specs & Maintenance...' });
+            // 2. Sync specialized silos in parallel
+            this.syncProgress.set({ current: 35, total: 100, message: 'Syncing Fluids, Parts & Maintenance...' });
             await Promise.all([
                 this.syncFluids(contentSource, vehicleId),
+                this.syncParts(contentSource, vehicleId),
                 this.syncMaintenance(contentSource, vehicleId)
             ]);
 
-            // 3. Mark as metadata-ready (not necessarily fully normalized yet)
+            // 3. Mark as normalized (article catalog is populated by the proxy background worker
+            //    when the articles/v2 response passes through; the full sync here covers silos)
+            this.syncProgress.set({ current: 90, total: 100, message: 'Finalizing...' });
             await this.supabase.client.from('vehicles').update({
+                is_normalized: true,
                 updated_at: new Date().toISOString()
             }).eq('external_id', vehicleId);
 
@@ -122,11 +124,16 @@ export class DataSyncService {
         const contentRes = await lastValueFrom(this.motorApi.getArticleContent(cs, vid, item.id));
         const rawHtml = (contentRes?.body as any)?.html || '';
 
-        const articleData = {
+        const articleData: Record<string, any> = {
             original_id: item.id,
             title: item.title || item.code || '',
             subtitle: item.subtitle ?? null,
+            code: item.code ?? null,
+            description: item.description ?? null,
             thumbnail_href: item.thumbnailHref ?? null,
+            bulletin_number: item.bulletinNumber ?? null,
+            release_date: item.releaseDate ?? null,
+            sort: typeof item.sort === 'number' ? item.sort : null,
             original_content: rawHtml,
             enhanced_content: '',
             vehicle_id: vid,
