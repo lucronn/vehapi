@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-03-16
+**Last updated**: 2026-03-16 (lazy normalization)
 
 ## Summary
 
@@ -12,7 +12,7 @@
 | Article-Level Content Locking | Complete |
 | UI/UX Copy Cleanup | Complete |
 | Lock Overlay UX | Complete |
-| Data Normalization Pipeline | Complete |
+| Data Normalization Pipeline | Complete (lazy by-need) |
 
 ## Implementation Checklist
 
@@ -66,19 +66,31 @@ _None currently tracked._
 - [x] **function.js** – Article content cache checks both normalized tables AND articles table. Articles cache applies normalizeMotorResponse for consistent filterTabs. articles/v2 normalizeMotorResponse always applied (not only for large catalogs).
 - [x] **vehicle-data.service.ts** – Section strategies: comprehensive bucket names matching normalizeCategoryParams output (DTCs, TSBs, procedures, diagrams, component-locations). Article filter checks both bucket AND parent_bucket. loadSectionData always uses articles table for list view (simplified flow).
 - [x] **data-sync.service.ts** – syncFullVehicle includes parts sync. Sets is_normalized=true after completion. syncSingleArticle stores all article fields (code, description, bulletin_number, release_date, sort).
-- [x] **vehicle-dashboard.component.ts** – Re-enabled normalization trigger (checks is_normalized first).
+- [x] **vehicle-dashboard.component.ts** – Dashboard calls ensureVehicleRecord only (0 API calls). No eager syncFullVehicle.
+- [x] **Lazy normalization** – Each silo syncs on-demand: fluids when specs section opens, maintenance per-interval, parts when parts section opens. syncSingleArticle accepts pre-fetched HTML to avoid double-fetch.
 - [x] **ai_parser.js** – SCHEMAS for dtcs, tsbs, procedures, specifications unchanged (already aligned).
 
-### Data flow
+### Data flow (lazy / by-need)
 
 ```
-Motor API → Proxy → normalizeMotorResponse → Supabase articles table (complete catalog)
-                  → background_worker → AI parse → Supabase normalized tables (procedures/dtcs/tsbs/specs)
-                  → content_html cached in normalized tables + articles.original_content
+Dashboard load → ensureVehicleRecord (0 API calls)
+                → searchArticles → proxy → articles/v2 → background_worker stores catalog
 
-Supabase articles (list) → frontend section strategies → section components (DTCs, TSBs, Procedures, etc.)
-Supabase normalized tables (content) → proxy cache middleware → article viewer (HTML content)
-Supabase specifications/maintenance/parts → vehicle-data.service → specs/fluids/maintenance sections
+Section opened → Supabase articles table → section list (cached)
+               OR → Motor API fallback → display + lazy cache to Supabase
+
+Article opened → proxy article content (cached or Motor API)
+               → syncSingleArticle with pre-fetched HTML (no double-fetch)
+               → background_worker AI parse into procedures/dtcs/tsbs tables
+
+Specs opened → Supabase specifications → display
+             OR → Motor API fluids → display + lazySyncFluids (fire-and-forget)
+
+Maintenance opened → Supabase maintenance_schedules for selected interval
+                   OR → Motor API for that interval → display + lazySyncMaintenanceInterval
+
+Parts opened → Supabase parts → display
+             OR → Motor API → display + lazySyncParts
 ```
 
 ### What remains (optional)
