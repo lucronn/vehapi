@@ -24,6 +24,115 @@ const UPSERT_CONFLICT_COLUMNS = {
 };
 
 /**
+ * Ensures a vehicle record exists in the vehicles table.
+ * Must be called before inserting into any table that references vehicles(external_id).
+ * @param {string} vehicleId The Motor API vehicle ID (external_id)
+ * @param {string} contentSource e.g. 'MOTOR'
+ * @returns {{ success: boolean }}
+ */
+export async function ensureVehicleExists(vehicleId, contentSource = 'MOTOR') {
+    const cfg = getSupabaseConfig();
+    if (!cfg || !vehicleId) return { success: false };
+
+    try {
+        const url = `${cfg.url}/rest/v1/vehicles?on_conflict=external_id`;
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': cfg.key,
+                'Authorization': `Bearer ${cfg.key}`,
+                'Prefer': 'return=minimal,resolution=merge-duplicates'
+            },
+            body: JSON.stringify({
+                external_id: vehicleId,
+                content_source: contentSource,
+                updated_at: new Date().toISOString()
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            logger.error(`Failed to ensure vehicle ${vehicleId}: ${errorText}`);
+            return { success: false, error: errorText };
+        }
+        return { success: true };
+    } catch (err) {
+        logger.error(`Error ensuring vehicle ${vehicleId}:`, err);
+        return { success: false, error: err.message };
+    }
+}
+
+/**
+ * Marks a vehicle as normalized after its article catalog has been fully ingested.
+ * @param {string} vehicleId The Motor API vehicle ID (external_id)
+ */
+export async function markVehicleNormalized(vehicleId) {
+    const cfg = getSupabaseConfig();
+    if (!cfg || !vehicleId) return { success: false };
+
+    try {
+        const url = `${cfg.url}/rest/v1/vehicles?external_id=eq.${encodeURIComponent(vehicleId)}`;
+        const response = await fetch(url, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': cfg.key,
+                'Authorization': `Bearer ${cfg.key}`,
+                'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({
+                is_normalized: true,
+                updated_at: new Date().toISOString()
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            logger.error(`Failed to mark vehicle ${vehicleId} as normalized: ${errorText}`);
+            return { success: false, error: errorText };
+        }
+        logger.info(`✓ Vehicle ${vehicleId} marked as normalized`);
+        return { success: true };
+    } catch (err) {
+        logger.error(`Error marking vehicle ${vehicleId} as normalized:`, err);
+        return { success: false, error: err.message };
+    }
+}
+
+/**
+ * Checks for cached article content in the articles table by original_id.
+ * Complements checkParsedArticle which checks normalized content tables.
+ * @param {string} vehicleId
+ * @param {string} articleId The Motor API article ID (original_id)
+ * @returns {Object|null} The cached article row or null
+ */
+export async function checkArticleContent(vehicleId, articleId) {
+    const cfg = getSupabaseConfig();
+    if (!cfg) return null;
+
+    try {
+        const url = `${cfg.url}/rest/v1/articles?vehicle_id=eq.${encodeURIComponent(vehicleId)}&original_id=eq.${encodeURIComponent(articleId)}&select=*&limit=1`;
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'apikey': cfg.key,
+                'Authorization': `Bearer ${cfg.key}`,
+            },
+        });
+
+        if (!response.ok) return null;
+        const data = await response.json();
+        if (data && data.length > 0 && data[0].original_content) {
+            return data[0];
+        }
+        return null;
+    } catch {
+        return null;
+    }
+}
+
+/**
  * Persists normalized data to the specified Supabase table via REST API.
  * Uses UPSERT (merge-duplicates) so re-processed data overwrites stale rows
  * instead of creating duplicates.

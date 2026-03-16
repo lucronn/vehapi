@@ -47,10 +47,13 @@ export class VehicleDataService {
     private supabase = inject(SupabaseService);
 
     private readonly sectionStrategies: Record<string, SectionStrategy> = {
-        // id for list items must be the Motor article id (original_id from articles, external_id from procedures/dtcs/tsbs) for correct article content resolution.
         dtcs: {
             type: 'DTCs',
-            alwaysIncludeBuckets: ['Diagnostic Trouble Codes', 'Diagnostic Codes', 'DTCs'],
+            alwaysIncludeBuckets: [
+                'Diagnostic Trouble Codes', 'Diagnostic Codes', 'DTCs',
+                'Diagnostic Codes (DTC)',
+                'Powertrain (P-Codes)', 'Chassis (C-Codes)', 'Body (B-Codes)', 'Network (U-Codes)', 'Other Codes'
+            ],
             mapper: (a: any) => ({
                 id: a.original_id ?? a.id,
                 code: a.code || a.title,
@@ -61,47 +64,56 @@ export class VehicleDataService {
         },
         tsbs: {
             type: 'TSBs',
-            alwaysIncludeBuckets: [],
+            alwaysIncludeBuckets: [
+                'Technical Service Bulletins', 'Bulletins', 'TSBs',
+                'Service Bulletins (TSB)', 'Service Bulletins'
+            ],
             mapper: (a: any) => ({
                 id: a.original_id ?? a.id,
-                bulletinNumber: a.bulletinNumber || '',
+                bulletinNumber: a.bulletin_number || a.bulletinNumber || '',
                 title: a.title,
-                releaseDate: a.releaseDate || '',
+                releaseDate: a.release_date || a.releaseDate || '',
                 description: a.description || a.subtitle || '',
-                thumbnailHref: a.thumbnailHref
+                thumbnailHref: a.thumbnail_href || a.thumbnailHref
             } as Tsb)
         },
         procedures: {
             type: 'Procedures',
-            alwaysIncludeBuckets: ['Labor'],
+            alwaysIncludeBuckets: [
+                'Procedures', 'Labor', 'Service Procedures',
+                'Labor & Estimating',
+                'Engine Mechanical', 'Transmission & Driveline', 'Electrical & Sensors',
+                'Fuel & Emissions', 'Steering & Suspension', 'Cooling System',
+                'Brakes', 'HVAC', 'Body & Interior', 'Restraints & Safety',
+                'Fluids & Maintenance', 'General'
+            ],
             mapper: (a: any) => ({
                 id: a.original_id ?? a.id,
                 bucket: a.bucket,
                 title: a.title,
                 subtitle: a.subtitle,
-                parentBucket: a.parentBucket
+                parentBucket: a.parent_bucket || a.parentBucket || ''
             } as Procedure)
         },
-        // Diagrams and component-locations: no normalized table in schema; section lists from articles only.
         diagrams: {
             type: 'Diagrams',
-            alwaysIncludeBuckets: ['Wiring Diagrams', 'Component Locations'],
+            alwaysIncludeBuckets: ['Wiring Diagrams', 'Component Locations', 'Diagrams', 'System Wiring Diagrams'],
             mapper: (a: any) => ({
                 id: a.original_id ?? a.id,
                 bucket: a.bucket,
                 title: a.title,
                 subtitle: a.subtitle,
-                thumbnailHref: a.thumbnailHref || ''
+                thumbnailHref: a.thumbnail_href || a.thumbnailHref || ''
             } as WiringDiagram)
         },
         'component-locations': {
             type: 'Component Locations',
-            alwaysIncludeBuckets: ['Component Locations'],
+            alwaysIncludeBuckets: ['Component Locations', 'Component Location Diagrams'],
             mapper: (a: any) => ({
                 id: a.original_id ?? a.id,
                 bucket: a.bucket,
                 title: a.title,
-                thumbnailHref: a.thumbnailHref || ''
+                thumbnailHref: a.thumbnail_href || a.thumbnailHref || ''
             } as ComponentLocation)
         }
     };
@@ -186,7 +198,8 @@ export class VehicleDataService {
                                     id: s.id,
                                     bucket: s.category,
                                     title: s.name,
-                                    value: s.value
+                                    value: s.display_text || s.value || '',
+                                    description: s.unit ? `${s.value} ${s.unit}` : undefined
                                 }));
                             const fluids: Fluid[] = (specsData || [])
                                 .filter(s => s.category === 'Fluids')
@@ -194,8 +207,8 @@ export class VehicleDataService {
                                     id: s.id,
                                     bucket: s.category,
                                     title: s.name,
-                                    capacity: s.value,
-                                    specification: s.metadata?.specification || ''
+                                    capacity: s.value || '',
+                                    specification: s.metadata?.specification || s.display_text || ''
                                 }));
                             return { specs, fluids };
                         }),
@@ -336,27 +349,29 @@ export class VehicleDataService {
         ).pipe(
             switchMap(({ data }) => {
                 if (data?.is_normalized) {
-                    // If normalized, we can check specific tables or just return a default "all-available" 
-                    // or better, check the articles table for this vehicle.
                     return from(this.supabase.client
                         .from('articles')
-                        .select('bucket')
+                        .select('bucket,parent_bucket')
                         .eq('vehicle_id', vehicleId)
                     ).pipe(
                         map(({ data: articles }) => {
-                            const buckets = new Set((articles || []).map(a => a.bucket?.toLowerCase()));
-                            const hasDtcs = [...buckets].some(b => b.includes('dtc') || b.includes('diagnostic'));
-                            const hasTsbs = [...buckets].some(b => b.includes('tsb') || b.includes('bulletin'));
-                            const hasDiagrams = [...buckets].some(b => b.includes('diagram') || b.includes('wiring'));
-                            const hasProcedures = [...buckets].some(b => b.includes('procedure') || b.includes('labor'));
-                            const hasSpecs = [...buckets].some(b => b.includes('spec') || b.includes('capacity'));
-                            const hasMaintenance = [...buckets].some(b => b.includes('maintenance'));
-                            const hasComponentLocations = [...buckets].some(b => b.includes('location'));
+                            const allBuckets = new Set<string>();
+                            (articles || []).forEach(a => {
+                                if (a.bucket) allBuckets.add(a.bucket.toLowerCase());
+                                if (a.parent_bucket) allBuckets.add(a.parent_bucket.toLowerCase());
+                            });
+                            const has = (keywords: string[]) =>
+                                [...allBuckets].some(b => keywords.some(k => b.includes(k)));
 
                             return {
-                                hasDtcs, hasTsbs, hasDiagrams, hasProcedures,
-                                hasSpecs, hasMaintenance, hasComponentLocations,
-                                hasParts: true // Optimization: assume parts exist if normalized
+                                hasDtcs: has(['dtc', 'diagnostic']),
+                                hasTsbs: has(['tsb', 'bulletin']),
+                                hasDiagrams: has(['diagram', 'wiring']),
+                                hasProcedures: has(['procedure', 'labor', 'service procedures']),
+                                hasSpecs: has(['spec', 'capacity', 'fluid']),
+                                hasMaintenance: has(['maintenance']),
+                                hasComponentLocations: has(['component location', 'locations']),
+                                hasParts: true
                             };
                         })
                     );
@@ -484,7 +499,20 @@ export class VehicleDataService {
     }
 
     /**
-     * Load data for a specific dashboard section
+     * Matches an article row against the section's bucket list,
+     * checking both bucket and parent_bucket for a match.
+     */
+    private matchesSectionBuckets(article: any, bucketNames: string[]): boolean {
+        if (bucketNames.length === 0) return false;
+        const b = (article.bucket || article.parent_bucket || '').toLowerCase();
+        const pb = (article.parent_bucket || article.parentBucket || '').toLowerCase();
+        return bucketNames.some(name => b.includes(name) || pb.includes(name));
+    }
+
+    /**
+     * Load data for a specific dashboard section.
+     * Uses articles table as the canonical list source, with API fallback.
+     * Normalized tables (procedures/dtcs/tsbs) are only used for content detail.
      */
     loadSectionData(
         section: 'dtcs' | 'tsbs' | 'procedures' | 'diagrams' | 'component-locations',
@@ -500,43 +528,19 @@ export class VehicleDataService {
 
         loadingSignal.set(true);
 
-        // Optional path: when vehicle has normalized data (is_normalized), try procedures/dtcs/tsbs tables first for section lists.
-        // Diagrams and component-locations have no normalized table in schema; they always use articles then API.
-        // Default path: articles table, then API fallback. Logic is backward compatible.
-        from(this.supabase.client.from('vehicles').select('is_normalized').eq('external_id', vehicleId).maybeSingle()).pipe(
-            switchMap(({ data: vehicle }) => {
-                const useNormalizedTables = vehicle?.is_normalized && (section === 'procedures' || section === 'dtcs' || section === 'tsbs');
-                if (!useNormalizedTables) return of(null);
-                const table = section as 'procedures' | 'dtcs' | 'tsbs';
-                return from(this.supabase.client.from(table).select('*').eq('vehicle_id', vehicleId)).pipe(
-                    map(({ data: rows }) => {
-                        if (!rows?.length) return null;
-                        // Use external_id as id so article viewer / proxy can resolve content (checkParsedArticle).
-                        if (section === 'procedures') return rows.map((r: any) => ({ id: r.external_id ?? String(r.id), bucket: 'Procedures', title: r.title ?? '', subtitle: undefined, parentBucket: 'Procedures' } as Procedure));
-                        if (section === 'dtcs') return rows.map((r: any) => ({ id: r.external_id ?? String(r.id), code: r.code ?? '', description: r.description ?? '', bucket: 'DTCs' } as Dtc));
-                        return rows.map((r: any) => ({ id: r.external_id ?? String(r.id), bulletinNumber: r.bulletin_number ?? '', title: r.title ?? '', releaseDate: r.issue_date ?? '', description: '', thumbnailHref: undefined } as Tsb));
-                    }),
-                    catchError(() => of(null))
-                );
-            }),
-            switchMap((normalizedList) => {
-                if (normalizedList && normalizedList.length > 0) return of(normalizedList);
-                return from(this.supabase.client.from('articles').select('*').eq('vehicle_id', vehicleId)).pipe(
-                    map(({ data }) => {
-                        if (!data || data.length === 0) return null;
-                        const bucketNames = strategy.alwaysIncludeBuckets.map(b => b.toLowerCase());
-                        return data.filter((a: any) => {
-                            const b = (a.bucket || '').toLowerCase();
-                            return bucketNames.length === 0 || bucketNames.some(name => b.includes(name));
-                        }).map(strategy.mapper);
-                    })
-                );
+        from(this.supabase.client.from('articles').select('*').eq('vehicle_id', vehicleId)).pipe(
+            map(({ data }) => {
+                if (!data || data.length === 0) return null;
+                const bucketNames = strategy.alwaysIncludeBuckets.map(b => b.toLowerCase());
+                const filtered = data.filter((a: any) => this.matchesSectionBuckets(a, bucketNames));
+                if (filtered.length === 0) return null;
+                return filtered.map(strategy.mapper);
             }),
             catchError(() => of(null))
         ).subscribe({
             next: (supabaseData) => {
                 if (supabaseData && supabaseData.length > 0) {
-                    console.log(`[VehicleData] Loaded ${section} from Supabase`);
+                    console.log(`[VehicleData] Loaded ${section} from Supabase articles (${supabaseData.length} items)`);
                     updateState(supabaseData);
                     loadingSignal.set(false);
                 } else {

@@ -1,6 +1,6 @@
 import logger from './logger.js';
 import { parseWithAI } from './ai_parser.js';
-import { insertParsedData, logAiProcessing, wasAlreadyParsed, insertMetadata } from './supabase.js';
+import { insertParsedData, logAiProcessing, wasAlreadyParsed, insertMetadata, ensureVehicleExists, markVehicleNormalized } from './supabase.js';
 import { normalizeCategoryParams } from './categorize.js';
 
 function determineSchemaType(urlPath) {
@@ -91,14 +91,14 @@ function normalizeForSupabase(data, schemaType) {
 }
 
 /**
- * Extracts a stable external_id that can be used for dedup across all schema types.
- * Procedures: article ID from /article/<id>
- * Others: derive from the full path (vehicle + endpoint) for a stable fingerprint.
+ * Extracts a stable external_id for dedup across all schema types.
+ * Procedures/DTCs/TSBs that come from /article/<id> get the article ID.
+ * Bulk endpoints get a path-based fingerprint.
  */
 function extractExternalId(urlPath, targetSchema) {
-    if (targetSchema === 'procedures') {
-        const m = urlPath.match(/\/article\/([^?/]+)/);
-        return m ? m[1] : null;
+    const articleMatch = urlPath.match(/\/article\/([^?/]+)/);
+    if (articleMatch) {
+        return articleMatch[1];
     }
     const vehicleId = extractVehicleId(urlPath);
     if (vehicleId) {
@@ -141,7 +141,6 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
 
     try {
         if (targetSchema === 'metadata') {
-            // No AI parsing needed for raw metadata json
             const parsedJson = JSON.parse(rawData);
             const result = await insertMetadata(urlPath, parsedJson);
             if (!result.success) {
@@ -151,20 +150,28 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
             return;
         }
 
+        const vehicleIdStr = extractVehicleId(urlPath);
+
         if (targetSchema === 'articles') {
             const parsedJson = JSON.parse(rawData);
-            if (parsedJson?.body?.articleDetails) {
-                const vehicleId = extractVehicleId(urlPath);
+            if (parsedJson?.body?.articleDetails && vehicleIdStr) {
+                await ensureVehicleExists(vehicleIdStr, 'MOTOR');
+
                 const articles = parsedJson.body.articleDetails.map(a => {
                     const { rootName, subName } = normalizeCategoryParams(a.title, a.parentBucket, a.bucket);
                     return {
-                        vehicle_id: vehicleId,
+                        vehicle_id: vehicleIdStr,
                         original_id: a.id,
-                        title: a.title,
-                        subtitle: a.subtitle,
+                        title: a.title ?? null,
+                        subtitle: a.subtitle ?? null,
+                        code: a.code ?? null,
+                        description: a.description ?? null,
                         bucket: subName,
                         parent_bucket: rootName,
-                        thumbnail_href: a.thumbnailHref,
+                        thumbnail_href: a.thumbnailHref ?? null,
+                        bulletin_number: a.bulletinNumber ?? null,
+                        release_date: a.releaseDate ?? null,
+                        sort: typeof a.sort === 'number' ? a.sort : null,
                         content_source: a.contentSource || 'MOTOR'
                     };
                 });
@@ -172,15 +179,14 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                 if (!result.success) {
                     status = 'FAILED';
                     errorMessage = result.error?.message || result.error || 'Articles Insert Failed';
+                } else if (articles.length > 0) {
+                    await markVehicleNormalized(vehicleIdStr);
                 }
             }
             return;
         }
 
-        const parsedData = await parseWithAI(rawData, targetSchema);
-
-        const vehicleIdStr = extractVehicleId(urlPath);
-        const externalIdStr = extractExternalId(urlPath, targetSchema);
+        // For AI-parsed content (procedures, dtcs, tsbs, specifications)
 
         if (!vehicleIdStr) {
             logger.warn(`[${taskId}] No vehicle_id in URL, skipping insert to avoid orphan rows: ${urlPath}`);
@@ -189,7 +195,12 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
             return;
         }
 
-        // external_id is always set for procedures (article id from URL) so future conflict key vehicle_id,external_id is ready.
+        await ensureVehicleExists(vehicleIdStr, 'MOTOR');
+
+        const parsedData = await parseWithAI(rawData, targetSchema);
+
+        const externalIdStr = extractExternalId(urlPath, targetSchema);
+
         const attachMeta = (item) => {
             item.vehicle_id = vehicleIdStr;
             if (externalIdStr) {
@@ -204,14 +215,32 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
         }
 
         const normalized = normalizeForSupabase(parsedData, targetSchema);
-        // Content tables store full HTML in content_html for cache response. Use raw when it's HTML.
-        const rawIsHtml = typeof rawData === 'string' && rawData.trim().startsWith('<');
+
+        // Store raw HTML in content_html for content cache.
+        // For HTML article content (starts with <), always store it.
+        // For JSON responses, try to extract HTML from body.html if present.
+        const trimmed = typeof rawData === 'string' ? rawData.trim() : '';
+        const rawIsHtml = trimmed.startsWith('<');
+        let htmlContent = null;
+
         if (rawIsHtml) {
+            htmlContent = rawData;
+        } else {
+            try {
+                const parsed = JSON.parse(rawData);
+                htmlContent = parsed?.body?.html || parsed?.html || null;
+            } catch { /* not JSON, ignore */ }
+        }
+
+        if (htmlContent) {
             const payload = Array.isArray(normalized) ? normalized : [normalized];
             payload.forEach(row => {
-                row.content_html = row.content_html || rawData;
+                if (!row.content_html) {
+                    row.content_html = htmlContent;
+                }
             });
         }
+
         const result = await insertParsedData(targetSchema, normalized);
 
         if (!result.success) {
