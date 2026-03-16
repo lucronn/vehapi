@@ -341,12 +341,9 @@ export class VehicleDashboardComponent {
   // Services
   private windowManager = inject(WindowManagerService);
 
-  // Normalization Flow
   private async checkAndTriggerNormalization(cs: string, vid: string) {
-    // We only trigger "Full" sync for core metadata and essential features (Common Issues, Specs)
-    // Deep article content is now handled lazily in ArticleViewer
     const name = this.vehicleName() || 'Vehicle';
-    // this.dataSync.syncFullVehicle(cs, vid, name);
+    await this.dataSync.ensureVehicleRecord(cs, vid, name);
   }
 
   // Orientation Selection

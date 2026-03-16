@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-03-15
+**Last updated**: 2026-03-16 (lazy normalization)
 
 ## Summary
 
@@ -12,6 +12,7 @@
 | Article-Level Content Locking | Complete |
 | UI/UX Copy Cleanup | Complete |
 | Lock Overlay UX | Complete |
+| Data Normalization Pipeline | Complete (lazy by-need) |
 
 ## Implementation Checklist
 
@@ -53,20 +54,46 @@ _None currently tracked._
 | Medium | Rate limiting on article content API |
 | Low | Add moduleType to browse-all article links |
 | Low | Full-vehicle unlock option from lock overlay |
-# Progress
-
-**Last updated:** 2025-03-15
 
 ## Vehicle data normalization / migration
 
-- [x] **normalized_schema.ts** – Interfaces aligned with Supabase (procedures, tsbs, dtcs, specifications, maintenance_schedules, parts, ai_processing_logs). Optional fields and DB column notes documented.
-- [x] **background_worker.js** – determineSchemaType, extractVehicleId, extractExternalId; normalizeForSupabase sets all fields with safe defaults (no undefined) for procedures, tsbs, dtcs, specifications.
-- [x] **ai_parser.js** – SCHEMAS for dtcs, tsbs, procedures, specifications aligned with normalized types.
-- [x] **supabase.js** – UPSERT_CONFLICT_COLUMNS (procedures: vehicle_id,external_id; articles: vehicle_id,original_id; specifications; parts; maintenance_schedules). logAiProcessing sends only schema columns (no vehicle_id).
-- [x] **vehicle-data.service.ts** – Section strategies and mappers (original_id/external_id for list item ids); loadMaintenance reads maintenance_schedules columns (interval_value, action, item, frequency_code).
-- [x] **data-sync.service.ts** – Articles upsert (original_id, no client id); syncFluids (specs with unit, display_text, metadata); syncMaintenance (frequency_code); syncParts (nullable fields, conflict vehicle_id,part_number).
+### Completed
 
-## What's left (optional)
+- [x] **normalized_schema.ts** – NormalizedArticle added (all Motor API catalog fields). NormalizedVehicle has is_normalized. Existing interfaces unchanged.
+- [x] **supabase_schema.sql** – Articles table: added code, description, sort, bulletin_number, release_date columns + parent_bucket index. Migration SQL included.
+- [x] **supabase.js** – ensureVehicleExists (FK safety), markVehicleNormalized, checkArticleContent (articles table cache). UPSERT_CONFLICT_COLUMNS unchanged.
+- [x] **background_worker.js** – Creates vehicle record before FK-dependent inserts. Articles include all Motor API fields (code, description, sort, bulletin_number, release_date). Marks vehicle normalized after catalog ingest. extractExternalId returns per-article IDs for DTCs/TSBs. Improved content_html extraction (JSON body.html fallback).
+- [x] **function.js** – Article content cache checks both normalized tables AND articles table. Articles cache applies normalizeMotorResponse for consistent filterTabs. articles/v2 normalizeMotorResponse always applied (not only for large catalogs).
+- [x] **vehicle-data.service.ts** – Section strategies: comprehensive bucket names matching normalizeCategoryParams output (DTCs, TSBs, procedures, diagrams, component-locations). Article filter checks both bucket AND parent_bucket. loadSectionData always uses articles table for list view (simplified flow).
+- [x] **data-sync.service.ts** – syncFullVehicle includes parts sync. Sets is_normalized=true after completion. syncSingleArticle stores all article fields (code, description, bulletin_number, release_date, sort).
+- [x] **vehicle-dashboard.component.ts** – Dashboard calls ensureVehicleRecord only (0 API calls). No eager syncFullVehicle.
+- [x] **Lazy normalization** – Each silo syncs on-demand: fluids when specs section opens, maintenance per-interval, parts when parts section opens. syncSingleArticle accepts pre-fetched HTML to avoid double-fetch.
+- [x] **ai_parser.js** – SCHEMAS for dtcs, tsbs, procedures, specifications unchanged (already aligned).
 
-- **Diagrams/component-locations** – No normalized table; section lists use articles only (see `supabase_schema.sql`).
-- **Future API fields** – Parts: quantity, fitment_notes. Maintenance: is_severe_service, labor_time_hours (in contract when API/DB support them).
+### Data flow (lazy / by-need)
+
+```
+Dashboard load → ensureVehicleRecord (0 API calls)
+                → searchArticles → proxy → articles/v2 → background_worker stores catalog
+
+Section opened → Supabase articles table → section list (cached)
+               OR → Motor API fallback → display + lazy cache to Supabase
+
+Article opened → proxy article content (cached or Motor API)
+               → syncSingleArticle with pre-fetched HTML (no double-fetch)
+               → background_worker AI parse into procedures/dtcs/tsbs tables
+
+Specs opened → Supabase specifications → display
+             OR → Motor API fluids → display + lazySyncFluids (fire-and-forget)
+
+Maintenance opened → Supabase maintenance_schedules for selected interval
+                   OR → Motor API for that interval → display + lazySyncMaintenanceInterval
+
+Parts opened → Supabase parts → display
+             OR → Motor API → display + lazySyncParts
+```
+
+### What remains (optional)
+
+- **Diagrams/component-locations** – No normalized table; section lists use articles only.
+- **Future API fields** – Parts: quantity, fitment_notes. Maintenance: is_severe_service, labor_time_hours.

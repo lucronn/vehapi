@@ -244,13 +244,13 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
           this.articleContent.set(safeHtml);
           // Store for tutorial generation
           this.rawHtmlForTutorial = htmlString;
-          // Trigger lazy normalization (save to Supabase for future use)
+          // Save content to Supabase (passes pre-fetched HTML to avoid double-fetch)
           this.dataSync.syncSingleArticle(this.contentSource!, this.vehicleId!, {
             id: aid,
             title: this.articleTitle(),
             bucket: (content.body as any)?.bucket || '',
             parentBucket: (content.body as any)?.parentBucket || ''
-          });
+          }, rawHtml);
           // Background AI rewrite
           this.triggerAiRewrite(htmlString);
         }

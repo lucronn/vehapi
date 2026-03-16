@@ -49,9 +49,14 @@ CREATE TABLE public.articles (
     original_id TEXT NOT NULL,
     title TEXT,
     subtitle TEXT,
+    code TEXT,
+    description TEXT,
     bucket TEXT,
     parent_bucket TEXT,
     thumbnail_href TEXT,
+    bulletin_number TEXT,
+    release_date TEXT,
+    sort INTEGER,
     content_source TEXT DEFAULT 'MOTOR',
     original_content TEXT,
     enhanced_content TEXT,
@@ -63,6 +68,7 @@ CREATE TABLE public.articles (
 
 CREATE INDEX idx_articles_vehicle_id ON public.articles(vehicle_id);
 CREATE INDEX idx_articles_bucket ON public.articles(vehicle_id, bucket);
+CREATE INDEX idx_articles_parent_bucket ON public.articles(vehicle_id, parent_bucket);
 
 -- -----------------------------------------------------------------------------
 -- 3. PROCEDURES (normalized repair procedures; cache for article content)
@@ -273,3 +279,13 @@ CREATE POLICY "Allow all ai_processing_logs" ON public.ai_processing_logs FOR AL
 CREATE POLICY "Allow all common_issues_cache" ON public.common_issues_cache FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all parts" ON public.parts FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all maintenance_schedules" ON public.maintenance_schedules FOR ALL USING (true) WITH CHECK (true);
+
+-- =============================================================================
+-- MIGRATION: Add missing article catalog fields (run on existing deployments)
+-- =============================================================================
+-- ALTER TABLE public.articles ADD COLUMN IF NOT EXISTS code TEXT;
+-- ALTER TABLE public.articles ADD COLUMN IF NOT EXISTS description TEXT;
+-- ALTER TABLE public.articles ADD COLUMN IF NOT EXISTS sort INTEGER;
+-- ALTER TABLE public.articles ADD COLUMN IF NOT EXISTS bulletin_number TEXT;
+-- ALTER TABLE public.articles ADD COLUMN IF NOT EXISTS release_date TEXT;
+-- CREATE INDEX IF NOT EXISTS idx_articles_parent_bucket ON public.articles(vehicle_id, parent_bucket);

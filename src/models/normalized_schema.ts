@@ -15,6 +15,34 @@ export interface NormalizedVehicle {
   vin?: string;
   external_id?: string;
   content_source?: string;
+  is_normalized?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
+ * Article Catalog Entry
+ * DB table articles — the master list of Motor API articles for a vehicle.
+ * All Motor API articleDetails fields are retained here for complete section list rendering.
+ */
+export interface NormalizedArticle {
+  id?: string;
+  vehicle_id: string;
+  original_id: string;
+  title?: string;
+  subtitle?: string;
+  code?: string;
+  description?: string;
+  bucket?: string;
+  parent_bucket?: string;
+  thumbnail_href?: string;
+  bulletin_number?: string;
+  release_date?: string;
+  sort?: number;
+  content_source?: string;
+  original_content?: string;
+  enhanced_content?: string;
+  source?: string;
   created_at?: string;
   updated_at?: string;
 }

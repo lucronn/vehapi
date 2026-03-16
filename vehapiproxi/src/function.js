@@ -14,7 +14,8 @@ import { createCheckoutSession, createBillingPortalSession, handleWebhook, verif
 import { getUserData, unlockModule, getTransactions } from './credits.js';
 import { 
     insertParsedData, 
-    checkParsedArticle, 
+    checkParsedArticle,
+    checkArticleContent,
     insertMetadata, 
     getMetadata,
     getVehicleArticles,
@@ -886,29 +887,29 @@ const articlesCacheMiddleware = async (req, res, next) => {
                     if (articles && articles.length > 0) {
                         // We need to transform these Supabase rows back into the shape Motor API returns
                         // or at least what our normalizeMotorResponse expects.
-                        const motorShape = {
+                        let motorShape = {
                             header: { status: 'OK', statusCode: 200 },
                             body: {
-                                // We store them slightly flattened in Supabase, but our UI expects 
-                                // the Motor format which we then normalize.
-                                // Actually, if we just return the "normalized" version it might be better,
-                                // but the frontend SearchResultsState expects the full Motor response to then call its own normalization.
-                                // TO AVOID FRONEND CHANGES: Return a mock Motor response that our ResponseInterceptor will then normalize.
                                 articleDetails: articles.map(a => ({
                                     id: a.original_id,
                                     title: a.title,
                                     subtitle: a.subtitle,
+                                    code: a.code || undefined,
+                                    description: a.description || undefined,
                                     bucket: a.bucket,
                                     parentBucket: a.parent_bucket,
                                     thumbnailHref: a.thumbnail_href,
+                                    bulletinNumber: a.bulletin_number || undefined,
+                                    releaseDate: a.release_date || undefined,
+                                    sort: a.sort,
                                     contentSource: a.content_source || 'MOTOR'
                                 })),
-                                filterTabs: [] // The response interceptor will generate these if missing, or we can mock them
+                                filterTabs: []
                             }
                         };
+
+                        motorShape = normalizeMotorResponse(motorShape);
                         
-                        // We set a flag so the response interceptor doesn't try to normalize AGAIN if we already did it
-                        // Or better: just return it and let the response interceptor handle it as if it came from Motor.
                         res.setHeader('x-data-source', 'supabase');
                         res.setHeader('x-cache-hit', 'true');
                         return res.json(motorShape);
@@ -928,34 +929,46 @@ app.use('/api', articlesCacheMiddleware);
 // Article Content Cache-First Middleware
 const articleContentCacheMiddleware = async (req, res, next) => {
     const path = req.path;
-    // Example: /api/source/Ford/vehicle/2013:Ford:Explorer/article/12345/html
-    const isArticleHtml = path.includes('/article/') && path.endsWith('/html');
+    const isArticleContent = path.includes('/article/') && (path.endsWith('/html') || !path.includes('/orientations'));
     
-    if (isArticleHtml && req.method === 'GET') {
+    if (isArticleContent && req.method === 'GET') {
         try {
             const pathParts = path.split('/');
             const articleIdx = pathParts.indexOf('article');
+            const vehicleIdx = pathParts.indexOf('vehicle');
             if (articleIdx !== -1 && pathParts.length > articleIdx + 1) {
                 const articleId = pathParts[articleIdx + 1];
+                const vehicleId = vehicleIdx !== -1 && pathParts.length > vehicleIdx + 1
+                    ? decodeURIComponent(pathParts[vehicleIdx + 1])
+                    : null;
                 
-                // Attempt to find in ANY of the content tables
-                // This is a bit brute-force but since we don't know the type from the URL alone,
-                // we check the most likely one first (procedures)
+                // 1. Check normalized content tables (procedures, dtcs, tsbs, specifications)
                 const cached = await checkParsedArticle(articleId);
                 if (cached) {
-                    logger.info(`✓ Serving article content from cache: ${articleId}`);
-                    res.setHeader('x-data-source', 'supabase');
-                    res.setHeader('x-cache-hit', 'true');
-                    // Wrap in the shape the UI expects (Motor typically returns { body: { html: "..." } })
-                    // DB column for full HTML is content_html (procedures, tsbs, dtcs tables).
-                    return res.json({
-                        header: { status: 'OK', statusCode: 200 },
-                        body: {
-                            html: cached.content_html || cached.html || cached.description || cached.content || '',
-                            title: cached.title,
-                            id: articleId
-                        }
-                    });
+                    const html = cached.content_html || cached.html || cached.content || '';
+                    if (html) {
+                        logger.info(`✓ Serving article ${articleId} from normalized cache (${cached._table})`);
+                        res.setHeader('x-data-source', 'supabase');
+                        res.setHeader('x-cache-hit', 'true');
+                        return res.json({
+                            header: { status: 'OK', statusCode: 200 },
+                            body: { html, title: cached.title, id: articleId }
+                        });
+                    }
+                }
+
+                // 2. Check articles table for original_content (lazy-synced HTML)
+                if (vehicleId) {
+                    const articleRow = await checkArticleContent(vehicleId, articleId);
+                    if (articleRow && articleRow.original_content) {
+                        logger.info(`✓ Serving article ${articleId} from articles table cache`);
+                        res.setHeader('x-data-source', 'supabase');
+                        res.setHeader('x-cache-hit', 'true');
+                        return res.json({
+                            header: { status: 'OK', statusCode: 200 },
+                            body: { html: articleRow.original_content, title: articleRow.title, id: articleId }
+                        });
+                    }
                 }
             }
         } catch (err) {
@@ -1124,9 +1137,19 @@ app.use('/', authMiddleware, createProxyMiddleware({
                 const isSilo = req.path.includes('/parts') || req.path.includes('/fluids') || req.path.includes('/specifications') || req.path.includes('/dtcs') || req.path.includes('/tsbs');
                 const isCatalog = isArticleCatalog || isMetadata || isSilo;
 
+                // Always normalize article catalogs (menu structure)
+                if (isArticleCatalog) {
+                    try {
+                        let parsedJson = JSON.parse(normalizedData);
+                        parsedJson = normalizeMotorResponse(parsedJson);
+                        normalizedData = JSON.stringify(parsedJson);
+                        logger.info(`Normalized menu structure for ${req.path}`);
+                    } catch (e) {
+                        logger.warn('Failed to normalize article catalog:', e);
+                    }
+                }
+
                 if (!isCatalog && normalizedData && normalizedData.length >= 1000) {
-                    // Fast heuristic to avoid JSON.parse entirely if there's no possibility of a 500-element array.
-                    // Does the string contain 500 commas?
                     let commaCount = 0;
                     let idx = normalizedData.indexOf(',');
                     while (idx !== -1) {
@@ -1167,18 +1190,9 @@ app.use('/', authMiddleware, createProxyMiddleware({
 
                             truncateArrays(parsedJson);
 
-                            if (isArticleCatalog) {
-                                parsedJson = normalizeMotorResponse(parsedJson);
-                            }
-
-                            if (didTruncate || isArticleCatalog) {
+                            if (didTruncate) {
                                 normalizedData = JSON.stringify(parsedJson);
-                                if (didTruncate) {
-                                    logger.info(`Truncated massive JSON arrays to prevent iOS/Vercel OOM crashes on ${req.path}`);
-                                }
-                                if (isArticleCatalog) {
-                                    logger.info(`Normalized menu structure for ${req.path}`);
-                                }
+                                logger.info(`Truncated massive JSON arrays to prevent iOS/Vercel OOM crashes on ${req.path}`);
                             }
                         } catch (e) {
                             logger.warn('Failed to parse or truncate JSON for performance protections:', e);
