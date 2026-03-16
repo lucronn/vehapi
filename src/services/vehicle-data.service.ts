@@ -3,6 +3,7 @@ import { Observable, from, of, forkJoin } from 'rxjs';
 import { map, switchMap, tap, catchError, timeout } from 'rxjs/operators';
 import { MotorApiService } from './motor-api.service';
 import { SupabaseService } from './supabase.service';
+import { DataSyncService } from './data-sync.service';
 import { ApiResponse, Dtc, Tsb, Procedure, WiringDiagram, ComponentLocation, Spec, Fluid, MaintenanceSchedule, FilterTab, ArticlesData } from '../models/motor.models';
 
 export type DashboardSection = 'overview' | 'specs' | 'fluids' | 'maintenance' | 'parts' | 'labor' | 'tsbs' | 'dtcs' | 'diagrams' | 'bookmarks' | 'search' | 'common-issues';
@@ -45,6 +46,7 @@ interface SectionStrategy {
 export class VehicleDataService {
     private motorApi = inject(MotorApiService);
     private supabase = inject(SupabaseService);
+    private dataSync = inject(DataSyncService);
 
     private readonly sectionStrategies: Record<string, SectionStrategy> = {
         dtcs: {
@@ -323,6 +325,11 @@ export class VehicleDataService {
             fluids: getFluids().pipe(catchError(() => of([]))),
             specs: getSpecs().pipe(catchError(() => of([])))
         }).pipe(
+            tap(result => {
+                if (result.fluids.length > 0) {
+                    this.dataSync.lazySyncFluids(contentSource, vehicleId).catch(() => {});
+                }
+            }),
             timeout(20000),
             catchError(err => {
                 console.warn('[VehicleDataService-V4] loadSpecs FATAL:', err);
@@ -708,15 +715,14 @@ export class VehicleDataService {
         loadingSignal.set(true);
         const params = this.resolveSourceParams(contentSource, vehicleId, motorVehicleId, true);
 
-        // Fetch By Interval
         this.motorApi.getMaintenanceByIntervals(params.contentSource, params.vehicleId, 'miles', interval)
             .subscribe({
                 next: (res) => {
                     loadingSignal.set(false);
-                    // Map response to simple MaintenanceSchedule[]
-                    // Handle potential variations in API response structure
                     const schedules = (res.body as any)?.schedules || (res.body as any)?.items || (res.body as any)?.data || [];
                     updateState(schedules);
+                    // Lazily cache this interval for next visit (fire-and-forget)
+                    this.dataSync.lazySyncMaintenanceInterval(contentSource, vehicleId, interval).catch(() => {});
                 },
                 error: (err) => {
                     console.error('[VehicleDataService] Maintenance fetch failed:', err);
@@ -784,6 +790,9 @@ export class VehicleDataService {
                         next: (res) => {
                             updateState(res.body?.data || []);
                             loadingSignal.set(false);
+                            if (!searchTerm) {
+                                this.dataSync.lazySyncParts(contentSource, vehicleId).catch(() => {});
+                            }
                         },
                         error: (err) => {
                             console.error('[VehicleDataService] Parts API failed:', err);

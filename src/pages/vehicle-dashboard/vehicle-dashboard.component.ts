@@ -342,11 +342,8 @@ export class VehicleDashboardComponent {
   private windowManager = inject(WindowManagerService);
 
   private async checkAndTriggerNormalization(cs: string, vid: string) {
-    const isNormalized = await this.dataSync.checkNormalizationStatus(vid);
-    if (!isNormalized) {
-      const name = this.vehicleName() || 'Vehicle';
-      this.dataSync.syncFullVehicle(cs, vid, name);
-    }
+    const name = this.vehicleName() || 'Vehicle';
+    await this.dataSync.ensureVehicleRecord(cs, vid, name);
   }
 
   // Orientation Selection
