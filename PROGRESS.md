@@ -10,8 +10,9 @@
 | Credits Service (Balance, Unlocks, Transactions) | Complete |
 | Section-Level Content Locking | Complete |
 | Article-Level Content Locking | Complete |
+| Navigation Access Control | Complete |
 | UI/UX Copy Cleanup | Complete |
-| Lock Overlay UX | Complete |
+| Desktop UI Polish | Complete |
 
 ## Implementation Checklist
 
@@ -31,15 +32,26 @@
 - [x] Component-locations module type aligned to `diagrams` (was mismatched)
 - [x] Locked sections show limited preview items (max 8)
 - [x] Direct URL access to articles is blocked when section is locked
+- [x] Browse-all article links route through onArticleClick (not direct routerLinks)
+- [x] Sidebar category tree replaced with section links (no unprotected article tree)
+
+### Navigation
+- [x] Sidebar redesigned with clean section links + lock indicators
+- [x] Sections conditionally shown based on data availability
+- [x] Credit balance visible in sidebar footer and mobile header
+- [x] Mobile nav overlay shows all available sections (mirrors sidebar)
+- [x] Removed redundant category tree from sidebar
 
 ### UI/UX Cleanup
 - [x] Removed verbose marketing copy from home page
-- [x] Removed fluff section labels from dashboard (Tactical Overview, Intelligence, etc.)
+- [x] Removed fluff section labels from dashboard
 - [x] Tightened lock overlay descriptions to concise one-liners
-- [x] Simplified credits dashboard text (pack descriptions, billing portal, empty states)
+- [x] Simplified credits dashboard text
 - [x] Removed alert()/confirm() dialogs from unlock flows
-- [x] Removed internal status badges (Supabase Cached, Connected, version number)
-- [x] Cleaned up sidebar and mobile nav labels
+- [x] Removed internal status badges (Supabase Cached, Connected, version)
+- [x] Removed card/glass-card hover lift animations (layout shift)
+- [x] Toned down button hover glow effects
+- [x] Removed decorative blur orbs from dashboard
 
 ## Bugs & Known Issues
 
@@ -51,5 +63,4 @@ _None currently tracked._
 |----------|------|
 | Medium | Backend-side access enforcement (currently client-side only) |
 | Medium | Rate limiting on article content API |
-| Low | Add moduleType to browse-all article links |
 | Low | Full-vehicle unlock option from lock overlay |
