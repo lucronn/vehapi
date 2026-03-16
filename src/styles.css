@@ -221,28 +221,7 @@
   }
 
   .glass-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     border-color: rgba(255, 255, 255, 0.08);
-  }
-
-  /* Shine sweep on hover */
-  .glass-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 50%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.03), transparent);
-    transform: skewX(-15deg);
-    transition: left 0.6s ease;
-    pointer-events: none;
-    z-index: 1;
-  }
-
-  .glass-card:hover::before {
-    left: 200%;
   }
 
   /* Light mode glass card */
@@ -254,7 +233,6 @@
   }
 
   [data-theme="light"] .glass-card:hover {
-    box-shadow: var(--shadow-md);
     border-color: var(--primary);
   }
 
@@ -271,27 +249,8 @@
   }
 
   .card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    border-color: rgba(255, 255, 255, 0.08);
-  }
-
-  .card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 50%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.03), transparent);
-    transform: skewX(-15deg);
-    transition: left 0.6s ease;
-    pointer-events: none;
+    border-color: rgba(255, 255, 255, 0.1);
     z-index: 1;
-  }
-
-  .card:hover::before {
-    left: 200%;
   }
 
   [data-theme="light"] .card {
@@ -302,7 +261,6 @@
   }
 
   [data-theme="light"] .card:hover {
-    box-shadow: var(--shadow-md);
     border-color: var(--primary);
   }
 
@@ -337,12 +295,11 @@
   }
 
   .btn-primary:hover {
-    box-shadow: 0 0 20px rgba(0, 212, 255, 0.4), 0 0 40px rgba(0, 212, 255, 0.1);
-    transform: translateY(-1px);
+    box-shadow: 0 0 12px rgba(0, 212, 255, 0.25);
   }
 
   .btn-primary:active {
-    transform: scale(0.95);
+    opacity: 0.9;
   }
 
   .btn-primary:disabled {
@@ -547,6 +504,31 @@
   [data-theme="light"] .sidebar-nav-item.active {
     color: var(--primary);
     background: rgba(0, 150, 200, 0.06);
+  }
+
+  /* ---- Mobile Nav Items ---- */
+  .mobile-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: hsl(215, 20%, 70%);
+    transition: all 150ms;
+    text-align: left;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    text-decoration: none;
+  }
+
+  .mobile-nav-item:hover,
+  .mobile-nav-item.active {
+    color: white;
+    background: rgba(255, 255, 255, 0.05);
   }
 
   /* ---- Section Labels ---- */

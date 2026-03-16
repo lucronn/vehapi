@@ -35,10 +35,10 @@ import { LucideAngularModule, Menu, X, House, TriangleAlert, FileText, Wrench, P
 // Local Components
 import { LogoComponent } from '../../components/logo/logo.component';
 import { OrientationSelectorModalComponent, OrientationOption } from '../../components/orientation-selector-modal/orientation-selector-modal.component';
-import { ThemeToggleComponent } from '../../components/theme-toggle/theme-toggle.component';
 import { ArticleViewerComponent } from '../article-viewer/article-viewer.component';
 import { WindowManagerService } from '../../services/window-manager.service';
 import { AuthModalComponent } from '../../components/auth-modal/auth-modal.component';
+import { CreditsService } from '../../services/credits.service';
 
 export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'component-locations' | 'procedures' | 'parts' | 'specs' | 'maintenance' | 'browse-all' | 'common-issues';
 
@@ -66,7 +66,6 @@ export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'comp
     PartsSectionComponent,
     LogoComponent,
     OrientationSelectorModalComponent,
-    ThemeToggleComponent,
     AuthModalComponent,
     SyncProgressOverlayComponent,
     CommonIssuesSectionComponent
@@ -79,6 +78,7 @@ export class VehicleDashboardComponent {
   private vehicleData = inject(VehicleDataService);
   public searchResultsState = inject(SearchResultsState);
   public dataSync = inject(DataSyncService);
+  public creditsService = inject(CreditsService);
 
   readonly icons = { Menu, X, House, TriangleAlert, FileText, Wrench, Package, Lightbulb };
 

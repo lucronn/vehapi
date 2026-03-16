@@ -9,15 +9,19 @@
   <div class="md:hidden sticky top-0 w-full z-50 px-4 py-3 flex items-center justify-between
     bg-[hsl(230,35%,9%)]/90 backdrop-blur-xl border-b border-white/5"
     style="padding-top: calc(0.75rem + env(safe-area-inset-top, 0px)); padding-left: calc(1rem + env(safe-area-inset-left, 0px)); padding-right: calc(1rem + env(safe-area-inset-right, 0px));">
-    <div class="flex items-center gap-2">
-      <app-logo class="w-5 h-5"></app-logo>
-      <h1 class="text-sm font-heading font-bold tracking-tight truncate max-w-[220px] text-white">{{
+    <div class="flex items-center gap-2 min-w-0">
+      <a routerLink="/" class="flex-shrink-0">
+        <app-logo class="w-5 h-5"></app-logo>
+      </a>
+      <h1 class="text-sm font-heading font-bold tracking-tight truncate text-white">{{
         vehicleName() || 'TORQUE' }}</h1>
     </div>
     <div class="flex items-center gap-1">
-      <app-theme-toggle></app-theme-toggle>
+      <a routerLink="/credits" class="text-[10px] font-mono text-torque-cyan px-2 py-1">
+        {{ creditsService.balance() }} CR
+      </a>
       <button (click)="toggleMobileMenu()" class="btn-glass p-2 rounded-lg"
-        [attr.aria-label]="isMobileMenuOpen() ? 'Close navigation menu' : 'Open navigation menu'">
+        [attr.aria-label]="isMobileMenuOpen() ? 'Close menu' : 'Open menu'">
         <lucide-icon [img]="isMobileMenuOpen() ? icons.X : icons.Menu" class="w-5 h-5"></lucide-icon>
       </button>
     </div>
@@ -25,15 +29,65 @@
 
   <!-- Mobile Navigation Overlay -->
   @if (isMobileMenuOpen()) {
-  <div class="fixed inset-0 z-40 md:hidden pt-16 px-4 animate-fade-in bg-[hsl(230,35%,7%)]/95 backdrop-blur-xl">
-    <div class="mt-6 space-y-3">
-      <a routerLink="/credits" (click)="toggleMobileMenu()"
-        class="flex items-center justify-center gap-2 w-full py-3 text-sm font-medium text-torque-cyan hover:text-white border border-torque-cyan/30 hover:bg-torque-cyan/10 rounded-xl transition-colors">
-        Account
-      </a>
-      <button (click)="setSection('browse-all')" class="w-full btn-secondary py-3 text-sm">Browse All</button>
-      <a routerLink="/" (click)="toggleMobileMenu()"
-        class="block w-full text-center py-3 text-sm text-torque-muted hover:text-white transition-colors">Exit</a>
+  <div class="fixed inset-0 z-40 md:hidden pt-16 px-4 animate-fade-in bg-[hsl(230,35%,7%)]/95 backdrop-blur-xl overflow-y-auto"
+    style="padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px))">
+    <div class="mt-4 space-y-1">
+      <button (click)="setSection('overview')" class="mobile-nav-item" [class.active]="activeSection() === 'overview'">
+        <lucide-icon [img]="icons.House" class="w-4 h-4"></lucide-icon>
+        <span>Overview</span>
+      </button>
+      <button (click)="setSection('common-issues')" class="mobile-nav-item" [class.active]="activeSection() === 'common-issues'">
+        <lucide-icon [img]="icons.Lightbulb" class="w-4 h-4"></lucide-icon>
+        <span>Common Issues</span>
+      </button>
+      @if (availableSections()?.hasSpecs) {
+      <button (click)="setSection('specs')" class="mobile-nav-item" [class.active]="activeSection() === 'specs'">
+        <span>Specifications</span>
+      </button>
+      }
+      @if (availableSections()?.hasDtcs) {
+      <button (click)="setSection('dtcs')" class="mobile-nav-item" [class.active]="activeSection() === 'dtcs'">
+        <span>Diagnostic Codes</span>
+      </button>
+      }
+      @if (availableSections()?.hasTsbs) {
+      <button (click)="setSection('tsbs')" class="mobile-nav-item" [class.active]="activeSection() === 'tsbs'">
+        <span>Service Bulletins</span>
+      </button>
+      }
+      @if (availableSections()?.hasDiagrams) {
+      <button (click)="setSection('diagrams')" class="mobile-nav-item" [class.active]="activeSection() === 'diagrams'">
+        <span>Wiring Diagrams</span>
+      </button>
+      }
+      @if (availableSections()?.hasProcedures) {
+      <button (click)="setSection('procedures')" class="mobile-nav-item" [class.active]="activeSection() === 'procedures'">
+        <span>Service Procedures</span>
+      </button>
+      }
+      @if (availableSections()?.hasParts) {
+      <button (click)="setSection('parts')" class="mobile-nav-item" [class.active]="activeSection() === 'parts'">
+        <span>Parts Catalog</span>
+      </button>
+      }
+      @if (availableSections()?.hasMaintenance) {
+      <button (click)="setSection('maintenance')" class="mobile-nav-item" [class.active]="activeSection() === 'maintenance'">
+        <span>Maintenance</span>
+      </button>
+      }
+      <button (click)="setSection('browse-all')" class="mobile-nav-item" [class.active]="activeSection() === 'browse-all'">
+        <lucide-icon [img]="icons.Package" class="w-4 h-4"></lucide-icon>
+        <span>All Data</span>
+      </button>
+
+      <div class="pt-4 border-t border-white/5 mt-4 space-y-1">
+        <a routerLink="/credits" (click)="toggleMobileMenu()" class="mobile-nav-item">
+          <span>Account</span>
+        </a>
+        <a routerLink="/" (click)="toggleMobileMenu()" class="mobile-nav-item text-torque-muted">
+          <span>Exit</span>
+        </a>
+      </div>
     </div>
   </div>
   }
