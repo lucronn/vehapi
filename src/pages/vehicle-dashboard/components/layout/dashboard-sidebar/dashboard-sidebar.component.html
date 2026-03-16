@@ -1,136 +1,170 @@
 <aside class="w-64 bg-torque-dark border-r border-white/5 flex flex-col h-full overflow-hidden flex-shrink-0">
     <!-- Header -->
-    <div class="h-14 border-b border-white/5 flex flex-col justify-center px-4 shrink-0 bg-torque-dark">
-        <h2 class="text-sm font-bold text-white truncate">{{ vehicleName }}</h2>
-        <p class="text-[10px] text-torque-muted uppercase tracking-wider">Dashboard</p>
+    <div class="h-14 border-b border-white/5 flex items-center gap-3 px-4 shrink-0 bg-torque-dark">
+        <a routerLink="/" class="flex items-center gap-2.5 min-w-0 group">
+            <app-logo class="w-5 h-5 flex-shrink-0"></app-logo>
+            <h2 class="text-sm font-bold text-white truncate group-hover:text-torque-cyan transition-colors">{{ vehicleName }}</h2>
+        </a>
     </div>
 
     <!-- Navigation -->
-    <nav class="flex-1 overflow-y-auto p-3 space-y-1">
+    <nav class="flex-1 overflow-y-auto p-3 space-y-0.5">
+        <!-- Primary -->
         <button (click)="onSectionClick('overview')"
-            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
-            [ngClass]="{
-                'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': activeSection === 'overview',
-                'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': activeSection !== 'overview'
-            }">
-            <lucide-icon [img]="icons.House" class="w-4 h-4"></lucide-icon>
-            <span class="text-xs font-bold tracking-[0.15em] uppercase">Overview</span>
+            class="sidebar-nav-item"
+            [class.active]="activeSection === 'overview'">
+            <lucide-icon [img]="icons.House" class="w-4 h-4 flex-shrink-0"></lucide-icon>
+            <span class="flex-1">Overview</span>
         </button>
 
         <button (click)="onSectionClick('common-issues')"
-            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2 mt-1"
-            [ngClass]="{
-                'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': activeSection === 'common-issues',
-                'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': activeSection !== 'common-issues'
-            }">
-            <lucide-icon [img]="icons.Lightbulb" class="w-4 h-4"></lucide-icon>
-            <span class="text-xs font-bold tracking-[0.15em] uppercase">Common Issues</span>
+            class="sidebar-nav-item"
+            [class.active]="activeSection === 'common-issues'">
+            <lucide-icon [img]="icons.Lightbulb" class="w-4 h-4 flex-shrink-0"></lucide-icon>
+            <span class="flex-1">Common Issues</span>
+            @if (!creditsService.hasAccess(vehicleId, 'common_issues')) {
+            <lucide-icon [img]="icons.Lock" class="w-3 h-3 text-torque-muted/50 flex-shrink-0"></lucide-icon>
+            }
         </button>
 
-        <div class="pt-4 pb-2 px-3">
-            <p class="text-[10px] font-mono uppercase tracking-[0.2em] text-torque-muted mb-1">Categories</p>
+        <div class="pt-3 pb-1.5 px-1">
+            <p class="text-[9px] font-semibold uppercase tracking-[0.15em] text-torque-muted/60">Data</p>
         </div>
 
-        <!-- Render the category tree -->
-        <ng-container *ngTemplateOutlet="treeNodeTemplate; context: { nodes: treeNodes(), depth: 0 }"></ng-container>
-
-        <ng-template #treeNodeTemplate let-nodes="nodes" let-depth="depth">
-            <ul class="space-y-1" [ngClass]="{'pl-4 ml-2 border-l border-white/5': depth > 0}">
-                @for (node of nodes; track node.id) {
-                <li>
-                    @if (node.type !== 'article') {
-                        <!-- Root/System Node (Large Button) vs Nested Folder -->
-                        @if (depth === 0) {
-                            <button (click)="toggleNode(node.id, $event)"
-                                class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
-                                [ngClass]="{
-                                    'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': isNodeExpanded(node.id),
-                                    'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': !isNodeExpanded(node.id)
-                                }">
-                                <lucide-icon [img]="getIcon(node)" class="w-4 h-4"></lucide-icon>
-                                <span class="text-xs font-bold tracking-[0.15em] uppercase flex-1 truncate">{{ node.name }}</span>
-                                <div class="flex items-center gap-2">
-                                    <span class="text-[9px] font-mono bg-white/5 px-1.5 py-0.5 rounded border border-white/5 text-torque-muted group-hover:text-torque-cyan transition-colors">
-                                        {{ node.children.length }}
-                                    </span>
-                                    <lucide-icon [img]="isNodeExpanded(node.id) ? icons.ChevronDown : icons.ChevronRight"
-                                        class="w-3 h-3 text-torque-muted transition-transform"></lucide-icon>
-                                </div>
-                            </button>
-                        } @else {
-                            <button (click)="toggleNode(node.id, $event)"
-                                class="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-colors hover:bg-white/[0.03] group"
-                                [ngClass]="{
-                                    'text-white': isNodeExpanded(node.id),
-                                    'text-torque-muted': !isNodeExpanded(node.id)
-                                }">
-                                <lucide-icon [img]="isNodeExpanded(node.id) ? icons.ChevronDown : icons.ChevronRight"
-                                    class="w-3 h-3 transition-transform text-torque-muted group-hover:text-white"></lucide-icon>
-                                <lucide-icon [img]="isNodeExpanded(node.id) ? icons.FolderOpen : icons.Folder"
-                                    class="w-3.5 h-3.5 text-torque-cyan/70"></lucide-icon>
-                                <span class="text-xs truncate flex-1 font-medium">{{ node.name }}</span>
-                                <span class="text-[10px] bg-white/5 text-torque-muted px-1.5 rounded-md">
-                                    {{ node.children.length }}
-                                </span>
-                            </button>
-                        }
-
-                        <!-- Nested Children -->
-                        @if (isNodeExpanded(node.id) && node.children.length > 0) {
-                            <div class="mt-1">
-                                <ng-container *ngTemplateOutlet="treeNodeTemplate; context: { nodes: node.children, depth: depth + 1 }"></ng-container>
-                            </div>
-                        }
-                    } @else {
-                        <!-- Article/File Node -->
-                        <button (click)="onArticleClick(node.id)"
-                            class="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-left transition-colors text-torque-muted hover:text-white hover:bg-white/[0.03] group pl-7">
-                            <lucide-icon [img]="icons.FileText" class="w-3 h-3 text-torque-muted group-hover:text-torque-cyan transition-colors"></lucide-icon>
-                            <span class="text-[11px] truncate flex-1" [title]="node.name">{{ node.name }}</span>
-                        </button>
-                    }
-                </li>
-                }
-            </ul>
-        </ng-template>
-
-    </nav>
-
-    <!-- Footer -->
-    <div class="p-4 border-t border-white/5 space-y-3 shrink-0">
-
-        <!-- Account link -->
-        <a routerLink="/credits"
-            class="w-full flex items-center gap-2 px-3 py-2 rounded-xl
-           text-[hsl(215,20%,65%)] hover:text-white hover:bg-white/[0.03] transition-colors text-xs font-semibold border border-transparent hover:border-white/5">
-            <lucide-icon [img]="icons.CreditCard" class="w-4 h-4 text-torque-cyan"></lucide-icon>
-            Account
-        </a>
-
-        <!-- Auth Section -->
-        @if (authService.isLoggedIn()) {
-        <div class="flex items-center gap-2">
-            <div class="w-7 h-7 rounded-full bg-[hsl(217,91%,55%)] flex items-center justify-center flex-shrink-0">
-                <lucide-icon [img]="icons.User" class="w-3.5 h-3.5 text-white"></lucide-icon>
-            </div>
-            <div class="flex-1 min-w-0">
-                <p class="text-[10px] font-semibold text-white truncate">{{ authService.user()?.email }}</p>
-                <p class="text-[9px] font-mono text-torque-muted">Signed In</p>
-            </div>
-            <button (click)="signOut()" title="Sign Out" aria-label="Sign out"
-                class="p-1.5 rounded-lg text-torque-muted hover:text-red-400 hover:bg-red-400/10 transition-colors focus-visible:ring-2 focus-visible:ring-torque-cyan/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(230,35%,9%)]">
-                <lucide-icon [img]="icons.LogOut" class="w-3.5 h-3.5"></lucide-icon>
-            </button>
-        </div>
-        } @else {
-        <button (click)="onOpenAuthClick()" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl
-                       bg-[hsl(217,91%,55%)]/10 border border-[hsl(217,91%,55%)]/20
-                       text-[hsl(217,91%,70%)] hover:bg-[hsl(217,91%,55%)]/20
-                       transition-colors text-xs font-semibold">
-            <lucide-icon [img]="icons.LogIn" class="w-4 h-4"></lucide-icon>
-            Sign In / Create Account
+        @if (availableSections?.hasSpecs) {
+        <button (click)="onSectionClick('specs')"
+            class="sidebar-nav-item"
+            [class.active]="activeSection === 'specs'">
+            <lucide-icon [img]="icons.Settings" class="w-4 h-4 flex-shrink-0"></lucide-icon>
+            <span class="flex-1">Specifications</span>
+            @if (!creditsService.hasAccess(vehicleId, 'specs')) {
+            <lucide-icon [img]="icons.Lock" class="w-3 h-3 text-torque-muted/50 flex-shrink-0"></lucide-icon>
+            }
         </button>
         }
 
+        @if (availableSections?.hasDtcs) {
+        <button (click)="onSectionClick('dtcs')"
+            class="sidebar-nav-item"
+            [class.active]="activeSection === 'dtcs'">
+            <lucide-icon [img]="icons.TriangleAlert" class="w-4 h-4 flex-shrink-0"></lucide-icon>
+            <span class="flex-1">Diagnostic Codes</span>
+            @if (!creditsService.hasAccess(vehicleId, 'dtcs')) {
+            <lucide-icon [img]="icons.Lock" class="w-3 h-3 text-torque-muted/50 flex-shrink-0"></lucide-icon>
+            }
+        </button>
+        }
+
+        @if (availableSections?.hasTsbs) {
+        <button (click)="onSectionClick('tsbs')"
+            class="sidebar-nav-item"
+            [class.active]="activeSection === 'tsbs'">
+            <lucide-icon [img]="icons.FileText" class="w-4 h-4 flex-shrink-0"></lucide-icon>
+            <span class="flex-1">Service Bulletins</span>
+            @if (!creditsService.hasAccess(vehicleId, 'tsbs')) {
+            <lucide-icon [img]="icons.Lock" class="w-3 h-3 text-torque-muted/50 flex-shrink-0"></lucide-icon>
+            }
+        </button>
+        }
+
+        @if (availableSections?.hasDiagrams) {
+        <button (click)="onSectionClick('diagrams')"
+            class="sidebar-nav-item"
+            [class.active]="activeSection === 'diagrams'">
+            <lucide-icon [img]="icons.Cable" class="w-4 h-4 flex-shrink-0"></lucide-icon>
+            <span class="flex-1">Wiring Diagrams</span>
+            @if (!creditsService.hasAccess(vehicleId, 'diagrams')) {
+            <lucide-icon [img]="icons.Lock" class="w-3 h-3 text-torque-muted/50 flex-shrink-0"></lucide-icon>
+            }
+        </button>
+        }
+
+        @if (availableSections?.hasComponentLocations) {
+        <button (click)="onSectionClick('component-locations')"
+            class="sidebar-nav-item"
+            [class.active]="activeSection === 'component-locations'">
+            <lucide-icon [img]="icons.MapPin" class="w-4 h-4 flex-shrink-0"></lucide-icon>
+            <span class="flex-1">Component Locations</span>
+            @if (!creditsService.hasAccess(vehicleId, 'diagrams')) {
+            <lucide-icon [img]="icons.Lock" class="w-3 h-3 text-torque-muted/50 flex-shrink-0"></lucide-icon>
+            }
+        </button>
+        }
+
+        @if (availableSections?.hasProcedures) {
+        <button (click)="onSectionClick('procedures')"
+            class="sidebar-nav-item"
+            [class.active]="activeSection === 'procedures'">
+            <lucide-icon [img]="icons.Wrench" class="w-4 h-4 flex-shrink-0"></lucide-icon>
+            <span class="flex-1">Service Procedures</span>
+            @if (!creditsService.hasAccess(vehicleId, 'procedures')) {
+            <lucide-icon [img]="icons.Lock" class="w-3 h-3 text-torque-muted/50 flex-shrink-0"></lucide-icon>
+            }
+        </button>
+        }
+
+        @if (availableSections?.hasParts) {
+        <button (click)="onSectionClick('parts')"
+            class="sidebar-nav-item"
+            [class.active]="activeSection === 'parts'">
+            <lucide-icon [img]="icons.Box" class="w-4 h-4 flex-shrink-0"></lucide-icon>
+            <span class="flex-1">Parts Catalog</span>
+            @if (!creditsService.hasAccess(vehicleId, 'parts')) {
+            <lucide-icon [img]="icons.Lock" class="w-3 h-3 text-torque-muted/50 flex-shrink-0"></lucide-icon>
+            }
+        </button>
+        }
+
+        @if (availableSections?.hasMaintenance) {
+        <button (click)="onSectionClick('maintenance')"
+            class="sidebar-nav-item"
+            [class.active]="activeSection === 'maintenance'">
+            <lucide-icon [img]="icons.Calendar" class="w-4 h-4 flex-shrink-0"></lucide-icon>
+            <span class="flex-1">Maintenance</span>
+            @if (!creditsService.hasAccess(vehicleId, 'maintenance')) {
+            <lucide-icon [img]="icons.Lock" class="w-3 h-3 text-torque-muted/50 flex-shrink-0"></lucide-icon>
+            }
+        </button>
+        }
+
+        <div class="pt-3 pb-1.5 px-1">
+            <p class="text-[9px] font-semibold uppercase tracking-[0.15em] text-torque-muted/60">Browse</p>
+        </div>
+
+        <button (click)="onSectionClick('browse-all')"
+            class="sidebar-nav-item"
+            [class.active]="activeSection === 'browse-all'">
+            <lucide-icon [img]="icons.Package" class="w-4 h-4 flex-shrink-0"></lucide-icon>
+            <span class="flex-1">All Data</span>
+        </button>
+    </nav>
+
+    <!-- Footer -->
+    <div class="p-3 border-t border-white/5 space-y-2 shrink-0">
+        <a routerLink="/credits"
+            class="sidebar-nav-item text-torque-muted hover:text-white">
+            <lucide-icon [img]="icons.CreditCard" class="w-4 h-4 flex-shrink-0 text-torque-cyan"></lucide-icon>
+            <span class="flex-1">Account</span>
+            <span class="text-[10px] font-mono text-torque-cyan">{{ creditsService.balance() }} CR</span>
+        </a>
+
+        @if (authService.isLoggedIn()) {
+        <div class="flex items-center gap-2 px-2.5 py-1.5">
+            <div class="w-6 h-6 rounded-full bg-[hsl(217,91%,55%)] flex items-center justify-center flex-shrink-0">
+                <lucide-icon [img]="icons.User" class="w-3 h-3 text-white"></lucide-icon>
+            </div>
+            <p class="text-[10px] text-torque-muted truncate flex-1">{{ authService.user()?.email }}</p>
+            <button (click)="signOut()" title="Sign Out" aria-label="Sign out"
+                class="p-1 rounded text-torque-muted hover:text-red-400 hover:bg-red-400/10 transition-colors">
+                <lucide-icon [img]="icons.LogOut" class="w-3 h-3"></lucide-icon>
+            </button>
+        </div>
+        } @else {
+        <button (click)="onOpenAuthClick()"
+            class="sidebar-nav-item bg-[hsl(217,91%,55%)]/10 border border-[hsl(217,91%,55%)]/20 text-[hsl(217,91%,70%)] hover:bg-[hsl(217,91%,55%)]/20">
+            <lucide-icon [img]="icons.LogIn" class="w-4 h-4 flex-shrink-0"></lucide-icon>
+            <span class="flex-1">Sign In</span>
+        </button>
+        }
     </div>
 </aside>

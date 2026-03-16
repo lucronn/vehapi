@@ -1,8 +1,8 @@
 <div class="min-h-screen flex flex-col md:flex-row relative">
   <!-- Sidebar Navigation - Desktop -->
   <app-dashboard-sidebar class="hidden md:flex w-64 flex-col flex-shrink-0" [vehicleName]="vehicleName()"
-    [activeSection]="activeSection()" [availableSections]="availableSections()" (sectionChange)="setSection($event)"
-    (openAuthModal)="showAuthModal.set(true)" (articleSelected)="onArticleClick(null, {id: $event})">
+    [vehicleId]="vehicleId()" [activeSection]="activeSection()" [availableSections]="availableSections()"
+    (sectionChange)="setSection($event)" (openAuthModal)="showAuthModal.set(true)">
   </app-dashboard-sidebar>
 
   <!-- Mobile Header -->
@@ -40,14 +40,8 @@
 
   <!-- Main Content Area -->
   <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 relative pb-20 md:pb-8 z-10">
-
-    <!-- Decorative blur -->
-    <div
-      class="hidden sm:block absolute top-0 right-0 w-[500px] h-[500px] bg-[hsl(191,97%,50%)] opacity-[0.02] rounded-full blur-[150px] pointer-events-none">
-    </div>
-
     <!-- Search Bar -->
-    <div class="max-w-5xl mx-auto mb-6">
+    <div class="max-w-6xl mx-auto mb-6">
       <app-dashboard-search [searchTerm]="searchTerm()" (searchChange)="onSearch($event)">
       </app-dashboard-search>
 
@@ -239,8 +233,8 @@
                 <ul class="space-y-1.5">
                   @for (article of bucket.articles; track article.id) {
                   <li>
-                    <a [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', article.id]"
-                      class="block text-sm py-1 text-torque-secondary hover:text-white transition-colors">
+                    <a href="javascript:void(0)" (click)="onArticleClick($event, article)"
+                      class="block text-sm py-1 text-torque-secondary hover:text-white transition-colors cursor-pointer">
                       {{ article.title }}
                     </a>
                   </li>
@@ -258,8 +252,8 @@
                     <ul class="space-y-1 pl-2">
                       @for (art of child.articles; track art.id) {
                       <li>
-                        <a [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', art.id]"
-                          class="block text-xs py-0.5 text-torque-secondary hover:text-white transition-colors">
+                        <a href="javascript:void(0)" (click)="onArticleClick($event, art)"
+                          class="block text-xs py-0.5 text-torque-secondary hover:text-white transition-colors cursor-pointer">
                           {{ art.title }}
                         </a>
                       </li>

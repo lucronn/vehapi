@@ -495,6 +495,60 @@
     box-shadow: 0 0 8px rgba(124, 58, 237, 0.15);
   }
 
+  /* ---- Sidebar Nav Items ---- */
+  .sidebar-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    width: 100%;
+    padding: 0.5rem 0.625rem;
+    border-radius: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: hsl(215, 20%, 55%);
+    transition: all 150ms;
+    text-align: left;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+  }
+
+  .sidebar-nav-item:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .sidebar-nav-item.active {
+    color: white;
+    background: rgba(0, 212, 255, 0.08);
+  }
+
+  .sidebar-nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2px;
+    height: 60%;
+    background: hsl(191, 97%, 50%);
+    border-radius: 1px;
+  }
+
+  [data-theme="light"] .sidebar-nav-item {
+    color: var(--text-secondary);
+  }
+
+  [data-theme="light"] .sidebar-nav-item:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+  }
+
+  [data-theme="light"] .sidebar-nav-item.active {
+    color: var(--primary);
+    background: rgba(0, 150, 200, 0.06);
+  }
+
   /* ---- Section Labels ---- */
   .section-label {
     font-size: 0.75rem;
