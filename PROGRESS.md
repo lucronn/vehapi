@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-03-18 (article lock enforcement, sidebar moduleType)
+**Last updated**: 2026-03-18 (backend article access enforcement)
 
 ## Summary
 
@@ -32,6 +32,7 @@
 - [x] Component-locations module type aligned to `diagrams` (was mismatched)
 - [x] Locked sections show limited preview items (max 8)
 - [x] Direct URL access to articles is blocked (missing moduleType → locked; sidebar/browse-all pass moduleType)
+- [x] Backend verifies article access (Bearer token + Supabase bucket lookup + unlock check)
 
 ### UI/UX Cleanup
 - [x] Removed verbose marketing copy from home page
@@ -55,7 +56,6 @@ _None currently tracked._
 
 | Priority | Task |
 |----------|------|
-| Medium | Backend-side access enforcement (currently client-side only) |
 | Medium | Rate limiting on article content API |
 | Low | Full-vehicle unlock option from lock overlay |
 

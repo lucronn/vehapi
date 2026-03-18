@@ -1,7 +1,8 @@
 import '@angular/compiler';
 
 import { bootstrapApplication } from '@angular/platform-browser';
-import { provideHttpClient, withFetch } from '@angular/common/http';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+import { authHeaderInterceptor } from './src/interceptors/auth-header.interceptor';
 import { provideRouter, withHashLocation } from '@angular/router';
 import { provideExperimentalZonelessChangeDetection } from '@angular/core';
 
@@ -14,7 +15,7 @@ import { CreditsDashboardComponent } from './src/pages/credits-dashboard/credits
 bootstrapApplication(AppComponent, {
   providers: [
     provideExperimentalZonelessChangeDetection(),
-    provideHttpClient(withFetch()),
+    provideHttpClient(withFetch(), withInterceptors([authHeaderInterceptor])),
     provideRouter([
       { path: '', component: HomeComponent },
       { path: 'credits', component: CreditsDashboardComponent },

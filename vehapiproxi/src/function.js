@@ -16,6 +16,7 @@ import {
     insertParsedData, 
     checkParsedArticle,
     checkArticleContent,
+    getArticleMetadata,
     insertMetadata, 
     getMetadata,
     getVehicleArticles,
@@ -923,6 +924,73 @@ const articlesCacheMiddleware = async (req, res, next) => {
     next();
 };
 
+// Article Access Enforcement: require auth + unlock for article content
+const BUCKET_TO_MODULE = [
+    { patterns: ['diagnostic trouble codes', 'dtcs', 'fault codes', 'diagnostic codes', 'p-codes', 'c-codes', 'b-codes', 'u-codes'], module: 'dtcs' },
+    { patterns: ['technical service bulletins', 'tsbs', 'bulletin', 'service bulletins'], module: 'tsbs' },
+    { patterns: ['procedure', 'labor', 'service procedures', 'engine mechanical', 'transmission', 'electrical', 'brakes', 'hvac', 'cooling', 'fuel', 'suspension', 'steering', 'body', 'restraints', 'maintenance', 'general'], module: 'procedures' },
+    { patterns: ['wiring diagrams', 'diagrams', 'system wiring'], module: 'diagrams' },
+    { patterns: ['component locations', 'component location diagrams'], module: 'diagrams' },
+    { patterns: ['specification', 'specs', 'fluid', 'capacity', 'alignment'], module: 'specs' },
+    { patterns: ['maintenance schedule', 'service intervals'], module: 'maintenance' },
+    { patterns: ['parts', 'part catalog'], module: 'parts' },
+    { patterns: ['common issues', 'common issue'], module: 'common_issues' },
+];
+
+function bucketToModuleType(bucket, parentBucket) {
+    const combined = [bucket, parentBucket].filter(Boolean).join(' ').toLowerCase();
+    if (!combined) return null;
+    for (const { patterns, module } of BUCKET_TO_MODULE) {
+        if (patterns.some(p => combined.includes(p))) return module;
+    }
+    return null;
+}
+
+const articleAccessMiddleware = async (req, res, next) => {
+    const path = req.path;
+    // Match /api/source/X/vehicle/Y/article/Z (exact - no /orientations, /title, etc.)
+    const articleContentMatch = path.match(/^\/api\/source\/[^/]+\/vehicle\/([^/]+)\/article\/([^/]+)$/);
+    if (!articleContentMatch || req.method !== 'GET') {
+        return next();
+    }
+
+    const vehicleId = decodeURIComponent(articleContentMatch[1]);
+    const articleId = articleContentMatch[2];
+
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Authorization required to access article content' });
+    }
+
+    const token = authHeader.split('Bearer ')[1];
+    const decoded = await verifySupabaseJwt(token);
+    if (!decoded) {
+        return res.status(401).json({ error: 'Invalid or expired authentication token' });
+    }
+
+    const userId = decoded.sub;
+    const metadata = await getArticleMetadata(vehicleId, articleId);
+    const moduleType = metadata ? bucketToModuleType(metadata.bucket, metadata.parent_bucket) : null;
+
+    if (!moduleType) {
+        logger.warn(`Article ${articleId} (vehicle ${vehicleId}): no bucket metadata in Supabase; denying access`);
+        return res.status(403).json({ error: 'Article access cannot be verified' });
+    }
+
+    const userData = await getUserData(userId);
+    const unlocks = userData.unlocks || {};
+    const vehicleUnlocks = unlocks[vehicleId] || [];
+    const hasAccess = vehicleUnlocks.includes(moduleType) || vehicleUnlocks.includes('full');
+
+    if (!hasAccess) {
+        logger.info(`Article access denied: user ${userId} lacks ${moduleType} for vehicle ${vehicleId}`);
+        return res.status(403).json({ error: 'Module not unlocked for this vehicle' });
+    }
+
+    next();
+};
+
+app.use('/api', articleAccessMiddleware);
 app.use('/api', metadataCacheMiddleware);
 app.use('/api', articlesCacheMiddleware);
 
