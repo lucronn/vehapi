@@ -171,7 +171,7 @@
             <!-- Desktop Dropdown -->
             <div *ngIf="showSuggestions() && !isVin() && !selectedVehicle()" #desktopSuggestionsContainer
               class="hidden md:block max-h-[400px] overflow-y-auto animate-fade-in"
-              style="border-top:1px solid rgba(255,255,255,0.05)">
+              style="border-top:1px solid rgba(255,255,255,0.05)"
               @if (searchStep() === 'Year' && suggestions().length > 10) {
               <!-- Year Grid -->
               <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 p-4 text-center">

@@ -70,6 +70,8 @@ export class HomeComponent implements OnInit {
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
   showSuggestions = signal(false);
+  /** Ignore the next document click - prevents closing dropdown when same click triggers focus */
+  private ignoreNextDocumentClick = false;
   viewportHeight = signal<number>(0);
   private baseViewportHeight = signal<number>(0);
   selectedSuggestionIndex = signal<number>(-1); // For keyboard navigation
@@ -151,10 +153,14 @@ export class HomeComponent implements OnInit {
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
+    if (this.ignoreNextDocumentClick) {
+      this.ignoreNextDocumentClick = false;
+      return;
+    }
     if (this.showSuggestions()) {
-      const clickedInsideInput = this.searchInputRef?.nativeElement.contains(event.target as Node);
-      const clickedInsideSuggestions = this.desktopSuggestionsContainerRef?.nativeElement.contains(event.target as Node);
-      const clickedInsideContainer = this.searchContainerRef?.nativeElement.contains(event.target as Node);
+      const clickedInsideInput = this.searchInputRef?.nativeElement?.contains(event.target as Node);
+      const clickedInsideSuggestions = this.desktopSuggestionsContainerRef?.nativeElement?.contains(event.target as Node);
+      const clickedInsideContainer = this.searchContainerRef?.nativeElement?.contains(event.target as Node);
 
       if (!clickedInsideInput && !clickedInsideSuggestions && !clickedInsideContainer) {
         this.showSuggestions.set(false);
@@ -379,13 +385,12 @@ export class HomeComponent implements OnInit {
   onSearchFocus(): void {
     if (this.selectedVehicle()) return;
     this.errorMessage.set(null);
-    // Always show suggestions on focus - they will populate as data loads
+    this.ignoreNextDocumentClick = true; // Same click that focused will bubble to document - don't close
     this.showSuggestions.set(true);
-    // Update viewport height when input is focused (keyboard may appear)
     setTimeout(() => {
       this.updateViewportHeight();
       this.calculateDropdownPosition();
-    }, 300);
+    }, 50);
   }
 
   private calculateDropdownPosition(): void {
@@ -501,12 +506,11 @@ export class HomeComponent implements OnInit {
       case 'Year':
         this.selectedYear.set(suggestion.value as number);
         this.isLoading.set(true);
-        this.showSuggestions.set(false); // Hide while loading
+        this.ignoreNextDocumentClick = true; // mousedown may trigger focus/blur - keep dropdown open
         this.motorApi.getMakes(suggestion.value as number).subscribe({
           next: (res) => {
             this.makes.set(res.body);
             this.isLoading.set(false);
-            // Show suggestions after makes are loaded
             if (res.body && res.body.length > 0) {
               this.showSuggestions.set(true);
             }

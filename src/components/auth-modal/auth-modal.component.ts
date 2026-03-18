@@ -1,4 +1,4 @@
-import { Component, signal, inject, output, input, effect } from '@angular/core';
+import { Component, signal, inject, output, input, effect, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
@@ -121,19 +121,25 @@ type AuthMode = 'signin' | 'signup' | 'reset';
     .modal-backdrop {
       position: fixed; inset: 0; z-index: 1000;
       background: rgba(0,0,0,0.6);
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       display: flex; align-items: center; justify-content: center;
       padding: 1rem;
+      animation: backdropIn 0.2s ease;
+    }
+    @keyframes backdropIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
     .modal-panel {
-      background: hsl(220, 16%, 10%);
-      border: 1px solid hsl(220, 16%, 20%);
-      border-radius: 16px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
       padding: 2rem;
       width: 100%; max-width: 420px;
       position: relative;
       box-shadow: 0 24px 64px rgba(0,0,0,0.5);
-      animation: modalIn 0.2s ease;
+      animation: modalIn 0.25s ease;
     }
     @keyframes modalIn {
       from { opacity: 0; transform: scale(0.95) translateY(-8px); }
@@ -142,11 +148,12 @@ type AuthMode = 'signin' | 'signup' | 'reset';
     .modal-close {
       position: absolute; top: 1rem; right: 1rem;
       background: none; border: none; cursor: pointer;
-      color: hsl(220, 10%, 50%);
-      padding: 4px; border-radius: 6px;
+      color: var(--text-muted);
+      padding: 6px; border-radius: 8px;
       transition: color 0.2s, background 0.2s;
+      min-width: 36px; min-height: 36px;
     }
-    .modal-close:hover { color: white; background: hsl(220, 16%, 20%); }
+    .modal-close:hover { color: var(--text-primary); background: var(--bg-hover); }
     .modal-header { text-align: center; margin-bottom: 1.5rem; }
     .modal-logo { font-size: 2rem; margin-bottom: 0.5rem; }
     .modal-title { font-size: 1.4rem; font-weight: 700; color: white; margin: 0 0 0.25rem; }
@@ -173,7 +180,7 @@ type AuthMode = 'signin' | 'signup' | 'reset';
       outline: none; transition: border-color 0.2s;
       box-sizing: border-box;
     }
-    .form-input:focus { border-color: hsl(217, 91%, 60%); }
+    .form-input:focus { border-color: var(--primary); outline: none; }
     .form-input::placeholder { color: hsl(220,10%,35%); }
     .password-toggle {
       position: absolute; right: 0.6rem;
@@ -182,14 +189,14 @@ type AuthMode = 'signin' | 'signup' | 'reset';
     }
     .password-toggle:hover { color: white; }
     .btn-primary {
-      margin-top: 0.25rem; padding: 0.7rem;
-      background: hsl(217, 91%, 55%);
-      border: none; border-radius: 8px;
-      color: white; font-weight: 600; font-size: 0.9rem;
-      cursor: pointer; transition: background 0.2s;
+      margin-top: 0.25rem; padding: 0.75rem;
+      background: var(--primary);
+      border: none; border-radius: var(--radius-sm);
+      color: var(--primary-text); font-weight: 600; font-size: 0.9rem;
+      cursor: pointer; transition: background 0.2s, box-shadow 0.2s;
       display: flex; align-items: center; justify-content: center; gap: 0.5rem;
     }
-    .btn-primary:hover:not(:disabled) { background: hsl(217, 91%, 65%); }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
     .divider {
       display: flex; align-items: center; gap: 0.75rem;
@@ -216,10 +223,10 @@ type AuthMode = 'signin' | 'signup' | 'reset';
     }
     .link-btn {
       background: none; border: none; cursor: pointer;
-      color: hsl(217, 91%, 65%); font-size: 0.82rem;
+      color: var(--primary); font-size: 0.82rem;
       padding: 0; text-decoration: underline; text-underline-offset: 2px;
     }
-    .link-btn:hover { color: hsl(217, 91%, 75%); }
+    .link-btn:hover { color: var(--primary-hover); }
     .footer-sep { color: hsl(220,10%,40%); }
     .spin { animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -254,6 +261,11 @@ export class AuthModalComponent {
         this.mode.set(newMode);
         this.errorMessage.set('');
         this.successMessage.set('');
+    }
+
+    @HostListener('document:keydown.escape')
+    onEscape() {
+        this.close.emit();
     }
 
     onBackdropClick(e: MouseEvent) {

@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-03-16 (lazy normalization)
+**Last updated**: 2026-03-18 (desktop UX, dropdown fix, modals)
 
 ## Summary
 
@@ -41,6 +41,11 @@
 - [x] Removed alert()/confirm() dialogs from unlock flows
 - [x] Removed internal status badges (Supabase Cached, Connected, version number)
 - [x] Cleaned up sidebar and mobile nav labels
+- [x] Removed redundant sign-in prompt from credits dashboard (header already has auth)
+- [x] Consolidated credits tabs: merged Buy into Overview
+- [x] Vehicle dashboard: mobile nav as bottom sheet, Home/Account in header, dynamic bottom tabs
+- [x] Fixed vehicle selection dropdown: no more flash/second-click (ignoreNextDocumentClick, keep open during Year load)
+- [x] Desktop: Home link in sidebar header, modals use design tokens, Escape to close
 
 ## Bugs & Known Issues
 

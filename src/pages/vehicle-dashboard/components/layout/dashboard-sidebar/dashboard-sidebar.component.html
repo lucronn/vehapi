@@ -1,7 +1,12 @@
 <aside class="w-64 bg-torque-dark border-r border-white/5 flex flex-col h-full overflow-hidden flex-shrink-0">
     <!-- Header -->
     <div class="h-14 border-b border-white/5 flex flex-col justify-center px-4 shrink-0 bg-torque-dark">
-        <h2 class="text-sm font-bold text-white truncate">{{ vehicleName }}</h2>
+        <div class="flex items-center justify-between gap-2">
+            <h2 class="text-sm font-bold text-white truncate min-w-0">{{ vehicleName }}</h2>
+            <a routerLink="/" class="btn-glass p-1.5 rounded-lg flex-shrink-0" title="Home" aria-label="Home">
+                <lucide-icon [img]="icons.House" class="w-4 h-4"></lucide-icon>
+            </a>
+        </div>
         <p class="text-[10px] text-torque-muted uppercase tracking-wider">Dashboard</p>
     </div>
 

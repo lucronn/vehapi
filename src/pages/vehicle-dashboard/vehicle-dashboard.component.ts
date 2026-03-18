@@ -31,7 +31,7 @@ import { CommonIssuesSectionComponent } from './components/sections/common-issue
 import { SyncProgressOverlayComponent } from './components/layout/sync-progress-overlay/sync-progress-overlay.component';
 
 // Icons
-import { LucideAngularModule, Menu, X, House, TriangleAlert, FileText, Wrench, Package, Lightbulb } from 'lucide-angular';
+import { LucideAngularModule, Menu, X, House, TriangleAlert, FileText, Wrench, Package, Lightbulb, CreditCard } from 'lucide-angular';
 
 // Local Components
 import { LogoComponent } from '../../components/logo/logo.component';
@@ -82,7 +82,7 @@ export class VehicleDashboardComponent {
   public dataSync = inject(DataSyncService);
   private persistence = inject(VehiclePersistenceService);
 
-  readonly icons = { Menu, X, House, TriangleAlert, FileText, Wrench, Package, Lightbulb };
+  readonly icons = { Menu, X, House, TriangleAlert, FileText, Wrench, Package, Lightbulb, CreditCard };
 
   // Route parameters
   params = toSignal(this.route.paramMap);

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, signal, ElementRef, ViewChild } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, ElementRef, ViewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule, X, ZoomIn, ZoomOut, RotateCw } from 'lucide-angular';
 
@@ -100,5 +100,10 @@ export class ImageViewerModalComponent {
 
     private getDistance(touch1: Touch, touch2: Touch): number {
         return Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
+    }
+
+    @HostListener('document:keydown.escape')
+    onEscape() {
+        this.close.emit();
     }
 }

@@ -6,13 +6,13 @@ import { CreditsService, Transaction } from '../../services/credits.service';
 import { AuthService } from '../../services/auth.service';
 import {
   LucideAngularModule,
-  CreditCard, ArrowLeft, Plus, Car, Receipt, User,
+  CreditCard, ArrowLeft, Car, Receipt, User,
   Check, Clock, ChevronRight, Sparkles, Home, Lock,
   LayoutDashboard, Settings, LogIn, UserPlus, LogOut, X, AlertCircle
 } from 'lucide-angular';
 import { AuthModalComponent } from '../../components/auth-modal/auth-modal.component';
 
-type Tab = 'overview' | 'vehicles' | 'receipts' | 'buy';
+type Tab = 'overview' | 'vehicles' | 'receipts';
 
 // Module display labels
 const MODULE_LABELS: Record<string, string> = {
@@ -89,17 +89,6 @@ const MODULE_LABELS: Record<string, string> = {
             }
           </div>
         </header>
-
-        <!-- Not signed in: prompt to sign in or register -->
-        @if (!authService.user()) {
-        <div class="mb-6 p-5 rounded-xl bg-white/[0.04] border border-white/10">
-          <p class="text-sm text-gray-400 mb-4">Sign in to view your balance, purchase credits, and manage unlocked vehicles.</p>
-          <div class="flex flex-wrap gap-2">
-            <button (click)="openAuthModal('signin')" class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-white text-sm font-medium">Sign in</button>
-            <button (click)="openAuthModal('signup')" class="px-4 py-2 rounded-lg bg-torque-cyan text-black text-sm font-semibold hover:bg-torque-cyan/90">Create account</button>
-          </div>
-        </div>
-        }
 
         <!-- Auth Modal -->
         @if (showAuthModal()) {
@@ -195,6 +184,18 @@ const MODULE_LABELS: Record<string, string> = {
               <button (click)="openBillingPortal()" [disabled]="creditsService.portalLoading()"
                 class="text-torque-cyan hover:underline disabled:opacity-50">Manage payment methods and invoices</button>
             </p>
+            <!-- Credit usage reference -->
+            <div class="mt-6 pt-4 border-t border-white/[0.06]">
+              <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Credit Usage</h3>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                @for (item of costItems; track item.label) {
+                <div class="text-center py-2 rounded-lg bg-white/[0.02]">
+                  <p class="text-sm font-mono font-bold text-torque-cyan">{{ item.cost }} CR</p>
+                  <p class="text-[10px] text-gray-500 mt-0.5">{{ item.label }}</p>
+                </div>
+                }
+              </div>
+            </div>
           </div>
 
           <!-- Recent transactions preview -->
@@ -362,77 +363,6 @@ const MODULE_LABELS: Record<string, string> = {
         </div>
         }
 
-        <!-- ══════════════════════ BUY CREDITS TAB ══════════════════════ -->
-        @if (activeTab() === 'buy') {
-        <div class="animate-fade-in-up">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-
-            <!-- Starter -->
-            <button (click)="purchase(1000)" [disabled]="creditsService.isLoading()"
-              class="group relative overflow-hidden bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] hover:border-torque-cyan/40 rounded-2xl p-6 transition-all duration-300 text-left">
-              <div class="absolute inset-0 bg-gradient-to-br from-torque-cyan/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <div class="relative z-10">
-                <p class="text-sm text-gray-400 mb-1">Starter</p>
-                <p class="text-4xl font-mono font-bold text-torque-cyan mb-1">1,000</p>
-                <p class="text-sm text-gray-500 mb-5">credits</p>
-                <p class="text-xs text-gray-500 mb-6">Unlock specs on a few vehicles.</p>
-                <div class="flex items-center justify-between">
-                  <span class="text-xl font-bold">$10.00</span>
-                  <span class="text-xs uppercase tracking-wider font-bold bg-white/10 px-3 py-1.5 rounded-full group-hover:bg-torque-cyan group-hover:text-black transition-colors">Buy Now</span>
-                </div>
-              </div>
-            </button>
-
-            <!-- Standard — Popular badge -->
-            <button (click)="purchase(2500)" [disabled]="creditsService.isLoading()"
-              class="group relative overflow-hidden bg-white/[0.03] hover:bg-white/[0.06] border border-torque-cyan/30 hover:border-torque-cyan/60 rounded-2xl p-6 transition-all duration-300 text-left ring-1 ring-torque-cyan/10">
-              <div class="absolute top-4 right-4 text-xs bg-torque-cyan text-black font-bold px-2.5 py-0.5 rounded-full">Popular</div>
-              <div class="absolute inset-0 bg-gradient-to-br from-torque-cyan/8 to-transparent opacity-60 group-hover:opacity-100 transition-opacity"></div>
-              <div class="relative z-10">
-                <p class="text-sm text-gray-400 mb-1">Standard</p>
-                <p class="text-4xl font-mono font-bold text-torque-cyan mb-1">2,500</p>
-                <p class="text-sm text-gray-500 mb-5">credits</p>
-                <p class="text-xs text-gray-500 mb-6">Full access to several vehicles.</p>
-                <div class="flex items-center justify-between">
-                  <span class="text-xl font-bold">$25.00</span>
-                  <span class="text-xs uppercase tracking-wider font-bold bg-torque-cyan/20 text-torque-cyan px-3 py-1.5 rounded-full group-hover:bg-torque-cyan group-hover:text-black transition-colors">Buy Now</span>
-                </div>
-              </div>
-            </button>
-
-            <!-- Pro -->
-            <button (click)="purchase(5000)" [disabled]="creditsService.isLoading()"
-              class="group relative overflow-hidden bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] hover:border-torque-purple/50 rounded-2xl p-6 transition-all duration-300 text-left">
-              <div class="absolute inset-0 bg-gradient-to-br from-torque-purple/8 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <div class="relative z-10">
-                <p class="text-sm text-gray-400 mb-1">Pro</p>
-                <p class="text-4xl font-mono font-bold text-torque-purple mb-1">5,000</p>
-                <p class="text-sm text-gray-500 mb-5">credits</p>
-                <p class="text-xs text-gray-500 mb-6">Unlimited access across many vehicles.</p>
-                <div class="flex items-center justify-between">
-                  <span class="text-xl font-bold">$50.00</span>
-                  <span class="text-xs uppercase tracking-wider font-bold bg-white/10 px-3 py-1.5 rounded-full group-hover:bg-torque-purple group-hover:text-white transition-colors">Buy Now</span>
-                </div>
-              </div>
-            </button>
-          </div>
-
-          <!-- Cost breakdown -->
-          <div class="bg-white/[0.03] border border-white/[0.06] rounded-xl p-6">
-            <h3 class="font-semibold text-gray-300 mb-4">Credit Usage</h3>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              @for (item of costItems; track item.label) {
-              <div class="text-center">
-                <p class="text-lg font-mono font-bold text-torque-cyan">{{ item.cost }} CR</p>
-                <p class="text-xs text-gray-500 mt-1">{{ item.label }}</p>
-              </div>
-              }
-            </div>
-            <p class="text-xs text-gray-600 mt-6 text-center">All purchases are final.</p>
-          </div>
-        </div>
-        }
-
       </div>
     </div>
   `
@@ -442,7 +372,7 @@ export class CreditsDashboardComponent implements OnInit {
   readonly authService = inject(AuthService);
   readonly route = inject(ActivatedRoute);
 
-  readonly icons = { CreditCard, ArrowLeft, Plus, Car, Receipt, User, Check, Clock, ChevronRight, Sparkles, Home, Lock, LayoutDashboard, Settings, LogIn, UserPlus, LogOut, X, AlertCircle };
+  readonly icons = { CreditCard, ArrowLeft, Car, Receipt, User, Check, Clock, ChevronRight, Sparkles, Home, Lock, LayoutDashboard, Settings, LogIn, UserPlus, LogOut, X, AlertCircle };
 
   activeTab = signal<Tab>('overview');
   processingPurchase = signal(false);
@@ -454,7 +384,6 @@ export class CreditsDashboardComponent implements OnInit {
     { id: 'overview' as Tab, label: 'Overview', icon: LayoutDashboard },
     { id: 'vehicles' as Tab, label: 'My Vehicles', icon: Car },
     { id: 'receipts' as Tab, label: 'History', icon: Receipt },
-    { id: 'buy' as Tab, label: 'Buy Credits', icon: Plus },
   ];
 
   readonly creditPacks = [
