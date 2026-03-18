@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-03-18 (article titles visible before purchase, nav tree on mobile)
+**Last updated**: 2026-03-18 (desktop UI/UX improvements)
 
 ## Summary
 
@@ -50,6 +50,7 @@
 - [x] Navigation tree: shared CategoryTreeComponent in sidebar (desktop) and mobile menu; article catalog visible before purchase
 - [x] Fixed vehicle selection dropdown: no more flash/second-click (ignoreNextDocumentClick, keep open during Year load)
 - [x] Desktop: Home link in sidebar header, modals use design tokens, Escape to close
+- [x] Desktop UI/UX: Full section nav in sidebar (DTCs, TSBs, procedures, diagrams, specs, parts, maintenance, browse-all); wider content (xl/2xl); sidebar xl:w-72; overview grid xl:5 cols; credits pack grid xl:4 cols; window component design tokens; torque-dark/purple in tailwind
 
 ## Bugs & Known Issues
 
