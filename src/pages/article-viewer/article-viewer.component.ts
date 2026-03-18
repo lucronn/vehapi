@@ -9,7 +9,7 @@ import { HttpClient } from '@angular/common/http';
 import { MotorApiService } from '../../services/motor-api.service';
 import { MotorHtmlProcessorService } from '../../services/motor-html-processor.service';
 import { AiRewriteService } from '../../services/ai-rewrite.service';
-import { LucideAngularModule, ArrowLeft, Maximize2, List, X, Sparkles, BookOpen, Lock } from 'lucide-angular';
+import { LucideAngularModule, ArrowLeft, Maximize2, List, X, Sparkles, BookOpen, Lock, RefreshCw } from 'lucide-angular';
 import { ImageViewerModalComponent } from './components/image-viewer-modal/image-viewer-modal.component';
 import { TutorialComponent } from '../../components/tutorial/tutorial.component';
 import { TutorialStep } from '../../models/motor.models';
@@ -65,7 +65,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   protected creditsService = inject(CreditsService);
   private router = inject(Router);
 
-  readonly icons = { ArrowLeft, Maximize2, List, X, Sparkles, BookOpen, Lock };
+  readonly icons = { ArrowLeft, Maximize2, List, X, Sparkles, BookOpen, Lock, RefreshCw };
 
   // Use a Subject to trigger data loading when inputs change or on init
   private loadTrigger = new Subject<void>();
@@ -100,10 +100,11 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   isLocked = computed(() => {
     const mod = this.resolvedModuleType();
     const vid = this.vehicleIdSig();
+    const aid = this.internalArticleId();
     if (!vid) return false;
     // When moduleType is missing (e.g. direct URL), treat as locked to prevent bypass
     if (!mod) return true;
-    return !this.creditsService.hasAccess(vid, mod);
+    return !this.creditsService.hasAccess(vid, mod, aid ?? undefined);
   });
 
   resolvedModuleType = signal<string | null>(null);
@@ -481,6 +482,27 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
 
   navigateToCredits() {
     this.router.navigate(['/credits']);
+  }
+
+  goBackToDashboard() {
+    if (this.windowId) {
+      this.windowManager.closeWindow(this.windowId);
+    } else {
+      this.router.navigate(['/vehicle', this.contentSourceSig(), this.vehicleIdSig()]);
+    }
+  }
+
+  async refreshAndRetry() {
+    await this.creditsService.refreshBalance();
+    this.loadData();
+  }
+
+  async unlockThisArticle() {
+    const vid = this.vehicleIdSig();
+    const aid = this.internalArticleId();
+    if (!vid || !aid) return;
+    const ok = await this.creditsService.unlockArticle(vid, vid, aid);
+    if (ok) this.loadData();
   }
 
   scrollToSection(id: string) {

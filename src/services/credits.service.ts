@@ -59,7 +59,8 @@ export class CreditsService {
         DIAGRAMS: 10,
         PARTS: 10,
         COMMON_ISSUES: 5,
-        FULL_ACCESS: 25
+        FULL_ACCESS: 25,
+        ARTICLE: 100,
     };
 
     private get apiUrl() {
@@ -337,9 +338,16 @@ export class CreditsService {
         }
     }
 
-    hasAccess(vehicleId: string, moduleType: string): boolean {
+    /** Unlock a single article for 100 credits (stored as article:articleId in unlocks) */
+    async unlockArticle(vehicleId: string, vehicleName: string, articleId: string): Promise<boolean> {
+        return this.unlockModule(vehicleId, vehicleName, `article:${articleId}`, this.COSTS.ARTICLE);
+    }
+
+    hasAccess(vehicleId: string, moduleType: string, articleId?: string): boolean {
         const vehicleUnlocks = this.unlocks()[vehicleId] || [];
-        return vehicleUnlocks.includes('full') || vehicleUnlocks.includes(moduleType);
+        if (vehicleUnlocks.includes('full') || vehicleUnlocks.includes(moduleType)) return true;
+        if (articleId && vehicleUnlocks.includes(`article:${articleId}`)) return true;
+        return false;
     }
 
     /** Extract user-friendly error message from HttpErrorResponse, AbortError, or unknown error. */

@@ -198,17 +198,30 @@
         <p class="text-sm mb-6" style="color:var(--text-muted)">
           Purchase access to this section to view its articles and data.
         </p>
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3 flex-wrap">
+          <button (click)="unlockThisArticle()"
+            [disabled]="creditsService.balance() < creditsService.COSTS.ARTICLE || creditsService.isLoading()"
+            class="px-6 py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            style="background:var(--primary);color:white">
+            Unlock this article ({{ creditsService.COSTS.ARTICLE }} credits)
+          </button>
           <button (click)="navigateToCredits()"
             class="px-6 py-2.5 rounded-xl font-semibold text-sm transition-all"
-            style="background:var(--primary);color:white">
+            style="background:var(--primary);color:white;opacity:0.9">
             Get Credits
           </button>
-          <a [routerLink]="['/vehicle', contentSourceSig(), vehicleIdSig()]"
+          <button (click)="refreshAndRetry()"
+            [disabled]="creditsService.isLoading()"
+            class="px-6 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 justify-center disabled:opacity-50"
+            style="background:var(--bg-muted);color:var(--text-secondary);border:1px solid var(--border)">
+            <lucide-icon [img]="icons.RefreshCw" class="w-4 h-4"></lucide-icon>
+            Refresh
+          </button>
+          <button (click)="goBackToDashboard()"
             class="px-6 py-2.5 rounded-xl font-semibold text-sm transition-all"
             style="background:var(--bg-muted);color:var(--text-secondary);border:1px solid var(--border)">
             Back to Dashboard
-          </a>
+          </button>
         </div>
       </div>
       } @else if (!articleContent()) {

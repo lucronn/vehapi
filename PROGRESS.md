@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-03-18 (backend article access enforcement)
+**Last updated**: 2026-03-18 (article lock UX: back closes modal, refresh, single-article unlock)
 
 ## Summary
 
@@ -33,6 +33,7 @@
 - [x] Locked sections show limited preview items (max 8)
 - [x] Direct URL access to articles is blocked (missing moduleType → locked; sidebar/browse-all pass moduleType)
 - [x] Backend verifies article access (Bearer token + Supabase bucket lookup + unlock check)
+- [x] Article lock overlay: Back to Dashboard closes modal in window mode; Refresh button; Unlock single article (100 credits)
 
 ### UI/UX Cleanup
 - [x] Removed verbose marketing copy from home page

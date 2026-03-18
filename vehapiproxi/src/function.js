@@ -980,7 +980,8 @@ const articleAccessMiddleware = async (req, res, next) => {
     const userData = await getUserData(userId);
     const unlocks = userData.unlocks || {};
     const vehicleUnlocks = unlocks[vehicleId] || [];
-    const hasAccess = vehicleUnlocks.includes(moduleType) || vehicleUnlocks.includes('full');
+    const articleUnlockKey = `article:${articleId}`;
+    const hasAccess = vehicleUnlocks.includes(moduleType) || vehicleUnlocks.includes('full') || vehicleUnlocks.includes(articleUnlockKey);
 
     if (!hasAccess) {
         logger.info(`Article access denied: user ${userId} lacks ${moduleType} for vehicle ${vehicleId}`);
