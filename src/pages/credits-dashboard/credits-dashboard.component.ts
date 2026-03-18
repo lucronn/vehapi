@@ -40,7 +40,7 @@ const MODULE_LABELS: Record<string, string> = {
         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-torque-cyan/2 rounded-full blur-[200px]"></div>
       </div>
 
-      <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 py-10"
+      <div class="relative z-10 max-w-5xl xl:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10"
         style="padding-left: calc(1rem + env(safe-area-inset-left, 0px)); padding-right: calc(1rem + env(safe-area-inset-right, 0px)); padding-top: calc(2.5rem + env(safe-area-inset-top, 0px)); padding-bottom: calc(2.5rem + env(safe-area-inset-bottom, 0px));">
 
         <!-- Back Nav -->
@@ -142,7 +142,7 @@ const MODULE_LABELS: Record<string, string> = {
         <div class="space-y-6 animate-fade-in-up">
 
           <!-- Stats row -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-4">
             <div class="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 sm:p-5">
               <p class="text-xs text-gray-500 mb-1">Balance</p>
               <p class="text-2xl font-mono font-bold text-torque-cyan">{{ creditsService.balance() }}</p>
@@ -168,7 +168,7 @@ const MODULE_LABELS: Record<string, string> = {
           <!-- Quick buy: responsive grid, touch-friendly buttons -->
           <div class="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 sm:p-6">
             <h2 class="font-semibold text-gray-300 mb-4">Top Up Credits</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               @for (pack of creditPacks; track pack.credits) {
               <button
                 (click)="purchase(pack.credits)"

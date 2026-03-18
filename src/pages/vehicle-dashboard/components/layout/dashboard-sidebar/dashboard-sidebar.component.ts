@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { LucideAngularModule, House, TriangleAlert, FileText, Package, LogOut, MapPin, Calendar, User, LogIn, CreditCard, Lightbulb } from 'lucide-angular';
+import { LucideAngularModule, House, TriangleAlert, FileText, Package, LogOut, MapPin, Calendar, User, LogIn, CreditCard, Lightbulb, Wrench } from 'lucide-angular';
 
 import { SectionAvailability } from '../../../../../services/vehicle-data.service';
 import { AuthService } from '../../../../../services/auth.service';
@@ -30,7 +30,7 @@ export class DashboardSidebarComponent {
 
     protected authService = inject(AuthService);
 
-    readonly icons = { House, TriangleAlert, FileText, Package, LogOut, MapPin, Calendar, User, LogIn, CreditCard, Lightbulb };
+    readonly icons = { House, TriangleAlert, FileText, Package, LogOut, MapPin, Calendar, User, LogIn, CreditCard, Lightbulb, Wrench };
 
     onArticleFromTree(payload: { id: string; bucket?: string; parentBucket?: string }) {
         this.articleSelected.emit(payload);

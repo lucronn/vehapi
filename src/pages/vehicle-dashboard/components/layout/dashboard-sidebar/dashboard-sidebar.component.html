@@ -1,6 +1,8 @@
-<aside class="w-64 bg-torque-dark border-r border-white/5 flex flex-col h-full overflow-hidden flex-shrink-0">
+<aside class="w-64 xl:w-72 bg-torque-dark border-r border-white/5 flex flex-col h-full overflow-hidden flex-shrink-0"
+  style="background:var(--bg-secondary)">
     <!-- Header -->
-    <div class="h-14 border-b border-white/5 flex flex-col justify-center px-4 shrink-0 bg-torque-dark">
+    <div class="h-14 border-b border-white/5 flex flex-col justify-center px-4 shrink-0"
+      style="background:var(--bg-secondary)">
         <div class="flex items-center justify-between gap-2">
             <h2 class="text-sm font-bold text-white truncate min-w-0">{{ vehicleName }}</h2>
             <a routerLink="/" class="btn-glass p-1.5 rounded-lg flex-shrink-0" title="Home" aria-label="Home">
@@ -10,7 +12,7 @@
         <p class="text-[10px] text-torque-muted uppercase tracking-wider">Dashboard</p>
     </div>
 
-    <!-- Navigation -->
+    <!-- Section Navigation -->
     <nav class="flex-1 overflow-y-auto p-3 space-y-1">
         <button (click)="onSectionClick('overview')"
             class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
@@ -22,8 +24,97 @@
             <span class="text-xs font-bold tracking-[0.15em] uppercase">Overview</span>
         </button>
 
+        @if (availableSections?.hasDtcs) {
+        <button (click)="onSectionClick('dtcs')"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
+            [ngClass]="{
+                'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': activeSection === 'dtcs',
+                'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': activeSection !== 'dtcs'
+            }">
+            <lucide-icon [img]="icons.TriangleAlert" class="w-4 h-4"></lucide-icon>
+            <span class="text-xs font-bold tracking-[0.15em] uppercase">Trouble Codes</span>
+        </button>
+        }
+        @if (availableSections?.hasTsbs) {
+        <button (click)="onSectionClick('tsbs')"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
+            [ngClass]="{
+                'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': activeSection === 'tsbs',
+                'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': activeSection !== 'tsbs'
+            }">
+            <lucide-icon [img]="icons.FileText" class="w-4 h-4"></lucide-icon>
+            <span class="text-xs font-bold tracking-[0.15em] uppercase">Bulletins</span>
+        </button>
+        }
+        @if (availableSections?.hasProcedures) {
+        <button (click)="onSectionClick('procedures')"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
+            [ngClass]="{
+                'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': activeSection === 'procedures',
+                'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': activeSection !== 'procedures'
+            }">
+            <lucide-icon [img]="icons.Wrench" class="w-4 h-4"></lucide-icon>
+            <span class="text-xs font-bold tracking-[0.15em] uppercase">Procedures</span>
+        </button>
+        }
+        @if (availableSections?.hasDiagrams) {
+        <button (click)="onSectionClick('diagrams')"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
+            [ngClass]="{
+                'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': activeSection === 'diagrams',
+                'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': activeSection !== 'diagrams'
+            }">
+            <lucide-icon [img]="icons.Package" class="w-4 h-4"></lucide-icon>
+            <span class="text-xs font-bold tracking-[0.15em] uppercase">Diagrams</span>
+        </button>
+        }
+        @if (availableSections?.hasSpecs) {
+        <button (click)="onSectionClick('specs')"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
+            [ngClass]="{
+                'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': activeSection === 'specs',
+                'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': activeSection !== 'specs'
+            }">
+            <lucide-icon [img]="icons.FileText" class="w-4 h-4"></lucide-icon>
+            <span class="text-xs font-bold tracking-[0.15em] uppercase">Specs &amp; Fluids</span>
+        </button>
+        }
+        @if (availableSections?.hasComponentLocations) {
+        <button (click)="onSectionClick('component-locations')"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
+            [ngClass]="{
+                'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': activeSection === 'component-locations',
+                'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': activeSection !== 'component-locations'
+            }">
+            <lucide-icon [img]="icons.Package" class="w-4 h-4"></lucide-icon>
+            <span class="text-xs font-bold tracking-[0.15em] uppercase">Locations</span>
+        </button>
+        }
+        @if (availableSections?.hasMaintenance) {
+        <button (click)="onSectionClick('maintenance')"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
+            [ngClass]="{
+                'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': activeSection === 'maintenance',
+                'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': activeSection !== 'maintenance'
+            }">
+            <lucide-icon [img]="icons.Calendar" class="w-4 h-4"></lucide-icon>
+            <span class="text-xs font-bold tracking-[0.15em] uppercase">Maintenance</span>
+        </button>
+        }
+        @if (availableSections?.hasParts) {
+        <button (click)="onSectionClick('parts')"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
+            [ngClass]="{
+                'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': activeSection === 'parts',
+                'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': activeSection !== 'parts'
+            }">
+            <lucide-icon [img]="icons.Package" class="w-4 h-4"></lucide-icon>
+            <span class="text-xs font-bold tracking-[0.15em] uppercase">Parts</span>
+        </button>
+        }
+
         <button (click)="onSectionClick('common-issues')"
-            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2 mt-1"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
             [ngClass]="{
                 'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': activeSection === 'common-issues',
                 'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': activeSection !== 'common-issues'
@@ -32,8 +123,18 @@
             <span class="text-xs font-bold tracking-[0.15em] uppercase">Common Issues</span>
         </button>
 
+        <button (click)="onSectionClick('browse-all')"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
+            [ngClass]="{
+                'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': activeSection === 'browse-all',
+                'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': activeSection !== 'browse-all'
+            }">
+            <lucide-icon [img]="icons.Package" class="w-4 h-4"></lucide-icon>
+            <span class="text-xs font-bold tracking-[0.15em] uppercase">Browse All</span>
+        </button>
+
         <div class="pt-4 pb-2 px-3">
-            <p class="text-[10px] font-mono uppercase tracking-[0.2em] text-torque-muted mb-1">Categories</p>
+            <p class="text-[10px] font-mono uppercase tracking-[0.2em] text-torque-muted mb-1">Article Catalog</p>
         </div>
 
         <app-category-tree (articleSelected)="onArticleFromTree($event)"></app-category-tree>
