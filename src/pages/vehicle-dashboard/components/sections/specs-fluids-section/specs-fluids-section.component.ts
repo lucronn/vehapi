@@ -47,7 +47,7 @@ export class SpecsFluidsSectionComponent implements OnInit {
     displayLimit = signal(50);
 
     // Computed property to return only the items we should show right now
-    // If locked, we only show a tiny preview slice to save DOM/GPU memory for the blur effect
+    // When locked, show all titles so users can selectively purchase articles
     displayedSpecs = signal<Spec[]>([]);
     displayedFluids = signal<Fluid[]>([]);
 
@@ -85,7 +85,7 @@ export class SpecsFluidsSectionComponent implements OnInit {
 
     private updateDisplayedItems() {
         const hasAccess = this.creditsService.hasAccess(this.vehicleId, 'specs');
-        const limit = hasAccess ? this.displayLimit() : 8; // Only 8 items if locked (preview)
+        const limit = hasAccess ? this.displayLimit() : Number.MAX_SAFE_INTEGER; // Show all when locked
         this.displayedSpecs.set(this.specs().slice(0, limit));
         this.displayedFluids.set(this.fluids().slice(0, limit));
     }
@@ -115,11 +115,6 @@ export class SpecsFluidsSectionComponent implements OnInit {
     }
 
     viewArticle(item: Spec | Fluid) {
-        if (!this.creditsService.hasAccess(this.vehicleId, 'specs')) {
-            this.unlockSection();
-            return;
-        }
-
         if (this.windowManager.isDesktop()) {
             this.windowManager.openWindow(
                 item.title || 'Specification',

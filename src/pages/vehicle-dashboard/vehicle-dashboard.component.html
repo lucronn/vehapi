@@ -124,6 +124,14 @@
         <lucide-icon [img]="icons.Package" class="w-4.5 h-4.5"></lucide-icon>
         Browse All Data
       </button>
+
+      <!-- Article catalog tree (navigation tree) - visible before purchase for selective unlock -->
+      <div class="pt-4 mt-4 border-t border-white/10">
+        <p class="text-[10px] font-mono uppercase tracking-[0.2em] text-torque-muted px-2 mb-3">Article Catalog</p>
+        <div class="max-h-[40vh] overflow-y-auto overscroll-contain -webkit-overflow-scrolling-touch">
+          <app-category-tree (articleSelected)="onArticleClick(null, $event); toggleMobileMenu()"></app-category-tree>
+        </div>
+      </div>
     </div>
     </div>
   </div>

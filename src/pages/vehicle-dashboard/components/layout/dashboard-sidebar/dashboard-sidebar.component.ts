@@ -1,11 +1,11 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { LucideAngularModule, House, TriangleAlert, FileText, Cable, Wrench, ClipboardList, Package, LogOut, MapPin, Calendar, User, LogIn, CreditCard, ChevronRight, ChevronDown, FolderOpen, Folder, Settings, Box, Lightbulb, Info } from 'lucide-angular';
+import { LucideAngularModule, House, TriangleAlert, FileText, Package, LogOut, MapPin, Calendar, User, LogIn, CreditCard, Lightbulb } from 'lucide-angular';
 
 import { SectionAvailability } from '../../../../../services/vehicle-data.service';
 import { AuthService } from '../../../../../services/auth.service';
-import { CategoryTreeService, TreeNode } from '../../../../../services/category-tree.service';
+import { CategoryTreeComponent } from '../../../../../components/category-tree/category-tree.component';
 
 export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'component-locations' | 'procedures' | 'parts' | 'specs' | 'maintenance' | 'browse-all' | 'common-issues';
 
@@ -16,7 +16,7 @@ export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'comp
     selector: 'app-dashboard-sidebar',
     templateUrl: './dashboard-sidebar.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, RouterModule, LucideAngularModule],
+    imports: [CommonModule, RouterModule, LucideAngularModule, CategoryTreeComponent],
     standalone: true,
     host: { class: 'contents' }
 })
@@ -25,57 +25,15 @@ export class DashboardSidebarComponent {
     @Input({ required: true }) activeSection!: DashboardSection;
     @Input() availableSections: SectionAvailability | null = null;
     @Output() sectionChange = new EventEmitter<DashboardSection>();
-    @Output() articleSelected = new EventEmitter<{ id: string; bucket?: string; parentBucket?: string }>(); // Emits article for access control
-    /** Ask parent layout to open the global auth modal. */
+    @Output() articleSelected = new EventEmitter<{ id: string; bucket?: string; parentBucket?: string }>();
     @Output() openAuthModal = new EventEmitter<void>();
 
     protected authService = inject(AuthService);
-    protected categoryTreeService = inject(CategoryTreeService);
 
-    // Get the tree data
-    treeNodes = this.categoryTreeService.categoryTree;
+    readonly icons = { House, TriangleAlert, FileText, Package, LogOut, MapPin, Calendar, User, LogIn, CreditCard, Lightbulb };
 
-    readonly icons = { House, TriangleAlert, FileText, Cable, Wrench, ClipboardList, Package, LogOut, MapPin, Calendar, User, LogIn, CreditCard, ChevronRight, ChevronDown, FolderOpen, Folder, Settings, Box, Lightbulb, Info };
-
-    getIcon(nodeOrName: TreeNode | string): any {
-        const name = typeof nodeOrName === 'string' ? nodeOrName.toLowerCase() : nodeOrName.name.toLowerCase();
-        
-        if (name.includes('dtc') || name.includes('fault') || name.includes('trouble')) return TriangleAlert;
-        if (name.includes('bulletin') || name.includes('tsb')) return FileText;
-        if (name.includes('procedure') || name.includes('repair') || name.includes('labor') || name.includes('wrench')) return Wrench;
-        if (name.includes('spec') || name.includes('fluid') || name.includes('setting')) return Settings;
-        if (name.includes('location')) return MapPin;
-        if (name.includes('maintenance') || name.includes('service') || name.includes('calendar')) return Calendar;
-        if (name.includes('part') || name.includes('box')) return Box;
-        if (name.includes('issue') || name.includes('bulb')) return Lightbulb;
-        if (name.includes('diagram') || name.includes('cable')) return Cable;
-        
-        return ClipboardList; // Default icon
-    }
-
-    // Set to keep track of open nodes
-    expandedNodes = signal<Set<string>>(new Set<string>());
-
-    toggleNode(nodeId: string, event: Event) {
-        event.stopPropagation();
-        const current = new Set(this.expandedNodes());
-        if (current.has(nodeId)) {
-            current.delete(nodeId);
-        } else {
-            current.add(nodeId);
-        }
-        this.expandedNodes.set(current);
-    }
-
-    isNodeExpanded(nodeId: string): boolean {
-        return this.expandedNodes().has(nodeId);
-    }
-
-    onArticleClick(node: TreeNode) {
-        const article = node.type === 'article' ? node.article : null;
-        this.articleSelected.emit(article
-            ? { id: article.id, bucket: article.bucket, parentBucket: article.parentBucket }
-            : { id: node.id });
+    onArticleFromTree(payload: { id: string; bucket?: string; parentBucket?: string }) {
+        this.articleSelected.emit(payload);
         this.sectionChange.emit('browse-all');
     }
 

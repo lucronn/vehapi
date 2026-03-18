@@ -30,6 +30,7 @@ import { MaintenanceSectionComponent } from './components/sections/maintenance-s
 import { PartsSectionComponent } from './components/sections/parts-section/parts-section.component';
 import { CommonIssuesSectionComponent } from './components/sections/common-issues-section/common-issues-section.component';
 import { SyncProgressOverlayComponent } from './components/layout/sync-progress-overlay/sync-progress-overlay.component';
+import { CategoryTreeComponent } from '../../components/category-tree/category-tree.component';
 
 // Icons
 import { LucideAngularModule, Menu, X, House, TriangleAlert, FileText, Wrench, Package, Lightbulb, CreditCard } from 'lucide-angular';
@@ -71,7 +72,8 @@ export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'comp
     ThemeToggleComponent,
     AuthModalComponent,
     SyncProgressOverlayComponent,
-    CommonIssuesSectionComponent
+    CommonIssuesSectionComponent,
+    CategoryTreeComponent
   ],
 })
 export class VehicleDashboardComponent {

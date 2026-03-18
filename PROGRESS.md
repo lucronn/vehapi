@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-03-18 (payments in modal, Stripe checkout popup)
+**Last updated**: 2026-03-18 (article titles visible before purchase, nav tree on mobile)
 
 ## Summary
 
@@ -30,7 +30,7 @@
 - [x] Article viewer access gating via `moduleType` input/query param
 - [x] All section components propagate `moduleType` when opening articles
 - [x] Component-locations module type aligned to `diagrams` (was mismatched)
-- [x] Locked sections show limited preview items (max 8)
+- [x] Article titles visible before purchase (all titles shown when locked; users can selectively unlock)
 - [x] Direct URL access to articles is blocked (missing moduleType → locked; sidebar/browse-all pass moduleType)
 - [x] Backend verifies article access (Bearer token + Supabase bucket lookup + unlock check)
 - [x] Article lock overlay: Back to Dashboard closes modal in window mode; Refresh button; Unlock single article (100 credits)
@@ -47,6 +47,7 @@
 - [x] Removed redundant sign-in prompt from credits dashboard (header already has auth)
 - [x] Consolidated credits tabs: merged Buy into Overview
 - [x] Vehicle dashboard: mobile nav as bottom sheet, Home/Account in header, dynamic bottom tabs
+- [x] Navigation tree: shared CategoryTreeComponent in sidebar (desktop) and mobile menu; article catalog visible before purchase
 - [x] Fixed vehicle selection dropdown: no more flash/second-click (ignoreNextDocumentClick, keep open during Year load)
 - [x] Desktop: Home link in sidebar header, modals use design tokens, Escape to close
 

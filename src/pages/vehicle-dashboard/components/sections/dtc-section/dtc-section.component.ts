@@ -69,7 +69,7 @@ export class DtcSectionComponent implements OnInit {
 
     private updateDisplayedDtcs() {
         const hasAccess = this.creditsService.hasAccess(this.vehicleId, 'dtcs');
-        const limit = hasAccess ? this.displayLimit() : 8; // Only 8 items if locked (preview)
+        const limit = hasAccess ? this.displayLimit() : this.dtcs().length; // Show all titles when locked for selective purchase
         this.displayedDtcs.set(this.dtcs().slice(0, limit));
     }
 
@@ -100,11 +100,7 @@ export class DtcSectionComponent implements OnInit {
     }
 
     viewDtc(dtc: Dtc) {
-        if (!this.creditsService.hasAccess(this.vehicleId, 'dtcs')) {
-            this.unlockSection();
-            return;
-        }
-
+        // Always open article viewer; when locked it shows unlock options (single article or section)
         if (this.windowManager.isDesktop()) {
             this.windowManager.openWindow(
                 `DTC: ${dtc.code}`,

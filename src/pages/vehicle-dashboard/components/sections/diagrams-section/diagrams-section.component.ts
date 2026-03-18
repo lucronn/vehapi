@@ -71,7 +71,7 @@ export class DiagramsSectionComponent implements OnInit {
 
     private updateDisplayedDiagrams() {
         const hasAccess = this.creditsService.hasAccess(this.vehicleId, 'diagrams');
-        const limit = hasAccess ? this.displayLimit() : 8; // Only 8 items if locked (preview)
+        const limit = hasAccess ? this.displayLimit() : this.diagrams().length; // Show all when locked
         this.displayedDiagrams.set(this.diagrams().slice(0, limit));
     }
 
@@ -109,11 +109,6 @@ export class DiagramsSectionComponent implements OnInit {
     }
 
     viewDiagram(diagram: WiringDiagram | ComponentLocation) {
-        if (!this.creditsService.hasAccess(this.vehicleId, 'diagrams')) {
-            this.unlockSection();
-            return;
-        }
-
         if (this.windowManager.isDesktop()) {
             this.windowManager.openWindow(
                 diagram.title || 'Diagram',

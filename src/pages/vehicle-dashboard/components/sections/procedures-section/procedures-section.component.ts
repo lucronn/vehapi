@@ -38,12 +38,11 @@ export class ProceduresSectionComponent implements OnInit {
     // Pagination state
     displayLimit = signal(50);
 
-    // Grouped procedures logic (sliced to displayLimit or 8 if locked)
+    // Grouped procedures logic (sliced to displayLimit or all when locked for selective purchase)
     groupedProcedures = computed(() => {
         const hasAccess = this.creditsService.hasAccess(this.vehicleId, 'procedures');
-        const limit = hasAccess ? this.displayLimit() : 8; // Only 8 items if locked (preview)
+        const limit = hasAccess ? this.displayLimit() : this.procedures().length; // Show all titles when locked
 
-        // We slice the flat array before grouping to ensure we don't render thousands of nodes across groups
         const all = this.procedures().slice(0, limit);
         const groups: { [key: string]: Procedure[] } = {};
 
@@ -119,11 +118,6 @@ export class ProceduresSectionComponent implements OnInit {
     }
 
     viewProcedure(procedure: Procedure) {
-        if (!this.creditsService.hasAccess(this.vehicleId, 'procedures')) {
-            this.unlockSection();
-            return;
-        }
-
         if (this.windowManager.isDesktop()) {
             this.windowManager.openWindow(
                 procedure.title || 'Procedure',

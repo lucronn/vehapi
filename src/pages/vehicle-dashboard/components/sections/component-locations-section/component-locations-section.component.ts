@@ -81,11 +81,6 @@ export class ComponentLocationsSectionComponent implements OnInit {
     }
 
     viewLocation(item: ComponentLocation) {
-        if (!this.creditsService.hasAccess(this.vehicleId, 'diagrams')) {
-            this.unlockSection();
-            return;
-        }
-
         if (this.windowManager.isDesktop()) {
             this.windowManager.openWindow(
                 item.title || 'Component Location',

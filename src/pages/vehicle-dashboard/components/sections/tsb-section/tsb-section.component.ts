@@ -73,7 +73,7 @@ export class TsbSectionComponent implements OnInit {
 
     private updateDisplayedTsbs() {
         const hasAccess = this.creditsService.hasAccess(this.vehicleId, 'tsbs');
-        const limit = hasAccess ? this.displayLimit() : 8; // Only 8 items if locked (preview)
+        const limit = hasAccess ? this.displayLimit() : this.tsbs().length; // Show all titles when locked
         this.displayedTsbs.set(this.tsbs().slice(0, limit));
     }
 
@@ -104,11 +104,6 @@ export class TsbSectionComponent implements OnInit {
     }
 
     viewTsb(tsb: Tsb) {
-        if (!this.creditsService.hasAccess(this.vehicleId, 'tsbs')) {
-            this.unlockSection();
-            return;
-        }
-
         if (this.windowManager.isDesktop()) {
             this.windowManager.openWindow(
                 `TSB: ${tsb.bulletinNumber || 'View'}`,
