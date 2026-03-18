@@ -53,7 +53,7 @@
 
 ## Bugs & Known Issues
 
-_None currently tracked._
+- **Fixed 2026-03-18**: Motor/Article API 401 Unauthorized while logged in — interceptor previously forwarded Supabase `Authorization: Bearer ...` to Motor-proxy endpoints (years/catalog/parts/name), causing Motor to reject requests; now only attaches Bearer for `/api/credits/*` and `/api/source/*/vehicle/*/article/*` paths.
 
 ## What's Left to Do
 

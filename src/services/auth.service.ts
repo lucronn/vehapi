@@ -64,9 +64,22 @@ export class AuthService {
         if (error) throw error;
     }
 
-    /** For CreditsService: return access token for API auth (Supabase session) */
+    /** For CreditsService and HTTP interceptor: return access token for API auth (Supabase session).
+     * Fetches fresh session from Supabase and refreshes if expired, so article/content requests
+     * always have a valid Bearer token for the backend. */
     async getIdToken(): Promise<string | null> {
-        const session = this._session();
-        return session?.access_token ?? null;
+        const session = await this.supabase.getSession();
+        if (!session) return null;
+        // Refresh if token expires in < 60 seconds
+        const expiresAt = session.expires_at;
+        if (expiresAt && expiresAt * 1000 < Date.now() + 60000) {
+            const { data } = await this.supabase.auth.refreshSession();
+            if (data.session) {
+                this._session.set(data.session);
+                this._user.set(data.session.user);
+                return data.session.access_token;
+            }
+        }
+        return session.access_token;
     }
 }
