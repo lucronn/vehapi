@@ -137,15 +137,18 @@
 
           <div class="glass-card overflow-hidden relative z-[1]">
             <!-- MOBILE: Trigger Button -->
-            <button *ngIf="isMobile() && !selectedVehicle()" (click)="onMobileSearchTrigger(); $event.stopPropagation()"
+            @if (isMobile() && !selectedVehicle()) {
+            <button (click)="onMobileSearchTrigger(); $event.stopPropagation()"
               type="button"
               class="w-full flex items-center px-4 py-4 text-left bg-transparent border-none outline-none active:opacity-70 transition-opacity">
               <lucide-icon [img]="icons.Search" class="w-5 h-5 mr-3 flex-shrink-0 text-torque-muted"></lucide-icon>
               <span class="text-torque-muted text-base flex-1">Tap to select vehicle...</span>
             </button>
+            }
 
             <!-- DESKTOP / SELECTED STATE -->
-            <div *ngIf="!isMobile() || selectedVehicle()" class="flex items-center px-4"
+            @if (!isMobile() || selectedVehicle()) {
+            <div class="flex items-center px-4"
               (click)="searchInputRef.focus()" #searchContainer>
               <lucide-icon [img]="icons.Search" class="w-5 h-5 mr-3 flex-shrink-0 text-torque-muted"></lucide-icon>
 
@@ -157,9 +160,11 @@
                 aria-label="Vehicle Search" />
 
               <!-- Mobile placeholder for selected state -->
-              <span *ngIf="isMobile()" class="flex-1 text-base truncate text-torque-muted">
+              @if (isMobile()) {
+              <span class="flex-1 text-base truncate text-torque-muted">
                 {{ selectedVehicle() ? selectedVehicle()?.displayName : 'Tap to select vehicle...' }}
               </span>
+              }
 
               <button (click)="submitSearch()"
                 [disabled]="isLoading() || (!isVin() && !selectedVehicle() && !selectedModel())"
@@ -167,11 +172,13 @@
                 @if (isLoading()) { <span class="animate-spin inline-block">◌</span> } @else { Continue }
               </button>
             </div>
+            }
 
             <!-- Desktop Dropdown -->
-            <div *ngIf="showSuggestions() && !isVin() && !selectedVehicle()" #desktopSuggestionsContainer
+            @if (showSuggestions() && !isVin() && !selectedVehicle()) {
+            <div #desktopSuggestionsContainer
               class="hidden md:block max-h-[400px] overflow-y-auto animate-fade-in"
-              style="border-top:1px solid rgba(255,255,255,0.05)"
+              style="border-top:1px solid rgba(255,255,255,0.05)">
               @if (searchStep() === 'Year' && suggestions().length > 10) {
               <!-- Year Grid -->
               <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 p-4 text-center">
@@ -213,10 +220,11 @@
                   style="border-color:rgba(255,255,255,0.1);border-top-color:hsl(191,97%,50%)"></div>
                 <p class="mt-2 text-xs text-torque-muted font-mono">Loading...</p>
               </div>
-              } @else if(suggestions().length === 0) {
+              } @else if (suggestions().length === 0) {
               <div class="p-8 text-center text-sm text-torque-muted">No results found.</div>
               }
             </div>
+            }
           </div>
         </div>
 
