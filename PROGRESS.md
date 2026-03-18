@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-03-18 (article lock UX: back closes modal, refresh, single-article unlock)
+**Last updated**: 2026-03-18 (payments in modal, Stripe checkout popup)
 
 ## Summary
 
@@ -34,6 +34,7 @@
 - [x] Direct URL access to articles is blocked (missing moduleType → locked; sidebar/browse-all pass moduleType)
 - [x] Backend verifies article access (Bearer token + Supabase bucket lookup + unlock check)
 - [x] Article lock overlay: Back to Dashboard closes modal in window mode; Refresh button; Unlock single article (100 credits)
+- [x] Payments in modal: Get Credits opens credits modal; Stripe checkout in popup (no page refresh)
 
 ### UI/UX Cleanup
 - [x] Removed verbose marketing copy from home page

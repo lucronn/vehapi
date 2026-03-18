@@ -251,6 +251,75 @@ export class CreditsService {
         }
     }
 
+    /**
+     * Start checkout in a popup window. Keeps the current page and modals open.
+     * Resolves when the popup completes (success or cancel).
+     */
+    async startCheckoutPopup(amount: number): Promise<{ success: boolean; error?: string }> {
+        if (!this.authService.user()) {
+            return { success: false, error: 'Sign in required' };
+        }
+
+        if (this.USE_MOCK) {
+            this.isLoading.set(true);
+            setTimeout(() => {
+                this.balance.update(b => b + amount);
+                this.saveMockData();
+                this.isLoading.set(false);
+            }, 800);
+            return { success: true };
+        }
+
+        this.lastError.set(null);
+        this.isLoading.set(true);
+        try {
+            const headers = await this.getHeaders();
+            const res = await firstValueFrom(
+                this.http.post<{ url: string }>(
+                    `${this.apiUrl}/checkout`,
+                    { amount, origin: window.location.origin },
+                    { headers }
+                )
+            );
+
+            if (!res?.url) {
+                return { success: false, error: 'No checkout URL received' };
+            }
+
+            const popup = window.open(res.url, 'stripe_checkout', 'width=600,height=700,scrollbars=yes,resizable=yes');
+            if (!popup) {
+                return { success: false, error: 'Popup blocked. Please allow popups for this site.' };
+            }
+
+            return new Promise<{ success: boolean; error?: string }>((resolve) => {
+                const cleanup = (result: { success: boolean; error?: string }) => {
+                    window.removeEventListener('message', handler);
+                    clearInterval(poll);
+                    resolve(result);
+                };
+                const handler = (event: MessageEvent) => {
+                    if (event.data?.type === 'stripe-checkout-complete') {
+                        cleanup({ success: event.data.success ?? false });
+                    }
+                };
+                window.addEventListener('message', handler);
+
+                const poll = setInterval(() => {
+                    if (popup.closed) {
+                        cleanup({ success: false, error: 'Checkout was closed' });
+                    }
+                }, 500);
+            });
+        } catch (err: unknown) {
+            const msg = this.extractErrorMessage(err, 'Checkout failed. Please try again.');
+            console.error('Checkout failed:', err);
+            this.lastError.set(msg);
+            return { success: false, error: msg };
+        } finally {
+            this.isLoading.set(false);
+        }
+    }
+
     /** Open Stripe Customer Billing Portal (payment methods, invoices). Requires at least one purchase. */
     async openBillingPortal(): Promise<void> {
         if (!this.authService.user()) {

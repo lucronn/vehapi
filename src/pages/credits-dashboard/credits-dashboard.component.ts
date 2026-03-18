@@ -442,7 +442,8 @@ export class CreditsDashboardComponent implements OnInit {
     }
 
     this.route.queryParams.subscribe(async params => {
-      if (params['purchase'] === 'success') {
+      const purchase = params['purchase'];
+      if (purchase === 'success') {
         const sid = params['session_id'];
         let verified = false;
         if (sid) {
@@ -460,6 +461,15 @@ export class CreditsDashboardComponent implements OnInit {
         }
         this.creditsService.refreshBalance();
         this.creditsService.fetchTransactions();
+
+        // If opened in popup (from startCheckoutPopup), notify opener and close
+        if (typeof window !== 'undefined' && window.opener) {
+          window.opener.postMessage({ type: 'stripe-checkout-complete', success: verified }, window.location.origin);
+          window.close();
+        }
+      } else if (purchase === 'cancel' && typeof window !== 'undefined' && window.opener) {
+        window.opener.postMessage({ type: 'stripe-checkout-complete', success: false }, window.location.origin);
+        window.close();
       }
     });
 
@@ -472,9 +482,14 @@ export class CreditsDashboardComponent implements OnInit {
       this.showAuthModal.set(true);
       return;
     }
-    const result = await this.creditsService.startCheckout(amount);
+    const result = await this.creditsService.startCheckoutPopup(amount);
     if (!result.success) {
       this.creditsService.lastError.set(result.error ?? 'Checkout failed');
+    } else {
+      this.purchaseSuccess.set(true);
+      setTimeout(() => this.purchaseSuccess.set(false), 8000);
+      await this.creditsService.refreshBalance();
+      this.creditsService.fetchTransactions();
     }
   }
 

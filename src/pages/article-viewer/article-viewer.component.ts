@@ -10,6 +10,7 @@ import { MotorApiService } from '../../services/motor-api.service';
 import { MotorHtmlProcessorService } from '../../services/motor-html-processor.service';
 import { AiRewriteService } from '../../services/ai-rewrite.service';
 import { LucideAngularModule, ArrowLeft, Maximize2, List, X, Sparkles, BookOpen, Lock, RefreshCw } from 'lucide-angular';
+import { CreditsModalComponent } from '../../components/credits-modal/credits-modal.component';
 import { ImageViewerModalComponent } from './components/image-viewer-modal/image-viewer-modal.component';
 import { TutorialComponent } from '../../components/tutorial/tutorial.component';
 import { TutorialStep } from '../../models/motor.models';
@@ -481,7 +482,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   }
 
   navigateToCredits() {
-    this.router.navigate(['/credits']);
+    this.windowManager.openWindow('Get Credits', CreditsModalComponent);
   }
 
   goBackToDashboard() {
