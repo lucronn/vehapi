@@ -25,7 +25,7 @@ export class DashboardSidebarComponent {
     @Input({ required: true }) activeSection!: DashboardSection;
     @Input() availableSections: SectionAvailability | null = null;
     @Output() sectionChange = new EventEmitter<DashboardSection>();
-    @Output() articleSelected = new EventEmitter<string>(); // Emits article ID
+    @Output() articleSelected = new EventEmitter<{ id: string; bucket?: string; parentBucket?: string }>(); // Emits article for access control
     /** Ask parent layout to open the global auth modal. */
     @Output() openAuthModal = new EventEmitter<void>();
 
@@ -71,9 +71,12 @@ export class DashboardSidebarComponent {
         return this.expandedNodes().has(nodeId);
     }
 
-    onArticleClick(articleId: string) {
-        this.articleSelected.emit(articleId);
-        this.sectionChange.emit('browse-all'); // Switch main view to browse-all or a dedicated article view
+    onArticleClick(node: TreeNode) {
+        const article = node.type === 'article' ? node.article : null;
+        this.articleSelected.emit(article
+            ? { id: article.id, bucket: article.bucket, parentBucket: article.parentBucket }
+            : { id: node.id });
+        this.sectionChange.emit('browse-all');
     }
 
     onSectionClick(section: DashboardSection) {

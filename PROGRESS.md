@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-03-18 (desktop UX, dropdown fix, modals)
+**Last updated**: 2026-03-18 (article lock enforcement, sidebar moduleType)
 
 ## Summary
 
@@ -31,7 +31,7 @@
 - [x] All section components propagate `moduleType` when opening articles
 - [x] Component-locations module type aligned to `diagrams` (was mismatched)
 - [x] Locked sections show limited preview items (max 8)
-- [x] Direct URL access to articles is blocked when section is locked
+- [x] Direct URL access to articles is blocked (missing moduleType → locked; sidebar/browse-all pass moduleType)
 
 ### UI/UX Cleanup
 - [x] Removed verbose marketing copy from home page
@@ -57,7 +57,6 @@ _None currently tracked._
 |----------|------|
 | Medium | Backend-side access enforcement (currently client-side only) |
 | Medium | Rate limiting on article content API |
-| Low | Add moduleType to browse-all article links |
 | Low | Full-vehicle unlock option from lock overlay |
 
 ## Vehicle data normalization / migration

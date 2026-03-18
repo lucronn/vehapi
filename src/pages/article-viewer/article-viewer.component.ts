@@ -100,7 +100,9 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   isLocked = computed(() => {
     const mod = this.resolvedModuleType();
     const vid = this.vehicleIdSig();
-    if (!mod || !vid) return false;
+    if (!vid) return false;
+    // When moduleType is missing (e.g. direct URL), treat as locked to prevent bypass
+    if (!mod) return true;
     return !this.creditsService.hasAccess(vid, mod);
   });
 

@@ -2,7 +2,7 @@
   <!-- Sidebar Navigation - Desktop -->
   <app-dashboard-sidebar class="hidden md:flex w-64 flex-col flex-shrink-0" [vehicleName]="vehicleName()"
     [activeSection]="activeSection()" [availableSections]="availableSections()" (sectionChange)="setSection($event)"
-    (openAuthModal)="showAuthModal.set(true)" (articleSelected)="onArticleClick(null, {id: $event})">
+    (openAuthModal)="showAuthModal.set(true)" (articleSelected)="onArticleClick(null, $event)">
   </app-dashboard-sidebar>
 
   <!-- Mobile Header -->

@@ -7,6 +7,7 @@ import { Subject, of } from 'rxjs';
 
 // Models
 import { Article } from '../../models/motor.models';
+import { bucketToModuleType } from '../../utils/module-access.util';
 
 // Services
 import { VehicleDataService } from '../../services/vehicle-data.service';
@@ -348,30 +349,24 @@ export class VehicleDashboardComponent {
 
   // Orientation Selection
   onArticleClick(event: Event | null, article: Article | any): void {
-    // Prevent default navigation
-    if (event) {
-      event.preventDefault();
-    }
-    // Prevent default navigation
-    if (event) {
-      event.preventDefault();
-    }
+    if (event) event.preventDefault();
 
     const articleId = article.id || article;
 
-    // Check if this article needs orientation selection
-    // Article ID "-999" or similar indicates orientation required
     if (articleId === '-999' || (typeof articleId === 'string' && articleId.includes('SelectOrientation'))) {
       this.loadOrientationOptions(articleId);
       return;
     }
 
-    // Open in Window or Navigate on Mobile
     const contentSource = this.contentSource();
     const vehicleId = this.vehicleId();
     const title = article.title || 'Article Viewer';
+    const moduleType = article.moduleType ?? bucketToModuleType(article.bucket, article.parentBucket);
 
     if (contentSource && vehicleId && articleId) {
+      const queryParams: Record<string, string> = { title };
+      if (moduleType) queryParams['moduleType'] = moduleType;
+
       if (this.windowManager.isDesktop()) {
         this.windowManager.openWindow(
           title,
@@ -380,12 +375,13 @@ export class VehicleDashboardComponent {
             articleId: articleId,
             contentSource: contentSource,
             vehicleId: vehicleId,
-            articleTitleInput: title
+            articleTitleInput: title,
+            moduleType: moduleType ?? undefined
           }
         );
       } else {
         this.router.navigate(['/vehicle', contentSource, vehicleId, 'article', articleId], {
-          queryParams: { title }
+          queryParams
         });
       }
     }
