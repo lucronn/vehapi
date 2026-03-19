@@ -20,19 +20,35 @@ export class AuthService {
     readonly isLoggedIn = computed(() => !!this._user());
     readonly userId = computed(() => this._user()?.id ?? null);
 
+    private setSessionState(session: Session | null) {
+        const currentSession = this._session();
+        const currentUser = this._user();
+        const currentUserId = currentUser?.id ?? null;
+        const nextUserId = session?.user?.id ?? null;
+        const currentToken = currentSession?.access_token ?? null;
+        const nextToken = session?.access_token ?? null;
+
+        // Avoid emitting duplicate signal updates for equivalent auth state.
+        // This prevents dependent effects from re-triggering on every token read.
+        if (currentUserId === nextUserId && currentToken === nextToken) {
+            if (this._loading()) this._loading.set(false);
+            return;
+        }
+
+        this._session.set(session);
+        this._user.set(session?.user ?? null);
+        this._loading.set(false);
+    }
+
     constructor() {
         // Initialize session on startup
         this.supabase.getSession().then(session => {
-            this._session.set(session);
-            this._user.set(session?.user ?? null);
-            this._loading.set(false);
+            this.setSessionState(session);
         });
 
         // Listen for auth state changes
         this.supabase.onAuthStateChange((event, session) => {
-            this._session.set(session);
-            this._user.set(session?.user ?? null);
-            this._loading.set(false);
+            this.setSessionState(session);
         });
     }
 
@@ -70,26 +86,21 @@ export class AuthService {
     async getIdToken(): Promise<string | null> {
         const session = await this.supabase.getSession();
         if (!session) {
-            this._session.set(null);
-            this._user.set(null);
-            this._loading.set(false);
+            this.setSessionState(null);
             return null;
         }
 
         // Always hydrate signals from the current session, even if we don't refresh.
         // This prevents auth-hydration races (e.g. right after Stripe redirect) where
         // a valid session exists but `authService.user()` is still null.
-        this._session.set(session);
-        this._user.set(session.user);
-        this._loading.set(false);
+        this.setSessionState(session);
 
         // Refresh if token expires in < 60 seconds
         const expiresAt = session.expires_at;
         if (expiresAt && expiresAt * 1000 < Date.now() + 60000) {
             const { data } = await this.supabase.auth.refreshSession();
             if (data.session) {
-                this._session.set(data.session);
-                this._user.set(data.session.user);
+                this.setSessionState(data.session);
                 return data.session.access_token;
             }
         }

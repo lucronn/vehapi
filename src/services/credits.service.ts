@@ -71,8 +71,8 @@ export class CreditsService {
 
     constructor() {
         effect(() => {
-            const user = this.authService.user();
-            if (user) {
+            const userId = this.authService.userId();
+            if (userId) {
                 this.refreshBalance();
                 this.fetchTransactions();
                 // Retry any pending Stripe session that failed due to auth not being ready
