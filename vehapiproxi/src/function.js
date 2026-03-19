@@ -1116,11 +1116,13 @@ app.use('/', authMiddleware, createProxyMiddleware({
         const requestOrigin = req.headers['origin'];
         if (requestOrigin) {
             res.setHeader('access-control-allow-origin', requestOrigin);
+            // Required when frontend sends withCredentials: true (Supabase auth). Cannot use * with credentials.
+            res.setHeader('access-control-allow-credentials', 'true');
         } else {
             res.setHeader('access-control-allow-origin', '*');
         }
-        // Frontend does not need (and should never receive) any upstream auth cookies.
-        res.removeHeader('access-control-allow-credentials');
+        // Strip upstream cookie headers so frontend never receives Motor cookies.
+        // (access-control-allow-credentials above allows our frontend's credentialed requests.)
 
         // STRIP upstream headers that might reveal the source or leak data
         res.removeHeader('authorization');

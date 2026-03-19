@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-03-19 (Stripe/Auth hydration + article auth hardening + proxy auth artifact stripping)
+**Last updated**: 2026-03-18 (CORS credentials fix for cross-origin API calls)
 
 ## Summary
 
@@ -60,7 +60,7 @@
 - **Fixed 2026-03-19**: Unauthenticated requests (cookies cleared) could still retrieve cached article content — `articleAccessMiddleware` was matching the wrong path shape because it expected `/api/source/...` even though it runs under `app.use('/api', ...)` (now correctly enforces `/source/...`).
 - **Fixed 2026-03-19**: Hardened `articleContentCacheMiddleware` to only cache/serve the exact article-content route (not `/article/:id/title` or other sub-routes), preventing cached HTML leakage on unauthenticated calls.
 - **Fixed 2026-03-19**: Reordered backend unlock checks so individually purchased articles (`article:${articleId}`) and `full` unlocks are honored even if article bucket metadata is missing/unmappable.
-- **Hardened (pending deploy)**: Ensure no Motor.com auth artifacts leak past the proxy — proxy response header stripping includes `Authorization`/`WWW-Authenticate` and removes `access-control-allow-credentials`.
+- **Fixed 2026-03-18**: CORS blocked API calls from vehapi.vercel.app to vehapiproxi.vercel.app — proxy was removing `access-control-allow-credentials`; now sets it to `true` when `Origin` is present so credentialed requests (withCredentials) succeed. Motor cookies still stripped via cookie/set-cookie removal.
 - **Fixed (pending deploy)**: Backend `vehapiproxi` was not deploying independently after Mar 13; added `deploy-backend.yml` to deploy backend when `vehapiproxi/**` changes.
 
 ## What's Left to Do
