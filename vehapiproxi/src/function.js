@@ -1110,12 +1110,17 @@ app.use('/', authMiddleware, createProxyMiddleware({
         const requestOrigin = req.headers['origin'];
         if (requestOrigin) {
             res.setHeader('access-control-allow-origin', requestOrigin);
-            res.setHeader('access-control-allow-credentials', 'true');
         } else {
             res.setHeader('access-control-allow-origin', '*');
         }
+        // Frontend does not need (and should never receive) any upstream auth cookies.
+        res.removeHeader('access-control-allow-credentials');
 
         // STRIP upstream headers that might reveal the source or leak data
+        res.removeHeader('authorization');
+        res.removeHeader('www-authenticate');
+        res.removeHeader('proxy-authenticate');
+        res.removeHeader('cookie');
         res.removeHeader('set-cookie'); // Frontend doesn't need Motor cookies
         res.removeHeader('server');     // Hide upstream server info
         res.removeHeader('x-powered-by');
