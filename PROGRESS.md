@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-03-19 (locked/unlocked refactor, data normalization)
+**Last updated**: 2026-03-19 (bug fixes, logging cleanup, null safety)
 
 ## Summary
 
@@ -65,6 +65,10 @@
 - **Fixed 2026-03-19**: `/auth/status` CORS regression and status polling spam — backend now uses explicit allowed-origin reflection (no wildcard for credentialed requests) for direct Express routes and proxy responses; frontend auth-status pollers now stop when idle/error and use bounded/backoff retry to prevent continuous request storms.
 - **Fixed (pending deploy)**: Backend `vehapiproxi` was not deploying independently after Mar 13; added `deploy-backend.yml` to deploy backend when `vehapiproxi/**` changes.
 - **Fixed 2026-03-19**: Locked/unlocked logic refactor — extracted article-access.js and menu-normalizer.js; Supabase-served articles no longer re-normalized; 403 response includes moduleType for frontend unlock-section; article metadata endpoint for direct-URL moduleType resolution.
+- **Fixed 2026-03-19**: Verbose console.log in production — guarded debug logging in article-viewer, vehicle-data.service, data-sync.service, motor-api.service with `isDevMode()` or `environment.production` checks.
+- **Fixed 2026-03-19**: motor-api.service AbortError check — clarified operator precedence with explicit `isAbortError` variable for HttpErrorResponse-wrapped cancellations.
+- **Fixed 2026-03-19**: article-access.js null safety — `checkArticleAccess` now guards against non-array `vehicleUnlocks` to prevent runtime errors.
+- **Fixed 2026-03-19**: npm audit — applied `npm audit fix`; immutable, minimatch, qs vulnerabilities resolved. Remaining (cookie, tar) require `--force` and may break Angular CLI.
 
 ## What's Left to Do
 
@@ -72,6 +76,7 @@
 |----------|------|
 | Medium | Rate limiting on article content API |
 | Low | Full-vehicle unlock option from lock overlay |
+| Low | npm audit: cookie, tar vulnerabilities (require `npm audit fix --force`; may break Angular CLI) |
 
 ## Vehicle data normalization / migration
 

@@ -104,7 +104,10 @@ export class MotorApiService {
    */
   private logApiError(url: string, error: any, duration?: number): void {
     // Suppress AbortError from Angular switchMap / HTTP client cancellation
-    if (error?.name === 'AbortError' || error?.name === 'HttpErrorResponse' && error?.error?.name === 'AbortError') {
+    const isAbortError =
+      error?.name === 'AbortError' ||
+      (error?.name === 'HttpErrorResponse' && error?.error?.name === 'AbortError');
+    if (isAbortError) {
       if (!environment.production) {
         console.log(`[API REQUEST CANCELLED] Frontend intentionally cancelled HTTP request to ${url} ( likely due to fast route navigation )`);
       }

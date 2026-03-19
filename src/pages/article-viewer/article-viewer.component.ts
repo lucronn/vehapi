@@ -121,11 +121,6 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
     if (changes['articleId'] || changes['vehicleId'] || changes['contentSource']) {
       // If we have all required inputs, load data
       if (this.contentSource && this.vehicleId && this.internalArticleId()) {
-        console.log('[ArticleViewer] Inputs changed, loading data:', {
-          source: this.contentSource,
-          vehicle: this.vehicleId,
-          article: this.internalArticleId()
-        });
         this.loadData();
       }
     }
@@ -324,7 +319,6 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
         next: (status) => {
           const sessionValid = (status as any)?.sessionValid === true;
           if (status?.status === 'success' || sessionValid) {
-            console.log('[ArticleViewer] Auth restored, retrying article load...');
             this.isRetrying.set(false);
             this.loadData();
           } else if (status?.status === 'authenticating') {
@@ -492,7 +486,6 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
           const parts = href.split('/article/');
           if (parts.length > 1) {
             const newArticleId = parts[1];
-            console.log('[ArticleViewer] Intercepted link click in modal. Switching to article:', newArticleId);
             this.internalArticleId.set(newArticleId);
             this.articleTitleInput = undefined; // Clear existing title input to force reload
             this.loadData();
