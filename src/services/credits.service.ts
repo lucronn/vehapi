@@ -169,8 +169,15 @@ export class CreditsService {
         localStorage.setItem(this.PENDING_SESSION_KEY, sessionId);
 
         // Auth may still be loading after a full page redirect from Stripe checkout.
-        // Wait up to 15 seconds for the session to restore.
-        for (let i = 0; i < 150 && this.authService.loading(); i++) {
+        // Force a session read (helps `authService.user()` become available deterministically).
+        try {
+            await this.authService.getIdToken();
+        } catch {
+            // Non-fatal; we'll just rely on the polling below.
+        }
+
+        // Wait up to 15 seconds for the session/user to restore.
+        for (let i = 0; i < 150 && !this.authService.user(); i++) {
             await new Promise(r => setTimeout(r, 100));
         }
         if (!this.authService.user()) {
