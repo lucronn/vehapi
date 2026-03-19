@@ -170,6 +170,19 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
       this.loadData();
     }
 
+    // Resolve moduleType from metadata when missing (e.g. direct URL)
+    if (!this.resolvedModuleType() && this.contentSource && this.vehicleId && this.internalArticleId()) {
+      this.motorApi.getArticleMetadata(this.contentSource, this.vehicleId, this.internalArticleId()!).subscribe({
+        next: (meta) => {
+          if (meta.moduleType) {
+            this.resolvedModuleType.set(meta.moduleType);
+            this.loadData(); // Retry load now that we know moduleType
+          }
+        },
+        error: () => { /* ignore */ }
+      });
+    }
+
     if (this.articleTitleInput) {
       this.articleTitle.set(this.cleanTitle(this.articleTitleInput));
     }
@@ -264,6 +277,15 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
       error: (err) => {
         console.error('[ArticleViewer] Failed to load article:', err);
         const status = err?.status;
+        const body = err?.error;
+
+        // 403 with moduleType = access denied (not unlocked) — show lock overlay
+        if (status === 403 && body?.moduleType) {
+          this.resolvedModuleType.set(body.moduleType);
+          this.error.set(null);
+          this.isLoading.set(false);
+          return;
+        }
 
         if ((status === 401 || status === 403) && this.retryCount() < 3) {
           // Auth expired — proxy is re-authenticating, poll and retry
@@ -273,7 +295,6 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
         } else {
           this.isRetrying.set(false);
           this.retryCount.set(0);
-          // Extract clean message without exposing proxy URLs
           let msg = 'Could not load this article.';
           if (status === 404) msg = 'Article not found.';
           else if (status === 401 || status === 403) msg = 'Session expired. Please refresh and try again.';
@@ -507,6 +528,14 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
     const aid = this.internalArticleId();
     if (!vid || !aid) return;
     const ok = await this.creditsService.unlockArticle(vid, vid, aid);
+    if (ok) this.loadData();
+  }
+
+  async unlockSection(moduleType: string) {
+    const vid = this.vehicleIdSig();
+    if (!vid) return;
+    const cost = this.creditsService.getCostForModule(moduleType);
+    const ok = await this.creditsService.unlockModule(vid, vid, moduleType, cost);
     if (ok) this.loadData();
   }
 

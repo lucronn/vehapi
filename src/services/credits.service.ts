@@ -63,6 +63,21 @@ export class CreditsService {
         ARTICLE: 100,
     };
 
+    /** Cost for a module type (e.g. 'dtcs' -> COSTS.DTC) */
+    getCostForModule(moduleType: string): number {
+        const map: Record<string, number> = {
+            dtcs: this.COSTS.DTC,
+            tsbs: this.COSTS.TSB,
+            specs: this.COSTS.SPECS,
+            procedures: this.COSTS.PROCEDURES,
+            diagrams: this.COSTS.DIAGRAMS,
+            parts: this.COSTS.PARTS,
+            maintenance: this.COSTS.MAINTENANCE,
+            common_issues: this.COSTS.COMMON_ISSUES,
+        };
+        return map[moduleType] ?? this.COSTS.ARTICLE;
+    }
+
     private get apiUrl() {
         return environment.production
             ? 'https://vehapiproxi.vercel.app/api/credits'
@@ -406,8 +421,11 @@ export class CreditsService {
                 return true;
             }
             return false;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Unlock failed:', error);
+            const err = error as { error?: string | { error?: string } };
+            const msg = typeof err?.error === 'string' ? err.error : err?.error?.error ?? 'Unlock failed';
+            this.lastError.set(msg);
             return false;
         } finally {
             this.isLoading.set(false);

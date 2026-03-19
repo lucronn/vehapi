@@ -442,6 +442,11 @@ export class MotorApiService {
     return this.http.get(url, { responseType: 'text', withCredentials: true });
   }
 
+  getArticleMetadata(contentSource: string, vehicleId: string, articleId: string): Observable<{ bucket: string; parent_bucket: string; moduleType: string | null }> {
+    const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/article/${articleId}/metadata`;
+    return this.getWithLogging<{ bucket: string; parent_bucket: string; moduleType: string | null }>(url);
+  }
+
   getArticleTitle(contentSource: string, vehicleId: string, articleId: string): Observable<ApiResponse<string>> {
     const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/article/${articleId}/title`;
     return this.getWithLogging<ApiResponse<StringResponse>>(url).pipe(
