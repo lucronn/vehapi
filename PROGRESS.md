@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-03-18 (CORS credentials fix for cross-origin API calls)
+**Last updated**: 2026-03-19 (auth/status CORS + polling storm fix)
 
 ## Summary
 
@@ -62,6 +62,7 @@
 - **Fixed 2026-03-19**: Hardened `articleContentCacheMiddleware` to only cache/serve the exact article-content route (not `/article/:id/title` or other sub-routes), preventing cached HTML leakage on unauthenticated calls.
 - **Fixed 2026-03-19**: Reordered backend unlock checks so individually purchased articles (`article:${articleId}`) and `full` unlocks are honored even if article bucket metadata is missing/unmappable.
 - **Fixed 2026-03-18**: CORS blocked API calls from vehapi.vercel.app to vehapiproxi.vercel.app — proxy was removing `access-control-allow-credentials`; now sets it to `true` when `Origin` is present so credentialed requests (withCredentials) succeed. Motor cookies still stripped via cookie/set-cookie removal.
+- **Fixed 2026-03-19**: `/auth/status` CORS regression and status polling spam — backend now uses explicit allowed-origin reflection (no wildcard for credentialed requests) for direct Express routes and proxy responses; frontend auth-status pollers now stop when idle/error and use bounded/backoff retry to prevent continuous request storms.
 - **Fixed (pending deploy)**: Backend `vehapiproxi` was not deploying independently after Mar 13; added `deploy-backend.yml` to deploy backend when `vehapiproxi/**` changes.
 
 ## What's Left to Do

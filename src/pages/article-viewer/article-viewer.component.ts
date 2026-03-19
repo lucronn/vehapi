@@ -4,7 +4,6 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map, switchMap, of, catchError, Subject, takeUntil } from 'rxjs';
-import { HttpClient } from '@angular/common/http';
 
 import { MotorApiService } from '../../services/motor-api.service';
 import { MotorHtmlProcessorService } from '../../services/motor-html-processor.service';
@@ -109,8 +108,6 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   });
 
   resolvedModuleType = signal<string | null>(null);
-
-  private http = inject(HttpClient);
 
   // Signal-safe accessors for template — fall back to route params when inputs are undefined
   contentSourceSig = computed(() => this.contentSource || this.params()?.get('contentSource') || '');
@@ -291,9 +288,8 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
 
   /** Poll /auth/status until ready, then re-attempt loadData */
   private pollAndRetry() {
-    const baseUrl = this.motorApi.baseUrl;
     let attempts = 0;
-    const maxAttempts = 20; // ~10s
+    const maxAttempts = 12;
 
     const poll = () => {
       if (attempts++ > maxAttempts) {
@@ -303,18 +299,26 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
         return;
       }
 
-      this.http.get<any>(`${baseUrl}/auth/status`).subscribe({
+      this.motorApi.getAuthStatus().subscribe({
         next: (status) => {
-          if (status?.status === 'success' || status?.sessionValid === true) {
+          const sessionValid = (status as any)?.sessionValid === true;
+          if (status?.status === 'success' || sessionValid) {
             console.log('[ArticleViewer] Auth restored, retrying article load...');
             this.isRetrying.set(false);
             this.loadData();
-          } else {
-            // Not ready yet, poll again in 800ms
+          } else if (status?.status === 'authenticating') {
+            // Keep polling while backend refreshes Motor session.
             setTimeout(poll, 800);
+          } else {
+            // Idle/error/unknown should back off to avoid request storms.
+            const backoffMs = Math.min(2500, 800 + attempts * 200);
+            setTimeout(poll, backoffMs);
           }
         },
-        error: () => setTimeout(poll, 1000)
+        error: () => {
+          const backoffMs = Math.min(3000, 1000 + attempts * 250);
+          setTimeout(poll, backoffMs);
+        }
       });
     };
 

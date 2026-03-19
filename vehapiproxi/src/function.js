@@ -143,10 +143,31 @@ validateConfig();
 const app = express();
 
 // Enable CORS
-app.use(cors({
-    origin: true, // Allow all origins for now
-    credentials: true
-}));
+// Use explicit origin reflection for credentialed requests and avoid wildcard
+// fallback in any cross-origin browser response.
+const allowedOrigins = new Set([
+    'https://vehapi.vercel.app',
+    'http://localhost:3000'
+]);
+
+const corsOptionsDelegate = (req, callback) => {
+    const requestOrigin = req.headers.origin;
+    let corsOptions;
+
+    if (!requestOrigin) {
+        // Non-browser/server-to-server calls: no CORS headers needed.
+        corsOptions = { origin: false, credentials: true };
+    } else if (allowedOrigins.has(requestOrigin)) {
+        corsOptions = { origin: requestOrigin, credentials: true };
+    } else {
+        corsOptions = { origin: false, credentials: true };
+    }
+
+    callback(null, corsOptions);
+};
+
+app.use(cors(corsOptionsDelegate));
+app.options('*', cors(corsOptionsDelegate));
 
 // Health check endpoint
 if (swaggerDocument) {
@@ -1114,12 +1135,14 @@ app.use('/', authMiddleware, createProxyMiddleware({
     onProxyRes: responseInterceptor(async (responseBuffer, proxyRes, req, res) => {
         // STRICTLY override CORS to hide upstream source
         const requestOrigin = req.headers['origin'];
-        if (requestOrigin) {
+        if (requestOrigin && allowedOrigins.has(requestOrigin)) {
             res.setHeader('access-control-allow-origin', requestOrigin);
             // Required when frontend sends withCredentials: true (Supabase auth). Cannot use * with credentials.
             res.setHeader('access-control-allow-credentials', 'true');
         } else {
-            res.setHeader('access-control-allow-origin', '*');
+            // Do not emit wildcard for credentialed/browser requests.
+            res.removeHeader('access-control-allow-origin');
+            res.removeHeader('access-control-allow-credentials');
         }
         // Strip upstream cookie headers so frontend never receives Motor cookies.
         // (access-control-allow-credentials above allows our frontend's credentialed requests.)

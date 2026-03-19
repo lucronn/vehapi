@@ -1,7 +1,6 @@
 import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MotorApiService } from '../../services/motor-api.service';
-import { timer, Subscription, switchMap, filter, takeWhile, finalize } from 'rxjs';
 
 @Component({
     selector: 'app-auth-loading',
@@ -27,6 +26,7 @@ import { timer, Subscription, switchMap, filter, takeWhile, finalize } from 'rxj
 export class AuthLoadingComponent implements OnInit, OnDestroy {
     private motorApi = inject(MotorApiService);
     private destroyed = false;
+    private pollTimer: ReturnType<typeof setTimeout> | null = null;
 
     progress = signal(0);
     message = signal('ACCESSING DATABASE...');
@@ -40,7 +40,7 @@ export class AuthLoadingComponent implements OnInit, OnDestroy {
 
         this.motorApi.getAuthStatus().subscribe({
             next: (response) => {
-                let nextPollDelay = 4000; // Default idle poll
+                let nextPollDelay: number | null = null;
                 let shouldContinue = true;
 
                 if (response.status === 'authenticating') {
@@ -62,27 +62,42 @@ export class AuthLoadingComponent implements OnInit, OnDestroy {
                     }
                 } else if (response.status === 'error') {
                     this.progress.set(0);
+                    // If status endpoint is failing, stop instead of retrying forever.
+                    shouldContinue = false;
                 } else if (response.status === 'idle') {
-                    // unexpected idle state, reset if we were showing something (unless we just finished success animation)
+                    // Only poll while auth is actively in progress.
                     if (this.progress() > 0 && this.message() !== 'COMPLETE') {
                         this.progress.set(0);
                     }
+                    shouldContinue = false;
                 }
 
-                if (!this.destroyed && shouldContinue) {
-                    setTimeout(() => this.poll(), nextPollDelay);
+                if (!this.destroyed && shouldContinue && nextPollDelay !== null) {
+                    this.schedulePoll(nextPollDelay);
                 }
             },
             error: () => {
                 this.progress.set(0);
-                if (!this.destroyed) {
-                    setTimeout(() => this.poll(), 4000); // Retry later on error
-                }
+                // Avoid endless retry loops during CORS/network failures.
+                this.clearPollTimer();
             }
         });
     }
 
+    private schedulePoll(delayMs: number) {
+        this.clearPollTimer();
+        this.pollTimer = setTimeout(() => this.poll(), delayMs);
+    }
+
+    private clearPollTimer() {
+        if (this.pollTimer) {
+            clearTimeout(this.pollTimer);
+            this.pollTimer = null;
+        }
+    }
+
     ngOnDestroy() {
         this.destroyed = true;
+        this.clearPollTimer();
     }
 }
