@@ -49,10 +49,11 @@ jobs:
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ prj_b4OTKYmhaSuJKAIhZ1O49erFEVgI }}
+          vercel-project-id: prj_b4OTKYmhaSuJKAIhZ1O49erFEVgI
           vercel-args: '--prod'
           working-directory: ./
         env:
           VERCEL_FORCE_NO_BUILD: 1
+
 
 
