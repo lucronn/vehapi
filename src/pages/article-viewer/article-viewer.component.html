@@ -205,6 +205,14 @@
             style="background:var(--primary);color:white">
             Unlock this article ({{ creditsService.COSTS.ARTICLE }} credits)
           </button>
+          @if (resolvedModuleType(); as mod) {
+          <button (click)="unlockSection(mod)"
+            [disabled]="creditsService.balance() < creditsService.getCostForModule(mod) || creditsService.isLoading()"
+            class="px-6 py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            style="background:var(--primary);color:white;opacity:0.95">
+            Unlock section ({{ creditsService.getCostForModule(mod) }} credits)
+          </button>
+          }
           <button (click)="navigateToCredits()"
             class="px-6 py-2.5 rounded-xl font-semibold text-sm transition-all"
             style="background:var(--primary);color:white;opacity:0.9">

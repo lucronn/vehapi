@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-03-19 (auth/status CORS + polling storm fix)
+**Last updated**: 2026-03-19 (locked/unlocked refactor, data normalization)
 
 ## Summary
 
@@ -33,7 +33,7 @@
 - [x] Article titles visible before purchase (all titles shown when locked; users can selectively unlock)
 - [x] Direct URL access to articles is blocked (missing moduleType → locked; sidebar/browse-all pass moduleType)
 - [x] Backend verifies article access (Bearer token + Supabase bucket lookup + unlock check)
-- [x] Article lock overlay: Back to Dashboard closes modal in window mode; Refresh button; Unlock single article (100 credits)
+- [x] Article lock overlay: Back to Dashboard closes modal in window mode; Refresh button; Unlock single article (100 credits); Unlock section when moduleType known
 - [x] Payments in modal: Get Credits opens credits modal; Stripe checkout in popup (no page refresh)
 
 ### UI/UX Cleanup
@@ -64,6 +64,7 @@
 - **Fixed 2026-03-18**: CORS blocked API calls from vehapi.vercel.app to vehapiproxi.vercel.app — proxy was removing `access-control-allow-credentials`; now sets it to `true` when `Origin` is present so credentialed requests (withCredentials) succeed. Motor cookies still stripped via cookie/set-cookie removal.
 - **Fixed 2026-03-19**: `/auth/status` CORS regression and status polling spam — backend now uses explicit allowed-origin reflection (no wildcard for credentialed requests) for direct Express routes and proxy responses; frontend auth-status pollers now stop when idle/error and use bounded/backoff retry to prevent continuous request storms.
 - **Fixed (pending deploy)**: Backend `vehapiproxi` was not deploying independently after Mar 13; added `deploy-backend.yml` to deploy backend when `vehapiproxi/**` changes.
+- **Fixed 2026-03-19**: Locked/unlocked logic refactor — extracted article-access.js and menu-normalizer.js; Supabase-served articles no longer re-normalized; 403 response includes moduleType for frontend unlock-section; article metadata endpoint for direct-URL moduleType resolution.
 
 ## What's Left to Do
 
@@ -80,7 +81,7 @@
 - [x] **supabase_schema.sql** – Articles table: added code, description, sort, bulletin_number, release_date columns + parent_bucket index. Migration SQL included.
 - [x] **supabase.js** – ensureVehicleExists (FK safety), markVehicleNormalized, checkArticleContent (articles table cache). UPSERT_CONFLICT_COLUMNS unchanged.
 - [x] **background_worker.js** – Creates vehicle record before FK-dependent inserts. Articles include all Motor API fields (code, description, sort, bulletin_number, release_date). Marks vehicle normalized after catalog ingest. extractExternalId returns per-article IDs for DTCs/TSBs. Improved content_html extraction (JSON body.html fallback).
-- [x] **function.js** – Article content cache checks both normalized tables AND articles table. Articles cache applies normalizeMotorResponse for consistent filterTabs. articles/v2 normalizeMotorResponse always applied (not only for large catalogs).
+- [x] **function.js** – Article content cache checks both normalized tables AND articles table. Modular article-access.js and menu-normalizer.js. Supabase-served articles use buildMenuFromNormalizedArticles (no re-normalization). Motor API responses use normalizeMotorResponse.
 - [x] **vehicle-data.service.ts** – Section strategies: comprehensive bucket names matching normalizeCategoryParams output (DTCs, TSBs, procedures, diagrams, component-locations). Article filter checks both bucket AND parent_bucket. loadSectionData always uses articles table for list view (simplified flow).
 - [x] **data-sync.service.ts** – syncFullVehicle includes parts sync. Sets is_normalized=true after completion. syncSingleArticle stores all article fields (code, description, bulletin_number, release_date, sort).
 - [x] **vehicle-dashboard.component.ts** – Dashboard calls ensureVehicleRecord only (0 API calls). No eager syncFullVehicle.

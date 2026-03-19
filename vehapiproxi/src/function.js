@@ -24,7 +24,8 @@ import {
 } from './supabase.js';
 import jwt from 'jsonwebtoken';
 import { generateCommonIssues } from './ai_parser.js';
-import { normalizeCategoryParams } from './categorize.js';
+import { bucketToModuleType, checkArticleAccess } from './article-access.js';
+import { normalizeMotorResponse, buildMenuFromNormalizedArticles } from './menu-normalizer.js';
 // AI parser is loaded lazily to avoid cold-start crashes when NVIDIA_API_KEY is absent
 let _rewriteArticleHtml = null;
 let _generateTutorialSteps = null;
@@ -53,85 +54,6 @@ async function getEnqueue() {
         // Background worker unavailable (e.g. missing API keys). Proxy still works.
     }
     return _enqueueParsingTask;
-}
-
-/**
- * Normalizes the Motor API /articles/v2 response into a structured menu.
- */
-function normalizeMotorResponse(data) {
-    if (!data || !data.body || !data.body.articleDetails) return data;
-
-    const articles = data.body.articleDetails;
-    const categoriesMap = new Map();
-    const result = { categories: [] };
-
-    // Standard mapping for root level categories to ensure consistency
-    const rootNameMap = {
-        'Procedures': 'Service Procedures',
-        'Wiring Diagrams': 'Wiring Diagrams',
-        'Component Locations': 'Component Locations',
-        'Labor': 'Labor & Estimating',
-        'Fluids': 'Fluids & Capacities',
-        'Specifications': 'Specifications',
-        'Parts': 'Parts Catalog',
-        'TSBs': 'Service Bulletins (TSB)',
-        'DTCs': 'Diagnostic Codes (DTC)'
-    };
-
-    articles.forEach(article => {
-        let parentBucketRaw = article.parentBucket || 'Other';
-        let bucketRaw = article.bucket || 'Uncategorized';
-
-        const { rootName, subName } = normalizeCategoryParams(article.title, parentBucketRaw, bucketRaw);
-
-        // 1. Ensure Root Category exists
-        let rootCat = categoriesMap.get(rootName);
-        if (!rootCat) {
-            rootCat = {
-                id: rootName.toLowerCase().replace(/\s+/g, '-'),
-                name: rootName,
-                count: 0,
-                type: 'system',
-                children: []
-            };
-            categoriesMap.set(rootName, rootCat);
-            result.categories.push(rootCat);
-        }
-
-        // 2. Add to Subcategory or Direct
-        if (subName && subName !== rootName) {
-            const subId = `${rootCat.id}-${subName.toLowerCase().replace(/\s+/g, '-')}`;
-            let subCat = categoriesMap.get(subId);
-            if (!subCat) {
-                subCat = {
-                    id: subId,
-                    name: subName,
-                    count: 0,
-                    type: 'group',
-                    articles: []
-                };
-                categoriesMap.set(subId, subCat);
-                rootCat.children.push(subCat);
-            }
-            subCat.articles.push(article);
-            subCat.count++;
-        } else {
-            if (!rootCat.articles) rootCat.articles = [];
-            rootCat.articles.push(article);
-        }
-        rootCat.count++;
-    });
-
-    // Sort categories and clean up empty ones
-    result.categories.sort((a, b) => a.name.localeCompare(b.name));
-    result.categories.forEach(cat => {
-        if (cat.children && cat.children.length > 0) {
-            cat.children.sort((a, b) => a.name.localeCompare(b.name));
-        }
-    });
-
-    data.body.normalizedMenu = result;
-    return data;
 }
 
 const require = createRequire(import.meta.url);
@@ -798,6 +720,26 @@ app.post('/api/credits/verify-session', express.json(), secureAuthMiddleware, as
 // Using express.raw to preserve the raw body for signature verification
 app.post('/api/credits/webhook', express.raw({ type: 'application/json' }), handleWebhook);
 
+// Article metadata (bucket, moduleType) for frontend access resolution when moduleType is missing
+app.get('/api/source/:source/vehicle/:vehicleId/article/:articleId/metadata', secureAuthMiddleware, async (req, res) => {
+    try {
+        const { vehicleId, articleId } = req.params;
+        const metadata = await getArticleMetadata(vehicleId, articleId);
+        if (!metadata) {
+            return res.status(404).json({ error: 'Article not found' });
+        }
+        const moduleType = bucketToModuleType(metadata.bucket, metadata.parent_bucket);
+        res.json({
+            bucket: metadata.bucket,
+            parent_bucket: metadata.parent_bucket,
+            moduleType: moduleType || null
+        });
+    } catch (error) {
+        logger.error('Error fetching article metadata:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // --- AI ENDPOINTS ---
 
 // POST /api/rewrite — rewrites article HTML text content via Nemotron (NVIDIA)
@@ -909,28 +851,28 @@ const articlesCacheMiddleware = async (req, res, next) => {
                     if (articles && articles.length > 0) {
                         // We need to transform these Supabase rows back into the shape Motor API returns
                         // or at least what our normalizeMotorResponse expects.
-                        let motorShape = {
+                        const articleDetails = articles.map(a => ({
+                            id: a.original_id,
+                            title: a.title,
+                            subtitle: a.subtitle,
+                            code: a.code || undefined,
+                            description: a.description || undefined,
+                            bucket: a.bucket,
+                            parentBucket: a.parent_bucket,
+                            thumbnailHref: a.thumbnail_href,
+                            bulletinNumber: a.bulletin_number || undefined,
+                            releaseDate: a.release_date || undefined,
+                            sort: a.sort,
+                            contentSource: a.content_source || 'MOTOR'
+                        }));
+                        const motorShape = {
                             header: { status: 'OK', statusCode: 200 },
                             body: {
-                                articleDetails: articles.map(a => ({
-                                    id: a.original_id,
-                                    title: a.title,
-                                    subtitle: a.subtitle,
-                                    code: a.code || undefined,
-                                    description: a.description || undefined,
-                                    bucket: a.bucket,
-                                    parentBucket: a.parent_bucket,
-                                    thumbnailHref: a.thumbnail_href,
-                                    bulletinNumber: a.bulletin_number || undefined,
-                                    releaseDate: a.release_date || undefined,
-                                    sort: a.sort,
-                                    contentSource: a.content_source || 'MOTOR'
-                                })),
-                                filterTabs: []
+                                articleDetails,
+                                filterTabs: [],
+                                normalizedMenu: buildMenuFromNormalizedArticles(articles)
                             }
                         };
-
-                        motorShape = normalizeMotorResponse(motorShape);
                         
                         res.setHeader('x-data-source', 'supabase');
                         res.setHeader('x-cache-hit', 'true');
@@ -946,27 +888,6 @@ const articlesCacheMiddleware = async (req, res, next) => {
 };
 
 // Article Access Enforcement: require auth + unlock for article content
-const BUCKET_TO_MODULE = [
-    { patterns: ['diagnostic trouble codes', 'dtcs', 'fault codes', 'diagnostic codes', 'p-codes', 'c-codes', 'b-codes', 'u-codes'], module: 'dtcs' },
-    { patterns: ['technical service bulletins', 'tsbs', 'bulletin', 'service bulletins'], module: 'tsbs' },
-    { patterns: ['procedure', 'labor', 'service procedures', 'engine mechanical', 'transmission', 'electrical', 'brakes', 'hvac', 'cooling', 'fuel', 'suspension', 'steering', 'body', 'restraints', 'maintenance', 'general'], module: 'procedures' },
-    { patterns: ['wiring diagrams', 'diagrams', 'system wiring'], module: 'diagrams' },
-    { patterns: ['component locations', 'component location diagrams'], module: 'diagrams' },
-    { patterns: ['specification', 'specs', 'fluid', 'capacity', 'alignment'], module: 'specs' },
-    { patterns: ['maintenance schedule', 'service intervals'], module: 'maintenance' },
-    { patterns: ['parts', 'part catalog'], module: 'parts' },
-    { patterns: ['common issues', 'common issue'], module: 'common_issues' },
-];
-
-function bucketToModuleType(bucket, parentBucket) {
-    const combined = [bucket, parentBucket].filter(Boolean).join(' ').toLowerCase();
-    if (!combined) return null;
-    for (const { patterns, module } of BUCKET_TO_MODULE) {
-        if (patterns.some(p => combined.includes(p))) return module;
-    }
-    return null;
-}
-
 const articleAccessMiddleware = async (req, res, next) => {
     const path = req.path;
     // IMPORTANT:
@@ -997,31 +918,25 @@ const articleAccessMiddleware = async (req, res, next) => {
     const userData = await getUserData(userId);
     const unlocks = userData.unlocks || {};
     const vehicleUnlocks = unlocks[vehicleId] || [];
-    const articleUnlockKey = `article:${articleId}`;
-    
-    // 1) Individually purchased articles should be accessible even if
-    // article bucket metadata is missing/unmappable.
-    if (vehicleUnlocks.includes(articleUnlockKey) || vehicleUnlocks.includes('full')) {
-        return next();
-    }
 
-    // 2) Category-level purchases require mapping article bucket -> module type.
     const metadata = await getArticleMetadata(vehicleId, articleId);
     const moduleType = metadata ? bucketToModuleType(metadata.bucket, metadata.parent_bucket) : null;
+    const { allowed } = checkArticleAccess(vehicleUnlocks, articleId, moduleType);
+
+    if (allowed) {
+        return next();
+    }
 
     if (!moduleType) {
         logger.warn(`Article ${articleId} (vehicle ${vehicleId}): no bucket metadata in Supabase; denying category-level access`);
         return res.status(403).json({ error: 'Article access cannot be verified' });
     }
 
-    const hasAccess = vehicleUnlocks.includes(moduleType);
-
-    if (!hasAccess) {
-        logger.info(`Article access denied: user ${userId} lacks ${moduleType} for vehicle ${vehicleId}`);
-        return res.status(403).json({ error: 'Module not unlocked for this vehicle' });
-    }
-
-    next();
+    logger.info(`Article access denied: user ${userId} lacks ${moduleType} for vehicle ${vehicleId}`);
+    return res.status(403).json({
+        error: 'Module not unlocked for this vehicle',
+        moduleType
+    });
 };
 
 app.use('/api', articleAccessMiddleware);

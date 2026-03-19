@@ -31,7 +31,7 @@ export const authHeaderInterceptor: HttpInterceptorFn = (req, next) => {
   })();
 
   const isCreditsEndpoint = path.startsWith('/api/credits/');
-  const isArticleContentEndpoint = /^\/api\/source\/[^/]+\/vehicle\/[^/]+\/article\/[^/]+(?:\/html)?$/.test(path);
+  const isArticleContentEndpoint = /^\/api\/source\/[^/]+\/vehicle\/[^/]+\/article\/[^/]+(?:\/html|\/metadata)?$/.test(path);
 
   if (!isCreditsEndpoint && !isArticleContentEndpoint) {
     return next(req);
