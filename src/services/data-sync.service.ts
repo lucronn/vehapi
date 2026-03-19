@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, signal, isDevMode } from '@angular/core';
 import { from, lastValueFrom, of } from 'rxjs';
 import { catchError, concatMap, mergeMap, tap } from 'rxjs/operators';
 import { MotorApiService } from './motor-api.service';
@@ -141,7 +141,9 @@ export class DataSyncService {
             // Use pre-fetched HTML when available; only call API as last resort
             let rawHtml = prefetchedHtml || '';
             if (!rawHtml && !existing) {
-                console.log(`[DataSync] Fetching ${item.id} from Motor API (no prefetched HTML)...`);
+                if (isDevMode()) {
+                    console.log(`[DataSync] Fetching ${item.id} from Motor API (no prefetched HTML)...`);
+                }
                 const contentRes = await lastValueFrom(this.motorApi.getArticleContent(cs, vid, item.id));
                 rawHtml = (contentRes?.body as any)?.html || '';
             }

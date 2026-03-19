@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-03-19 (locked/unlocked refactor, data normalization)
+**Last updated**: 2026-03-19 (bug fixes, dev-only logging, deploy-backend alignment)
 
 ## Summary
 
@@ -57,14 +57,15 @@
 - **Fixed 2026-03-18**: Motor/Article API 401 Unauthorized while logged in — interceptor previously forwarded Supabase `Authorization: Bearer ...` to Motor-proxy endpoints (years/catalog/parts/name), causing Motor to reject requests; now only attaches Bearer for `/api/credits/*` and `/api/source/*/vehicle/*/article/*` paths.
 - **Fixed 2026-03-18**: Credits dashboard request storm (`/api/credits/balance` and `/api/credits/transactions`) caused by auth signal churn — `getIdToken()` no longer re-emits identical auth state, and credits bootstrap effect now keys off stable `userId` instead of full user object.
 - **Fixed 2026-03-19**: Stripe redirect credit authorization sometimes failed due to Supabase session hydration race; `AuthService.getIdToken()` now always hydrates `_session/_user` signals, and `CreditsService.verifySession()` waits for `authService.user()` before calling `/api/credits/verify-session`.
-- **Fixed (pending deploy)**: Motor.com session/auth breaks after buying/unlocking a single article — proxy forwarded Supabase `Authorization` header to Motor.com for article requests; backend now strips `Authorization` header in `vehapiproxi/src/function.js` `onProxyReq` before forwarding upstream.
+- **Fixed 2026-03-19**: Motor.com session/auth breaks after buying/unlocking a single article — proxy forwarded Supabase `Authorization` header to Motor.com for article requests; backend now strips `Authorization` header in `vehapiproxi/src/function.js` `onProxyReq` before forwarding upstream.
 - **Fixed 2026-03-19**: Unauthenticated requests (cookies cleared) could still retrieve cached article content — `articleAccessMiddleware` was matching the wrong path shape because it expected `/api/source/...` even though it runs under `app.use('/api', ...)` (now correctly enforces `/source/...`).
 - **Fixed 2026-03-19**: Hardened `articleContentCacheMiddleware` to only cache/serve the exact article-content route (not `/article/:id/title` or other sub-routes), preventing cached HTML leakage on unauthenticated calls.
 - **Fixed 2026-03-19**: Reordered backend unlock checks so individually purchased articles (`article:${articleId}`) and `full` unlocks are honored even if article bucket metadata is missing/unmappable.
 - **Fixed 2026-03-18**: CORS blocked API calls from vehapi.vercel.app to vehapiproxi.vercel.app — proxy was removing `access-control-allow-credentials`; now sets it to `true` when `Origin` is present so credentialed requests (withCredentials) succeed. Motor cookies still stripped via cookie/set-cookie removal.
 - **Fixed 2026-03-19**: `/auth/status` CORS regression and status polling spam — backend now uses explicit allowed-origin reflection (no wildcard for credentialed requests) for direct Express routes and proxy responses; frontend auth-status pollers now stop when idle/error and use bounded/backoff retry to prevent continuous request storms.
-- **Fixed (pending deploy)**: Backend `vehapiproxi` was not deploying independently after Mar 13; added `deploy-backend.yml` to deploy backend when `vehapiproxi/**` changes.
+- **Fixed 2026-03-19**: Backend `vehapiproxi` was not deploying independently after Mar 13; added `deploy-backend.yml` to deploy backend when `vehapiproxi/**` changes. Workflow now uses Node 22 and VERCEL_PROJECT_ID secret.
 - **Fixed 2026-03-19**: Locked/unlocked logic refactor — extracted article-access.js and menu-normalizer.js; Supabase-served articles no longer re-normalized; 403 response includes moduleType for frontend unlock-section; article metadata endpoint for direct-URL moduleType resolution.
+- **Improved 2026-03-19**: Gated verbose `console.log` in article-viewer, vehicle-data.service, and data-sync.service with `isDevMode()` so production builds avoid noisy logs.
 
 ## What's Left to Do
 

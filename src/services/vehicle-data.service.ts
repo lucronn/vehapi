@@ -153,7 +153,9 @@ export class VehicleDataService {
         transform: (articles: any[]) => T[]
     ): void {
         loadingSignal.set(true);
-        console.log(`[VehicleData] Fetching from Search API(term: "${searchTerm}")...`);
+        if (isDevMode()) {
+            console.log(`[VehicleData] Fetching from Search API(term: "${searchTerm}")...`);
+        }
 
         this.motorApi.searchArticles(contentSource, vehicleId, searchTerm).subscribe({
             next: (res) => {
@@ -187,7 +189,9 @@ export class VehicleDataService {
         ).pipe(
             switchMap(({ data }) => {
                 if (data?.is_normalized) {
-                    console.log(`[VehicleDataService] Loading specs from Supabase for ${vehicleId}`);
+                    if (isDevMode()) {
+                        console.log(`[VehicleDataService] Loading specs from Supabase for ${vehicleId}`);
+                    }
                     return from(this.supabase.client
                         .from('specifications')
                         .select('*')
@@ -237,7 +241,9 @@ export class VehicleDataService {
         const consumptionKeywords = ['consumption', 'efficiency', 'fuel', 'economy', 'intelligence'];
 
         const getFluids = () => {
-            console.log('[Cache DISABLED] Fluids fetching from API...');
+            if (isDevMode()) {
+                console.log('[Cache DISABLED] Fluids fetching from API...');
+            }
             // Legacy Parity: Fluids often align with "Specs/Parts" which tend to be Motor-sourced.
             // Using Motor ID if available to ensure data consistency.
             const params = this.resolveSourceParams(contentSource, vehicleId, motorVehicleId, true);
@@ -252,10 +258,16 @@ export class VehicleDataService {
 
         const getSpecs = () => {
             const params = this.resolveSourceParams(contentSource, vehicleId, motorVehicleId, true);
-            console.log(`[VehicleDataService - V4] Specs loading for ${params.contentSource} / ${params.vehicleId}...`);
+            if (isDevMode()) {
+                console.log(`[VehicleDataService - V4] Specs loading for ${params.contentSource} / ${params.vehicleId}...`);
+            }
 
             return this.motorApi.searchArticles(params.contentSource, params.vehicleId, '').pipe(
-                tap(res => console.log(`[VehicleDataService - V4] articles / v2 response received.Body: ${!!res?.body}, Count: ${res?.body?.articleDetails?.length || 0} `)),
+                tap(res => {
+                    if (isDevMode()) {
+                        console.log(`[VehicleDataService - V4] articles / v2 response received.Body: ${!!res?.body}, Count: ${res?.body?.articleDetails?.length || 0} `);
+                    }
+                }),
                 switchMap(res => {
                     const articles = res.body?.articleDetails || [];
 
@@ -270,7 +282,9 @@ export class VehicleDataService {
                             title.includes('capacity');
                     });
 
-                    console.log(`[VehicleDataService - V4] Found ${specArticles.length} matching articles.`);
+                    if (isDevMode()) {
+                        console.log(`[VehicleDataService - V4] Found ${specArticles.length} matching articles.`);
+                    }
 
                     if (specArticles.length === 0) {
                         return of([]);
@@ -547,7 +561,9 @@ export class VehicleDataService {
         ).subscribe({
             next: (supabaseData) => {
                 if (supabaseData && supabaseData.length > 0) {
-                    console.log(`[VehicleData] Loaded ${section} from Supabase articles (${supabaseData.length} items)`);
+                    if (isDevMode()) {
+                        console.log(`[VehicleData] Loaded ${section} from Supabase articles (${supabaseData.length} items)`);
+                    }
                     updateState(supabaseData);
                     loadingSignal.set(false);
                 } else {
@@ -669,7 +685,9 @@ export class VehicleDataService {
         ).pipe(
             switchMap(({ data }) => {
                 if (data?.is_normalized) {
-                    console.log(`[VehicleDataService] Loading maintenance from Supabase for ${vehicleId}`);
+                    if (isDevMode()) {
+                        console.log(`[VehicleDataService] Loading maintenance from Supabase for ${vehicleId}`);
+                    }
                     return from(this.supabase.client
                         .from('maintenance_schedules')
                         .select('*')
