@@ -54,6 +54,7 @@
 ## Bugs & Known Issues
 
 - **Fixed 2026-03-18**: Motor/Article API 401 Unauthorized while logged in — interceptor previously forwarded Supabase `Authorization: Bearer ...` to Motor-proxy endpoints (years/catalog/parts/name), causing Motor to reject requests; now only attaches Bearer for `/api/credits/*` and `/api/source/*/vehicle/*/article/*` paths.
+- **Fixed (pending deploy)**: Motor.com session/auth breaks after buying/unlocking a single article — proxy forwarded Supabase `Authorization` header to Motor.com for article requests; backend now strips `Authorization` header in `vehapiproxi/src/function.js` `onProxyReq` before forwarding upstream.
 
 ## What's Left to Do
 

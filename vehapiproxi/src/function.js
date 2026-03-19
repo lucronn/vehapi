@@ -1078,6 +1078,14 @@ app.use('/', authMiddleware, createProxyMiddleware({
             // Force identity encoding to avoid GZIP issues in interceptor
             proxyReq.removeHeader('accept-encoding');
 
+            // IMPORTANT:
+            // For `/api/source/.../article/...` requests the browser also sends a Supabase
+            // `Authorization: Bearer <jwt>` header so our backend can verify unlocks.
+            // Those headers must NOT be forwarded to Motor.com (we authenticate to Motor.com
+            // exclusively via the cookie jar established in `authMiddleware`).
+            proxyReq.removeHeader('authorization');
+            proxyReq.removeHeader('Authorization');
+
             // Get cookies from request headers (set by authMiddleware)
             const cookieHeader = req.headers['cookie'];
             if (cookieHeader) {
