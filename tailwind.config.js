@@ -11,8 +11,10 @@ module.exports = {
                 torque: {
                     bg: 'hsl(230, 35%, 7%)',
                     card: 'hsl(230, 35%, 12%)',
+                    dark: 'hsl(230, 35%, 9%)',
                     cyan: 'hsl(191, 97%, 50%)',
                     violet: 'hsl(263, 83%, 58%)',
+                    purple: 'hsl(263, 83%, 58%)',
                     'text-secondary': 'hsl(215, 20%, 65%)',
                     'text-muted': 'hsl(215, 16%, 47%)',
                 }
