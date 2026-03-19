@@ -69,7 +69,20 @@ export class AuthService {
      * always have a valid Bearer token for the backend. */
     async getIdToken(): Promise<string | null> {
         const session = await this.supabase.getSession();
-        if (!session) return null;
+        if (!session) {
+            this._session.set(null);
+            this._user.set(null);
+            this._loading.set(false);
+            return null;
+        }
+
+        // Always hydrate signals from the current session, even if we don't refresh.
+        // This prevents auth-hydration races (e.g. right after Stripe redirect) where
+        // a valid session exists but `authService.user()` is still null.
+        this._session.set(session);
+        this._user.set(session.user);
+        this._loading.set(false);
+
         // Refresh if token expires in < 60 seconds
         const expiresAt = session.expires_at;
         if (expiresAt && expiresAt * 1000 < Date.now() + 60000) {
@@ -80,6 +93,7 @@ export class AuthService {
                 return data.session.access_token;
             }
         }
+
         return session.access_token;
     }
 }
