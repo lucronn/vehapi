@@ -948,8 +948,12 @@ function bucketToModuleType(bucket, parentBucket) {
 
 const articleAccessMiddleware = async (req, res, next) => {
     const path = req.path;
-    // Match /api/source/X/vehicle/Y/article/Z (exact - no /orientations, /title, etc.)
-    const articleContentMatch = path.match(/^\/api\/source\/[^/]+\/vehicle\/([^/]+)\/article\/([^/]+)$/);
+    // IMPORTANT:
+    // This middleware is mounted at `app.use('/api', ...)`, so inside here `req.path`
+    // is relative to that mount (it starts with `/source/...`, not `/api/source/...`).
+    // If we incorrectly expect `/api/source/...`, unauthenticated requests can slip
+    // through and reach the article cache middleware.
+    const articleContentMatch = path.match(/^\/source\/[^/]+\/vehicle\/([^/]+)\/article\/([^/]+)(?:\/html)?$/);
     if (!articleContentMatch || req.method !== 'GET') {
         return next();
     }
@@ -969,19 +973,27 @@ const articleAccessMiddleware = async (req, res, next) => {
     }
 
     const userId = decoded.sub;
-    const metadata = await getArticleMetadata(vehicleId, articleId);
-    const moduleType = metadata ? bucketToModuleType(metadata.bucket, metadata.parent_bucket) : null;
-
-    if (!moduleType) {
-        logger.warn(`Article ${articleId} (vehicle ${vehicleId}): no bucket metadata in Supabase; denying access`);
-        return res.status(403).json({ error: 'Article access cannot be verified' });
-    }
-
     const userData = await getUserData(userId);
     const unlocks = userData.unlocks || {};
     const vehicleUnlocks = unlocks[vehicleId] || [];
     const articleUnlockKey = `article:${articleId}`;
-    const hasAccess = vehicleUnlocks.includes(moduleType) || vehicleUnlocks.includes('full') || vehicleUnlocks.includes(articleUnlockKey);
+    
+    // 1) Individually purchased articles should be accessible even if
+    // article bucket metadata is missing/unmappable.
+    if (vehicleUnlocks.includes(articleUnlockKey) || vehicleUnlocks.includes('full')) {
+        return next();
+    }
+
+    // 2) Category-level purchases require mapping article bucket -> module type.
+    const metadata = await getArticleMetadata(vehicleId, articleId);
+    const moduleType = metadata ? bucketToModuleType(metadata.bucket, metadata.parent_bucket) : null;
+
+    if (!moduleType) {
+        logger.warn(`Article ${articleId} (vehicle ${vehicleId}): no bucket metadata in Supabase; denying category-level access`);
+        return res.status(403).json({ error: 'Article access cannot be verified' });
+    }
+
+    const hasAccess = vehicleUnlocks.includes(moduleType);
 
     if (!hasAccess) {
         logger.info(`Article access denied: user ${userId} lacks ${moduleType} for vehicle ${vehicleId}`);
@@ -998,47 +1010,41 @@ app.use('/api', articlesCacheMiddleware);
 // Article Content Cache-First Middleware
 const articleContentCacheMiddleware = async (req, res, next) => {
     const path = req.path;
-    const isArticleContent = path.includes('/article/') && (path.endsWith('/html') || !path.includes('/orientations'));
-    
-    if (isArticleContent && req.method === 'GET') {
-        try {
-            const pathParts = path.split('/');
-            const articleIdx = pathParts.indexOf('article');
-            const vehicleIdx = pathParts.indexOf('vehicle');
-            if (articleIdx !== -1 && pathParts.length > articleIdx + 1) {
-                const articleId = pathParts[articleIdx + 1];
-                const vehicleId = vehicleIdx !== -1 && pathParts.length > vehicleIdx + 1
-                    ? decodeURIComponent(pathParts[vehicleIdx + 1])
-                    : null;
-                
-                // 1. Check normalized content tables (procedures, dtcs, tsbs, specifications)
-                const cached = await checkParsedArticle(articleId);
-                if (cached) {
-                    const html = cached.content_html || cached.html || cached.content || '';
-                    if (html) {
-                        logger.info(`✓ Serving article ${articleId} from normalized cache (${cached._table})`);
-                        res.setHeader('x-data-source', 'supabase');
-                        res.setHeader('x-cache-hit', 'true');
-                        return res.json({
-                            header: { status: 'OK', statusCode: 200 },
-                            body: { html, title: cached.title, id: articleId }
-                        });
-                    }
-                }
+    // Only intercept the actual article-content endpoints.
+    // This middleware must NOT run for e.g. `/article/:id/title` or other sub-routes,
+    // otherwise unauthenticated callers could receive cached HTML unintentionally.
+    const articleContentMatch = path.match(/^\/source\/[^/]+\/vehicle\/([^/]+)\/article\/([^/]+)(?:\/html)?$/);
 
-                // 2. Check articles table for original_content (lazy-synced HTML)
-                if (vehicleId) {
-                    const articleRow = await checkArticleContent(vehicleId, articleId);
-                    if (articleRow && articleRow.original_content) {
-                        logger.info(`✓ Serving article ${articleId} from articles table cache`);
-                        res.setHeader('x-data-source', 'supabase');
-                        res.setHeader('x-cache-hit', 'true');
-                        return res.json({
-                            header: { status: 'OK', statusCode: 200 },
-                            body: { html: articleRow.original_content, title: articleRow.title, id: articleId }
-                        });
-                    }
+    if (articleContentMatch && req.method === 'GET') {
+        try {
+            const articleId = articleContentMatch[2];
+            const vehicleId = decodeURIComponent(articleContentMatch[1]);
+
+            // 1. Check normalized content tables (procedures, dtcs, tsbs, specifications)
+            const cached = await checkParsedArticle(articleId);
+            if (cached) {
+                const html = cached.content_html || cached.html || cached.content || '';
+                if (html) {
+                    logger.info(`✓ Serving article ${articleId} from normalized cache (${cached._table})`);
+                    res.setHeader('x-data-source', 'supabase');
+                    res.setHeader('x-cache-hit', 'true');
+                    return res.json({
+                        header: { status: 'OK', statusCode: 200 },
+                        body: { html, title: cached.title, id: articleId }
+                    });
                 }
+            }
+
+            // 2. Check articles table for original_content (lazy-synced HTML)
+            const articleRow = await checkArticleContent(vehicleId, articleId);
+            if (articleRow && articleRow.original_content) {
+                logger.info(`✓ Serving article ${articleId} from articles table cache`);
+                res.setHeader('x-data-source', 'supabase');
+                res.setHeader('x-cache-hit', 'true');
+                return res.json({
+                    header: { status: 'OK', statusCode: 200 },
+                    body: { html: articleRow.original_content, title: articleRow.title, id: articleId }
+                });
             }
         } catch (err) {
             logger.warn(`Failed to fetch article content from cache for ${path}:`, err.message);

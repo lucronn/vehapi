@@ -19,6 +19,7 @@ export const authHeaderInterceptor: HttpInterceptorFn = (req, next) => {
   // We attach:
   // - `/api/credits/*` (secureAuthMiddleware)
   // - `/api/source/:source/vehicle/:vehicleId/article/:articleId` (articleAccessMiddleware)
+  // - optional `/api/source/:source/vehicle/:vehicleId/article/:articleId/html`
   const urlNoQuery = req.url.split('?')[0];
   const path = (() => {
     try {
@@ -30,7 +31,7 @@ export const authHeaderInterceptor: HttpInterceptorFn = (req, next) => {
   })();
 
   const isCreditsEndpoint = path.startsWith('/api/credits/');
-  const isArticleContentEndpoint = /^\/api\/source\/[^/]+\/vehicle\/[^/]+\/article\/[^/]+$/.test(path);
+  const isArticleContentEndpoint = /^\/api\/source\/[^/]+\/vehicle\/[^/]+\/article\/[^/]+(?:\/html)?$/.test(path);
 
   if (!isCreditsEndpoint && !isArticleContentEndpoint) {
     return next(req);
