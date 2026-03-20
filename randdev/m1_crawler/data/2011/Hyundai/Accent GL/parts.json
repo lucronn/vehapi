@@ -1,0 +1,6748 @@
+{
+  "header": {
+    "messages": [],
+    "date": "Tue, 10 Mar 2026 16:51:40 GMT",
+    "status": "OK",
+    "statusCode": 200
+  },
+  "body": [
+    {
+      "partNumber": "97701-1E100",
+      "partDescription": "A/C Compressor - Incl.A/C Compressor Clutch",
+      "quantity": 1,
+      "price": "$1,247.94"
+    },
+    {
+      "partNumber": "97641-1E100",
+      "partDescription": "A/C Compressor Clutch Coil",
+      "quantity": 1,
+      "price": "$112.76"
+    },
+    {
+      "partNumber": "97644-2K000",
+      "partDescription": "A/C Compressor Clutch Hub",
+      "quantity": 1,
+      "price": "$117.45"
+    },
+    {
+      "partNumber": "97643-2K100",
+      "partDescription": "A/C Compressor Clutch Pulley",
+      "quantity": 1,
+      "price": "$262.00"
+    },
+    {
+      "partNumber": "97606-1E000",
+      "partDescription": "A/C Condenser",
+      "quantity": 1,
+      "price": "$635.60"
+    },
+    {
+      "partNumber": "97730-1E000",
+      "partDescription": "A/C Condenser Fan Assembly - Incl.Fan Blade & Motor",
+      "quantity": 1,
+      "price": "$443.85"
+    },
+    {
+      "partNumber": "25231-1E308",
+      "partDescription": "A/C Condenser Fan Blade",
+      "quantity": 1,
+      "price": "$49.47"
+    },
+    {
+      "partNumber": "97735-1E100",
+      "partDescription": "A/C Condenser Fan Shroud",
+      "quantity": 1,
+      "price": "$164.08"
+    },
+    {
+      "partNumber": "97140-1E002",
+      "partDescription": "A/C Evaporator Core",
+      "quantity": 1,
+      "price": "$737.92"
+    },
+    {
+      "partNumber": "97607-25000",
+      "partDescription": "A/C Evaporator Core Bracket - evaporator",
+      "quantity": 1,
+      "price": "$6.02"
+    },
+    {
+      "partNumber": "97173-1E001",
+      "partDescription": "A/C Evaporator Drain",
+      "quantity": 1,
+      "price": "$28.89"
+    },
+    {
+      "partNumber": "97604-1E300",
+      "partDescription": "A/C Expansion Valve",
+      "quantity": 1,
+      "price": "$307.61"
+    },
+    {
+      "partNumber": "97759-1E021",
+      "partDescription": "A/C Manifold and Tube Assembly - Hose & tube assy",
+      "quantity": 1,
+      "price": "$609.61"
+    },
+    {
+      "partNumber": "97765-1E002",
+      "partDescription": "A/C Pipe - Discharge pipe",
+      "quantity": 1,
+      "price": "$222.49"
+    },
+    {
+      "partNumber": "97760-1E020",
+      "partDescription": "A/C Pipe - Evaporator tube",
+      "quantity": 1,
+      "price": "$332.83"
+    },
+    {
+      "partNumber": "9780217000",
+      "partDescription": "A/C Receiver Drier",
+      "quantity": 1,
+      "price": "$45.63"
+    },
+    {
+      "partNumber": "97762-1E100",
+      "partDescription": "A/C Refrigerant Discharge Hose - compressor to condenser",
+      "quantity": 1,
+      "price": "$222.49"
+    },
+    {
+      "partNumber": "97763-1E000",
+      "partDescription": "A/C Refrigerant Suction Hose - Evaporator To Compressor",
+      "quantity": 1,
+      "price": "$220.95"
+    },
+    {
+      "partNumber": "97699-1E000",
+      "partDescription": "A/C System Information Label",
+      "quantity": 1,
+      "price": "$3.10"
+    },
+    {
+      "partNumber": "58960-1E110",
+      "partDescription": "ABS Modulator Bracket",
+      "quantity": 1,
+      "price": "$170.98"
+    },
+    {
+      "partNumber": "97713-1E000",
+      "partDescription": "Accessory Drive Belt - Compressor, Routing:Crk,Idler,Comp",
+      "quantity": 1,
+      "price": "$49.12"
+    },
+    {
+      "partNumber": "25212-26021",
+      "partDescription": "Accessory Drive Belt - Routing:Crk,Alt,Wp, Alternator and Water Pump",
+      "quantity": 1,
+      "price": "$20.31"
+    },
+    {
+      "partNumber": "57231-29100",
+      "partDescription": "Accessory Drive Belt - Routing:Ps,Wp, Water Pump and Power Steering",
+      "quantity": 1,
+      "price": "$19.16"
+    },
+    {
+      "partNumber": "97704-22101",
+      "partDescription": "Accessory Drive Belt Idler Assembly",
+      "quantity": 1,
+      "price": "$273.64"
+    },
+    {
+      "partNumber": "97834-29010",
+      "partDescription": "Accessory Drive Belt Idler Pulley",
+      "quantity": 1,
+      "price": "$54.77"
+    },
+    {
+      "partNumber": "952242D000",
+      "partDescription": "Accessory Power Relay - #1",
+      "quantity": 1,
+      "price": "$40.65"
+    },
+    {
+      "partNumber": "952252D000",
+      "partDescription": "Accessory Power Relay - #2",
+      "quantity": 1,
+      "price": "$37.35"
+    },
+    {
+      "partNumber": "95230-3A400",
+      "partDescription": "Accessory Power Relay - #3",
+      "quantity": 1,
+      "price": "$48.05"
+    },
+    {
+      "partNumber": "91961-25000",
+      "partDescription": "Accessory Power Relay - #4",
+      "quantity": 1,
+      "price": "$12.31"
+    },
+    {
+      "partNumber": "93490-1E500",
+      "partDescription": "Air Bag Clockspring - w/cruise control",
+      "quantity": 1,
+      "price": "$462.37"
+    },
+    {
+      "partNumber": "93490-1G510",
+      "partDescription": "Air Bag Clockspring - w/o cruise control",
+      "quantity": 1,
+      "price": "$492.65"
+    },
+    {
+      "partNumber": "95910-1E900",
+      "partDescription": "Air Bag Control Module",
+      "quantity": 1,
+      "price": "$818.50"
+    },
+    {
+      "partNumber": "95920-3K150",
+      "partDescription": "Air Bag Impact Sensor - Front",
+      "quantity": 2,
+      "price": "$390.18"
+    },
+    {
+      "partNumber": "95920-3K000",
+      "partDescription": "Air Bag Impact Sensor - Rear",
+      "quantity": 1,
+      "price": "$409.11"
+    },
+    {
+      "partNumber": "28167-1G000",
+      "partDescription": "Air Cleaner Bracket",
+      "quantity": 1,
+      "price": "$7.35"
+    },
+    {
+      "partNumber": "28111-1G000",
+      "partDescription": "Air Cleaner Cover",
+      "quantity": 1,
+      "price": "$48.61"
+    },
+    {
+      "partNumber": "28112-1G000",
+      "partDescription": "Air Filter Housing",
+      "quantity": 1,
+      "price": "$51.82"
+    },
+    {
+      "partNumber": "28171-4R000",
+      "partDescription": "Air Filter Housing Bolt",
+      "quantity": 1,
+      "price": "$2.18"
+    },
+    {
+      "partNumber": "28117-3K000",
+      "partDescription": "Air Filter Housing Gasket",
+      "quantity": 1,
+      "price": "$7.15"
+    },
+    {
+      "partNumber": "281603R030",
+      "partDescription": "Air Filter Housing Insulator",
+      "quantity": 1,
+      "price": "$2.18"
+    },
+    {
+      "partNumber": "2817402400",
+      "partDescription": "Air Filter Housing Lid Clip",
+      "quantity": 1,
+      "price": "$8.82"
+    },
+    {
+      "partNumber": "281611H000",
+      "partDescription": "Air Filter Housing Sleeve",
+      "quantity": 1,
+      "price": "$1.39"
+    },
+    {
+      "partNumber": "37300-26100",
+      "partDescription": "Alternator",
+      "quantity": 1,
+      "price": "$665.31"
+    },
+    {
+      "partNumber": "37461-26050",
+      "partDescription": "Alternator Adjusting Bracket",
+      "quantity": 1,
+      "price": "$9.60"
+    },
+    {
+      "partNumber": "1140308407B",
+      "partDescription": "Alternator Adjusting Bracket Bolt - Adjust bracket,bolt",
+      "quantity": 1,
+      "price": "$1.27"
+    },
+    {
+      "partNumber": "37462-22000",
+      "partDescription": "Alternator Adjusting Bracket Bolt - Adjust bracket,mount bolt",
+      "quantity": 1,
+      "price": "$9.35"
+    },
+    {
+      "partNumber": "37463-33000",
+      "partDescription": "Alternator Adjusting Bracket Nut",
+      "quantity": 1,
+      "price": "$14.97"
+    },
+    {
+      "partNumber": "37451-22000",
+      "partDescription": "Alternator Bracket Bolt",
+      "quantity": 1,
+      "price": "$6.84"
+    },
+    {
+      "partNumber": "37321-22650",
+      "partDescription": "Alternator Pulley",
+      "quantity": 1,
+      "price": "$44.60"
+    },
+    {
+      "partNumber": "96200-1E500",
+      "partDescription": "Antenna Cable - Front - front w/o satellite",
+      "quantity": 1,
+      "price": "$57.16"
+    },
+    {
+      "partNumber": "96200-1E505",
+      "partDescription": "Antenna Cable - Front - front w/satellite",
+      "quantity": 1,
+      "price": "$86.27"
+    },
+    {
+      "partNumber": "96210-1E750",
+      "partDescription": "Antenna Cable - Rear - rear, w/o satellite hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$51.27"
+    },
+    {
+      "partNumber": "96215-1E750",
+      "partDescription": "Antenna Cable - Rear - rear, w/satellite",
+      "quantity": 1,
+      "price": "$276.02"
+    },
+    {
+      "partNumber": "84550-1E000-AR",
+      "partDescription": "Ash Tray - beige",
+      "quantity": 1,
+      "price": "$125.31"
+    },
+    {
+      "partNumber": "84550-1E000-WK",
+      "partDescription": "Ash Tray - Black",
+      "quantity": 1,
+      "price": "$131.23"
+    },
+    {
+      "partNumber": "45334-28012",
+      "partDescription": "Automatic Transmission Cover",
+      "quantity": 1,
+      "price": "$50.68"
+    },
+    {
+      "partNumber": "23211-26050",
+      "partDescription": "Automatic Transmission Flexplate",
+      "quantity": 1,
+      "price": "$94.53"
+    },
+    {
+      "partNumber": "46790-1R200",
+      "partDescription": "Automatic Transmission Shifter Cable",
+      "quantity": 1,
+      "price": "$189.48"
+    },
+    {
+      "partNumber": "45100-22035",
+      "partDescription": "Automatic Transmission Torque Converter",
+      "quantity": 1,
+      "price": "$1,226.19"
+    },
+    {
+      "partNumber": "49551-21000",
+      "partDescription": "Axle Nut - Front",
+      "quantity": 2,
+      "price": "$6.55"
+    },
+    {
+      "partNumber": "55160-1E000",
+      "partDescription": "Axle Support Bushing - Rear",
+      "quantity": 1,
+      "price": "$107.74"
+    },
+    {
+      "partNumber": "98930-1E000",
+      "partDescription": "Back Glass Washer Nozzle - Rear - Hatchback",
+      "quantity": 1,
+      "price": "$31.76"
+    },
+    {
+      "partNumber": "98510-2J500",
+      "partDescription": "Back Glass Washer Pump",
+      "quantity": 1,
+      "price": "$226.10"
+    },
+    {
+      "partNumber": "93860-49600",
+      "partDescription": "Back Up Light Switch",
+      "quantity": 1,
+      "price": "$74.08"
+    },
+    {
+      "partNumber": "91860-1E021",
+      "partDescription": "Battery Cable - Negative, From 07/16/2010",
+      "quantity": 1,
+      "price": "$84.45"
+    },
+    {
+      "partNumber": "91860-1E020",
+      "partDescription": "Battery Cable - Negative, To 07/16/2010",
+      "quantity": 1,
+      "price": "$84.45"
+    },
+    {
+      "partNumber": "91850-1E023",
+      "partDescription": "Battery Cable - Positive, from 01/12/2010",
+      "quantity": 1,
+      "price": "$215.89"
+    },
+    {
+      "partNumber": "91850-1E022",
+      "partDescription": "Battery Cable - Positive, To 01/12/2010",
+      "quantity": 1,
+      "price": "$215.89"
+    },
+    {
+      "partNumber": "37112-1G110",
+      "partDescription": "Battery Cover",
+      "quantity": 1,
+      "price": "$42.50"
+    },
+    {
+      "partNumber": "37160-22000",
+      "partDescription": "Battery Hold Down",
+      "quantity": 1,
+      "price": "$6.35"
+    },
+    {
+      "partNumber": "11290-08306-B",
+      "partDescription": "Battery Hold Down Bolt",
+      "quantity": 1,
+      "price": "$1.47"
+    },
+    {
+      "partNumber": "37150-1E200",
+      "partDescription": "Battery Tray",
+      "quantity": 1,
+      "price": "$32.61"
+    },
+    {
+      "partNumber": "1140308456K",
+      "partDescription": "Belt Tensioner Bolt",
+      "quantity": 2,
+      "price": "$1.63"
+    },
+    {
+      "partNumber": "97831-22060",
+      "partDescription": "Belt Tensioner Pulley Bolt",
+      "quantity": 1,
+      "price": "$14.69"
+    },
+    {
+      "partNumber": "97705-22060",
+      "partDescription": "Belt Tensioner Pulley Bracket",
+      "quantity": 1,
+      "price": "$117.86"
+    },
+    {
+      "partNumber": "86362-1E201",
+      "partDescription": "Black Out Tape - Front Left - hatchback, Upper - Hatchback",
+      "quantity": 1,
+      "price": "$17.23"
+    },
+    {
+      "partNumber": "86372-1E201",
+      "partDescription": "Black Out Tape - Front Right - hatchback, Upper - Hatchback",
+      "quantity": 1,
+      "price": "$17.23"
+    },
+    {
+      "partNumber": "86363-1E201",
+      "partDescription": "Black Out Tape - Rear Left - rear, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$17.49"
+    },
+    {
+      "partNumber": "86373-1E201",
+      "partDescription": "Black Out Tape - Rear Right - rear, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$17.49"
+    },
+    {
+      "partNumber": "71201-1E200",
+      "partDescription": "Body A-Pillar - Left Inner - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$709.58"
+    },
+    {
+      "partNumber": "71110-1EA60",
+      "partDescription": "Body A-Pillar - Left Outer - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$699.47"
+    },
+    {
+      "partNumber": "71202-1E200",
+      "partDescription": "Body A-Pillar - Right Inner - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$702.56"
+    },
+    {
+      "partNumber": "71120-1EA70",
+      "partDescription": "Body A-Pillar - Right Outer - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$685.06"
+    },
+    {
+      "partNumber": "85810-1E050-QS",
+      "partDescription": "Body A-Pillar Trim Panel - Left - hatchback, w/head air bags - Hatchback",
+      "quantity": 1,
+      "price": "$78.52"
+    },
+    {
+      "partNumber": "85810-1E000-QS",
+      "partDescription": "Body A-Pillar Trim Panel - Left - hatchback, w/o head air bags - Hatchback",
+      "quantity": 1,
+      "price": "$64.95"
+    },
+    {
+      "partNumber": "85820-1E050-QS",
+      "partDescription": "Body A-Pillar Trim Panel - Right - hatchback, w/head air bags - Hatchback",
+      "quantity": 1,
+      "price": "$68.05"
+    },
+    {
+      "partNumber": "85820-1E000-QS",
+      "partDescription": "Body A-Pillar Trim Panel - Right - hatchback, w/o head air bags - Hatchback",
+      "quantity": 1,
+      "price": "$64.95"
+    },
+    {
+      "partNumber": "10144-06201",
+      "partDescription": "Body A-Pillar Trim Panel Bolt - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$0.82"
+    },
+    {
+      "partNumber": "95410-1E203",
+      "partDescription": "Body Control Module - Exc.Keyless Entry",
+      "quantity": 1,
+      "price": "$293.47"
+    },
+    {
+      "partNumber": "87370-1E210",
+      "partDescription": "Body Trim Molding - Rear - Hatchback",
+      "quantity": 1,
+      "price": "$246.07"
+    },
+    {
+      "partNumber": "87376-1E010",
+      "partDescription": "Body Trim Molding Bolt - Hatchback",
+      "quantity": 1,
+      "price": "$2.50"
+    },
+    {
+      "partNumber": "58355-1G000",
+      "partDescription": "Brake Backing Plate - Rear Left - drum brake",
+      "quantity": 1,
+      "price": "$249.85"
+    },
+    {
+      "partNumber": "58365-1G000",
+      "partDescription": "Brake Backing Plate - Rear Right - drum brake",
+      "quantity": 1,
+      "price": "$249.85"
+    },
+    {
+      "partNumber": "581201G100",
+      "partDescription": "Brake Bleeder Screw - Front",
+      "quantity": 1,
+      "price": "$9.26"
+    },
+    {
+      "partNumber": "58121-1G000",
+      "partDescription": "Brake Bleeder Screw Cap - Front",
+      "quantity": 1,
+      "price": "$1.82"
+    },
+    {
+      "partNumber": "58411-1G000",
+      "partDescription": "Brake Drum - Rear",
+      "quantity": 2,
+      "price": "$251.68"
+    },
+    {
+      "partNumber": "51755-1E000",
+      "partDescription": "Brake Dust Shield - Front Left",
+      "quantity": 1,
+      "price": "$98.03"
+    },
+    {
+      "partNumber": "51756-1E000",
+      "partDescription": "Brake Dust Shield - Front Right",
+      "quantity": 1,
+      "price": "$98.03"
+    },
+    {
+      "partNumber": "58535-1G000",
+      "partDescription": "Brake Fluid Level Switch",
+      "quantity": 1,
+      "price": "$74.90"
+    },
+    {
+      "partNumber": "58731-1E000",
+      "partDescription": "Brake Hydraulic Hose - Front Left",
+      "quantity": 1,
+      "price": "$117.44"
+    },
+    {
+      "partNumber": "58732-1E000",
+      "partDescription": "Brake Hydraulic Hose - Front Right",
+      "quantity": 1,
+      "price": "$120.03"
+    },
+    {
+      "partNumber": "58737-1G000",
+      "partDescription": "Brake Hydraulic Hose - Rear Left",
+      "quantity": 1,
+      "price": "$63.05"
+    },
+    {
+      "partNumber": "58738-1G000",
+      "partDescription": "Brake Hydraulic Hose - Rear Right",
+      "quantity": 1,
+      "price": "$70.15"
+    },
+    {
+      "partNumber": "93810-3K000",
+      "partDescription": "Brake Light Switch",
+      "quantity": 1,
+      "price": "$16.05"
+    },
+    {
+      "partNumber": "58510-1G000",
+      "partDescription": "Brake Master Cylinder",
+      "quantity": 1,
+      "price": "$1,008.26"
+    },
+    {
+      "partNumber": "58511-1G000--DS",
+      "partDescription": "Brake Master Cylinder Reservoir",
+      "quantity": 1,
+      "price": "$164.89"
+    },
+    {
+      "partNumber": "58531-07000",
+      "partDescription": "Brake Master Cylinder Reservoir Cap - w/o ABS",
+      "quantity": 1,
+      "price": "$15.69"
+    },
+    {
+      "partNumber": "59140-1G000",
+      "partDescription": "Brake Vacuum Hose",
+      "quantity": 1,
+      "price": "$46.75"
+    },
+    {
+      "partNumber": "86511-1E010",
+      "partDescription": "Bumper Cover - Front",
+      "quantity": 1,
+      "price": "$369.77"
+    },
+    {
+      "partNumber": "86611-1E100",
+      "partDescription": "Bumper Cover - Rear - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$442.63"
+    },
+    {
+      "partNumber": "86591-1E000",
+      "partDescription": "Bumper Cover Bracket - Front Left",
+      "quantity": 1,
+      "price": "$25.19"
+    },
+    {
+      "partNumber": "86592-1E000",
+      "partDescription": "Bumper Cover Bracket - Front Right",
+      "quantity": 1,
+      "price": "$25.19"
+    },
+    {
+      "partNumber": "1491005000",
+      "partDescription": "Bumper Cover Nut - Front",
+      "quantity": 1,
+      "price": "$0.90"
+    },
+    {
+      "partNumber": "86520-1E050",
+      "partDescription": "Bumper Cover Reinforcement - Front",
+      "quantity": 1,
+      "price": "$126.55"
+    },
+    {
+      "partNumber": "86620-1E160",
+      "partDescription": "Bumper Cover Reinforcement - Rear - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$104.39"
+    },
+    {
+      "partNumber": "8659324000",
+      "partDescription": "Bumper Cover Retainer - Bumper cover,retainer clip",
+      "quantity": 1,
+      "price": "$3.29"
+    },
+    {
+      "partNumber": "12441-05207-B",
+      "partDescription": "Bumper Cover Screw - Front - Bumper cover,screw",
+      "quantity": 1,
+      "price": "$1.05"
+    },
+    {
+      "partNumber": "1249305167B",
+      "partDescription": "Bumper Cover Screw - Rear - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$0.94"
+    },
+    {
+      "partNumber": "86618-1E100",
+      "partDescription": "Bumper Cover Support Rail - Rear Left - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$41.48"
+    },
+    {
+      "partNumber": "86619-1E100",
+      "partDescription": "Bumper Cover Support Rail - Rear Right - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$41.48"
+    },
+    {
+      "partNumber": "86699-1E010",
+      "partDescription": "Bumper Cover Support Rail Nut - Rear - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$2.87"
+    },
+    {
+      "partNumber": "86530-1E050",
+      "partDescription": "Bumper Impact Bar - Front",
+      "quantity": 1,
+      "price": "$302.96"
+    },
+    {
+      "partNumber": "86631-1E160",
+      "partDescription": "Bumper Impact Bar - Rear - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$416.86"
+    },
+    {
+      "partNumber": "86583-1E000",
+      "partDescription": "Bumper Impact Bar Bracket - Front Left",
+      "quantity": 1,
+      "price": "$22.29"
+    },
+    {
+      "partNumber": "86584-1E000",
+      "partDescription": "Bumper Impact Bar Bracket - Front Right",
+      "quantity": 1,
+      "price": "$22.29"
+    },
+    {
+      "partNumber": "86635-1E160",
+      "partDescription": "Bumper Impact Bar Bracket - Rear Inner - hatchback, inner - Hatchback",
+      "quantity": 3,
+      "price": "$16.39"
+    },
+    {
+      "partNumber": "86641-1E060",
+      "partDescription": "Bumper Impact Bar Bracket - Rear Left - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$60.18"
+    },
+    {
+      "partNumber": "86637-1E160",
+      "partDescription": "Bumper Impact Bar Bracket - Rear Left Outer - hatchback, outer - Hatchback",
+      "quantity": 1,
+      "price": "$17.73"
+    },
+    {
+      "partNumber": "86642-1E060",
+      "partDescription": "Bumper Impact Bar Bracket - Rear Right - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$57.46"
+    },
+    {
+      "partNumber": "86638-1E160",
+      "partDescription": "Bumper Impact Bar Bracket - Rear Right Outer - hatchback, outer - Hatchback",
+      "quantity": 1,
+      "price": "$17.73"
+    },
+    {
+      "partNumber": "08790-2H000-A",
+      "partDescription": "Cabin Air Filter",
+      "quantity": 1,
+      "price": "$35.06"
+    },
+    {
+      "partNumber": "97129-1E000",
+      "partDescription": "Cabin Air Filter Cover",
+      "quantity": 1,
+      "price": "$17.56"
+    },
+    {
+      "partNumber": "28950-26810",
+      "partDescription": "Catalytic Converter - Rear",
+      "quantity": 1,
+      "price": "$1,096.02"
+    },
+    {
+      "partNumber": "28751-25000",
+      "partDescription": "Catalytic Converter Gasket - Rear Forward",
+      "quantity": 1,
+      "price": "$21.69"
+    },
+    {
+      "partNumber": "28752-25000",
+      "partDescription": "Catalytic Converter Gasket - Rear Rearward",
+      "quantity": 1,
+      "price": "$19.89"
+    },
+    {
+      "partNumber": "28791-1E000",
+      "partDescription": "Catalytic Converter Heat Shield - CATALYTIC CONVERTER",
+      "quantity": 1,
+      "price": "$77.18"
+    },
+    {
+      "partNumber": "28510-26AE0",
+      "partDescription": "Catalytic Converter with Integrated Exhaust Manifold",
+      "quantity": 1,
+      "price": "$1,142.52"
+    },
+    {
+      "partNumber": "852612D700",
+      "partDescription": "Caution Label - Air Bag",
+      "quantity": 1,
+      "price": "$5.98"
+    },
+    {
+      "partNumber": "84611-1E200-OR",
+      "partDescription": "Center Console - Center - beige",
+      "quantity": 1,
+      "price": "$222.90"
+    },
+    {
+      "partNumber": "84611-1E200-WK",
+      "partDescription": "Center Console - Center - Black",
+      "quantity": 1,
+      "price": "$269.42"
+    },
+    {
+      "partNumber": "84611-1E200-QS",
+      "partDescription": "Center Console - Center - Gray",
+      "quantity": 1,
+      "price": "$222.90"
+    },
+    {
+      "partNumber": "92700-1E200",
+      "partDescription": "Center High Mount Stop Light - Rear - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$174.95"
+    },
+    {
+      "partNumber": "37370-22651",
+      "partDescription": "Charging System Voltage Regulator",
+      "quantity": 1,
+      "price": "$144.92"
+    },
+    {
+      "partNumber": "81419-34000",
+      "partDescription": "Child Lock Label - Left - rear door latch",
+      "quantity": 1,
+      "price": "$2.10"
+    },
+    {
+      "partNumber": "81429-34000",
+      "partDescription": "Child Lock Label - Right - rear door latch",
+      "quantity": 1,
+      "price": "$2.10"
+    },
+    {
+      "partNumber": "89862-1G200",
+      "partDescription": "Child Restraint Anchor Plate - Lower Inner - inner",
+      "quantity": 1,
+      "price": "$18.29"
+    },
+    {
+      "partNumber": "89861-1G000",
+      "partDescription": "Child Restraint Anchor Plate - Lower Outer - outer",
+      "quantity": 1,
+      "price": "$18.85"
+    },
+    {
+      "partNumber": "89850-1G100",
+      "partDescription": "Child Restraint Anchor Plate - Upper - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$13.06"
+    },
+    {
+      "partNumber": "951102D000",
+      "partDescription": "Cigarette Lighter Element",
+      "quantity": 1,
+      "price": "$41.18"
+    },
+    {
+      "partNumber": "94520-1E150",
+      "partDescription": "Clock",
+      "quantity": 1,
+      "price": "$395.05"
+    },
+    {
+      "partNumber": "23200-26101",
+      "partDescription": "Clutch Flywheel - Incl.Clutch Flywheel Ring Gear",
+      "quantity": 1,
+      "price": "$353.29"
+    },
+    {
+      "partNumber": "23311-23000",
+      "partDescription": "Clutch Flywheel Bolt",
+      "quantity": 5,
+      "price": "$5.56"
+    },
+    {
+      "partNumber": "23212-21000",
+      "partDescription": "Clutch Flywheel Ring Gear",
+      "quantity": 1,
+      "price": "$85.69"
+    },
+    {
+      "partNumber": "41610-1G000",
+      "partDescription": "Clutch Master Cylinder",
+      "quantity": 1,
+      "price": "$329.84"
+    },
+    {
+      "partNumber": "41430-23200",
+      "partDescription": "Clutch Release Arm - Incl.Clutch Release Arm Spring",
+      "quantity": 1,
+      "price": "$142.11"
+    },
+    {
+      "partNumber": "41421-32000",
+      "partDescription": "Clutch Release Bearing",
+      "quantity": 1,
+      "price": "$141.47"
+    },
+    {
+      "partNumber": "41710-23005",
+      "partDescription": "Clutch Slave Cylinder",
+      "quantity": 1,
+      "price": "$161.94"
+    },
+    {
+      "partNumber": "93840-2E000",
+      "partDescription": "Clutch Starter Safety Switch",
+      "quantity": 1,
+      "price": "$74.45"
+    },
+    {
+      "partNumber": "54630-1G000--DS",
+      "partDescription": "Coil Spring - Front - w/o sport suspension manual trans",
+      "quantity": 1,
+      "price": "$166.69"
+    },
+    {
+      "partNumber": "54630-1G210--DS",
+      "partDescription": "Coil Spring - Front - w/sport suspension manual trans",
+      "quantity": 1,
+      "price": "$234.08"
+    },
+    {
+      "partNumber": "55330-1G000--DS",
+      "partDescription": "Coil Spring - Rear - w/o sport suspension",
+      "quantity": 1,
+      "price": "$166.34"
+    },
+    {
+      "partNumber": "54633-1G000",
+      "partDescription": "Coil Spring Insulator - Lower",
+      "quantity": 1,
+      "price": "$18.50"
+    },
+    {
+      "partNumber": "55332-1G000",
+      "partDescription": "Coil Spring Insulator - Rear Lower",
+      "quantity": 1,
+      "price": "$15.27"
+    },
+    {
+      "partNumber": "55331-1C000",
+      "partDescription": "Coil Spring Insulator - Rear Upper",
+      "quantity": 1,
+      "price": "$34.63"
+    },
+    {
+      "partNumber": "54623-1E100",
+      "partDescription": "Coil Spring Insulator - Upper",
+      "quantity": 1,
+      "price": "$31.81"
+    },
+    {
+      "partNumber": "93410-1G000",
+      "partDescription": "Combination Switch - Dimmer,Headlight,Turn Signal",
+      "quantity": 1,
+      "price": "$204.47"
+    },
+    {
+      "partNumber": "84670-1E000",
+      "partDescription": "Console Bracket",
+      "quantity": 1,
+      "price": "$14.19"
+    },
+    {
+      "partNumber": "84640-1E201-OR",
+      "partDescription": "Console Cup Holder - beige",
+      "quantity": 1,
+      "price": "$122.90"
+    },
+    {
+      "partNumber": "84640-1E201-WK",
+      "partDescription": "Console Cup Holder - Black",
+      "quantity": 1,
+      "price": "$128.66"
+    },
+    {
+      "partNumber": "84640-1E201-QS",
+      "partDescription": "Console Cup Holder - Gray",
+      "quantity": 1,
+      "price": "$122.90"
+    },
+    {
+      "partNumber": "84612-1E200",
+      "partDescription": "Console Mat",
+      "quantity": 1,
+      "price": "$86.63"
+    },
+    {
+      "partNumber": "84680-1E000-OR",
+      "partDescription": "Console Panel - Left - beige",
+      "quantity": 1,
+      "price": "$37.56"
+    },
+    {
+      "partNumber": "84680-1E000-WK",
+      "partDescription": "Console Panel - Left - Black",
+      "quantity": 1,
+      "price": "$37.56"
+    },
+    {
+      "partNumber": "84680-1E000-QS",
+      "partDescription": "Console Panel - Left - Gray",
+      "quantity": 1,
+      "price": "$39.26"
+    },
+    {
+      "partNumber": "84690-1E000-OR",
+      "partDescription": "Console Panel - Right - beige",
+      "quantity": 1,
+      "price": "$37.56"
+    },
+    {
+      "partNumber": "84690-1E000-WK",
+      "partDescription": "Console Panel - Right - Black",
+      "quantity": 1,
+      "price": "$37.56"
+    },
+    {
+      "partNumber": "84690-1E000-QS",
+      "partDescription": "Console Panel - Right - Gray",
+      "quantity": 1,
+      "price": "$39.26"
+    },
+    {
+      "partNumber": "84747-1C000",
+      "partDescription": "Console Panel Clip",
+      "quantity": 1,
+      "price": "$0.74"
+    },
+    {
+      "partNumber": "84653-1E000",
+      "partDescription": "Console Panel Insulator",
+      "quantity": 1,
+      "price": "$13.06"
+    },
+    {
+      "partNumber": "84651-1E000",
+      "partDescription": "Console Panel Insulator - Front Left",
+      "quantity": 1,
+      "price": "$13.06"
+    },
+    {
+      "partNumber": "84650-1E000",
+      "partDescription": "Console Panel Insulator - Front Right",
+      "quantity": 1,
+      "price": "$13.06"
+    },
+    {
+      "partNumber": "84652-1E000",
+      "partDescription": "Console Panel Insulator - Rear Right",
+      "quantity": 1,
+      "price": "$13.06"
+    },
+    {
+      "partNumber": "84613-1E000-AR",
+      "partDescription": "Console Tray - beige",
+      "quantity": 1,
+      "price": "$13.76"
+    },
+    {
+      "partNumber": "84613-1E000-WK",
+      "partDescription": "Console Tray - Black",
+      "quantity": 1,
+      "price": "$13.76"
+    },
+    {
+      "partNumber": "84613-1E000-FZ",
+      "partDescription": "Console Tray - Gray",
+      "quantity": 1,
+      "price": "$14.37"
+    },
+    {
+      "partNumber": "86150-1E000",
+      "partDescription": "Cowl Cover",
+      "quantity": 1,
+      "price": "$254.37"
+    },
+    {
+      "partNumber": "86150-1E010",
+      "partDescription": "Cowl Extension - Left - cowl top",
+      "quantity": 1,
+      "price": "$8.95"
+    },
+    {
+      "partNumber": "86150-1E050",
+      "partDescription": "Cowl Extension - Left - Fender",
+      "quantity": 1,
+      "price": "$6.40"
+    },
+    {
+      "partNumber": "86160-1E010",
+      "partDescription": "Cowl Extension - Right - cowl top",
+      "quantity": 1,
+      "price": "$8.95"
+    },
+    {
+      "partNumber": "86160-1E050",
+      "partDescription": "Cowl Extension - Right - Fender",
+      "quantity": 1,
+      "price": "$10.69"
+    },
+    {
+      "partNumber": "84124-1G000",
+      "partDescription": "Cowl Insulator",
+      "quantity": 1,
+      "price": "$419.95"
+    },
+    {
+      "partNumber": "66758-1E000",
+      "partDescription": "Cowl Panel - Left Lower",
+      "quantity": 1,
+      "price": "$48.15"
+    },
+    {
+      "partNumber": "66702-1E300",
+      "partDescription": "Cowl Panel - Lower",
+      "quantity": 1,
+      "price": "$441.18"
+    },
+    {
+      "partNumber": "66768-1E000",
+      "partDescription": "Cowl Panel - Right Lower",
+      "quantity": 1,
+      "price": "$45.32"
+    },
+    {
+      "partNumber": "66703-1E300",
+      "partDescription": "Cowl Panel - Upper",
+      "quantity": 1,
+      "price": "$245.23"
+    },
+    {
+      "partNumber": "66751-1E300",
+      "partDescription": "Cowl Side Panel - Left Upper",
+      "quantity": 1,
+      "price": "$65.50"
+    },
+    {
+      "partNumber": "66761-1E300",
+      "partDescription": "Cowl Side Panel - Right Upper",
+      "quantity": 1,
+      "price": "$63.35"
+    },
+    {
+      "partNumber": "85010-1E300",
+      "partDescription": "Curtain Air Bag - Left - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$1,374.74"
+    },
+    {
+      "partNumber": "85020-1E300",
+      "partDescription": "Curtain Air Bag - Right - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$1,361.13"
+    },
+    {
+      "partNumber": "49500-1E011--SJ",
+      "partDescription": "CV Axle Assembly - Front Left",
+      "quantity": 1,
+      "price": "$602.82"
+    },
+    {
+      "partNumber": "49500-1E051--SJ1",
+      "partDescription": "CV Axle Assembly - Front Right",
+      "quantity": 1,
+      "price": "$582.44"
+    },
+    {
+      "partNumber": "49606-1E000",
+      "partDescription": "CV Joint Boot Kit - Front Left Inner",
+      "quantity": 1,
+      "price": "$54.76"
+    },
+    {
+      "partNumber": "49509-1E000",
+      "partDescription": "CV Joint Boot Kit - Front Left Outer",
+      "quantity": 1,
+      "price": "$100.00"
+    },
+    {
+      "partNumber": "49505-1E000",
+      "partDescription": "CV Joint Kit - Front Left Inner",
+      "quantity": 1,
+      "price": "$289.05"
+    },
+    {
+      "partNumber": "4954921000",
+      "partDescription": "CV Joint Washer",
+      "quantity": 1,
+      "price": "$8.65"
+    },
+    {
+      "partNumber": "97410-1E250",
+      "partDescription": "Dashboard Air Vent - Center Left - Black",
+      "quantity": 1,
+      "price": "$84.18"
+    },
+    {
+      "partNumber": "97420-1E250",
+      "partDescription": "Dashboard Air Vent - Center Right - Black",
+      "quantity": 1,
+      "price": "$83.11"
+    },
+    {
+      "partNumber": "97460-1E250-AR",
+      "partDescription": "Dashboard Air Vent - Left Outer - beige",
+      "quantity": 1,
+      "price": "$56.44"
+    },
+    {
+      "partNumber": "97460-1E250-WK",
+      "partDescription": "Dashboard Air Vent - Left Outer - Black",
+      "quantity": 1,
+      "price": "$58.42"
+    },
+    {
+      "partNumber": "97480-1E250-AR",
+      "partDescription": "Dashboard Air Vent - Right Outer - beige",
+      "quantity": 1,
+      "price": "$56.44"
+    },
+    {
+      "partNumber": "97480-1E250-WK",
+      "partDescription": "Dashboard Air Vent - Right Outer - Black",
+      "quantity": 1,
+      "price": "$59.44"
+    },
+    {
+      "partNumber": "84710-1E100-AR",
+      "partDescription": "Dashboard Panel - beige",
+      "quantity": 1,
+      "price": "$2,144.52"
+    },
+    {
+      "partNumber": "84710-1E100-WK",
+      "partDescription": "Dashboard Panel - Black",
+      "quantity": 1,
+      "price": "$2,144.52"
+    },
+    {
+      "partNumber": "27301-26640",
+      "partDescription": "Direct Ignition Coil",
+      "quantity": 4,
+      "price": "$218.55"
+    },
+    {
+      "partNumber": "58144-1G000",
+      "partDescription": "Disc Brake Anti-Rattle Clip - Front",
+      "quantity": 4,
+      "price": "$20.89"
+    },
+    {
+      "partNumber": "58180-1GA00",
+      "partDescription": "Disc Brake Caliper - Front Left",
+      "quantity": 1,
+      "price": "$375.40"
+    },
+    {
+      "partNumber": "58190-1GA00",
+      "partDescription": "Disc Brake Caliper - Front Right",
+      "quantity": 1,
+      "price": "$375.40"
+    },
+    {
+      "partNumber": "58151-2E000",
+      "partDescription": "Disc Brake Caliper Bracket Mounting Bolt - Front",
+      "quantity": 2,
+      "price": "$8.00"
+    },
+    {
+      "partNumber": "58162-1G000",
+      "partDescription": "Disc Brake Caliper Pin - Front Lower",
+      "quantity": 1,
+      "price": "$30.50"
+    },
+    {
+      "partNumber": "58161-1G000",
+      "partDescription": "Disc Brake Caliper Pin - Front Upper",
+      "quantity": 1,
+      "price": "$31.10"
+    },
+    {
+      "partNumber": "581631G000",
+      "partDescription": "Disc Brake Caliper Pin Bolt - Front",
+      "quantity": 2,
+      "price": "$12.53"
+    },
+    {
+      "partNumber": "58164-1G000",
+      "partDescription": "Disc Brake Caliper Pin Boot - Front",
+      "quantity": 2,
+      "price": "$9.58"
+    },
+    {
+      "partNumber": "58112-1G000",
+      "partDescription": "Disc Brake Caliper Piston - Front",
+      "quantity": 1,
+      "price": "$82.19"
+    },
+    {
+      "partNumber": "58102-1GA00",
+      "partDescription": "Disc Brake Caliper Repair Kit - Front - Incl.Guide Pin Boot,Piston Boot,Seal",
+      "quantity": 1,
+      "price": "$43.61"
+    },
+    {
+      "partNumber": "58101-1GA00",
+      "partDescription": "Disc Brake Pad Set - Front - Incl.Clips,Shims",
+      "quantity": 1,
+      "price": "$96.84"
+    },
+    {
+      "partNumber": "51712-1G000",
+      "partDescription": "Disc Brake Rotor - Front",
+      "quantity": 2,
+      "price": "$99.84"
+    },
+    {
+      "partNumber": "92800-1E000-QS",
+      "partDescription": "Dome Light - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$48.84"
+    },
+    {
+      "partNumber": "92811-1E000",
+      "partDescription": "Dome Light Lens - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$3.81"
+    },
+    {
+      "partNumber": "79380-1E200",
+      "partDescription": "Door Check - Front Left - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$57.19"
+    },
+    {
+      "partNumber": "82411-1E210",
+      "partDescription": "Door Glass - Front Left - hatchback, Hyundai w/tinted glass - Hatchback",
+      "quantity": 1,
+      "price": "$316.16"
+    },
+    {
+      "partNumber": "82421-1E200",
+      "partDescription": "Door Glass - Front Right - hatchback, Hyundai w/o tinted glass - Hatchback",
+      "quantity": 1,
+      "price": "$316.16"
+    },
+    {
+      "partNumber": "82412-17000",
+      "partDescription": "Door Glass Attaching Clips - Front - hatchback - Hatchback",
+      "quantity": 2,
+      "price": "$9.58"
+    },
+    {
+      "partNumber": "79315-1E200",
+      "partDescription": "Door Hinge - Front Left Lower - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$47.47"
+    },
+    {
+      "partNumber": "79310-1G000",
+      "partDescription": "Door Hinge - Front Left Upper - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$47.00"
+    },
+    {
+      "partNumber": "79325-1E200",
+      "partDescription": "Door Hinge - Front Right Lower - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$46.97"
+    },
+    {
+      "partNumber": "79320-1E200",
+      "partDescription": "Door Hinge - Front Right Upper - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$47.39"
+    },
+    {
+      "partNumber": "82303-1E201-WK",
+      "partDescription": "Door Interior Trim Panel - Front Left Inner - hatchback, w/o power windows black - Hatchback",
+      "quantity": 1,
+      "price": "$720.19"
+    },
+    {
+      "partNumber": "82303-1E201-QS",
+      "partDescription": "Door Interior Trim Panel - Front Left Inner - hatchback, w/o power windows gray - Hatchback",
+      "quantity": 1,
+      "price": "$705.37"
+    },
+    {
+      "partNumber": "82303-1E322-WK",
+      "partDescription": "Door Interior Trim Panel - Front Left Inner - hatchback, w/power windows black - Hatchback",
+      "quantity": 1,
+      "price": "$1,006.53"
+    },
+    {
+      "partNumber": "82303-1E322-QS",
+      "partDescription": "Door Interior Trim Panel - Front Left Inner - hatchback, w/power windows gray - Hatchback",
+      "quantity": 1,
+      "price": "$1,006.53"
+    },
+    {
+      "partNumber": "82304-1E221-WK",
+      "partDescription": "Door Interior Trim Panel - Front Right Inner - hatchback, w/o power windows black - Hatchback",
+      "quantity": 1,
+      "price": "$893.87"
+    },
+    {
+      "partNumber": "82304-1E201-QS",
+      "partDescription": "Door Interior Trim Panel - Front Right Inner - hatchback, w/o power windows gray - Hatchback",
+      "quantity": 1,
+      "price": "$712.29"
+    },
+    {
+      "partNumber": "82304-1E322-WK",
+      "partDescription": "Door Interior Trim Panel - Front Right Inner - hatchback, w/power windows black - Hatchback",
+      "quantity": 1,
+      "price": "$940.00"
+    },
+    {
+      "partNumber": "82304-1E322-QS",
+      "partDescription": "Door Interior Trim Panel - Front Right Inner - hatchback, w/power windows gray - Hatchback",
+      "quantity": 1,
+      "price": "$893.87"
+    },
+    {
+      "partNumber": "82727-1E010",
+      "partDescription": "Door Interior Trim Panel Bracket - Left - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$7.11"
+    },
+    {
+      "partNumber": "82737-1E010",
+      "partDescription": "Door Interior Trim Panel Bracket - Right - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$7.73"
+    },
+    {
+      "partNumber": "823152P000",
+      "partDescription": "Door Interior Trim Panel Nut - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$2.68"
+    },
+    {
+      "partNumber": "81310-1E240",
+      "partDescription": "Door Latch Assembly - Front Left - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$312.44"
+    },
+    {
+      "partNumber": "81320-1E220",
+      "partDescription": "Door Latch Assembly - Front Right - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$312.44"
+    },
+    {
+      "partNumber": "95735-1G020",
+      "partDescription": "Door Lock Actuator Motor - Front Left - Incl.Latch",
+      "quantity": 1,
+      "price": "$138.56"
+    },
+    {
+      "partNumber": "95736-1G020",
+      "partDescription": "Door Lock Actuator Motor - Front Right - Incl.Latch",
+      "quantity": 1,
+      "price": "$133.27"
+    },
+    {
+      "partNumber": "81970-1EA00",
+      "partDescription": "Door Lock Cylinder - Front Left - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$63.16"
+    },
+    {
+      "partNumber": "81980-1EA00",
+      "partDescription": "Door Lock Cylinder - Front Right - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$52.79"
+    },
+    {
+      "partNumber": "81350-1C010",
+      "partDescription": "Door Lock Striker Plate - Front - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$18.53"
+    },
+    {
+      "partNumber": "87610-1E590-CA",
+      "partDescription": "Door Mirror - Front Left - hatchback, w/power black - Hatchback",
+      "quantity": 1,
+      "price": "$296.49"
+    },
+    {
+      "partNumber": "87610-1E650",
+      "partDescription": "Door Mirror - Front Left - hatchback, w/power body color - Hatchback",
+      "quantity": 1,
+      "price": "$311.82"
+    },
+    {
+      "partNumber": "87620-1E710-CA",
+      "partDescription": "Door Mirror - Front Right - hatchback, w/power black - Hatchback",
+      "quantity": 1,
+      "price": "$286.89"
+    },
+    {
+      "partNumber": "87620-1E720",
+      "partDescription": "Door Mirror - Front Right - hatchback, w/power body color - Hatchback",
+      "quantity": 1,
+      "price": "$235.63"
+    },
+    {
+      "partNumber": "87650-1E010",
+      "partDescription": "Door Mirror Cover - Front Left Inner - hatchback, w/o power mirror - Hatchback",
+      "quantity": 1,
+      "price": "$18.75"
+    },
+    {
+      "partNumber": "87650-1E000",
+      "partDescription": "Door Mirror Cover - Front Left Inner - hatchback, w/power mirror - Hatchback",
+      "quantity": 1,
+      "price": "$18.75"
+    },
+    {
+      "partNumber": "87660-1E010",
+      "partDescription": "Door Mirror Cover - Front Right Inner - hatchback, w/o power mirror - Hatchback",
+      "quantity": 1,
+      "price": "$18.75"
+    },
+    {
+      "partNumber": "87660-1E000",
+      "partDescription": "Door Mirror Cover - Front Right Inner - hatchback, w/power mirror - Hatchback",
+      "quantity": 1,
+      "price": "$18.75"
+    },
+    {
+      "partNumber": "87611-1E500",
+      "partDescription": "Door Mirror Glass - Front Left - all, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$47.02"
+    },
+    {
+      "partNumber": "87621-1E500",
+      "partDescription": "Door Mirror Glass - Front Right - all, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$47.02"
+    },
+    {
+      "partNumber": "92755-25100",
+      "partDescription": "Door Mirror Housing Bolt - hatchback - Hatchback",
+      "quantity": 3,
+      "price": "$0.94"
+    },
+    {
+      "partNumber": "76111-1E210",
+      "partDescription": "Door Outer Panel - Front Left Outer - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$590.14"
+    },
+    {
+      "partNumber": "76121-1E210",
+      "partDescription": "Door Outer Panel - Front Right Outer - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$590.14"
+    },
+    {
+      "partNumber": "85830-1E550-QS",
+      "partDescription": "Door Pillar Post Trim Set - Left - hatchback, w/head air bags - Hatchback",
+      "quantity": 1,
+      "price": "$75.82"
+    },
+    {
+      "partNumber": "85830-1E540-QS",
+      "partDescription": "Door Pillar Post Trim Set - Left - hatchback, w/o head air bags - Hatchback",
+      "quantity": 1,
+      "price": "$62.26"
+    },
+    {
+      "partNumber": "85840-1E540-QS",
+      "partDescription": "Door Pillar Post Trim Set - Right - hatchback, w/o head air bags - Hatchback",
+      "quantity": 1,
+      "price": "$62.26"
+    },
+    {
+      "partNumber": "82110-1E201",
+      "partDescription": "Door Seal - Front Left Inner - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$179.00"
+    },
+    {
+      "partNumber": "82130-1E200",
+      "partDescription": "Door Seal - Front Left Outer - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$131.26"
+    },
+    {
+      "partNumber": "82120-1E201",
+      "partDescription": "Door Seal - Front Right Inner - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$179.00"
+    },
+    {
+      "partNumber": "82140-1E200",
+      "partDescription": "Door Seal - Front Right Outer - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$131.26"
+    },
+    {
+      "partNumber": "76003-1E210",
+      "partDescription": "Door Shell - Front Left - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$1,038.25"
+    },
+    {
+      "partNumber": "76004-1E210",
+      "partDescription": "Door Shell - Front Right - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$1,038.25"
+    },
+    {
+      "partNumber": "85871-1E500-WK",
+      "partDescription": "Door Sill Plate - Left - Black, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$81.53"
+    },
+    {
+      "partNumber": "85872-1E500-WK",
+      "partDescription": "Door Sill Plate - Right - Black, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$81.53"
+    },
+    {
+      "partNumber": "8219133010",
+      "partDescription": "Door Stop - Front - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$4.53"
+    },
+    {
+      "partNumber": "82391-1E200",
+      "partDescription": "Door Water Deflector - Front Left - hatchback, W/O POWER WINDOWS - Hatchback",
+      "quantity": 1,
+      "price": "$11.39"
+    },
+    {
+      "partNumber": "82391-1E210",
+      "partDescription": "Door Water Deflector - Front Left - hatchback, w/power windows - Hatchback",
+      "quantity": 1,
+      "price": "$11.39"
+    },
+    {
+      "partNumber": "82392-1E200",
+      "partDescription": "Door Water Deflector - Front Right - hatchback, W/O POWER WINDOWS - Hatchback",
+      "quantity": 1,
+      "price": "$11.05"
+    },
+    {
+      "partNumber": "82392-1E210",
+      "partDescription": "Door Water Deflector - Front Right - hatchback, w/power windows - Hatchback",
+      "quantity": 1,
+      "price": "$11.05"
+    },
+    {
+      "partNumber": "82331-1E200",
+      "partDescription": "Door Window Belt Weatherstrip - Front Left Inner - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$60.98"
+    },
+    {
+      "partNumber": "82210-1E200",
+      "partDescription": "Door Window Belt Weatherstrip - Front Left Outer - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$62.47"
+    },
+    {
+      "partNumber": "82341-1E200",
+      "partDescription": "Door Window Belt Weatherstrip - Front Right Inner - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$48.45"
+    },
+    {
+      "partNumber": "82220-1E200",
+      "partDescription": "Door Window Belt Weatherstrip - Front Right Outer - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$62.47"
+    },
+    {
+      "partNumber": "93570-1E212",
+      "partDescription": "Door Window Switch - Front Left - Switch Panel Assy.",
+      "quantity": 1,
+      "price": "$460.24"
+    },
+    {
+      "partNumber": "93580-1E001",
+      "partDescription": "Door Window Switch - Rear",
+      "quantity": 2,
+      "price": "$114.18"
+    },
+    {
+      "partNumber": "94525-1E050",
+      "partDescription": "Driver Information Display Switch - clock/odometer",
+      "quantity": 1,
+      "price": "$24.13"
+    },
+    {
+      "partNumber": "58350-1G000",
+      "partDescription": "Drum Brake Adjuster - Rear Left",
+      "quantity": 1,
+      "price": "$112.23"
+    },
+    {
+      "partNumber": "58370-1G000",
+      "partDescription": "Drum Brake Adjuster - Rear Right",
+      "quantity": 1,
+      "price": "$112.08"
+    },
+    {
+      "partNumber": "58353-1G000",
+      "partDescription": "Drum Brake Adjusting Lever - Rear Left",
+      "quantity": 1,
+      "price": "$32.45"
+    },
+    {
+      "partNumber": "58363-1G000",
+      "partDescription": "Drum Brake Adjusting Lever - Rear Right",
+      "quantity": 1,
+      "price": "$29.79"
+    },
+    {
+      "partNumber": "58384-1G000",
+      "partDescription": "Drum Brake Adjusting Spring - Rear",
+      "quantity": 2,
+      "price": "$7.73"
+    },
+    {
+      "partNumber": "58310-1G100",
+      "partDescription": "Drum Brake Assembly - Rear Left - Incl.Backing Plate,Shoes,Wheel Cylinder,Hardware",
+      "quantity": 1,
+      "price": "$510.85"
+    },
+    {
+      "partNumber": "58360-1G100",
+      "partDescription": "Drum Brake Assembly - Rear Right - Incl.Backing Plate,Shoes,Wheel Cylinder,Hardware",
+      "quantity": 1,
+      "price": "$488.97"
+    },
+    {
+      "partNumber": "58386-1G000",
+      "partDescription": "Drum Brake Inspection Plug - Rear Lower - Round, Inspection Plug",
+      "quantity": 2,
+      "price": "$3.85"
+    },
+    {
+      "partNumber": "58388-1G000",
+      "partDescription": "Drum Brake Inspection Plug - Rear Upper - Adjuster Plug, oblong",
+      "quantity": 2,
+      "price": "$3.21"
+    },
+    {
+      "partNumber": "58305-1GA00",
+      "partDescription": "Drum Brake Shoe - Rear",
+      "quantity": 1,
+      "price": "$83.09"
+    },
+    {
+      "partNumber": "58323-1G000",
+      "partDescription": "Drum Brake Shoe Hold Down Pin - Rear",
+      "quantity": 4,
+      "price": "$4.53"
+    },
+    {
+      "partNumber": "58322-1G000",
+      "partDescription": "Drum Brake Shoe Hold Down Spring - Rear - Spring Clip",
+      "quantity": 4,
+      "price": "$5.27"
+    },
+    {
+      "partNumber": "58312-1G000",
+      "partDescription": "Drum Brake Shoe Return Spring - Rear Lower",
+      "quantity": 1,
+      "price": "$9.16"
+    },
+    {
+      "partNumber": "58311-1G000",
+      "partDescription": "Drum Brake Shoe Return Spring - Rear Upper",
+      "quantity": 2,
+      "price": "$6.13"
+    },
+    {
+      "partNumber": "58330-1G000",
+      "partDescription": "Drum Brake Wheel Cylinder - Rear",
+      "quantity": 2,
+      "price": "$200.40"
+    },
+    {
+      "partNumber": "58394-1G000",
+      "partDescription": "Drum Brake Wheel Cylinder Bolt - Rear",
+      "quantity": 4,
+      "price": "$3.35"
+    },
+    {
+      "partNumber": "31111-0M000",
+      "partDescription": "Electric Fuel Pump",
+      "quantity": 1,
+      "price": "$597.92"
+    },
+    {
+      "partNumber": "31110-1G500--DS",
+      "partDescription": "Electric Fuel Pump - In Tank Assy.",
+      "quantity": 1,
+      "price": "$638.19"
+    },
+    {
+      "partNumber": "32450-26734",
+      "partDescription": "Emission Label",
+      "quantity": 1,
+      "price": "$5.84"
+    },
+    {
+      "partNumber": "14711-80006-B",
+      "partDescription": "Engine Air Duct Clamp - Front - front",
+      "quantity": 1,
+      "price": "$9.37"
+    },
+    {
+      "partNumber": "14711-75006-B",
+      "partDescription": "Engine Air Duct Clamp - Rear - rear",
+      "quantity": 1,
+      "price": "$4.55"
+    },
+    {
+      "partNumber": "28113-1G000",
+      "partDescription": "Engine Air Filter",
+      "quantity": 1,
+      "price": "$28.91"
+    },
+    {
+      "partNumber": "28210-1E000",
+      "partDescription": "Engine Air Intake Hose - Front",
+      "quantity": 1,
+      "price": "$110.52"
+    },
+    {
+      "partNumber": "8659028000",
+      "partDescription": "Engine Air Intake Hose Clip",
+      "quantity": 1,
+      "price": "$3.63"
+    },
+    {
+      "partNumber": "28190-1G000",
+      "partDescription": "Engine Air Intake Resonator",
+      "quantity": 1,
+      "price": "$53.45"
+    },
+    {
+      "partNumber": "24200-26704",
+      "partDescription": "Engine Camshaft - Exhaust",
+      "quantity": 1,
+      "price": "$897.39"
+    },
+    {
+      "partNumber": "7C037-26U00",
+      "partDescription": "Engine Camshaft - Intake",
+      "quantity": 1,
+      "price": "$489.42"
+    },
+    {
+      "partNumber": "22231-37100",
+      "partDescription": "Engine Camshaft Follower",
+      "quantity": 16,
+      "price": "$30.27"
+    },
+    {
+      "partNumber": "22327-35504",
+      "partDescription": "Engine Camshaft Plug - Circular Plug",
+      "quantity": 1,
+      "price": "$8.90"
+    },
+    {
+      "partNumber": "22442-23500",
+      "partDescription": "Engine Camshaft Plug - Semicircular Plug",
+      "quantity": 2,
+      "price": "$5.97"
+    },
+    {
+      "partNumber": "39350-26900",
+      "partDescription": "Engine Camshaft Position Sensor",
+      "quantity": 1,
+      "price": "$223.71"
+    },
+    {
+      "partNumber": "22144-3B001",
+      "partDescription": "Engine Camshaft Seal - Front",
+      "quantity": 1,
+      "price": "$35.68"
+    },
+    {
+      "partNumber": "115C1-26P15",
+      "partDescription": "Engine Complete Assembly - To 11/30/2010",
+      "quantity": 1,
+      "price": "$4,828.02"
+    },
+    {
+      "partNumber": "23510-26040",
+      "partDescription": "Engine Connecting Rod",
+      "quantity": 4,
+      "price": "$125.66"
+    },
+    {
+      "partNumber": "23060-26415",
+      "partDescription": "Engine Connecting Rod Bearing - Grade A, Color-Black",
+      "quantity": 4,
+      "price": "$23.85"
+    },
+    {
+      "partNumber": "23060-26425",
+      "partDescription": "Engine Connecting Rod Bearing - Grade B, Color-None",
+      "quantity": 4,
+      "price": "$31.51"
+    },
+    {
+      "partNumber": "23060-26435",
+      "partDescription": "Engine Connecting Rod Bearing - Grade C, Color-Green",
+      "quantity": 4,
+      "price": "$23.40"
+    },
+    {
+      "partNumber": "23060-26405",
+      "partDescription": "Engine Connecting Rod Bearing - Grade-AA, Color-Blue",
+      "quantity": 4,
+      "price": "$22.37"
+    },
+    {
+      "partNumber": "23060-26445",
+      "partDescription": "Engine Connecting Rod Bearing - Grade-D, Color-Yellow",
+      "quantity": 4,
+      "price": "$21.97"
+    },
+    {
+      "partNumber": "23513-11104",
+      "partDescription": "Engine Connecting Rod Bolt",
+      "quantity": 8,
+      "price": "$8.63"
+    },
+    {
+      "partNumber": "23514-22020",
+      "partDescription": "Engine Connecting Rod Nut",
+      "quantity": 8,
+      "price": "$3.85"
+    },
+    {
+      "partNumber": "39134-26BL0",
+      "partDescription": "Engine Control Module (ECM)",
+      "quantity": 1,
+      "price": "$855.18"
+    },
+    {
+      "partNumber": "25472-26001",
+      "partDescription": "Engine Coolant Bypass Hose",
+      "quantity": 1,
+      "price": "$21.21"
+    },
+    {
+      "partNumber": "25468-26101",
+      "partDescription": "Engine Coolant Hose - throttle body, Inlet",
+      "quantity": 1,
+      "price": "$8.79"
+    },
+    {
+      "partNumber": "25469-26102",
+      "partDescription": "Engine Coolant Hose - throttle body, Outlet",
+      "quantity": 1,
+      "price": "$9.63"
+    },
+    {
+      "partNumber": "25611-26890",
+      "partDescription": "Engine Coolant Outlet Flange",
+      "quantity": 1,
+      "price": "$44.37"
+    },
+    {
+      "partNumber": "25623-38400",
+      "partDescription": "Engine Coolant Outlet Gasket - O-ring, Outlet Flange",
+      "quantity": 1,
+      "price": "$7.42"
+    },
+    {
+      "partNumber": "25462-23000",
+      "partDescription": "Engine Coolant Pipe O-Ring",
+      "quantity": 1,
+      "price": "$4.63"
+    },
+    {
+      "partNumber": "25431-1E500",
+      "partDescription": "Engine Coolant Reservoir - w/cruise control",
+      "quantity": 1,
+      "price": "$39.29"
+    },
+    {
+      "partNumber": "25431-1G000",
+      "partDescription": "Engine Coolant Reservoir - w/o cruise control",
+      "quantity": 1,
+      "price": "$17.50"
+    },
+    {
+      "partNumber": "25441-26100",
+      "partDescription": "Engine Coolant Reservoir Cap",
+      "quantity": 1,
+      "price": "$3.56"
+    },
+    {
+      "partNumber": "25442-22020",
+      "partDescription": "Engine Coolant Reservoir Cap Gasket - w/cruise control",
+      "quantity": 1,
+      "price": "$2.63"
+    },
+    {
+      "partNumber": "25442-26100",
+      "partDescription": "Engine Coolant Reservoir Cap Gasket - w/o cruise control",
+      "quantity": 1,
+      "price": "$2.63"
+    },
+    {
+      "partNumber": "25443-1G000",
+      "partDescription": "Engine Coolant Reservoir Hose - Overflow hose",
+      "quantity": 1,
+      "price": "$14.53"
+    },
+    {
+      "partNumber": "25443-1E500",
+      "partDescription": "Engine Coolant Reservoir Hose - w/cruise control",
+      "quantity": 1,
+      "price": "$13.16"
+    },
+    {
+      "partNumber": "25443-1E100",
+      "partDescription": "Engine Coolant Reservoir Hose - w/o cruise control",
+      "quantity": 1,
+      "price": "$13.42"
+    },
+    {
+      "partNumber": "3922038030",
+      "partDescription": "Engine Coolant Temperature Sensor",
+      "quantity": 1,
+      "price": "$80.47"
+    },
+    {
+      "partNumber": "25500-23010",
+      "partDescription": "Engine Coolant Thermostat",
+      "quantity": 1,
+      "price": "$59.77"
+    },
+    {
+      "partNumber": "25612-26870",
+      "partDescription": "Engine Coolant Thermostat Gasket",
+      "quantity": 1,
+      "price": "$12.61"
+    },
+    {
+      "partNumber": "25620-26845",
+      "partDescription": "Engine Coolant Thermostat Housing - Lower",
+      "quantity": 1,
+      "price": "$92.65"
+    },
+    {
+      "partNumber": "25631-26835",
+      "partDescription": "Engine Coolant Thermostat Housing - Upper",
+      "quantity": 1,
+      "price": "$51.34"
+    },
+    {
+      "partNumber": "25614-26100",
+      "partDescription": "Engine Coolant Thermostat Housing Gasket - Lower housing",
+      "quantity": 1,
+      "price": "$11.29"
+    },
+    {
+      "partNumber": "25380-1E100",
+      "partDescription": "Engine Cooling Fan Assembly - Incl.Fan Blade & Motor",
+      "quantity": 1,
+      "price": "$466.50"
+    },
+    {
+      "partNumber": "25231-1C333",
+      "partDescription": "Engine Cooling Fan Blade",
+      "quantity": 1,
+      "price": "$73.08"
+    },
+    {
+      "partNumber": "25393-3F000",
+      "partDescription": "Engine Cooling Fan Blade Clip",
+      "quantity": 1,
+      "price": "$1.29"
+    },
+    {
+      "partNumber": "25237-3F000",
+      "partDescription": "Engine Cooling Fan Blade Washer",
+      "quantity": 1,
+      "price": "$6.44"
+    },
+    {
+      "partNumber": "25386-1E100",
+      "partDescription": "Engine Cooling Fan Motor",
+      "quantity": 1,
+      "price": "$331.31"
+    },
+    {
+      "partNumber": "25350-1E500",
+      "partDescription": "Engine Cooling Fan Shroud - w/cruise control",
+      "quantity": 1,
+      "price": "$163.00"
+    },
+    {
+      "partNumber": "25350-1E100",
+      "partDescription": "Engine Cooling Fan Shroud - w/o cruise control",
+      "quantity": 1,
+      "price": "$164.77"
+    },
+    {
+      "partNumber": "1573430000",
+      "partDescription": "Engine Core Plug - All Required, Location-Cylinder Head",
+      "quantity": 3,
+      "price": "$3.69"
+    },
+    {
+      "partNumber": "15734-35000",
+      "partDescription": "Engine Core Plug - All Required, Location-Engine Block",
+      "quantity": 9,
+      "price": "$5.66"
+    },
+    {
+      "partNumber": "29240-26635",
+      "partDescription": "Engine Cover",
+      "quantity": 1,
+      "price": "$238.69"
+    },
+    {
+      "partNumber": "29217-23603",
+      "partDescription": "Engine Cover Bolt",
+      "quantity": 1,
+      "price": "$1.84"
+    },
+    {
+      "partNumber": "29214-26701",
+      "partDescription": "Engine Cover Bracket - Left",
+      "quantity": 1,
+      "price": "$20.27"
+    },
+    {
+      "partNumber": "29214-26601",
+      "partDescription": "Engine Cover Bracket - Right",
+      "quantity": 1,
+      "price": "$16.55"
+    },
+    {
+      "partNumber": "21020-26415",
+      "partDescription": "Engine Crankshaft Main Bearing - Grade A, Color-Black",
+      "quantity": 4,
+      "price": "$13.79"
+    },
+    {
+      "partNumber": "21020-26425",
+      "partDescription": "Engine Crankshaft Main Bearing - Grade B, Color-None",
+      "quantity": 4,
+      "price": "$14.69"
+    },
+    {
+      "partNumber": "21020-26435",
+      "partDescription": "Engine Crankshaft Main Bearing - Grade C, Color-Green",
+      "quantity": 4,
+      "price": "$13.79"
+    },
+    {
+      "partNumber": "21020-26405",
+      "partDescription": "Engine Crankshaft Main Bearing - Grade-AA, Color-Blue",
+      "quantity": 4,
+      "price": "$13.55"
+    },
+    {
+      "partNumber": "21020-26445",
+      "partDescription": "Engine Crankshaft Main Bearing - Grade-D, Color-Yellow",
+      "quantity": 4,
+      "price": "$13.55"
+    },
+    {
+      "partNumber": "21114-22020",
+      "partDescription": "Engine Crankshaft Main Bearing Cap Bolt",
+      "quantity": 10,
+      "price": "$5.97"
+    },
+    {
+      "partNumber": "39180-26900",
+      "partDescription": "Engine Crankshaft Position Sensor",
+      "quantity": 1,
+      "price": "$288.61"
+    },
+    {
+      "partNumber": "23124-26030",
+      "partDescription": "Engine Crankshaft Pulley - Incl.Engine Harmonic Balancer",
+      "quantity": 1,
+      "price": "$179.44"
+    },
+    {
+      "partNumber": "21421-22020",
+      "partDescription": "Engine Crankshaft Seal - Front",
+      "quantity": 1,
+      "price": "$18.37"
+    },
+    {
+      "partNumber": "21443-22000",
+      "partDescription": "Engine Crankshaft Seal - Rear",
+      "quantity": 1,
+      "price": "$57.47"
+    },
+    {
+      "partNumber": "21020-26455",
+      "partDescription": "Engine Crankshaft Thrust Washer - Bearing, Grade-AA",
+      "quantity": 1,
+      "price": "$43.02"
+    },
+    {
+      "partNumber": "21020-26495",
+      "partDescription": "Engine Crankshaft Thrust Washer - Bearing, Grade-D",
+      "quantity": 1,
+      "price": "$43.02"
+    },
+    {
+      "partNumber": "21020-26465",
+      "partDescription": "Engine Crankshaft Thrust Washer - Grade A, Bearing",
+      "quantity": 1,
+      "price": "$43.02"
+    },
+    {
+      "partNumber": "21020-26475",
+      "partDescription": "Engine Crankshaft Thrust Washer - Grade B, Bearing",
+      "quantity": 1,
+      "price": "$45.85"
+    },
+    {
+      "partNumber": "21020-26330",
+      "partDescription": "Engine Crankshaft Thrust Washer - Grade C, Bearing",
+      "quantity": 1,
+      "price": "$43.02"
+    },
+    {
+      "partNumber": "22321-26000",
+      "partDescription": "Engine Cylinder Head Bolt",
+      "quantity": 10,
+      "price": "$7.55"
+    },
+    {
+      "partNumber": "22322-26001",
+      "partDescription": "Engine Cylinder Head Bolt Washer",
+      "quantity": 10,
+      "price": "$1.74"
+    },
+    {
+      "partNumber": "22311-26101",
+      "partDescription": "Engine Cylinder Head Gasket",
+      "quantity": 1,
+      "price": "$109.23"
+    },
+    {
+      "partNumber": "20920-26K00",
+      "partDescription": "Engine Cylinder Head Gasket Set",
+      "quantity": 1,
+      "price": "$389.94"
+    },
+    {
+      "partNumber": "91117-1E050",
+      "partDescription": "Engine Decal",
+      "quantity": 1,
+      "price": "$0.10"
+    },
+    {
+      "partNumber": "22212-26050",
+      "partDescription": "Engine Exhaust Valve",
+      "quantity": 8,
+      "price": "$27.63"
+    },
+    {
+      "partNumber": "20910-26K00",
+      "partDescription": "Engine Gasket Set",
+      "quantity": 1,
+      "price": "$386.81"
+    },
+    {
+      "partNumber": "23127-26810",
+      "partDescription": "Engine Harmonic Balancer Bolt",
+      "quantity": 1,
+      "price": "$28.89"
+    },
+    {
+      "partNumber": "23126-22010",
+      "partDescription": "Engine Harmonic Balancer Washer",
+      "quantity": 1,
+      "price": "$9.03"
+    },
+    {
+      "partNumber": "28411-26900",
+      "partDescription": "Engine Intake Manifold Gasket",
+      "quantity": 1,
+      "price": "$27.81"
+    },
+    {
+      "partNumber": "22211-26600",
+      "partDescription": "Engine Intake Valve",
+      "quantity": 8,
+      "price": "$11.66"
+    },
+    {
+      "partNumber": "21910-1G050",
+      "partDescription": "Engine Mount - Front Lower - front manual trans",
+      "quantity": 1,
+      "price": "$291.85"
+    },
+    {
+      "partNumber": "21930-1G000",
+      "partDescription": "Engine Mount - Rear Lower - rear manual trans",
+      "quantity": 1,
+      "price": "$263.02"
+    },
+    {
+      "partNumber": "21810-1E000",
+      "partDescription": "Engine Mount - Upper",
+      "quantity": 1,
+      "price": "$419.06"
+    },
+    {
+      "partNumber": "21673-26000",
+      "partDescription": "Engine Mount Brace - Lower",
+      "quantity": 1,
+      "price": "$14.16"
+    },
+    {
+      "partNumber": "21670-26005",
+      "partDescription": "Engine Mount Support Bracket - Lower",
+      "quantity": 1,
+      "price": "$111.87"
+    },
+    {
+      "partNumber": "21820-1G000",
+      "partDescription": "Engine Mount Support Bracket - Upper",
+      "quantity": 1,
+      "price": "$298.79"
+    },
+    {
+      "partNumber": "26611-26000",
+      "partDescription": "Engine Oil Dipstick",
+      "quantity": 1,
+      "price": "$19.44"
+    },
+    {
+      "partNumber": "26612-26010",
+      "partDescription": "Engine Oil Dipstick Tube",
+      "quantity": 1,
+      "price": "$41.23"
+    },
+    {
+      "partNumber": "266152B000",
+      "partDescription": "Engine Oil Dipstick Tube Seal - Dipstick",
+      "quantity": 1,
+      "price": "$2.58"
+    },
+    {
+      "partNumber": "266142B000",
+      "partDescription": "Engine Oil Dipstick Tube Seal - Dipstick Tube",
+      "quantity": 1,
+      "price": "$5.27"
+    },
+    {
+      "partNumber": "2151223001",
+      "partDescription": "Engine Oil Drain Plug",
+      "quantity": 1,
+      "price": "$7.13"
+    },
+    {
+      "partNumber": "2151323001",
+      "partDescription": "Engine Oil Drain Plug Gasket",
+      "quantity": 1,
+      "price": "$2.87"
+    },
+    {
+      "partNumber": "2651026611",
+      "partDescription": "Engine Oil Filler Cap - Incl.Gasket",
+      "quantity": 1,
+      "price": "$35.44"
+    },
+    {
+      "partNumber": "2650222600",
+      "partDescription": "Engine Oil Filler Cap Gasket",
+      "quantity": 1,
+      "price": "$6.21"
+    },
+    {
+      "partNumber": "26300-35503",
+      "partDescription": "Engine Oil Filter",
+      "quantity": 1,
+      "price": "$8.15"
+    },
+    {
+      "partNumber": "21510-26601",
+      "partDescription": "Engine Oil Pan - Incl.Drain Plug and Drain Plug Gasket",
+      "quantity": 1,
+      "price": "$283.34"
+    },
+    {
+      "partNumber": "94750-21030",
+      "partDescription": "Engine Oil Pressure Switch",
+      "quantity": 1,
+      "price": "$47.45"
+    },
+    {
+      "partNumber": "21310-26802",
+      "partDescription": "Engine Oil Pump",
+      "quantity": 1,
+      "price": "$150.10"
+    },
+    {
+      "partNumber": "21411-26011",
+      "partDescription": "Engine Oil Pump Gasket",
+      "quantity": 1,
+      "price": "$32.34"
+    },
+    {
+      "partNumber": "26250-26010",
+      "partDescription": "Engine Oil Pump Pickup Tube",
+      "quantity": 1,
+      "price": "$44.94"
+    },
+    {
+      "partNumber": "26259-22010",
+      "partDescription": "Engine Oil Pump Pickup Tube Gasket - Optional",
+      "quantity": 1,
+      "price": "$4.37"
+    },
+    {
+      "partNumber": "26112-26800",
+      "partDescription": "Engine Oil Pump Rotor - Inner",
+      "quantity": 1,
+      "price": "$22.76"
+    },
+    {
+      "partNumber": "26113-26800",
+      "partDescription": "Engine Oil Pump Rotor - Outer",
+      "quantity": 1,
+      "price": "$31.61"
+    },
+    {
+      "partNumber": "26259-22800",
+      "partDescription": "Engine Oil Strainer Gasket",
+      "quantity": 1,
+      "price": "$4.37"
+    },
+    {
+      "partNumber": "21504-26600",
+      "partDescription": "Engine Oil Sump Windage Tray",
+      "quantity": 1,
+      "price": "$25.47"
+    },
+    {
+      "partNumber": "23410-26501",
+      "partDescription": "Engine Piston - Grade A, Incl.Piston Pin",
+      "quantity": 4,
+      "price": "$56.47"
+    },
+    {
+      "partNumber": "23410-26511",
+      "partDescription": "Engine Piston - Grade B, Incl.Piston Pin",
+      "quantity": 4,
+      "price": "$56.47"
+    },
+    {
+      "partNumber": "23410-26521",
+      "partDescription": "Engine Piston - Grade C, Incl.Piston Pin",
+      "quantity": 4,
+      "price": "$56.47"
+    },
+    {
+      "partNumber": "23040-26120",
+      "partDescription": "Engine Piston Ring - Complete Set",
+      "quantity": 1,
+      "price": "$154.13"
+    },
+    {
+      "partNumber": "23412-22001",
+      "partDescription": "Engine Piston Wrist Pin",
+      "quantity": 4,
+      "price": "$9.05"
+    },
+    {
+      "partNumber": "00231-13800",
+      "partDescription": "Engine Sealant",
+      "quantity": 1,
+      "price": "$8.15"
+    },
+    {
+      "partNumber": "204C2-26P04",
+      "partDescription": "Engine Short Block - To 11/30/2010",
+      "quantity": 1,
+      "price": "$1,708.45"
+    },
+    {
+      "partNumber": "24312-26050",
+      "partDescription": "Engine Timing Belt",
+      "quantity": 1,
+      "price": "$104.89"
+    },
+    {
+      "partNumber": "24810-26020",
+      "partDescription": "Engine Timing Belt Idler",
+      "quantity": 1,
+      "price": "$52.85"
+    },
+    {
+      "partNumber": "24410-26000",
+      "partDescription": "Engine Timing Belt Tensioner - adjuster",
+      "quantity": 1,
+      "price": "$72.42"
+    },
+    {
+      "partNumber": "24422-24000",
+      "partDescription": "Engine Timing Belt Tensioner - Spring",
+      "quantity": 1,
+      "price": "$6.24"
+    },
+    {
+      "partNumber": "24211-26100",
+      "partDescription": "Engine Timing Camshaft Sprocket - For Belt System",
+      "quantity": 1,
+      "price": "$25.84"
+    },
+    {
+      "partNumber": "24350-26800",
+      "partDescription": "Engine Timing Camshaft Sprocket - Left - For Chain System",
+      "quantity": 1,
+      "price": "$826.69"
+    },
+    {
+      "partNumber": "24322-26701",
+      "partDescription": "Engine Timing Camshaft Sprocket - Right - For Chain System",
+      "quantity": 1,
+      "price": "$34.35"
+    },
+    {
+      "partNumber": "24321-26701",
+      "partDescription": "Engine Timing Chain - Cam To Cam",
+      "quantity": 1,
+      "price": "$67.08"
+    },
+    {
+      "partNumber": "24410-26800",
+      "partDescription": "Engine Timing Chain Tensioner - Cam To Cam",
+      "quantity": 1,
+      "price": "$239.37"
+    },
+    {
+      "partNumber": "21350-26002",
+      "partDescription": "Engine Timing Cover - Lower",
+      "quantity": 1,
+      "price": "$63.52"
+    },
+    {
+      "partNumber": "21360-26002",
+      "partDescription": "Engine Timing Cover - Upper",
+      "quantity": 1,
+      "price": "$71.65"
+    },
+    {
+      "partNumber": "21353-23500",
+      "partDescription": "Engine Timing Cover Gasket - Left - Lower Timing Cover",
+      "quantity": 1,
+      "price": "$11.98"
+    },
+    {
+      "partNumber": "21365-26000",
+      "partDescription": "Engine Timing Cover Gasket - Lower - Upper Timing Cover",
+      "quantity": 1,
+      "price": "$4.90"
+    },
+    {
+      "partNumber": "21362-26000",
+      "partDescription": "Engine Timing Cover Gasket - Upper - Upper Timing Cover",
+      "quantity": 1,
+      "price": "$8.15"
+    },
+    {
+      "partNumber": "23121-26100",
+      "partDescription": "Engine Timing Crankshaft Sprocket",
+      "quantity": 1,
+      "price": "$47.34"
+    },
+    {
+      "partNumber": "22410-26860",
+      "partDescription": "Engine Valve Cover",
+      "quantity": 1,
+      "price": "$470.58"
+    },
+    {
+      "partNumber": "22441-26801",
+      "partDescription": "Engine Valve Cover Gasket",
+      "quantity": 1,
+      "price": "$41.94"
+    },
+    {
+      "partNumber": "22115-26000",
+      "partDescription": "Engine Valve Guide - Exhaust",
+      "quantity": 8,
+      "price": "$7.97"
+    },
+    {
+      "partNumber": "22114-26000",
+      "partDescription": "Engine Valve Guide - Intake",
+      "quantity": 8,
+      "price": "$7.50"
+    },
+    {
+      "partNumber": "22113-26010",
+      "partDescription": "Engine Valve Seat - Exhaust",
+      "quantity": 8,
+      "price": "$12.47"
+    },
+    {
+      "partNumber": "22112-26100",
+      "partDescription": "Engine Valve Seat - Intake",
+      "quantity": 8,
+      "price": "$7.47"
+    },
+    {
+      "partNumber": "22221-26000",
+      "partDescription": "Engine Valve Spring",
+      "quantity": 16,
+      "price": "$5.34"
+    },
+    {
+      "partNumber": "22225-26000",
+      "partDescription": "Engine Valve Spring Retainer - Lower",
+      "quantity": 16,
+      "price": "$0.87"
+    },
+    {
+      "partNumber": "22222-26000",
+      "partDescription": "Engine Valve Spring Retainer - Upper",
+      "quantity": 16,
+      "price": "$4.42"
+    },
+    {
+      "partNumber": "22223-22001",
+      "partDescription": "Engine Valve Spring Retainer Keeper",
+      "quantity": 32,
+      "price": "$2.53"
+    },
+    {
+      "partNumber": "22224-23500",
+      "partDescription": "Engine Valve Stem Oil Seal",
+      "quantity": 16,
+      "price": "$5.89"
+    },
+    {
+      "partNumber": "24355-26800",
+      "partDescription": "Engine Variable Valve Timing (VVT) Solenoid - Incl.Oil Control Valve",
+      "quantity": 1,
+      "price": "$363.65"
+    },
+    {
+      "partNumber": "25100-26902",
+      "partDescription": "Engine Water Pump",
+      "quantity": 1,
+      "price": "$248.90"
+    },
+    {
+      "partNumber": "25124-26002",
+      "partDescription": "Engine Water Pump Gasket",
+      "quantity": 1,
+      "price": "$22.76"
+    },
+    {
+      "partNumber": "25221-26001",
+      "partDescription": "Engine Water Pump Pulley",
+      "quantity": 1,
+      "price": "$47.58"
+    },
+    {
+      "partNumber": "27350-26620",
+      "partDescription": "Engine Wiring Harness",
+      "quantity": 1,
+      "price": "$176.85"
+    },
+    {
+      "partNumber": "91203-1E019",
+      "partDescription": "Engine Wiring Harness - manual trans w/o ABS",
+      "quantity": 1,
+      "price": "$2,336.66"
+    },
+    {
+      "partNumber": "28920-26910",
+      "partDescription": "Evaporative Emissions System Lines",
+      "quantity": 1,
+      "price": "$31.03"
+    },
+    {
+      "partNumber": "28610-1G300",
+      "partDescription": "Exhaust Axle Pipe - Front",
+      "quantity": 1,
+      "price": "$461.85"
+    },
+    {
+      "partNumber": "28961-26721",
+      "partDescription": "Exhaust Bracket",
+      "quantity": 1,
+      "price": "$16.24"
+    },
+    {
+      "partNumber": "28793-1E000",
+      "partDescription": "Exhaust Heat Shield - MUFFLER",
+      "quantity": 1,
+      "price": "$70.58"
+    },
+    {
+      "partNumber": "28521-26600",
+      "partDescription": "Exhaust Manifold Gasket",
+      "quantity": 1,
+      "price": "$30.74"
+    },
+    {
+      "partNumber": "28525-26601",
+      "partDescription": "Exhaust Manifold Heat Shield",
+      "quantity": 1,
+      "price": "$50.84"
+    },
+    {
+      "partNumber": "28730-1E450",
+      "partDescription": "Exhaust Muffler",
+      "quantity": 1,
+      "price": "$641.34"
+    },
+    {
+      "partNumber": "28700-1E411",
+      "partDescription": "Exhaust Pipe",
+      "quantity": 1,
+      "price": "$483.36"
+    },
+    {
+      "partNumber": "28760-4B030",
+      "partDescription": "Exhaust System Hanger",
+      "quantity": 1,
+      "price": "$8.90"
+    },
+    {
+      "partNumber": "82650-1E000-CA",
+      "partDescription": "Exterior Door Handle - Front Left Outer - Black, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$123.52"
+    },
+    {
+      "partNumber": "82650-1E050",
+      "partDescription": "Exterior Door Handle - Front Left Outer - body color, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$123.52"
+    },
+    {
+      "partNumber": "82660-1E000-CA",
+      "partDescription": "Exterior Door Handle - Front Right Outer - Black, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$123.52"
+    },
+    {
+      "partNumber": "82660-1E050",
+      "partDescription": "Exterior Door Handle - Front Right Outer - body color, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$123.52"
+    },
+    {
+      "partNumber": "82655-1E000",
+      "partDescription": "Exterior Door Handle Base - Front Left - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$55.47"
+    },
+    {
+      "partNumber": "82665-1E000",
+      "partDescription": "Exterior Door Handle Base - Front Right - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$55.47"
+    },
+    {
+      "partNumber": "8581837000",
+      "partDescription": "Exterior Molding Clip - Rear - Molding assy,retainer clip - Hatchback",
+      "quantity": 1,
+      "price": "$7.29"
+    },
+    {
+      "partNumber": "66311-1E300",
+      "partDescription": "Fender - Front Left",
+      "quantity": 1,
+      "price": "$401.46"
+    },
+    {
+      "partNumber": "66321-1E300",
+      "partDescription": "Fender - Front Right",
+      "quantity": 1,
+      "price": "$401.46"
+    },
+    {
+      "partNumber": "64501-1E300",
+      "partDescription": "Fender Apron - Front Left",
+      "quantity": 1,
+      "price": "$406.12"
+    },
+    {
+      "partNumber": "64502-1E300",
+      "partDescription": "Fender Apron - Front Right",
+      "quantity": 1,
+      "price": "$406.12"
+    },
+    {
+      "partNumber": "84141-1E010",
+      "partDescription": "Fender Insulator - Front Left",
+      "quantity": 1,
+      "price": "$77.58"
+    },
+    {
+      "partNumber": "84142-1E010",
+      "partDescription": "Fender Insulator - Front Right",
+      "quantity": 1,
+      "price": "$77.58"
+    },
+    {
+      "partNumber": "8684822000",
+      "partDescription": "Fender Liner Nut",
+      "quantity": 1,
+      "price": "$2.65"
+    },
+    {
+      "partNumber": "12493-06207-B",
+      "partDescription": "Fender Liner Screw",
+      "quantity": 1,
+      "price": "$0.98"
+    },
+    {
+      "partNumber": "87711-1E500",
+      "partDescription": "Fender Molding - Front Left",
+      "quantity": 1,
+      "price": "$20.86"
+    },
+    {
+      "partNumber": "87712-1E500",
+      "partDescription": "Fender Molding - Front Right",
+      "quantity": 1,
+      "price": "$20.86"
+    },
+    {
+      "partNumber": "87756-1C000",
+      "partDescription": "Fender Molding Retainer",
+      "quantity": 1,
+      "price": "$2.08"
+    },
+    {
+      "partNumber": "12431-03121",
+      "partDescription": "Fender Molding Screw",
+      "quantity": 1,
+      "price": "$0.94"
+    },
+    {
+      "partNumber": "86811-1E000",
+      "partDescription": "Fender Splash Shield - Front Left",
+      "quantity": 1,
+      "price": "$77.37"
+    },
+    {
+      "partNumber": "86812-1E000",
+      "partDescription": "Fender Splash Shield - Front Right",
+      "quantity": 1,
+      "price": "$77.37"
+    },
+    {
+      "partNumber": "65521-1G210",
+      "partDescription": "Floor Extension - Front - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$282.46"
+    },
+    {
+      "partNumber": "65111-1G300",
+      "partDescription": "Floor Pan - Front - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$750.87"
+    },
+    {
+      "partNumber": "65511-1E210",
+      "partDescription": "Floor Pan - Rear Forward - Center flr pan, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$257.79"
+    },
+    {
+      "partNumber": "65513-1E210",
+      "partDescription": "Floor Pan - Rear Rearward - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$547.31"
+    },
+    {
+      "partNumber": "65116-1G300",
+      "partDescription": "Floor Pan Bracket - Center - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$24.53"
+    },
+    {
+      "partNumber": "65150-1G000",
+      "partDescription": "Floor Pan Crossmember - Front Left - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$46.21"
+    },
+    {
+      "partNumber": "65160-1G000",
+      "partDescription": "Floor Pan Crossmember - Front Right - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$107.61"
+    },
+    {
+      "partNumber": "65831-1G300",
+      "partDescription": "Floor Pan Crossmember - Rear Forward - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$264.35"
+    },
+    {
+      "partNumber": "65850-1E210",
+      "partDescription": "Floor Pan Crossmember - Rear Rearward - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$100.02"
+    },
+    {
+      "partNumber": "65113-1G000",
+      "partDescription": "Floor Pan Reinforcement - Front - hatchback, front w/o seat anchor - Hatchback",
+      "quantity": 1,
+      "price": "$59.81"
+    },
+    {
+      "partNumber": "65145-1G300",
+      "partDescription": "Floor Pan Reinforcement - Rear - rear, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$136.00"
+    },
+    {
+      "partNumber": "65556-1G300",
+      "partDescription": "Floor Pan Reinforcement - Rear Center - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$54.13"
+    },
+    {
+      "partNumber": "65210-1G300",
+      "partDescription": "Floor Side Rail - Left - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$81.33"
+    },
+    {
+      "partNumber": "65220-1G300",
+      "partDescription": "Floor Side Rail - Right - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$89.98"
+    },
+    {
+      "partNumber": "92201-1E000",
+      "partDescription": "Fog Light - Front Left",
+      "quantity": 1,
+      "price": "$152.49"
+    },
+    {
+      "partNumber": "92202-1E000",
+      "partDescription": "Fog Light - Front Right",
+      "quantity": 1,
+      "price": "$152.49"
+    },
+    {
+      "partNumber": "18647-27009-S",
+      "partDescription": "Fog Light Bulb - Front",
+      "quantity": 1,
+      "price": "$38.27"
+    },
+    {
+      "partNumber": "93740-0N000-OR",
+      "partDescription": "Fog Light Switch - Color-Beige",
+      "quantity": 1,
+      "price": "$72.24"
+    },
+    {
+      "partNumber": "93740-0N000-WK",
+      "partDescription": "Fog Light Switch - Color-Black",
+      "quantity": 1,
+      "price": "$96.66"
+    },
+    {
+      "partNumber": "93740-0N000-QS",
+      "partDescription": "Fog Light Switch - Color-Gray",
+      "quantity": 1,
+      "price": "$96.66"
+    },
+    {
+      "partNumber": "89330-1E060",
+      "partDescription": "Folding Seat Latch - Rear Left - HATCHBACK, 2009-11 - Hatchback",
+      "quantity": 1,
+      "price": "$154.69"
+    },
+    {
+      "partNumber": "89430-1E060",
+      "partDescription": "Folding Seat Latch - Rear Right - HATCHBACK, 2009-11 - Hatchback",
+      "quantity": 1,
+      "price": "$134.23"
+    },
+    {
+      "partNumber": "89780-1G000",
+      "partDescription": "Folding Seat Lock Striker - Rear - HATCHBACK, 2009-11 - Hatchback",
+      "quantity": 1,
+      "price": "$25.21"
+    },
+    {
+      "partNumber": "65710-1E700",
+      "partDescription": "Frame Side Member - Rear Left - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$651.95"
+    },
+    {
+      "partNumber": "65720-1E700",
+      "partDescription": "Frame Side Member - Rear Right - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$636.46"
+    },
+    {
+      "partNumber": "64605-1E302",
+      "partDescription": "Frame Side Member Assembly - Front Left",
+      "quantity": 1,
+      "price": "$955.86"
+    },
+    {
+      "partNumber": "64606-1E301",
+      "partDescription": "Frame Side Member Assembly - Front Right",
+      "quantity": 1,
+      "price": "$955.86"
+    },
+    {
+      "partNumber": "87551-3K000",
+      "partDescription": "Fuel Door Bumper - hatchback - Hatchback",
+      "quantity": 2,
+      "price": "$0.18"
+    },
+    {
+      "partNumber": "81570-1G200",
+      "partDescription": "Fuel Door Release Handle - Front - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$59.18"
+    },
+    {
+      "partNumber": "79553-29000",
+      "partDescription": "Fuel Door Spring - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$7.48"
+    },
+    {
+      "partNumber": "69510-1E200",
+      "partDescription": "Fuel Filler Door - Rear - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$104.26"
+    },
+    {
+      "partNumber": "1125006206B",
+      "partDescription": "Fuel Filler Door Bolt - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$1.06"
+    },
+    {
+      "partNumber": "81590-1E200",
+      "partDescription": "Fuel Filler Door Release Cable - Front - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$182.03"
+    },
+    {
+      "partNumber": "31036-1E550",
+      "partDescription": "Fuel Filler Hose",
+      "quantity": 1,
+      "price": "$246.76"
+    },
+    {
+      "partNumber": "71531-1E210",
+      "partDescription": "Fuel Filler Housing - Rear - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$43.92"
+    },
+    {
+      "partNumber": "31112-1G500",
+      "partDescription": "Fuel Filter - Location-Tank",
+      "quantity": 1,
+      "price": "$80.38"
+    },
+    {
+      "partNumber": "35150-26900",
+      "partDescription": "Fuel Injection Idle Air Control Valve",
+      "quantity": 1,
+      "price": "$356.11"
+    },
+    {
+      "partNumber": "35156-23700",
+      "partDescription": "Fuel Injection Idle Air Control Valve Gasket",
+      "quantity": 1,
+      "price": "$3.08"
+    },
+    {
+      "partNumber": "31380-3K000",
+      "partDescription": "Fuel Injection Pressure Regulator - In-Tank Regulator",
+      "quantity": 1,
+      "price": "$125.89"
+    },
+    {
+      "partNumber": "35100-26910",
+      "partDescription": "Fuel Injection Throttle Body - cruise control",
+      "quantity": 1,
+      "price": "$641.08"
+    },
+    {
+      "partNumber": "35100-26860",
+      "partDescription": "Fuel Injection Throttle Body - Exc.Cruise Control",
+      "quantity": 1,
+      "price": "$641.08"
+    },
+    {
+      "partNumber": "35101-26860",
+      "partDescription": "Fuel Injection Throttle Body Mounting Gasket",
+      "quantity": 1,
+      "price": "$10.15"
+    },
+    {
+      "partNumber": "35310-37150",
+      "partDescription": "Fuel Injector - Incl.Seals",
+      "quantity": 4,
+      "price": "$158.81"
+    },
+    {
+      "partNumber": "3531222000",
+      "partDescription": "Fuel Injector O-Ring",
+      "quantity": 8,
+      "price": "$5.98"
+    },
+    {
+      "partNumber": "94472-1G000",
+      "partDescription": "Fuel Pump Shield",
+      "quantity": 1,
+      "price": "$22.81"
+    },
+    {
+      "partNumber": "31160-1E550",
+      "partDescription": "Fuel Shut-Off Solenoid",
+      "quantity": 1,
+      "price": "$12.76"
+    },
+    {
+      "partNumber": "31150-1E550",
+      "partDescription": "Fuel Tank",
+      "quantity": 1,
+      "price": "$1,059.32"
+    },
+    {
+      "partNumber": "65551-1E300",
+      "partDescription": "Fuel Tank Bracket - Rear Left - hatchback, fuel tank - Hatchback",
+      "quantity": 1,
+      "price": "$86.92"
+    },
+    {
+      "partNumber": "65561-1G300",
+      "partDescription": "Fuel Tank Bracket - Rear Right - hatchback, fuel tank - Hatchback",
+      "quantity": 1,
+      "price": "$83.73"
+    },
+    {
+      "partNumber": "310103L600",
+      "partDescription": "Fuel Tank Cap - Incl.Tether",
+      "quantity": 1,
+      "price": "$28.09"
+    },
+    {
+      "partNumber": "31040-1E550",
+      "partDescription": "Fuel Tank Filler Neck - Upper",
+      "quantity": 1,
+      "price": "$419.56"
+    },
+    {
+      "partNumber": "31182-1G500",
+      "partDescription": "Fuel Tank Insulator",
+      "quantity": 1,
+      "price": "$8.50"
+    },
+    {
+      "partNumber": "31158-1E000",
+      "partDescription": "Fuel Tank Lock Ring",
+      "quantity": 1,
+      "price": "$39.53"
+    },
+    {
+      "partNumber": "31435-2H500",
+      "partDescription": "Fuel Tank Pressure Sensor",
+      "quantity": 1,
+      "price": "$188.60"
+    },
+    {
+      "partNumber": "94460-1G500",
+      "partDescription": "Fuel Tank Sending Unit",
+      "quantity": 1,
+      "price": "$143.16"
+    },
+    {
+      "partNumber": "31221-1E000",
+      "partDescription": "Fuel Tank Shield",
+      "quantity": 1,
+      "price": "$51.42"
+    },
+    {
+      "partNumber": "91950-1G040",
+      "partDescription": "Fuse and Relay Center",
+      "quantity": 1,
+      "price": "$462.50"
+    },
+    {
+      "partNumber": "91940-1E101",
+      "partDescription": "Fuse Box Cover",
+      "quantity": 1,
+      "price": "$53.03"
+    },
+    {
+      "partNumber": "84755-1E100-OR-DS",
+      "partDescription": "Fuse Box Cover - beige",
+      "quantity": 1,
+      "price": "$29.55"
+    },
+    {
+      "partNumber": "84755-1E100-WK-DS",
+      "partDescription": "Fuse Box Cover - Black",
+      "quantity": 1,
+      "price": "$23.39"
+    },
+    {
+      "partNumber": "84755-1E100-QS-DS",
+      "partDescription": "Fuse Box Cover - Gray",
+      "quantity": 1,
+      "price": "$30.66"
+    },
+    {
+      "partNumber": "84510-1E400-OR",
+      "partDescription": "Glove Box - Front - beige",
+      "quantity": 1,
+      "price": "$473.39"
+    },
+    {
+      "partNumber": "84510-1E400-WK",
+      "partDescription": "Glove Box - Front - Black",
+      "quantity": 1,
+      "price": "$446.85"
+    },
+    {
+      "partNumber": "84510-1E400-QS",
+      "partDescription": "Glove Box - Front - Gray",
+      "quantity": 1,
+      "price": "$572.29"
+    },
+    {
+      "partNumber": "84544-2H100-CH",
+      "partDescription": "Glove Box Door Bumper - Front",
+      "quantity": 2,
+      "price": "$1.13"
+    },
+    {
+      "partNumber": "81514-1E000",
+      "partDescription": "Glove Box Door Striker - Front",
+      "quantity": 1,
+      "price": "$20.71"
+    },
+    {
+      "partNumber": "84535-39000--DS",
+      "partDescription": "Glove Box Insulator - Front - Black",
+      "quantity": 2,
+      "price": "$11.23"
+    },
+    {
+      "partNumber": "84535-39000",
+      "partDescription": "Glove Box Insulator - Guide assy,guide",
+      "quantity": 2,
+      "price": "$14.23"
+    },
+    {
+      "partNumber": "84519-22000",
+      "partDescription": "Glove Box Insulator - Guide assy,pad",
+      "quantity": 2,
+      "price": "$2.00"
+    },
+    {
+      "partNumber": "86522-1E010",
+      "partDescription": "Grille - Front Lower - w/fog lamp",
+      "quantity": 1,
+      "price": "$108.00"
+    },
+    {
+      "partNumber": "86522-1E000",
+      "partDescription": "Grille - Front Lower - w/o fog lamp",
+      "quantity": 1,
+      "price": "$108.00"
+    },
+    {
+      "partNumber": "86361-1E000",
+      "partDescription": "Grille - Front Upper - hatchback, grille - Hatchback",
+      "quantity": 1,
+      "price": "$43.90"
+    },
+    {
+      "partNumber": "86366-1E000",
+      "partDescription": "Grille - Front Upper - hatchback, Grille cover - Hatchback",
+      "quantity": 1,
+      "price": "$92.09"
+    },
+    {
+      "partNumber": "86300-3A001",
+      "partDescription": "Grille Emblem - Front - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$48.19"
+    },
+    {
+      "partNumber": "86655-17000",
+      "partDescription": "Grille Emblem Nut - hatchback - Hatchback",
+      "quantity": 2,
+      "price": "$2.61"
+    },
+    {
+      "partNumber": "1249204147B",
+      "partDescription": "Grille Screw - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$0.47"
+    },
+    {
+      "partNumber": "86311-1E200",
+      "partDescription": "Hatch Emblem - Rear - \"ACCENT\" - Hatchback",
+      "quantity": 1,
+      "price": "$30.79"
+    },
+    {
+      "partNumber": "86310-1E000",
+      "partDescription": "Hatch Emblem - Rear - \"HYUNDAI\" - Hatchback",
+      "quantity": 1,
+      "price": "$65.05"
+    },
+    {
+      "partNumber": "87321-1E200",
+      "partDescription": "Hatch Seal - Rear - Hatchback",
+      "quantity": 1,
+      "price": "$119.14"
+    },
+    {
+      "partNumber": "95550-1E000",
+      "partDescription": "Hazard Warning Flasher - Combo-Flasher",
+      "quantity": 1,
+      "price": "$91.40"
+    },
+    {
+      "partNumber": "93790-1E000",
+      "partDescription": "Hazard Warning Switch",
+      "quantity": 1,
+      "price": "$75.65"
+    },
+    {
+      "partNumber": "92101-1E011",
+      "partDescription": "Headlight Assembly - Front Left",
+      "quantity": 1,
+      "price": "$360.55"
+    },
+    {
+      "partNumber": "92102-1E011",
+      "partDescription": "Headlight Assembly - Front Right",
+      "quantity": 1,
+      "price": "$360.55"
+    },
+    {
+      "partNumber": "18647-61566-L",
+      "partDescription": "Headlight Bulb - Front",
+      "quantity": 1,
+      "price": "$36.66"
+    },
+    {
+      "partNumber": "92191-4E000",
+      "partDescription": "Headlight Bulb Cap - Front",
+      "quantity": 1,
+      "price": "$6.60"
+    },
+    {
+      "partNumber": "92160-3C000",
+      "partDescription": "Headlight Socket - Front",
+      "quantity": 1,
+      "price": "$24.98"
+    },
+    {
+      "partNumber": "85310-1E567-QS",
+      "partDescription": "Headliner - hatchback, w/head airbag w/o sunroof - Hatchback",
+      "quantity": 1,
+      "price": "$1,172.34"
+    },
+    {
+      "partNumber": "85410-1E535-QS",
+      "partDescription": "Headliner - hatchback, w/head airbag w/sunroof - Hatchback",
+      "quantity": 1,
+      "price": "$1,641.58"
+    },
+    {
+      "partNumber": "88700-1E600-NWU",
+      "partDescription": "Headrest - Front Left - hatchback black, driver seat - Hatchback",
+      "quantity": 1,
+      "price": "$170.73"
+    },
+    {
+      "partNumber": "88700-1E600-MFK",
+      "partDescription": "Headrest - Front Left - hatchback gray, driver seat - Hatchback",
+      "quantity": 1,
+      "price": "$184.47"
+    },
+    {
+      "partNumber": "88700-1E600-MWS",
+      "partDescription": "Headrest - Front Right - hatchback black, passenger seat - Hatchback",
+      "quantity": 1,
+      "price": "$170.73"
+    },
+    {
+      "partNumber": "89700-1E160-MWS",
+      "partDescription": "Headrest - Rear Center - Black, HATCHBACK, 2009-11 - Hatchback",
+      "quantity": 1,
+      "price": "$220.11"
+    },
+    {
+      "partNumber": "89700-1E060-MWS",
+      "partDescription": "Headrest - Rear Outer - Black, HATCHBACK, 2009-11 - Hatchback",
+      "quantity": 1,
+      "price": "$156.98"
+    },
+    {
+      "partNumber": "88720-1E000-OR",
+      "partDescription": "Headrest Guide - Front Left - driver seat, w/lever beige",
+      "quantity": 1,
+      "price": "$5.63"
+    },
+    {
+      "partNumber": "88720-1E000-WK",
+      "partDescription": "Headrest Guide - Front Left - driver seat, w/lever black",
+      "quantity": 1,
+      "price": "$5.63"
+    },
+    {
+      "partNumber": "88720-1E000-QS",
+      "partDescription": "Headrest Guide - Front Left - driver seat, w/lever gray",
+      "quantity": 1,
+      "price": "$5.63"
+    },
+    {
+      "partNumber": "88722-1E000-OR",
+      "partDescription": "Headrest Guide - Front Left - driver seat, w/o lever beige",
+      "quantity": 1,
+      "price": "$7.32"
+    },
+    {
+      "partNumber": "88722-1E000-WK",
+      "partDescription": "Headrest Guide - Front Left - driver seat, w/o lever black",
+      "quantity": 1,
+      "price": "$8.47"
+    },
+    {
+      "partNumber": "88722-1E000-QS",
+      "partDescription": "Headrest Guide - Front Left - driver seat, w/o lever gray",
+      "quantity": 1,
+      "price": "$7.32"
+    },
+    {
+      "partNumber": "81170-1E000",
+      "partDescription": "Hood / Trunk Prop Rod - Front",
+      "quantity": 1,
+      "price": "$42.29"
+    },
+    {
+      "partNumber": "93880-1E000",
+      "partDescription": "Hood Contact Switch - Front",
+      "quantity": 1,
+      "price": "$42.31"
+    },
+    {
+      "partNumber": "79110-1E000",
+      "partDescription": "Hood Hinge - Front Left",
+      "quantity": 1,
+      "price": "$66.79"
+    },
+    {
+      "partNumber": "79120-1E000",
+      "partDescription": "Hood Hinge - Front Right",
+      "quantity": 1,
+      "price": "$66.79"
+    },
+    {
+      "partNumber": "81125-1E000",
+      "partDescription": "Hood Insulation Pad",
+      "quantity": 1,
+      "price": "$262.63"
+    },
+    {
+      "partNumber": "8112637010",
+      "partDescription": "Hood Insulation Pad Clip",
+      "quantity": 14,
+      "price": "$1.87"
+    },
+    {
+      "partNumber": "81130-1G000",
+      "partDescription": "Hood Latch - Front",
+      "quantity": 1,
+      "price": "$78.74"
+    },
+    {
+      "partNumber": "81135-1E010",
+      "partDescription": "Hood Latch Striker Plate - Front",
+      "quantity": 1,
+      "price": "$141.89"
+    },
+    {
+      "partNumber": "66400-1E010",
+      "partDescription": "Hood Panel - Front",
+      "quantity": 1,
+      "price": "$738.37"
+    },
+    {
+      "partNumber": "81174-1G000",
+      "partDescription": "Hood Prop Rod Clip",
+      "quantity": 1,
+      "price": "$2.27"
+    },
+    {
+      "partNumber": "81173-1G000",
+      "partDescription": "Hood Prop Rod Grommet",
+      "quantity": 1,
+      "price": "$3.56"
+    },
+    {
+      "partNumber": "81190-1E100",
+      "partDescription": "Hood Release Cable - Front Forward - front",
+      "quantity": 1,
+      "price": "$101.52"
+    },
+    {
+      "partNumber": "81190-1E000",
+      "partDescription": "Hood Release Cable - Front Rearward - rear",
+      "quantity": 1,
+      "price": "$57.26"
+    },
+    {
+      "partNumber": "81180-1G000",
+      "partDescription": "Hood Release Handle - Front",
+      "quantity": 1,
+      "price": "$76.03"
+    },
+    {
+      "partNumber": "86435-1E000",
+      "partDescription": "Hood Seal - Front Forward",
+      "quantity": 1,
+      "price": "$26.58"
+    },
+    {
+      "partNumber": "86431-1E000",
+      "partDescription": "Hood Seal - Front Rearward",
+      "quantity": 1,
+      "price": "$79.58"
+    },
+    {
+      "partNumber": "81738-1E000",
+      "partDescription": "Hood Stop Buffer - Front Inner - inner",
+      "quantity": 1,
+      "price": "$3.02"
+    },
+    {
+      "partNumber": "82191-1E010",
+      "partDescription": "Hood Stop Buffer - Front Outer - outer",
+      "quantity": 1,
+      "price": "$4.11"
+    },
+    {
+      "partNumber": "96620-1G000",
+      "partDescription": "Horn",
+      "quantity": 1,
+      "price": "$140.08"
+    },
+    {
+      "partNumber": "1125106166B",
+      "partDescription": "Horn Mount Bolt",
+      "quantity": 1,
+      "price": "$1.87"
+    },
+    {
+      "partNumber": "97124-2H000",
+      "partDescription": "HVAC Air Adjustment Control Motor",
+      "quantity": 1,
+      "price": "$212.30"
+    },
+    {
+      "partNumber": "97158-1E000",
+      "partDescription": "HVAC Blend Door Lever - mix door",
+      "quantity": 1,
+      "price": "$7.87"
+    },
+    {
+      "partNumber": "97222-1E000",
+      "partDescription": "HVAC Blend Door Link - temp door",
+      "quantity": 1,
+      "price": "$3.87"
+    },
+    {
+      "partNumber": "97206-1E500",
+      "partDescription": "HVAC Blower Case Assembly",
+      "quantity": 1,
+      "price": "$560.40"
+    },
+    {
+      "partNumber": "97258-1E000",
+      "partDescription": "HVAC Blower Control Switch",
+      "quantity": 1,
+      "price": "$84.71"
+    },
+    {
+      "partNumber": "97113-1E000",
+      "partDescription": "HVAC Blower Motor - Incl.Impeller",
+      "quantity": 1,
+      "price": "$247.59"
+    },
+    {
+      "partNumber": "97035-1E100",
+      "partDescription": "HVAC Blower Motor Resistor",
+      "quantity": 1,
+      "price": "$103.35"
+    },
+    {
+      "partNumber": "97614-1E100",
+      "partDescription": "HVAC Evaporator Temperature Switch",
+      "quantity": 1,
+      "price": "$98.33"
+    },
+    {
+      "partNumber": "97138-1E001",
+      "partDescription": "HVAC Heater Core",
+      "quantity": 1,
+      "price": "$471.61"
+    },
+    {
+      "partNumber": "97310-1E000",
+      "partDescription": "HVAC Heater Hose - Inlet",
+      "quantity": 1,
+      "price": "$25.66"
+    },
+    {
+      "partNumber": "97320-1E000",
+      "partDescription": "HVAC Heater Hose - Outlet",
+      "quantity": 1,
+      "price": "$21.85"
+    },
+    {
+      "partNumber": "97150-1E000",
+      "partDescription": "HVAC Heater Mode Door Lever - foot",
+      "quantity": 1,
+      "price": "$4.73"
+    },
+    {
+      "partNumber": "97223-1E000",
+      "partDescription": "HVAC Mode Door Lever Link - Mode Door",
+      "quantity": 1,
+      "price": "$2.87"
+    },
+    {
+      "partNumber": "97224-1E000",
+      "partDescription": "HVAC Mode Door Lever Link - vent door",
+      "quantity": 1,
+      "price": "$2.87"
+    },
+    {
+      "partNumber": "977213K000",
+      "partDescription": "HVAC Pressure Switch",
+      "quantity": 1,
+      "price": "$382.97"
+    },
+    {
+      "partNumber": "97123-1E000",
+      "partDescription": "HVAC Recirculation Door Actuator Lever",
+      "quantity": 1,
+      "price": "$2.97"
+    },
+    {
+      "partNumber": "97250-1E065",
+      "partDescription": "HVAC Temperature Control Panel - w/AC",
+      "quantity": 1,
+      "price": "$466.52"
+    },
+    {
+      "partNumber": "97250-0N010",
+      "partDescription": "HVAC Temperature Control Panel - w/o AC",
+      "quantity": 1,
+      "price": "$425.24"
+    },
+    {
+      "partNumber": "97205-1E190",
+      "partDescription": "HVAC Unit Case - w/AC",
+      "quantity": 1,
+      "price": "$918.31"
+    },
+    {
+      "partNumber": "97205-1E015",
+      "partDescription": "HVAC Unit Case - w/o AC",
+      "quantity": 1,
+      "price": "$887.24"
+    },
+    {
+      "partNumber": "97650-38950",
+      "partDescription": "HVAC Unit Case Cover - all",
+      "quantity": 1,
+      "price": "$21.03"
+    },
+    {
+      "partNumber": "27330-26620",
+      "partDescription": "Ignition Condenser Bracket",
+      "quantity": 1,
+      "price": "$10.85"
+    },
+    {
+      "partNumber": "39252-26870",
+      "partDescription": "Ignition Knock (Detonation) Sensor",
+      "quantity": 1,
+      "price": "$152.69"
+    },
+    {
+      "partNumber": "39251-26870",
+      "partDescription": "Ignition Knock (Detonation) Sensor Bracket",
+      "quantity": 1,
+      "price": "$152.69"
+    },
+    {
+      "partNumber": "81920-1EA00",
+      "partDescription": "Ignition Lock Cylinder",
+      "quantity": 1,
+      "price": "$389.76"
+    },
+    {
+      "partNumber": "81918-2D000",
+      "partDescription": "Ignition Lock Housing Clamp",
+      "quantity": 1,
+      "price": "$13.58"
+    },
+    {
+      "partNumber": "93110-3K000",
+      "partDescription": "Ignition Switch",
+      "quantity": 1,
+      "price": "$53.32"
+    },
+    {
+      "partNumber": "94009-1E171",
+      "partDescription": "Instrument Cluster - w/tire pressure warning manual trans",
+      "quantity": 1,
+      "price": "$1,344.98"
+    },
+    {
+      "partNumber": "84830-1E000",
+      "partDescription": "Instrument Cluster Bezel",
+      "quantity": 1,
+      "price": "$154.65"
+    },
+    {
+      "partNumber": "94370-1E010",
+      "partDescription": "Instrument Cluster Housing",
+      "quantity": 1,
+      "price": "$41.32"
+    },
+    {
+      "partNumber": "84560-1E600-AR",
+      "partDescription": "Instrument Panel Air Bag - beige",
+      "quantity": 1,
+      "price": "$1,247.79"
+    },
+    {
+      "partNumber": "84560-1E600-WK",
+      "partDescription": "Instrument Panel Air Bag - Black",
+      "quantity": 1,
+      "price": "$1,247.79"
+    },
+    {
+      "partNumber": "84560-1E600-FZ",
+      "partDescription": "Instrument Panel Air Bag - Gray",
+      "quantity": 1,
+      "price": "$1,247.79"
+    },
+    {
+      "partNumber": "97470-1E000",
+      "partDescription": "Instrument Panel Air Duct - Front Center",
+      "quantity": 1,
+      "price": "$117.29"
+    },
+    {
+      "partNumber": "97360-1E100",
+      "partDescription": "Instrument Panel Air Duct - Rear Left Forward - front",
+      "quantity": 1,
+      "price": "$22.50"
+    },
+    {
+      "partNumber": "97365-1E000",
+      "partDescription": "Instrument Panel Air Duct - Rear Left Rearward - rear",
+      "quantity": 1,
+      "price": "$5.11"
+    },
+    {
+      "partNumber": "97370-1E100",
+      "partDescription": "Instrument Panel Air Duct - Rear Right Forward - front",
+      "quantity": 1,
+      "price": "$22.50"
+    },
+    {
+      "partNumber": "97375-1E000",
+      "partDescription": "Instrument Panel Air Duct - Rear Right Rearward - rear",
+      "quantity": 1,
+      "price": "$6.32"
+    },
+    {
+      "partNumber": "84760-1E300-QS",
+      "partDescription": "Instrument Panel Ashtray - hatchback all - Hatchback",
+      "quantity": 1,
+      "price": "$51.81"
+    },
+    {
+      "partNumber": "84741-1E000-AR",
+      "partDescription": "Instrument Panel Bezel - beige",
+      "quantity": 1,
+      "price": "$476.84"
+    },
+    {
+      "partNumber": "93701-1E100-WK",
+      "partDescription": "Instrument Panel Bezel - Black",
+      "quantity": 1,
+      "price": "$24.13"
+    },
+    {
+      "partNumber": "93701-1E100-QS",
+      "partDescription": "Instrument Panel Bezel - Gray",
+      "quantity": 1,
+      "price": "$25.45"
+    },
+    {
+      "partNumber": "93745-1E000-OR",
+      "partDescription": "Instrument Panel Cover - front fog lamp beige",
+      "quantity": 1,
+      "price": "$5.89"
+    },
+    {
+      "partNumber": "93745-1E000-WK",
+      "partDescription": "Instrument Panel Cover - front fog lamp black",
+      "quantity": 1,
+      "price": "$7.47"
+    },
+    {
+      "partNumber": "93745-1E000-QS",
+      "partDescription": "Instrument Panel Cover - front fog lamp gray",
+      "quantity": 1,
+      "price": "$7.47"
+    },
+    {
+      "partNumber": "84750-1E100-OR",
+      "partDescription": "Instrument Panel Cover - Lower - beige",
+      "quantity": 1,
+      "price": "$139.68"
+    },
+    {
+      "partNumber": "84750-1E100-WK",
+      "partDescription": "Instrument Panel Cover - Lower - Black",
+      "quantity": 1,
+      "price": "$139.68"
+    },
+    {
+      "partNumber": "84750-1E100-QS",
+      "partDescription": "Instrument Panel Cover - Lower - Gray",
+      "quantity": 1,
+      "price": "$139.68"
+    },
+    {
+      "partNumber": "93735-1E000-OR",
+      "partDescription": "Instrument Panel Cover - rear fog lamp beige",
+      "quantity": 1,
+      "price": "$5.89"
+    },
+    {
+      "partNumber": "93735-1E000-WK",
+      "partDescription": "Instrument Panel Cover - rear fog lamp black",
+      "quantity": 1,
+      "price": "$7.47"
+    },
+    {
+      "partNumber": "93735-1E000-QS",
+      "partDescription": "Instrument Panel Cover - rear fog lamp gray",
+      "quantity": 1,
+      "price": "$5.89"
+    },
+    {
+      "partNumber": "84410-1E500",
+      "partDescription": "Instrument Panel Crossmember",
+      "quantity": 1,
+      "price": "$617.97"
+    },
+    {
+      "partNumber": "94360-1G000",
+      "partDescription": "Instrument Panel Lens",
+      "quantity": 1,
+      "price": "$46.76"
+    },
+    {
+      "partNumber": "94369-25500",
+      "partDescription": "Instrument Panel Light Bulb",
+      "quantity": 3,
+      "price": "$13.00"
+    },
+    {
+      "partNumber": "84715-1E000-AR",
+      "partDescription": "Instrument Panel Side Cover - Left - beige",
+      "quantity": 1,
+      "price": "$19.89"
+    },
+    {
+      "partNumber": "84715-1E000-WK",
+      "partDescription": "Instrument Panel Side Cover - Left - Black",
+      "quantity": 1,
+      "price": "$19.89"
+    },
+    {
+      "partNumber": "84725-1E000-AR",
+      "partDescription": "Instrument Panel Side Cover - Right - beige",
+      "quantity": 1,
+      "price": "$19.89"
+    },
+    {
+      "partNumber": "84725-1E000-WK",
+      "partDescription": "Instrument Panel Side Cover - Right - Black",
+      "quantity": 1,
+      "price": "$19.89"
+    },
+    {
+      "partNumber": "84730-1E200-WK",
+      "partDescription": "Instrument Panel Trim Panel - hatchback black - Hatchback",
+      "quantity": 1,
+      "price": "$263.71"
+    },
+    {
+      "partNumber": "82610-1E030-WK",
+      "partDescription": "Interior Door Handle - Front Left Inner - hatchback, w/keyless entry black - Hatchback",
+      "quantity": 1,
+      "price": "$110.90"
+    },
+    {
+      "partNumber": "82610-1E030-S1",
+      "partDescription": "Interior Door Handle - Front Left Inner - hatchback, w/keyless entry gray - Hatchback",
+      "quantity": 1,
+      "price": "$110.90"
+    },
+    {
+      "partNumber": "82610-1E000-WK",
+      "partDescription": "Interior Door Handle - Front Left Inner - hatchback, w/o keyless entry black - Hatchback",
+      "quantity": 1,
+      "price": "$110.90"
+    },
+    {
+      "partNumber": "82620-1E030-WK",
+      "partDescription": "Interior Door Handle - Front Right Inner - hatchback, w/keyless entry black - Hatchback",
+      "quantity": 1,
+      "price": "$119.32"
+    },
+    {
+      "partNumber": "82620-1E030-S1",
+      "partDescription": "Interior Door Handle - Front Right Inner - hatchback, w/keyless entry gray - Hatchback",
+      "quantity": 1,
+      "price": "$94.73"
+    },
+    {
+      "partNumber": "82620-1E000-WK",
+      "partDescription": "Interior Door Handle - Front Right Inner - hatchback, w/o keyless entry black - Hatchback",
+      "quantity": 1,
+      "price": "$119.32"
+    },
+    {
+      "partNumber": "82611-1E010-WK",
+      "partDescription": "Interior Door Handle Trim - Front Left - Black, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$23.87"
+    },
+    {
+      "partNumber": "82621-1E010-WK",
+      "partDescription": "Interior Door Handle Trim - Front Right - Black, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$25.02"
+    },
+    {
+      "partNumber": "82710-1E200-CH",
+      "partDescription": "Interior Door Pull Handle - Front Left - hatchback, W/O POWER WINDOWS - Hatchback",
+      "quantity": 1,
+      "price": "$54.13"
+    },
+    {
+      "partNumber": "82710-1E264-WK",
+      "partDescription": "Interior Door Pull Handle - Front Left - hatchback, w/power window w/o power mirror - Hatchback",
+      "quantity": 1,
+      "price": "$121.35"
+    },
+    {
+      "partNumber": "82710-1E254-WK",
+      "partDescription": "Interior Door Pull Handle - Front Left - hatchback, w/power window w/power mirror - Hatchback",
+      "quantity": 1,
+      "price": "$378.03"
+    },
+    {
+      "partNumber": "82720-1E211-WK",
+      "partDescription": "Interior Door Pull Handle - Front Right - hatchback, w/power window w/o power mirror - Hatchback",
+      "quantity": 1,
+      "price": "$146.60"
+    },
+    {
+      "partNumber": "82734-3A000-WK",
+      "partDescription": "Interior Door Pull Handle Cap - Front - Black, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$1.02"
+    },
+    {
+      "partNumber": "82734-3A000-FZ",
+      "partDescription": "Interior Door Pull Handle Cap - Front - Gray, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$1.02"
+    },
+    {
+      "partNumber": "1249205203",
+      "partDescription": "Interior Door Pull Handle Screw - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$0.87"
+    },
+    {
+      "partNumber": "85340-1E050-QS",
+      "partDescription": "Interior Grab Bar - Rear - hatchback, rear w/head airbag - Hatchback",
+      "quantity": 1,
+      "price": "$81.95"
+    },
+    {
+      "partNumber": "85335-1E000",
+      "partDescription": "Interior Grab Bar Bracket - Front Left - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$24.69"
+    },
+    {
+      "partNumber": "85336-1E000",
+      "partDescription": "Interior Grab Bar Bracket - Front Right - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$24.69"
+    },
+    {
+      "partNumber": "85333-1E500",
+      "partDescription": "Interior Grab Bar Bracket - Rear Left - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$46.52"
+    },
+    {
+      "partNumber": "85334-1E500",
+      "partDescription": "Interior Grab Bar Bracket - Rear Right - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$45.40"
+    },
+    {
+      "partNumber": "85530-1E500-WK",
+      "partDescription": "Interior Quarter Panel Trim Panel - Rear Left Lower - Black, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$45.74"
+    },
+    {
+      "partNumber": "85550-1E500-WK",
+      "partDescription": "Interior Quarter Panel Trim Panel - Rear Left Upper - Black, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$95.19"
+    },
+    {
+      "partNumber": "85550-1E500-FZ",
+      "partDescription": "Interior Quarter Panel Trim Panel - Rear Left Upper - Gray, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$75.26"
+    },
+    {
+      "partNumber": "85850-1E530-WK",
+      "partDescription": "Interior Quarter Panel Trim Panel - Rear Left Upper - hatchback, w/head air bags black - Hatchback",
+      "quantity": 1,
+      "price": "$149.45"
+    },
+    {
+      "partNumber": "85850-1E520-WK",
+      "partDescription": "Interior Quarter Panel Trim Panel - Rear Left Upper - hatchback, w/o head air bags black - Hatchback",
+      "quantity": 1,
+      "price": "$122.61"
+    },
+    {
+      "partNumber": "85520-1E500-WK",
+      "partDescription": "Interior Quarter Panel Trim Panel - Rear Right Lower - Black, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$550.31"
+    },
+    {
+      "partNumber": "85560-1E500-WK",
+      "partDescription": "Interior Quarter Panel Trim Panel - Rear Right Upper - Black, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$79.02"
+    },
+    {
+      "partNumber": "85560-1E500-FZ",
+      "partDescription": "Interior Quarter Panel Trim Panel - Rear Right Upper - Gray, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$91.16"
+    },
+    {
+      "partNumber": "85860-1E530-WK",
+      "partDescription": "Interior Quarter Panel Trim Panel - Rear Right Upper - hatchback, w/head air bags black - Hatchback",
+      "quantity": 1,
+      "price": "$122.61"
+    },
+    {
+      "partNumber": "85860-1E520-WK",
+      "partDescription": "Interior Quarter Panel Trim Panel - Rear Right Upper - hatchback, w/o head air bags black - Hatchback",
+      "quantity": 1,
+      "price": "$128.39"
+    },
+    {
+      "partNumber": "85101-4A100",
+      "partDescription": "Interior Rear View Mirror - Front",
+      "quantity": 1,
+      "price": "$147.10"
+    },
+    {
+      "partNumber": "86115-22000",
+      "partDescription": "Interior Rear View Mirror Mounting Base - Front",
+      "quantity": 1,
+      "price": "$22.31"
+    },
+    {
+      "partNumber": "55326-1C000",
+      "partDescription": "Jounce Bumper - Rear - w/o sport suspension",
+      "quantity": 1,
+      "price": "$74.32"
+    },
+    {
+      "partNumber": "55326-1E000",
+      "partDescription": "Jounce Bumper - Rear - w/sport suspension",
+      "quantity": 1,
+      "price": "$115.03"
+    },
+    {
+      "partNumber": "95430-1E012",
+      "partDescription": "Keyless Entry Transmitter",
+      "quantity": 2,
+      "price": "$373.27"
+    },
+    {
+      "partNumber": "85325-21000-WK",
+      "partDescription": "Kick Panel Retainer - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$2.10"
+    },
+    {
+      "partNumber": "85823-1E001-WK",
+      "partDescription": "Kick Panel Trim - Left - Black, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$50.34"
+    },
+    {
+      "partNumber": "85824-1E001-WK",
+      "partDescription": "Kick Panel Trim - Right - Black, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$22.89"
+    },
+    {
+      "partNumber": "92501-3A000",
+      "partDescription": "License Plate Light Assembly - Rear - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$25.58"
+    },
+    {
+      "partNumber": "18643-05009-N",
+      "partDescription": "License Plate Light Bulb - Rear",
+      "quantity": 1,
+      "price": "$4.25"
+    },
+    {
+      "partNumber": "92510-3A000",
+      "partDescription": "License Plate Light Lens - Rear - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$20.32"
+    },
+    {
+      "partNumber": "73700-1E211",
+      "partDescription": "Liftgate - Rear - Hatchback",
+      "quantity": 1,
+      "price": "$1,422.63"
+    },
+    {
+      "partNumber": "87110-1E231",
+      "partDescription": "Liftgate Glass - Rear - Hyundai w/rear wiper - Hatchback",
+      "quantity": 1,
+      "price": "$564.19"
+    },
+    {
+      "partNumber": "79770-1E200",
+      "partDescription": "Liftgate Hinge - Rear - Hatchback",
+      "quantity": 1,
+      "price": "$42.76"
+    },
+    {
+      "partNumber": "81230-1E210",
+      "partDescription": "Liftgate Latch - Rear - Hatchback",
+      "quantity": 1,
+      "price": "$188.13"
+    },
+    {
+      "partNumber": "81720-1E020",
+      "partDescription": "Liftgate Latch Handle - Rear - Hatchback",
+      "quantity": 1,
+      "price": "$104.85"
+    },
+    {
+      "partNumber": "81770-1E000--DS",
+      "partDescription": "Liftgate Lift Support - Left",
+      "quantity": 1,
+      "price": "$206.87"
+    },
+    {
+      "partNumber": "95750-07000",
+      "partDescription": "Liftgate Lock Actuator - Rear - Hatchback",
+      "quantity": 1,
+      "price": "$99.55"
+    },
+    {
+      "partNumber": "81250-1ED00",
+      "partDescription": "Liftgate Lock Cylinder - w/keyless entry - Hatchback",
+      "quantity": 1,
+      "price": "$79.31"
+    },
+    {
+      "partNumber": "81250-1EC00",
+      "partDescription": "Liftgate Lock Cylinder - w/o keyless entry - Hatchback",
+      "quantity": 1,
+      "price": "$130.92"
+    },
+    {
+      "partNumber": "81210-1G200",
+      "partDescription": "Liftgate Lock Striker Plate - Rear - Hatchback",
+      "quantity": 1,
+      "price": "$107.40"
+    },
+    {
+      "partNumber": "87169-1E201",
+      "partDescription": "Liftgate Reveal Molding - Rear Left - Hatchback",
+      "quantity": 1,
+      "price": "$23.60"
+    },
+    {
+      "partNumber": "87179-1E201",
+      "partDescription": "Liftgate Reveal Molding - Rear Right - Hatchback",
+      "quantity": 1,
+      "price": "$23.60"
+    },
+    {
+      "partNumber": "82191-29000",
+      "partDescription": "Liftgate Stop Bumper - Rear - Hatchback",
+      "quantity": 2,
+      "price": "$4.53"
+    },
+    {
+      "partNumber": "81772-1E000",
+      "partDescription": "Liftgate Support Strut Holder - Rear Left - Hatchback",
+      "quantity": 1,
+      "price": "$17.39"
+    },
+    {
+      "partNumber": "81782-1E000",
+      "partDescription": "Liftgate Support Strut Holder - Rear Right - Hatchback",
+      "quantity": 1,
+      "price": "$27.02"
+    },
+    {
+      "partNumber": "81730-1E200-WK",
+      "partDescription": "Liftgate Trim Cover - Rear Left - Hatchback",
+      "quantity": 1,
+      "price": "$37.65"
+    },
+    {
+      "partNumber": "81750-1E200-WK",
+      "partDescription": "Liftgate Trim Cover - Rear Lower - w/o rear wiper - Hatchback",
+      "quantity": 1,
+      "price": "$272.98"
+    },
+    {
+      "partNumber": "81750-1E210-WK",
+      "partDescription": "Liftgate Trim Cover - Rear Lower - w/rear wiper - Hatchback",
+      "quantity": 1,
+      "price": "$272.98"
+    },
+    {
+      "partNumber": "81740-1E200-WK",
+      "partDescription": "Liftgate Trim Cover - Rear Right - Hatchback",
+      "quantity": 1,
+      "price": "$37.65"
+    },
+    {
+      "partNumber": "81760-1E200-WK",
+      "partDescription": "Liftgate Trim Cover - Rear Upper - Black - Hatchback",
+      "quantity": 1,
+      "price": "$48.32"
+    },
+    {
+      "partNumber": "81760-1E200-QS",
+      "partDescription": "Liftgate Trim Cover - Rear Upper - Gray - Hatchback",
+      "quantity": 1,
+      "price": "$48.32"
+    },
+    {
+      "partNumber": "858393X000",
+      "partDescription": "Liftgate Trim Cover Clip - Hatchback",
+      "quantity": 1,
+      "price": "$2.81"
+    },
+    {
+      "partNumber": "98980-1E000",
+      "partDescription": "Liftgate Washer Hose - Rear Center - CENTER - Hatchback",
+      "quantity": 1,
+      "price": "$39.95"
+    },
+    {
+      "partNumber": "98960-1E000",
+      "partDescription": "Liftgate Washer Hose - Rear Forward - front - Hatchback",
+      "quantity": 1,
+      "price": "$41.34"
+    },
+    {
+      "partNumber": "98950-1E000",
+      "partDescription": "Liftgate Washer Hose - Rear Rearward - rear - Hatchback",
+      "quantity": 1,
+      "price": "$46.82"
+    },
+    {
+      "partNumber": "39300-22600",
+      "partDescription": "Manifold Absolute Pressure Sensor",
+      "quantity": 1,
+      "price": "$191.26"
+    },
+    {
+      "partNumber": "43226-32000",
+      "partDescription": "Manual Transmission Countershaft Bearing - Left",
+      "quantity": 1,
+      "price": "$41.77"
+    },
+    {
+      "partNumber": "43225-32000",
+      "partDescription": "Manual Transmission Countershaft Bearing - Right",
+      "quantity": 1,
+      "price": "$46.39"
+    },
+    {
+      "partNumber": "43329-23010",
+      "partDescription": "Manual Transmission Differential Bearing",
+      "quantity": 2,
+      "price": "$63.90"
+    },
+    {
+      "partNumber": "43223-32000",
+      "partDescription": "Manual Transmission Input Shaft Bearing - Left",
+      "quantity": 1,
+      "price": "$56.21"
+    },
+    {
+      "partNumber": "43222-32000",
+      "partDescription": "Manual Transmission Input Shaft Bearing - Right",
+      "quantity": 1,
+      "price": "$69.05"
+    },
+    {
+      "partNumber": "43134-39011",
+      "partDescription": "Manual Transmission Input Shaft Seal",
+      "quantity": 1,
+      "price": "$9.60"
+    },
+    {
+      "partNumber": "21830-1G000",
+      "partDescription": "Manual Transmission Mount - Manual Trans",
+      "quantity": 1,
+      "price": "$389.98"
+    },
+    {
+      "partNumber": "43119-39080",
+      "partDescription": "Manual Transmission Output Shaft Seal - Left",
+      "quantity": 1,
+      "price": "$28.84"
+    },
+    {
+      "partNumber": "43119-39070",
+      "partDescription": "Manual Transmission Output Shaft Seal - Right",
+      "quantity": 1,
+      "price": "$28.84"
+    },
+    {
+      "partNumber": "84620-1E102-XM",
+      "partDescription": "Manual Transmission Shift Boot - manual trans, hatchback black - Hatchback",
+      "quantity": 1,
+      "price": "$76.34"
+    },
+    {
+      "partNumber": "84620-1E102-S1",
+      "partDescription": "Manual Transmission Shift Boot - manual trans, hatchback gray - Hatchback",
+      "quantity": 1,
+      "price": "$76.34"
+    },
+    {
+      "partNumber": "43794-1E150",
+      "partDescription": "Manual Transmission Shift Cable - From 06/17/2010",
+      "quantity": 1,
+      "price": "$202.45"
+    },
+    {
+      "partNumber": "43794-1E100",
+      "partDescription": "Manual Transmission Shift Cable - To 06/17/2010",
+      "quantity": 1,
+      "price": "$202.45"
+    },
+    {
+      "partNumber": "43126-32000",
+      "partDescription": "Manual Transmission Shift Linkage Seal",
+      "quantity": 1,
+      "price": "$10.05"
+    },
+    {
+      "partNumber": "18645-10019-N",
+      "partDescription": "Map Light Bulb",
+      "quantity": 1,
+      "price": "$3.18"
+    },
+    {
+      "partNumber": "18980-04815",
+      "partDescription": "Multi-Purpose Fuse - 10 amp",
+      "quantity": 1,
+      "price": "$1.56"
+    },
+    {
+      "partNumber": "18980-04816",
+      "partDescription": "Multi-Purpose Fuse - 15 amp",
+      "quantity": 1,
+      "price": "$1.23"
+    },
+    {
+      "partNumber": "18980-04817",
+      "partDescription": "Multi-Purpose Fuse - 20 amp",
+      "quantity": 1,
+      "price": "$1.52"
+    },
+    {
+      "partNumber": "18980-04818",
+      "partDescription": "Multi-Purpose Fuse - 25 Amp",
+      "quantity": 1,
+      "price": "$1.62"
+    },
+    {
+      "partNumber": "18980-04819",
+      "partDescription": "Multi-Purpose Fuse - 30 amp",
+      "quantity": 1,
+      "price": "$1.62"
+    },
+    {
+      "partNumber": "92800-1E201-OR",
+      "partDescription": "Overhead Console - Upper - w/o sunroof beige",
+      "quantity": 1,
+      "price": "$274.60"
+    },
+    {
+      "partNumber": "92800-1E201-QS",
+      "partDescription": "Overhead Console - Upper - w/o sunroof gray",
+      "quantity": 1,
+      "price": "$290.24"
+    },
+    {
+      "partNumber": "92800-1E300-QS",
+      "partDescription": "Overhead Console - Upper - w/sunroof black/gray",
+      "quantity": 1,
+      "price": "$290.24"
+    },
+    {
+      "partNumber": "39210-22610",
+      "partDescription": "Oxygen Sensor - Front",
+      "quantity": 1,
+      "price": "$286.67"
+    },
+    {
+      "partNumber": "39210-26620",
+      "partDescription": "Oxygen Sensor - Rear",
+      "quantity": 1,
+      "price": "$285.92"
+    },
+    {
+      "partNumber": "85910-1E500-WK",
+      "partDescription": "Package Tray - Rear - Black, HATCHBACK REAR COMPARTMENT - Hatchback",
+      "quantity": 1,
+      "price": "$495.73"
+    },
+    {
+      "partNumber": "59760-1G010",
+      "partDescription": "Parking Brake Cable - Rear Left",
+      "quantity": 1,
+      "price": "$128.48"
+    },
+    {
+      "partNumber": "59770-1G010",
+      "partDescription": "Parking Brake Cable - Rear Right",
+      "quantity": 1,
+      "price": "$141.13"
+    },
+    {
+      "partNumber": "84616-1E200-OR",
+      "partDescription": "Parking Brake Lever Cover - Front Forward - beige",
+      "quantity": 1,
+      "price": "$7.29"
+    },
+    {
+      "partNumber": "84616-1E200-WK",
+      "partDescription": "Parking Brake Lever Cover - Front Forward - Black",
+      "quantity": 1,
+      "price": "$8.44"
+    },
+    {
+      "partNumber": "84616-1E200-QS",
+      "partDescription": "Parking Brake Lever Cover - Front Forward - Gray",
+      "quantity": 1,
+      "price": "$8.82"
+    },
+    {
+      "partNumber": "84617-1E200-OR",
+      "partDescription": "Parking Brake Lever Cover - Front Rearward - beige",
+      "quantity": 1,
+      "price": "$17.85"
+    },
+    {
+      "partNumber": "84617-1E200-WK",
+      "partDescription": "Parking Brake Lever Cover - Front Rearward - Black",
+      "quantity": 1,
+      "price": "$21.58"
+    },
+    {
+      "partNumber": "84617-1E200-QS",
+      "partDescription": "Parking Brake Lever Cover - Front Rearward - Gray",
+      "quantity": 1,
+      "price": "$18.73"
+    },
+    {
+      "partNumber": "26740-26700",
+      "partDescription": "PCV Valve",
+      "quantity": 1,
+      "price": "$36.85"
+    },
+    {
+      "partNumber": "28192-1G000",
+      "partDescription": "PCV Valve Hose",
+      "quantity": 1,
+      "price": "$10.89"
+    },
+    {
+      "partNumber": "14711-37006-B",
+      "partDescription": "PCV Valve Hose Clamp",
+      "quantity": 1,
+      "price": "$5.71"
+    },
+    {
+      "partNumber": "59110-1G000--DS",
+      "partDescription": "Power Brake Booster",
+      "quantity": 1,
+      "price": "$908.53"
+    },
+    {
+      "partNumber": "59133-22000",
+      "partDescription": "Power Brake Booster Check Valve",
+      "quantity": 1,
+      "price": "$31.90"
+    },
+    {
+      "partNumber": "59145-24001",
+      "partDescription": "Power Brake Booster Gasket",
+      "quantity": 1,
+      "price": "$1.31"
+    },
+    {
+      "partNumber": "3137921001",
+      "partDescription": "Power Brake Booster Vacuum Hose Clamp",
+      "quantity": 1,
+      "price": "$1.60"
+    },
+    {
+      "partNumber": "88145-2C000",
+      "partDescription": "Power Seat Wiring Harness Clip - Front Left - driver seat",
+      "quantity": 1,
+      "price": "$1.73"
+    },
+    {
+      "partNumber": "57540-1E000",
+      "partDescription": "Power Steering Cooler - Front",
+      "quantity": 1,
+      "price": "$116.76"
+    },
+    {
+      "partNumber": "57776-1E000",
+      "partDescription": "Power Steering Hose Assembly - Front Left",
+      "quantity": 1,
+      "price": "$69.69"
+    },
+    {
+      "partNumber": "57780-1E000",
+      "partDescription": "Power Steering Hose Assembly - Front Right",
+      "quantity": 1,
+      "price": "$69.69"
+    },
+    {
+      "partNumber": "57510-1E001",
+      "partDescription": "Power Steering Pressure Hose",
+      "quantity": 1,
+      "price": "$444.19"
+    },
+    {
+      "partNumber": "57100-1E001",
+      "partDescription": "Power Steering Pump",
+      "quantity": 1,
+      "price": "$490.71"
+    },
+    {
+      "partNumber": "57225-22500",
+      "partDescription": "Power Steering Pump Bracket",
+      "quantity": 1,
+      "price": "$51.68"
+    },
+    {
+      "partNumber": "57130-1G000",
+      "partDescription": "Power Steering Pump Pulley",
+      "quantity": 1,
+      "price": "$68.37"
+    },
+    {
+      "partNumber": "57220-1G000",
+      "partDescription": "Power Steering Pump Reservoir Bracket",
+      "quantity": 1,
+      "price": "$19.08"
+    },
+    {
+      "partNumber": "57150-1G000",
+      "partDescription": "Power Steering Reservoir",
+      "quantity": 1,
+      "price": "$108.18"
+    },
+    {
+      "partNumber": "57153-1G000",
+      "partDescription": "Power Steering Reservoir Cap",
+      "quantity": 1,
+      "price": "$14.94"
+    },
+    {
+      "partNumber": "57530-1G000",
+      "partDescription": "Power Steering Reservoir Hose",
+      "quantity": 1,
+      "price": "$60.26"
+    },
+    {
+      "partNumber": "57560-1E010",
+      "partDescription": "Power Steering Return Hose - Cooler to Reservoir",
+      "quantity": 1,
+      "price": "$126.31"
+    },
+    {
+      "partNumber": "57520-1E011",
+      "partDescription": "Power Steering Return Hose - Gear to Cooler",
+      "quantity": 1,
+      "price": "$146.23"
+    },
+    {
+      "partNumber": "87810-1E080",
+      "partDescription": "Quarter Glass - Rear Left - hatchback, Hyundai w/o tinted glass - Hatchback",
+      "quantity": 1,
+      "price": "$220.50"
+    },
+    {
+      "partNumber": "87810-1E090",
+      "partDescription": "Quarter Glass - Rear Left - hatchback, Hyundai w/tinted glass - Hatchback",
+      "quantity": 1,
+      "price": "$220.50"
+    },
+    {
+      "partNumber": "87820-1E080",
+      "partDescription": "Quarter Glass - Rear Right - hatchback, Hyundai w/o tinted glass - Hatchback",
+      "quantity": 1,
+      "price": "$428.44"
+    },
+    {
+      "partNumber": "87820-1E090",
+      "partDescription": "Quarter Glass - Rear Right - hatchback, Hyundai w/tinted glass - Hatchback",
+      "quantity": 1,
+      "price": "$428.44"
+    },
+    {
+      "partNumber": "70100-1E3A1",
+      "partDescription": "Quarter Panel - Rear Left - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$1,560.31"
+    },
+    {
+      "partNumber": "71601-1E201",
+      "partDescription": "Quarter Panel - Rear Left Inner - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$818.06"
+    },
+    {
+      "partNumber": "71503-1EC61",
+      "partDescription": "Quarter Panel - Rear Left Outer - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$1,157.23"
+    },
+    {
+      "partNumber": "70200-1E3A1",
+      "partDescription": "Quarter Panel - Rear Right - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$1,575.94"
+    },
+    {
+      "partNumber": "71602-1E201",
+      "partDescription": "Quarter Panel - Rear Right Inner - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$852.85"
+    },
+    {
+      "partNumber": "71504-1EC60",
+      "partDescription": "Quarter Panel - Rear Right Outer - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$1,157.23"
+    },
+    {
+      "partNumber": "86821-1E200",
+      "partDescription": "Quarter Panel Splash Shield - Rear Left - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$66.28"
+    },
+    {
+      "partNumber": "86822-1E200",
+      "partDescription": "Quarter Panel Splash Shield - Rear Right - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$66.28"
+    },
+    {
+      "partNumber": "57700-1E100",
+      "partDescription": "Rack and Pinion Assembly - Complete Assembly",
+      "quantity": 1,
+      "price": "$1,176.76"
+    },
+    {
+      "partNumber": "57728-17000",
+      "partDescription": "Rack and Pinion Bellows",
+      "quantity": 2,
+      "price": "$53.74"
+    },
+    {
+      "partNumber": "57260-1E000",
+      "partDescription": "Rack and Pinion Heat Shield - Front",
+      "quantity": 1,
+      "price": "$29.94"
+    },
+    {
+      "partNumber": "57792-1C000",
+      "partDescription": "Rack and Pinion Mount Bushing",
+      "quantity": 1,
+      "price": "$22.73"
+    },
+    {
+      "partNumber": "25310-1E001",
+      "partDescription": "Radiator",
+      "quantity": 1,
+      "price": "$452.77"
+    },
+    {
+      "partNumber": "25330-17000",
+      "partDescription": "Radiator Cap",
+      "quantity": 1,
+      "price": "$20.20"
+    },
+    {
+      "partNumber": "25412-1E000",
+      "partDescription": "Radiator Coolant Hose - Lower",
+      "quantity": 1,
+      "price": "$36.16"
+    },
+    {
+      "partNumber": "25411-1E000",
+      "partDescription": "Radiator Coolant Hose - Upper",
+      "quantity": 1,
+      "price": "$27.02"
+    },
+    {
+      "partNumber": "25331-1W041",
+      "partDescription": "Radiator Hose Clamp",
+      "quantity": 2,
+      "price": "$6.77"
+    },
+    {
+      "partNumber": "25336-1E000",
+      "partDescription": "Radiator Insulator - Lower",
+      "quantity": 1,
+      "price": "$9.65"
+    },
+    {
+      "partNumber": "25335-1E000",
+      "partDescription": "Radiator Insulator - Upper",
+      "quantity": 1,
+      "price": "$8.21"
+    },
+    {
+      "partNumber": "25333-1E000",
+      "partDescription": "Radiator Mount Bracket - Upper",
+      "quantity": 1,
+      "price": "$14.47"
+    },
+    {
+      "partNumber": "64615-1E300",
+      "partDescription": "Radiator Support Bracket - Front Left - radiator suppo",
+      "quantity": 1,
+      "price": "$35.56"
+    },
+    {
+      "partNumber": "64625-1E300",
+      "partDescription": "Radiator Support Bracket - Front Right - radiator suppo",
+      "quantity": 1,
+      "price": "$35.56"
+    },
+    {
+      "partNumber": "64101-1E001",
+      "partDescription": "Radiator Support Panel - Front",
+      "quantity": 1,
+      "price": "$643.49"
+    },
+    {
+      "partNumber": "29110-1G000",
+      "partDescription": "Radiator Support Splash Shield - Front",
+      "quantity": 1,
+      "price": "$67.23"
+    },
+    {
+      "partNumber": "29130-1E000",
+      "partDescription": "Radiator Support Splash Shield - Front Left",
+      "quantity": 1,
+      "price": "$27.88"
+    },
+    {
+      "partNumber": "29120-1E000",
+      "partDescription": "Radiator Support Splash Shield - Front Right",
+      "quantity": 1,
+      "price": "$28.56"
+    },
+    {
+      "partNumber": "96200-1E112",
+      "partDescription": "Radio Antenna Base - w/o satallite hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$300.19"
+    },
+    {
+      "partNumber": "96250-1E000",
+      "partDescription": "Radio Antenna Base - w/satallite",
+      "quantity": 1,
+      "price": "$396.23"
+    },
+    {
+      "partNumber": "962172J000",
+      "partDescription": "Radio Antenna Base Nut",
+      "quantity": 1,
+      "price": "$15.18"
+    },
+    {
+      "partNumber": "96263-2E220",
+      "partDescription": "Radio Antenna Mast - w/o satallite",
+      "quantity": 1,
+      "price": "$69.61"
+    },
+    {
+      "partNumber": "96215-2J100",
+      "partDescription": "Radio Antenna Mast - w/satallite",
+      "quantity": 1,
+      "price": "$64.58"
+    },
+    {
+      "partNumber": "96145-1E080",
+      "partDescription": "Radio Bracket - Left - W/SATELLITE",
+      "quantity": 1,
+      "price": "$8.50"
+    },
+    {
+      "partNumber": "96146-1E080",
+      "partDescription": "Radio Bracket - Right - W/SATELLITE",
+      "quantity": 1,
+      "price": "$8.50"
+    },
+    {
+      "partNumber": "96101-1E100",
+      "partDescription": "Radio Bracket - w/o satellite",
+      "quantity": 1,
+      "price": "$7.52"
+    },
+    {
+      "partNumber": "96150-1G450",
+      "partDescription": "Radio Knob - w/o satellite",
+      "quantity": 2,
+      "price": "$7.63"
+    },
+    {
+      "partNumber": "96150-1E080",
+      "partDescription": "Radio Knob - W/SATELLITE",
+      "quantity": 2,
+      "price": "$9.58"
+    },
+    {
+      "partNumber": "69100-1E211",
+      "partDescription": "Rear Body Panel - Rear - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$436.18"
+    },
+    {
+      "partNumber": "85770-1E510-WK",
+      "partDescription": "Rear Body Panel Trim Panel - Rear - HATCHBACK REAR COMPARTMENT - Hatchback",
+      "quantity": 1,
+      "price": "$116.66"
+    },
+    {
+      "partNumber": "65170-1E200",
+      "partDescription": "Rocker Panel - Left Inner - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$166.53"
+    },
+    {
+      "partNumber": "71312-1ED60",
+      "partDescription": "Rocker Panel - Left Outer - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$962.87"
+    },
+    {
+      "partNumber": "65180-1E200",
+      "partDescription": "Rocker Panel - Right Inner - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$166.53"
+    },
+    {
+      "partNumber": "71322-1ED60",
+      "partDescription": "Rocker Panel - Right Outer - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$1,055.35"
+    },
+    {
+      "partNumber": "67142-1E000",
+      "partDescription": "Roof Bow - Center",
+      "quantity": 1,
+      "price": "$64.79"
+    },
+    {
+      "partNumber": "67152-1E000",
+      "partDescription": "Roof Bow - Front",
+      "quantity": 1,
+      "price": "$52.34"
+    },
+    {
+      "partNumber": "67136-1E200",
+      "partDescription": "Roof Bow - Rear",
+      "quantity": 1,
+      "price": "$32.35"
+    },
+    {
+      "partNumber": "67121-1E000",
+      "partDescription": "Roof Header Panel - Front",
+      "quantity": 1,
+      "price": "$51.32"
+    },
+    {
+      "partNumber": "67131-1E200",
+      "partDescription": "Roof Header Panel - Rear",
+      "quantity": 1,
+      "price": "$60.06"
+    },
+    {
+      "partNumber": "85385-1E501",
+      "partDescription": "Roof Insulator - Front - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$53.26"
+    },
+    {
+      "partNumber": "87231-1E200",
+      "partDescription": "Roof Molding - Left - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$282.95"
+    },
+    {
+      "partNumber": "87241-1E200",
+      "partDescription": "Roof Molding - Right - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$300.35"
+    },
+    {
+      "partNumber": "87245-1E000",
+      "partDescription": "Roof Molding Clip",
+      "quantity": 1,
+      "price": "$2.45"
+    },
+    {
+      "partNumber": "67111-1E200",
+      "partDescription": "Roof Panel - w/o sunroof hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$761.56"
+    },
+    {
+      "partNumber": "88500-1E270-WK",
+      "partDescription": "Seat Adjuster - Front Left - Black, driver seat",
+      "quantity": 1,
+      "price": "$1,777.15"
+    },
+    {
+      "partNumber": "88500-1E270-QS",
+      "partDescription": "Seat Adjuster - Front Left - Gray, driver seat",
+      "quantity": 1,
+      "price": "$1,777.15"
+    },
+    {
+      "partNumber": "88600-1E370-WK",
+      "partDescription": "Seat Adjuster - Front Right - black hatchback, passenger seat - Hatchback",
+      "quantity": 1,
+      "price": "$1,485.13"
+    },
+    {
+      "partNumber": "88901-1E100-MWS",
+      "partDescription": "Seat Armrest - Front Left - hatchback black, driver seat - Hatchback",
+      "quantity": 1,
+      "price": "$152.16"
+    },
+    {
+      "partNumber": "88901-1E100-MFE",
+      "partDescription": "Seat Armrest - Front Left - hatchback gray, driver seat - Hatchback",
+      "quantity": 1,
+      "price": "$152.16"
+    },
+    {
+      "partNumber": "88917-25000",
+      "partDescription": "Seat Armrest Bolt - driver seat",
+      "quantity": 1,
+      "price": "$5.60"
+    },
+    {
+      "partNumber": "88930-1E000-OR",
+      "partDescription": "Seat Armrest Cap - Front Left - beige, driver seat",
+      "quantity": 1,
+      "price": "$6.40"
+    },
+    {
+      "partNumber": "88930-1E000-WK",
+      "partDescription": "Seat Armrest Cap - Front Left - Black, driver seat",
+      "quantity": 1,
+      "price": "$7.69"
+    },
+    {
+      "partNumber": "88930-1E000-QS",
+      "partDescription": "Seat Armrest Cap - Front Left - Gray, driver seat",
+      "quantity": 1,
+      "price": "$6.76"
+    },
+    {
+      "partNumber": "88300-1E440-MWS",
+      "partDescription": "Seat Back Assembly - Front Left - hatchback black, driver seat - Hatchback",
+      "quantity": 1,
+      "price": "$2,382.03"
+    },
+    {
+      "partNumber": "89300-1E172-MWS",
+      "partDescription": "Seat Back Assembly - Rear Left - Black, HATCHBACK, 2009-11 - Hatchback",
+      "quantity": 1,
+      "price": "$1,763.44"
+    },
+    {
+      "partNumber": "89400-1E172-MWS",
+      "partDescription": "Seat Back Assembly - Rear Right - Black, HATCHBACK, 2009-11 - Hatchback",
+      "quantity": 1,
+      "price": "$1,763.44"
+    },
+    {
+      "partNumber": "88350-1E000",
+      "partDescription": "Seat Back Cushion - Front Left - driver seat",
+      "quantity": 1,
+      "price": "$291.50"
+    },
+    {
+      "partNumber": "88450-1E200",
+      "partDescription": "Seat Back Cushion - Front Right - passenger seat",
+      "quantity": 1,
+      "price": "$297.45"
+    },
+    {
+      "partNumber": "89350-1E161",
+      "partDescription": "Seat Back Cushion - Rear Left - HATCHBACK, 2009-11 - Hatchback",
+      "quantity": 1,
+      "price": "$338.65"
+    },
+    {
+      "partNumber": "89450-1E061",
+      "partDescription": "Seat Back Cushion - Rear Right - HATCHBACK, 2009-11 - Hatchback",
+      "quantity": 1,
+      "price": "$338.65"
+    },
+    {
+      "partNumber": "88370-1E030-MWS",
+      "partDescription": "Seat Back Cushion Cover - Front Left - hatchback black, driver seat - Hatchback",
+      "quantity": 1,
+      "price": "$544.63"
+    },
+    {
+      "partNumber": "88370-1E030-MFE",
+      "partDescription": "Seat Back Cushion Cover - Front Left - hatchback gray, driver seat - Hatchback",
+      "quantity": 1,
+      "price": "$544.63"
+    },
+    {
+      "partNumber": "88470-1E020-MWS",
+      "partDescription": "Seat Back Cushion Cover - Front Right - hatchback black, passenger seat - Hatchback",
+      "quantity": 1,
+      "price": "$530.95"
+    },
+    {
+      "partNumber": "89360-1E372-MWS",
+      "partDescription": "Seat Back Cushion Cover - Rear Left - Black, HATCHBACK, 2009-11 - Hatchback",
+      "quantity": 1,
+      "price": "$333.97"
+    },
+    {
+      "partNumber": "89460-1E172-MWS",
+      "partDescription": "Seat Back Cushion Cover - Rear Right - Black, HATCHBACK, 2009-11 - Hatchback",
+      "quantity": 1,
+      "price": "$667.05"
+    },
+    {
+      "partNumber": "88310-1E210",
+      "partDescription": "Seat Back Frame - Front Left - driver seat",
+      "quantity": 1,
+      "price": "$273.21"
+    },
+    {
+      "partNumber": "88410-1E200",
+      "partDescription": "Seat Back Frame - Front Right - passenger seat",
+      "quantity": 1,
+      "price": "$256.19"
+    },
+    {
+      "partNumber": "89310-1E260",
+      "partDescription": "Seat Back Frame - Rear Left - HATCHBACK, 2009-11 - Hatchback",
+      "quantity": 1,
+      "price": "$162.69"
+    },
+    {
+      "partNumber": "89410-1E200",
+      "partDescription": "Seat Back Frame - Rear Right - HATCHBACK, 2009-11 - Hatchback",
+      "quantity": 1,
+      "price": "$158.02"
+    },
+    {
+      "partNumber": "88390-1E500-OR",
+      "partDescription": "Seat Back Panel - Front Left - beige, driver seat",
+      "quantity": 1,
+      "price": "$105.42"
+    },
+    {
+      "partNumber": "88390-1E500-WK",
+      "partDescription": "Seat Back Panel - Front Left - Black, driver seat",
+      "quantity": 1,
+      "price": "$105.42"
+    },
+    {
+      "partNumber": "88390-1E500-QS",
+      "partDescription": "Seat Back Panel - Front Left - Gray, driver seat",
+      "quantity": 1,
+      "price": "$121.53"
+    },
+    {
+      "partNumber": "88390-1E500-MWK",
+      "partDescription": "Seat Back Panel - Front Right - hatchback black, passenger seat - Hatchback",
+      "quantity": 1,
+      "price": "$47.77"
+    },
+    {
+      "partNumber": "88140-1G000-OR",
+      "partDescription": "Seat Back Recliner Adjustment Handle - Front Left - beige, driver seat",
+      "quantity": 1,
+      "price": "$8.23"
+    },
+    {
+      "partNumber": "88140-1G000-WK",
+      "partDescription": "Seat Back Recliner Adjustment Handle - Front Left - Black, driver seat",
+      "quantity": 1,
+      "price": "$8.23"
+    },
+    {
+      "partNumber": "88240-1G000-OR",
+      "partDescription": "Seat Back Recliner Adjustment Handle - Front Right - beige, passenger seat",
+      "quantity": 1,
+      "price": "$7.63"
+    },
+    {
+      "partNumber": "88240-1G000-WK",
+      "partDescription": "Seat Back Recliner Adjustment Handle - Front Right - Black, passenger seat",
+      "quantity": 1,
+      "price": "$8.76"
+    },
+    {
+      "partNumber": "88890-1E530",
+      "partDescription": "Seat Belt Height Adjuster - Front - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$196.79"
+    },
+    {
+      "partNumber": "88870-1E530-WK",
+      "partDescription": "Seat Belt Lap and Shoulder Belt - Front Left - hatchback black - Hatchback",
+      "quantity": 1,
+      "price": "$1,089.16"
+    },
+    {
+      "partNumber": "88870-1E530-QS",
+      "partDescription": "Seat Belt Lap and Shoulder Belt - Front Left - hatchback gray - Hatchback",
+      "quantity": 1,
+      "price": "$1,089.16"
+    },
+    {
+      "partNumber": "88880-1E530-WK",
+      "partDescription": "Seat Belt Lap and Shoulder Belt - Front Right - hatchback black - Hatchback",
+      "quantity": 1,
+      "price": "$1,008.06"
+    },
+    {
+      "partNumber": "88880-1E530-QS",
+      "partDescription": "Seat Belt Lap and Shoulder Belt - Front Right - hatchback gray - Hatchback",
+      "quantity": 1,
+      "price": "$874.37"
+    },
+    {
+      "partNumber": "89810-1E581-WK",
+      "partDescription": "Seat Belt Lap and Shoulder Belt - Rear Center - hatchback black - Hatchback",
+      "quantity": 1,
+      "price": "$729.61"
+    },
+    {
+      "partNumber": "89810-1E581-QS",
+      "partDescription": "Seat Belt Lap and Shoulder Belt - Rear Center - hatchback gray - Hatchback",
+      "quantity": 1,
+      "price": "$668.94"
+    },
+    {
+      "partNumber": "89810-1E531-WK",
+      "partDescription": "Seat Belt Lap and Shoulder Belt - Rear Left - hatchback black - Hatchback",
+      "quantity": 1,
+      "price": "$291.08"
+    },
+    {
+      "partNumber": "89810-1E531-QS",
+      "partDescription": "Seat Belt Lap and Shoulder Belt - Rear Left - hatchback gray - Hatchback",
+      "quantity": 1,
+      "price": "$291.08"
+    },
+    {
+      "partNumber": "89820-1E531-WK",
+      "partDescription": "Seat Belt Lap and Shoulder Belt - Rear Right - hatchback black - Hatchback",
+      "quantity": 1,
+      "price": "$316.87"
+    },
+    {
+      "partNumber": "89820-1E531-QS",
+      "partDescription": "Seat Belt Lap and Shoulder Belt - Rear Right - hatchback gray - Hatchback",
+      "quantity": 1,
+      "price": "$299.82"
+    },
+    {
+      "partNumber": "88830-1E530-OR",
+      "partDescription": "Seat Belt Receptacle - Front Left - beige",
+      "quantity": 1,
+      "price": "$201.29"
+    },
+    {
+      "partNumber": "88830-1E530-WK",
+      "partDescription": "Seat Belt Receptacle - Front Left - Black",
+      "quantity": 1,
+      "price": "$201.29"
+    },
+    {
+      "partNumber": "88830-1E530-QS",
+      "partDescription": "Seat Belt Receptacle - Front Left - Gray",
+      "quantity": 1,
+      "price": "$201.29"
+    },
+    {
+      "partNumber": "88840-1E530-OR",
+      "partDescription": "Seat Belt Receptacle - Front Right - beige",
+      "quantity": 1,
+      "price": "$198.98"
+    },
+    {
+      "partNumber": "88840-1E530-WK",
+      "partDescription": "Seat Belt Receptacle - Front Right - Black",
+      "quantity": 1,
+      "price": "$210.34"
+    },
+    {
+      "partNumber": "88840-1E530-QS",
+      "partDescription": "Seat Belt Receptacle - Front Right - Gray",
+      "quantity": 1,
+      "price": "$210.34"
+    },
+    {
+      "partNumber": "89830-1E530-OR",
+      "partDescription": "Seat Belt Receptacle - Rear Left - beige",
+      "quantity": 1,
+      "price": "$152.71"
+    },
+    {
+      "partNumber": "89830-1E530-WK",
+      "partDescription": "Seat Belt Receptacle - Rear Left - Black",
+      "quantity": 1,
+      "price": "$186.03"
+    },
+    {
+      "partNumber": "89830-1E530-QS",
+      "partDescription": "Seat Belt Receptacle - Rear Left - Gray",
+      "quantity": 1,
+      "price": "$186.03"
+    },
+    {
+      "partNumber": "89840-1E530-OR",
+      "partDescription": "Seat Belt Receptacle - Rear Right - beige",
+      "quantity": 1,
+      "price": "$152.71"
+    },
+    {
+      "partNumber": "89840-1E530-WK",
+      "partDescription": "Seat Belt Receptacle - Rear Right - Black",
+      "quantity": 1,
+      "price": "$161.39"
+    },
+    {
+      "partNumber": "89840-1E530-QS",
+      "partDescription": "Seat Belt Receptacle - Rear Right - Gray",
+      "quantity": 1,
+      "price": "$186.03"
+    },
+    {
+      "partNumber": "88170-1E012-MWS",
+      "partDescription": "Seat Cover - Front Left - hatchback black, driver seat - Hatchback",
+      "quantity": 1,
+      "price": "$527.34"
+    },
+    {
+      "partNumber": "88270-1E000-MWS",
+      "partDescription": "Seat Cover - Front Right - hatchback black, passenger seat - Hatchback",
+      "quantity": 1,
+      "price": "$502.95"
+    },
+    {
+      "partNumber": "89160-1E170-MWS",
+      "partDescription": "Seat Cover - Rear - Black, HATCHBACK, 2009-11 - Hatchback",
+      "quantity": 1,
+      "price": "$899.47"
+    },
+    {
+      "partNumber": "88100-1E132-ORM",
+      "partDescription": "Seat Cushion Foam - Front Left - beige, driver seat",
+      "quantity": 1,
+      "price": "$2,175.69"
+    },
+    {
+      "partNumber": "88100-1E132-MWS",
+      "partDescription": "Seat Cushion Foam - Front Left - Black, driver seat",
+      "quantity": 1,
+      "price": "$2,175.69"
+    },
+    {
+      "partNumber": "88100-1E132-QFM",
+      "partDescription": "Seat Cushion Foam - Front Left - Gray, driver seat",
+      "quantity": 1,
+      "price": "$2,508.31"
+    },
+    {
+      "partNumber": "88200-1E600-NWU",
+      "partDescription": "Seat Cushion Foam - Front Right - Black, passenger seat",
+      "quantity": 1,
+      "price": "$1,481.76"
+    },
+    {
+      "partNumber": "88200-1E600-MFK",
+      "partDescription": "Seat Cushion Foam - Front Right - Gray, passenger seat",
+      "quantity": 1,
+      "price": "$1,148.79"
+    },
+    {
+      "partNumber": "89100-1E170-MWS",
+      "partDescription": "Seat Cushion Foam - Rear - Black, HATCHBACK, 2009-11 - Hatchback",
+      "quantity": 1,
+      "price": "$1,996.06"
+    },
+    {
+      "partNumber": "89160-22000",
+      "partDescription": "Seat Cushion Foam Grommet - HATCHBACK, 2009-11 - Hatchback",
+      "quantity": 2,
+      "price": "$12.52"
+    },
+    {
+      "partNumber": "88150-1E001",
+      "partDescription": "Seat Cushion Pad - Front Left - driver seat",
+      "quantity": 1,
+      "price": "$198.03"
+    },
+    {
+      "partNumber": "88110-1G100",
+      "partDescription": "Seat Frame - Front Left - driver seat",
+      "quantity": 1,
+      "price": "$76.52"
+    },
+    {
+      "partNumber": "88904-26001-AR",
+      "partDescription": "Seat Height Adjuster Handle - Front Left - beige, driver seat",
+      "quantity": 1,
+      "price": "$7.02"
+    },
+    {
+      "partNumber": "88904-26001-WK",
+      "partDescription": "Seat Height Adjuster Handle - Front Left - Black, driver seat",
+      "quantity": 1,
+      "price": "$7.02"
+    },
+    {
+      "partNumber": "89720-1E200",
+      "partDescription": "Seat Hinge - Rear Center - CENTER, HATCHBACK, 2009-11 - Hatchback",
+      "quantity": 1,
+      "price": "$39.97"
+    },
+    {
+      "partNumber": "89751-1G100",
+      "partDescription": "Seat Hinge - Rear Outer - HATCHBACK, 2009-11, outer - Hatchback",
+      "quantity": 1,
+      "price": "$32.29"
+    },
+    {
+      "partNumber": "88145-1G000-WK",
+      "partDescription": "Seat Hinge Cover - Front Left Inner - Black, driver seat",
+      "quantity": 1,
+      "price": "$21.35"
+    },
+    {
+      "partNumber": "88135-1G000-WK",
+      "partDescription": "Seat Hinge Cover - Front Left Outer - Black, driver seat",
+      "quantity": 1,
+      "price": "$21.35"
+    },
+    {
+      "partNumber": "88245-1G000-WK",
+      "partDescription": "Seat Hinge Cover - Front Right Inner - Black, passenger seat",
+      "quantity": 1,
+      "price": "$21.35"
+    },
+    {
+      "partNumber": "88235-1G000-WK",
+      "partDescription": "Seat Hinge Cover - Front Right Outer - Black, passenger seat",
+      "quantity": 1,
+      "price": "$21.35"
+    },
+    {
+      "partNumber": "65153-1G300",
+      "partDescription": "Seat Track Bracket - Left Inner - hatchback, inner - Hatchback",
+      "quantity": 1,
+      "price": "$14.69"
+    },
+    {
+      "partNumber": "65155-1E000",
+      "partDescription": "Seat Track Bracket - Left Outer - hatchback, outer - Hatchback",
+      "quantity": 1,
+      "price": "$5.18"
+    },
+    {
+      "partNumber": "65163-1G300",
+      "partDescription": "Seat Track Bracket - Right Inner - hatchback, inner - Hatchback",
+      "quantity": 1,
+      "price": "$14.69"
+    },
+    {
+      "partNumber": "65165-1E000",
+      "partDescription": "Seat Track Bracket - Right Outer - hatchback, outer - Hatchback",
+      "quantity": 1,
+      "price": "$5.18"
+    },
+    {
+      "partNumber": "88141-1G000-AR",
+      "partDescription": "Seat Trim Panel - Front Left Inner - beige, driver seat",
+      "quantity": 1,
+      "price": "$34.21"
+    },
+    {
+      "partNumber": "88141-1G000-WK",
+      "partDescription": "Seat Trim Panel - Front Left Inner - Black, driver seat",
+      "quantity": 1,
+      "price": "$34.21"
+    },
+    {
+      "partNumber": "88131-1G000-WK",
+      "partDescription": "Seat Trim Panel - Front Left Outer - Black, driver seat",
+      "quantity": 1,
+      "price": "$39.85"
+    },
+    {
+      "partNumber": "88241-1E060-WK",
+      "partDescription": "Seat Trim Panel - Front Right Inner - hatchback black, passenger seat - Hatchback",
+      "quantity": 1,
+      "price": "$22.47"
+    },
+    {
+      "partNumber": "88241-1E060-QS",
+      "partDescription": "Seat Trim Panel - Front Right Inner - hatchback gray, passenger seat - Hatchback",
+      "quantity": 1,
+      "price": "$2.97"
+    },
+    {
+      "partNumber": "88231-1E060-WK",
+      "partDescription": "Seat Trim Panel - Front Right Outer - hatchback black, passenger seat - Hatchback",
+      "quantity": 1,
+      "price": "$34.63"
+    },
+    {
+      "partNumber": "88231-1E060-QS",
+      "partDescription": "Seat Trim Panel - Front Right Outer - hatchback gray, passenger seat - Hatchback",
+      "quantity": 1,
+      "price": "$34.63"
+    },
+    {
+      "partNumber": "81940-1E000",
+      "partDescription": "Shift Interlock Cable",
+      "quantity": 1,
+      "price": "$69.68"
+    },
+    {
+      "partNumber": "46736-1G000",
+      "partDescription": "Shift Interlock Solenoid",
+      "quantity": 1,
+      "price": "$4.10"
+    },
+    {
+      "partNumber": "86352-1E000",
+      "partDescription": "Side Body Trim Protector - Front Upper - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$6.23"
+    },
+    {
+      "partNumber": "84120-1E000",
+      "partDescription": "Sound Absorber",
+      "quantity": 1,
+      "price": "$914.98"
+    },
+    {
+      "partNumber": "62850-1G000",
+      "partDescription": "Spare Tire Bolt",
+      "quantity": 1,
+      "price": "$11.50"
+    },
+    {
+      "partNumber": "65515-1E200",
+      "partDescription": "Spare Tire Bracket - Rear - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$23.24"
+    },
+    {
+      "partNumber": "85710-1E540-MC",
+      "partDescription": "Spare Tire Compartment Cover - Rear - HATCHBACK REAR COMPARTMENT - Hatchback",
+      "quantity": 1,
+      "price": "$601.94"
+    },
+    {
+      "partNumber": "18814-11051",
+      "partDescription": "Spark Plug - Vendor:NGK",
+      "quantity": 4,
+      "price": "$10.19"
+    },
+    {
+      "partNumber": "22443-23001",
+      "partDescription": "Spark Plug Tube Seal",
+      "quantity": 4,
+      "price": "$32.16"
+    },
+    {
+      "partNumber": "96330-1E150",
+      "partDescription": "Speaker - Front Left - w/equalizer w/MP3",
+      "quantity": 1,
+      "price": "$146.98"
+    },
+    {
+      "partNumber": "96331-1E160",
+      "partDescription": "Speaker - Front Right - w/equalizer w/MP3",
+      "quantity": 1,
+      "price": "$148.76"
+    },
+    {
+      "partNumber": "96360-1E050",
+      "partDescription": "Speaker - Rear Left - hatchback all - Hatchback",
+      "quantity": 1,
+      "price": "$146.98"
+    },
+    {
+      "partNumber": "96360-1E060",
+      "partDescription": "Speaker - Rear Right - hatchback all - Hatchback",
+      "quantity": 1,
+      "price": "$146.98"
+    },
+    {
+      "partNumber": "87210-1E250",
+      "partDescription": "Spoiler - Rear - w/o rear wiper - Hatchback",
+      "quantity": 1,
+      "price": "$615.51"
+    },
+    {
+      "partNumber": "87210-1E350",
+      "partDescription": "Spoiler - Rear - w/rear wiper - Hatchback",
+      "quantity": 1,
+      "price": "$610.14"
+    },
+    {
+      "partNumber": "36100-22810",
+      "partDescription": "Starter",
+      "quantity": 1,
+      "price": "$492.76"
+    },
+    {
+      "partNumber": "36120-22810",
+      "partDescription": "Starter Solenoid",
+      "quantity": 1,
+      "price": "$383.21"
+    },
+    {
+      "partNumber": "56310-1E000",
+      "partDescription": "Steering Column - w/o tilt",
+      "quantity": 1,
+      "price": "$1,008.84"
+    },
+    {
+      "partNumber": "56310-1E200",
+      "partDescription": "Steering Column - w/tilt",
+      "quantity": 1,
+      "price": "$1,198.11"
+    },
+    {
+      "partNumber": "84852-1E100-AR",
+      "partDescription": "Steering Column Cover - Lower - w/o tilt beige",
+      "quantity": 1,
+      "price": "$73.44"
+    },
+    {
+      "partNumber": "84852-1E100-WK",
+      "partDescription": "Steering Column Cover - Lower - w/o tilt black",
+      "quantity": 1,
+      "price": "$76.85"
+    },
+    {
+      "partNumber": "84852-1E150-AR",
+      "partDescription": "Steering Column Cover - Lower - w/tilt beige",
+      "quantity": 1,
+      "price": "$79.16"
+    },
+    {
+      "partNumber": "84852-1E150-WK",
+      "partDescription": "Steering Column Cover - Lower - w/tilt black",
+      "quantity": 1,
+      "price": "$79.16"
+    },
+    {
+      "partNumber": "84850-1E000-AR",
+      "partDescription": "Steering Column Cover - Upper - beige",
+      "quantity": 1,
+      "price": "$40.65"
+    },
+    {
+      "partNumber": "84850-1E000-WK",
+      "partDescription": "Steering Column Cover - Upper - Black",
+      "quantity": 1,
+      "price": "$40.65"
+    },
+    {
+      "partNumber": "84859-1E100",
+      "partDescription": "Steering Column Cover Grommet",
+      "quantity": 1,
+      "price": "$9.74"
+    },
+    {
+      "partNumber": "81910-1E020",
+      "partDescription": "Steering Column Lock - Manual Trans",
+      "quantity": 1,
+      "price": "$294.15"
+    },
+    {
+      "partNumber": "51715-1E100",
+      "partDescription": "Steering Knuckle - Front Left",
+      "quantity": 1,
+      "price": "$341.81"
+    },
+    {
+      "partNumber": "51716-1E100",
+      "partDescription": "Steering Knuckle - Front Right",
+      "quantity": 1,
+      "price": "$341.81"
+    },
+    {
+      "partNumber": "56370-1E500",
+      "partDescription": "Steering Shaft",
+      "quantity": 1,
+      "price": "$680.44"
+    },
+    {
+      "partNumber": "57724-1E000",
+      "partDescription": "Steering Tie Rod End - Inner",
+      "quantity": 2,
+      "price": "$149.40"
+    },
+    {
+      "partNumber": "56820-1E000",
+      "partDescription": "Steering Tie Rod End - Left Outer",
+      "quantity": 1,
+      "price": "$182.92"
+    },
+    {
+      "partNumber": "56820-1E900",
+      "partDescription": "Steering Tie Rod End - Right Outer",
+      "quantity": 1,
+      "price": "$182.92"
+    },
+    {
+      "partNumber": "13467-14007-B",
+      "partDescription": "Steering Tie Rod Nut",
+      "quantity": 1,
+      "price": "$1.39"
+    },
+    {
+      "partNumber": "56110-1E511-WK",
+      "partDescription": "Steering Wheel - w/leather black",
+      "quantity": 1,
+      "price": "$1,022.11"
+    },
+    {
+      "partNumber": "56110-1E500-AR",
+      "partDescription": "Steering Wheel - w/o leather beige",
+      "quantity": 1,
+      "price": "$429.23"
+    },
+    {
+      "partNumber": "56110-1E500-WK",
+      "partDescription": "Steering Wheel - w/o leather black",
+      "quantity": 1,
+      "price": "$453.74"
+    },
+    {
+      "partNumber": "56900-1E101-AR",
+      "partDescription": "Steering Wheel Air Bag - beige",
+      "quantity": 1,
+      "price": "$1,142.65"
+    },
+    {
+      "partNumber": "56900-1E101-WK",
+      "partDescription": "Steering Wheel Air Bag - Black",
+      "quantity": 1,
+      "price": "$1,178.31"
+    },
+    {
+      "partNumber": "13111-14003",
+      "partDescription": "Steering Wheel Nut",
+      "quantity": 1,
+      "price": "$0.27"
+    },
+    {
+      "partNumber": "56120-1E500-AR",
+      "partDescription": "Steering Wheel Trim - beige",
+      "quantity": 1,
+      "price": "$24.69"
+    },
+    {
+      "partNumber": "56120-1E500-WK",
+      "partDescription": "Steering Wheel Trim - black/gray",
+      "quantity": 1,
+      "price": "$44.39"
+    },
+    {
+      "partNumber": "13602-14006",
+      "partDescription": "Steering Wheel Washer",
+      "quantity": 1,
+      "price": "$1.00"
+    },
+    {
+      "partNumber": "85210-1E401-OR",
+      "partDescription": "Sun Visor - Left - hatchback, w/o vanity mirror - Hatchback",
+      "quantity": 1,
+      "price": "$155.13"
+    },
+    {
+      "partNumber": "85210-1E421-OR",
+      "partDescription": "Sun Visor - Left - hatchback, w/vanity mirror - Hatchback",
+      "quantity": 1,
+      "price": "$280.95"
+    },
+    {
+      "partNumber": "85220-1E401-QS",
+      "partDescription": "Sun Visor - Right - hatchback, w/o vanity mirror - Hatchback",
+      "quantity": 1,
+      "price": "$155.13"
+    },
+    {
+      "partNumber": "85220-1E421-QS",
+      "partDescription": "Sun Visor - Right - hatchback, w/vanity mirror - Hatchback",
+      "quantity": 1,
+      "price": "$280.95"
+    },
+    {
+      "partNumber": "85235-4D000-QS",
+      "partDescription": "Sun Visor Holder - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$15.39"
+    },
+    {
+      "partNumber": "12294-06204",
+      "partDescription": "Sun Visor Holder Screw - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$1.44"
+    },
+    {
+      "partNumber": "92890-3K000",
+      "partDescription": "Sun Visor Light - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$28.02"
+    },
+    {
+      "partNumber": "18645-05009-N",
+      "partDescription": "Sun Visor Light Bulb - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$4.70"
+    },
+    {
+      "partNumber": "67115-1E050",
+      "partDescription": "Sunroof Reinforcement",
+      "quantity": 1,
+      "price": "$490.81"
+    },
+    {
+      "partNumber": "51760-1G001",
+      "partDescription": "Suspension Ball Joint - Front",
+      "quantity": 2,
+      "price": "$169.94"
+    },
+    {
+      "partNumber": "54500-1E000",
+      "partDescription": "Suspension Control Arm - Front Left",
+      "quantity": 1,
+      "price": "$432.85"
+    },
+    {
+      "partNumber": "54501-1E000",
+      "partDescription": "Suspension Control Arm - Front Right",
+      "quantity": 1,
+      "price": "$432.85"
+    },
+    {
+      "partNumber": "54584-1G000",
+      "partDescription": "Suspension Control Arm Bushing - Front Forward",
+      "quantity": 2,
+      "price": "$36.94"
+    },
+    {
+      "partNumber": "54551-1E000",
+      "partDescription": "Suspension Control Arm Bushing - Front Rearward",
+      "quantity": 2,
+      "price": "$26.31"
+    },
+    {
+      "partNumber": "55421-3E000",
+      "partDescription": "Suspension Crossmember Bolt",
+      "quantity": 2,
+      "price": "$16.11"
+    },
+    {
+      "partNumber": "62485-1G000",
+      "partDescription": "Suspension Crossmember Insulator - Front",
+      "quantity": 1,
+      "price": "$48.24"
+    },
+    {
+      "partNumber": "62472-1G100",
+      "partDescription": "Suspension Crossmember Stop - Front Rearward - rear",
+      "quantity": 1,
+      "price": "$10.16"
+    },
+    {
+      "partNumber": "55310-1E100",
+      "partDescription": "Suspension Shock Absorber - Rear",
+      "quantity": 2,
+      "price": "$211.58"
+    },
+    {
+      "partNumber": "55370-1C000",
+      "partDescription": "Suspension Shock Absorber Bellows - Rear",
+      "quantity": 1,
+      "price": "$10.47"
+    },
+    {
+      "partNumber": "55311-1G000",
+      "partDescription": "Suspension Shock Absorber Mount - Rear",
+      "quantity": 2,
+      "price": "$100.58"
+    },
+    {
+      "partNumber": "55322-1C000",
+      "partDescription": "Suspension Shock Absorber Mount Washer",
+      "quantity": 1,
+      "price": "$6.19"
+    },
+    {
+      "partNumber": "1326210007K",
+      "partDescription": "Suspension Shock Absorber Nut",
+      "quantity": 1,
+      "price": "$3.37"
+    },
+    {
+      "partNumber": "54801-1G000--SJ",
+      "partDescription": "Suspension Stabilizer Bar - Front - w/o sport suspension",
+      "quantity": 1,
+      "price": "$288.79"
+    },
+    {
+      "partNumber": "54801-1G100--SJ",
+      "partDescription": "Suspension Stabilizer Bar - Front - w/sport suspension",
+      "quantity": 1,
+      "price": "$343.45"
+    },
+    {
+      "partNumber": "54812-1G000",
+      "partDescription": "Suspension Stabilizer Bar Bushing - Front",
+      "quantity": 2,
+      "price": "$21.31"
+    },
+    {
+      "partNumber": "54830-1G500",
+      "partDescription": "Suspension Stabilizer Bar Link Kit - Front Left",
+      "quantity": 1,
+      "price": "$72.77"
+    },
+    {
+      "partNumber": "54840-1G500",
+      "partDescription": "Suspension Stabilizer Bar Link Kit - Front Right",
+      "quantity": 1,
+      "price": "$72.77"
+    },
+    {
+      "partNumber": "13270-10007-K",
+      "partDescription": "Suspension Stabilizer Bar Link Nut - Front",
+      "quantity": 4,
+      "price": "$1.76"
+    },
+    {
+      "partNumber": "54650-1E200",
+      "partDescription": "Suspension Strut - Front Left",
+      "quantity": 1,
+      "price": "$294.18"
+    },
+    {
+      "partNumber": "54660-1E200",
+      "partDescription": "Suspension Strut - Front Right",
+      "quantity": 1,
+      "price": "$294.18"
+    },
+    {
+      "partNumber": "54612-2C000",
+      "partDescription": "Suspension Strut Bearing - Front",
+      "quantity": 1,
+      "price": "$25.39"
+    },
+    {
+      "partNumber": "54625-1E000",
+      "partDescription": "Suspension Strut Bellows - Front",
+      "quantity": 1,
+      "price": "$18.50"
+    },
+    {
+      "partNumber": "54645-07000",
+      "partDescription": "Suspension Strut Bolt",
+      "quantity": 1,
+      "price": "$5.97"
+    },
+    {
+      "partNumber": "54626-2K000",
+      "partDescription": "Suspension Strut Bumper - Front",
+      "quantity": 1,
+      "price": "$49.42"
+    },
+    {
+      "partNumber": "54610-1G505",
+      "partDescription": "Suspension Strut Mount - Front Left",
+      "quantity": 1,
+      "price": "$164.55"
+    },
+    {
+      "partNumber": "54610-1G555",
+      "partDescription": "Suspension Strut Mount - Front Right",
+      "quantity": 1,
+      "price": "$159.82"
+    },
+    {
+      "partNumber": "54639-1G100",
+      "partDescription": "Suspension Strut Mount Cap",
+      "quantity": 1,
+      "price": "$3.58"
+    },
+    {
+      "partNumber": "5455917100",
+      "partDescription": "Suspension Strut Mount Nut",
+      "quantity": 1,
+      "price": "$4.65"
+    },
+    {
+      "partNumber": "54620-1G100",
+      "partDescription": "Suspension Strut Mount Support Ring - Front Upper",
+      "quantity": 1,
+      "price": "$41.05"
+    },
+    {
+      "partNumber": "13504-12307-K",
+      "partDescription": "Suspension Strut Mount Washer",
+      "quantity": 1,
+      "price": "$1.19"
+    },
+    {
+      "partNumber": "54559-28000",
+      "partDescription": "Suspension Strut Nut",
+      "quantity": 1,
+      "price": "$1.53"
+    },
+    {
+      "partNumber": "55100-1E500",
+      "partDescription": "Suspension Subframe - Rear",
+      "quantity": 1,
+      "price": "$1,264.69"
+    },
+    {
+      "partNumber": "62400-1G010",
+      "partDescription": "Suspension Subframe Crossmember - Front",
+      "quantity": 1,
+      "price": "$1,300.23"
+    },
+    {
+      "partNumber": "55165-1E000",
+      "partDescription": "Suspension Subframe Insulator - Rear",
+      "quantity": 1,
+      "price": "$5.87"
+    },
+    {
+      "partNumber": "62473-1G010",
+      "partDescription": "Suspension Subframe Washer - Front Forward - front",
+      "quantity": 1,
+      "price": "$36.63"
+    },
+    {
+      "partNumber": "62473-1G100",
+      "partDescription": "Suspension Subframe Washer - Front Rearward - rear",
+      "quantity": 1,
+      "price": "$12.37"
+    },
+    {
+      "partNumber": "92401-1E211",
+      "partDescription": "Tail Light Assembly - Rear Left - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$225.71"
+    },
+    {
+      "partNumber": "92402-1E211",
+      "partDescription": "Tail Light Assembly - Rear Right - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$225.71"
+    },
+    {
+      "partNumber": "18644-28088-L",
+      "partDescription": "Tail Light Bulb - Rear - #1",
+      "quantity": 1,
+      "price": "$4.51"
+    },
+    {
+      "partNumber": "18642-27008-N",
+      "partDescription": "Tail Light Bulb - Rear - #2",
+      "quantity": 1,
+      "price": "$4.64"
+    },
+    {
+      "partNumber": "1864318004N",
+      "partDescription": "Tail Light Bulb - Rear - #3",
+      "quantity": 1,
+      "price": "$4.94"
+    },
+    {
+      "partNumber": "92410-1E211",
+      "partDescription": "Tail Light Housing - Rear Left - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$220.94"
+    },
+    {
+      "partNumber": "92420-1E211",
+      "partDescription": "Tail Light Housing - Rear Right - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$220.94"
+    },
+    {
+      "partNumber": "873131C000",
+      "partDescription": "Tail Light Nut",
+      "quantity": 1,
+      "price": "$1.06"
+    },
+    {
+      "partNumber": "71550-1E211",
+      "partDescription": "Tail Light Pocket - Rear Left - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$132.68"
+    },
+    {
+      "partNumber": "71560-1E211",
+      "partDescription": "Tail Light Pocket - Rear Right - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$134.02"
+    },
+    {
+      "partNumber": "35170-26900",
+      "partDescription": "Throttle Position Sensor",
+      "quantity": 1,
+      "price": "$219.63"
+    },
+    {
+      "partNumber": "05203-1E511",
+      "partDescription": "Tire Information Label - 14\" tire 175/70/R14",
+      "quantity": 1,
+      "price": "$2.81"
+    },
+    {
+      "partNumber": "05203-1E521",
+      "partDescription": "Tire Information Label - 14\" tire 185/65/R14",
+      "quantity": 1,
+      "price": "$2.81"
+    },
+    {
+      "partNumber": "05203-1E531",
+      "partDescription": "Tire Information Label - 15\" tire",
+      "quantity": 1,
+      "price": "$2.63"
+    },
+    {
+      "partNumber": "05203-1E540",
+      "partDescription": "Tire Information Label - 16\" tire",
+      "quantity": 1,
+      "price": "$2.63"
+    },
+    {
+      "partNumber": "95800-2F000",
+      "partDescription": "Tire Pressure Monitoring System (TPMS) Control Module",
+      "quantity": 1,
+      "price": "$175.53"
+    },
+    {
+      "partNumber": "52933-2F000",
+      "partDescription": "Tire Pressure Monitoring System (TPMS) Sensor - Incl.Cap,Nut and Valve",
+      "quantity": 4,
+      "price": "$71.89"
+    },
+    {
+      "partNumber": "52939-2M000",
+      "partDescription": "Tire Pressure Monitoring System (TPMS) Sensor Grommet",
+      "quantity": 4,
+      "price": "$26.63"
+    },
+    {
+      "partNumber": "52934-2F000",
+      "partDescription": "Tire Pressure Monitoring System (TPMS) Sensor Nut",
+      "quantity": 4,
+      "price": "$7.19"
+    },
+    {
+      "partNumber": "52936A5000",
+      "partDescription": "Tire Pressure Monitoring System (TPMS) Sensor Valve Assembly",
+      "quantity": 4,
+      "price": "$79.63"
+    },
+    {
+      "partNumber": "52933-2F400",
+      "partDescription": "Tire Pressure Monitoring System (TPMS) Valve Stem Cap",
+      "quantity": 4,
+      "price": "$2.44"
+    },
+    {
+      "partNumber": "86517-1E000",
+      "partDescription": "Tow Eye Cap - Front",
+      "quantity": 1,
+      "price": "$3.81"
+    },
+    {
+      "partNumber": "64645-1G300",
+      "partDescription": "Tow Hook Bracket - tow hook",
+      "quantity": 1,
+      "price": "$48.26"
+    },
+    {
+      "partNumber": "41100-23040",
+      "partDescription": "Transmission Clutch Friction Plate",
+      "quantity": 1,
+      "price": "$266.94"
+    },
+    {
+      "partNumber": "41300-23040",
+      "partDescription": "Transmission Clutch Pressure Plate",
+      "quantity": 1,
+      "price": "$308.84"
+    },
+    {
+      "partNumber": "45280-22100",
+      "partDescription": "Transmission Oil Pan",
+      "quantity": 1,
+      "price": "$94.19"
+    },
+    {
+      "partNumber": "85730-1E500-WK",
+      "partDescription": "Trunk Trim Panel - Rear Left - HATCHBACK REAR COMPARTMENT - Hatchback",
+      "quantity": 1,
+      "price": "$329.05"
+    },
+    {
+      "partNumber": "85740-1E500-WK",
+      "partDescription": "Trunk Trim Panel - Rear Right - HATCHBACK REAR COMPARTMENT - Hatchback",
+      "quantity": 1,
+      "price": "$329.05"
+    },
+    {
+      "partNumber": "85735-1E500-WK",
+      "partDescription": "Trunk Trim Panel Insert - Rear Left - HATCHBACK REAR COMPARTMENT - Hatchback",
+      "quantity": 1,
+      "price": "$90.77"
+    },
+    {
+      "partNumber": "85745-1E500-WK",
+      "partDescription": "Trunk Trim Panel Insert - Rear Right - HATCHBACK REAR COMPARTMENT - Hatchback",
+      "quantity": 1,
+      "price": "$95.58"
+    },
+    {
+      "partNumber": "92303-1E000",
+      "partDescription": "Turn Signal Light Assembly - Front Left",
+      "quantity": 1,
+      "price": "$37.51"
+    },
+    {
+      "partNumber": "92304-1E000",
+      "partDescription": "Turn Signal Light Assembly - Front Right",
+      "quantity": 1,
+      "price": "$37.51"
+    },
+    {
+      "partNumber": "18643-05008-N",
+      "partDescription": "Turn Signal Light Bulb - Front",
+      "quantity": 1,
+      "price": "$2.14"
+    },
+    {
+      "partNumber": "92311-1E000",
+      "partDescription": "Turn Signal Light Lens - Front Left",
+      "quantity": 1,
+      "price": "$25.06"
+    },
+    {
+      "partNumber": "92312-1E000",
+      "partDescription": "Turn Signal Light Lens - Front Right",
+      "quantity": 1,
+      "price": "$23.87"
+    },
+    {
+      "partNumber": "92550-2C000",
+      "partDescription": "Turn Signal Light Socket - Front",
+      "quantity": 1,
+      "price": "$11.32"
+    },
+    {
+      "partNumber": "31420-1G500",
+      "partDescription": "Vapor Canister",
+      "quantity": 2,
+      "price": "$379.06"
+    },
+    {
+      "partNumber": "31453-1G502",
+      "partDescription": "Vapor Canister Filter",
+      "quantity": 1,
+      "price": "$73.84"
+    },
+    {
+      "partNumber": "28910-26900",
+      "partDescription": "Vapor Canister Purge Solenoid - Location-Engine Bay",
+      "quantity": 1,
+      "price": "$85.42"
+    },
+    {
+      "partNumber": "31430-29200",
+      "partDescription": "Vapor Canister Purge Solenoid - Location-Vapor Canister",
+      "quantity": 1,
+      "price": "$169.42"
+    },
+    {
+      "partNumber": "31456-1G500",
+      "partDescription": "Vapor Canister Purge Solenoid Bracket",
+      "quantity": 1,
+      "price": "$26.50"
+    },
+    {
+      "partNumber": "29013-3E100",
+      "partDescription": "Vapor Canister Purge Solenoid Insulator",
+      "quantity": 1,
+      "price": "$11.35"
+    },
+    {
+      "partNumber": "00275-15001",
+      "partDescription": "Vehicle Battery",
+      "quantity": 1,
+      "price": "$175.21"
+    },
+    {
+      "partNumber": "96420-4A600",
+      "partDescription": "Vehicle Speed Sensor",
+      "quantity": 1,
+      "price": "$119.74"
+    },
+    {
+      "partNumber": "98611-1G001",
+      "partDescription": "Washer Fluid Reservoir",
+      "quantity": 1,
+      "price": "$37.98"
+    },
+    {
+      "partNumber": "98623-1G000",
+      "partDescription": "Washer Fluid Reservoir Cap - Front",
+      "quantity": 1,
+      "price": "$6.19"
+    },
+    {
+      "partNumber": "98622-1E001",
+      "partDescription": "Washer Fluid Reservoir Filler Pipe - Front",
+      "quantity": 1,
+      "price": "$19.23"
+    },
+    {
+      "partNumber": "52910-1E605",
+      "partDescription": "Wheel - 15\"",
+      "quantity": 1,
+      "price": "$480.40"
+    },
+    {
+      "partNumber": "52910-1E405",
+      "partDescription": "Wheel - 16\"",
+      "quantity": 1,
+      "price": "$495.44"
+    },
+    {
+      "partNumber": "52910-1E005",
+      "partDescription": "Wheel - 5.0J 14\"",
+      "quantity": 1,
+      "price": "$170.10"
+    },
+    {
+      "partNumber": "52910-1G105",
+      "partDescription": "Wheel - 5.5J 14\"",
+      "quantity": 1,
+      "price": "$170.10"
+    },
+    {
+      "partNumber": "52910-1G850",
+      "partDescription": "Wheel - Wheel, spare",
+      "quantity": 1,
+      "price": "$204.26"
+    },
+    {
+      "partNumber": "51720-02000",
+      "partDescription": "Wheel Bearing - Front",
+      "quantity": 2,
+      "price": "$172.76"
+    },
+    {
+      "partNumber": "52750-1G101",
+      "partDescription": "Wheel Bearing and Hub Assembly - Rear",
+      "quantity": 2,
+      "price": "$590.23"
+    },
+    {
+      "partNumber": "51718-1C010",
+      "partDescription": "Wheel Bearing Snap Ring - Front",
+      "quantity": 1,
+      "price": "$18.23"
+    },
+    {
+      "partNumber": "52960-1E400",
+      "partDescription": "Wheel Cap - 16\" alloy wheel",
+      "quantity": 1,
+      "price": "$38.40"
+    },
+    {
+      "partNumber": "52960-1E800",
+      "partDescription": "Wheel Cover",
+      "quantity": 1,
+      "price": "$164.06"
+    },
+    {
+      "partNumber": "51750-25001",
+      "partDescription": "Wheel Hub - Front",
+      "quantity": 2,
+      "price": "$179.47"
+    },
+    {
+      "partNumber": "5295014140",
+      "partDescription": "Wheel Lug Nut - alloy wheel 16\" wheel",
+      "quantity": 1,
+      "price": "$8.52"
+    },
+    {
+      "partNumber": "52950-3Y000",
+      "partDescription": "Wheel Lug Nut - steel wheel",
+      "quantity": 1,
+      "price": "$13.32"
+    },
+    {
+      "partNumber": "527552E000",
+      "partDescription": "Wheel Lug Stud - Front",
+      "quantity": 4,
+      "price": "$9.18"
+    },
+    {
+      "partNumber": "527552G000",
+      "partDescription": "Wheel Lug Stud - Rear - DRUM BRAKES",
+      "quantity": 4,
+      "price": "$8.81"
+    },
+    {
+      "partNumber": "82550-1E200",
+      "partDescription": "Window Channel - Front Left Lower - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$31.21"
+    },
+    {
+      "partNumber": "82530-1E200",
+      "partDescription": "Window Channel - Front Left Upper - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$167.18"
+    },
+    {
+      "partNumber": "82560-1E200",
+      "partDescription": "Window Channel - Front Right Lower - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$30.81"
+    },
+    {
+      "partNumber": "82540-1E200",
+      "partDescription": "Window Channel - Front Right Upper - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$172.21"
+    },
+    {
+      "partNumber": "82630-22001-QS",
+      "partDescription": "Window Crank Handle - Front - beige, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$11.76"
+    },
+    {
+      "partNumber": "82630-22001-WK",
+      "partDescription": "Window Crank Handle - Front - Black, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$11.76"
+    },
+    {
+      "partNumber": "82641-33002-WK",
+      "partDescription": "Window Crank Handle Cover - Front - Black, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$1.18"
+    },
+    {
+      "partNumber": "82641-33002-FZ",
+      "partDescription": "Window Crank Handle Cover - Front - Gray, hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$1.18"
+    },
+    {
+      "partNumber": "93710-0N000",
+      "partDescription": "Window Defroster Switch",
+      "quantity": 1,
+      "price": "$71.18"
+    },
+    {
+      "partNumber": "82643-21000",
+      "partDescription": "Window Handle Retaining Clip - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$1.87"
+    },
+    {
+      "partNumber": "98810-1E100",
+      "partDescription": "Window Motor - Front Left",
+      "quantity": 1,
+      "price": "$663.92"
+    },
+    {
+      "partNumber": "98820-1E100",
+      "partDescription": "Window Motor - Front Right",
+      "quantity": 1,
+      "price": "$705.10"
+    },
+    {
+      "partNumber": "82401-1E200",
+      "partDescription": "Window Regulator - Front Left - manual",
+      "quantity": 1,
+      "price": "$150.68"
+    },
+    {
+      "partNumber": "82401-1E210",
+      "partDescription": "Window Regulator - Front Left - Power Operated",
+      "quantity": 1,
+      "price": "$450.47"
+    },
+    {
+      "partNumber": "82402-1E200",
+      "partDescription": "Window Regulator - Front Right - manual",
+      "quantity": 1,
+      "price": "$150.68"
+    },
+    {
+      "partNumber": "82402-1E210",
+      "partDescription": "Window Regulator - Front Right - Power Operated",
+      "quantity": 1,
+      "price": "$450.47"
+    },
+    {
+      "partNumber": "86110-1E131",
+      "partDescription": "Windshield - Front - Hyundai w/tinted",
+      "quantity": 1,
+      "price": "$942.32"
+    },
+    {
+      "partNumber": "86131-1E000",
+      "partDescription": "Windshield Molding - Front",
+      "quantity": 1,
+      "price": "$54.61"
+    },
+    {
+      "partNumber": "86122-2D000",
+      "partDescription": "Windshield Spacer",
+      "quantity": 2,
+      "price": "$6.07"
+    },
+    {
+      "partNumber": "9J70031047",
+      "partDescription": "Windshield Washer Hose - Front Lower - lower",
+      "quantity": 1,
+      "price": "$29.94"
+    },
+    {
+      "partNumber": "98650-1E001",
+      "partDescription": "Windshield Washer Hose - Front Upper - Upper",
+      "quantity": 1,
+      "price": "$7.59"
+    },
+    {
+      "partNumber": "98630-1E100",
+      "partDescription": "Windshield Washer Nozzle - Front Left",
+      "quantity": 1,
+      "price": "$20.23"
+    },
+    {
+      "partNumber": "98630-1E110",
+      "partDescription": "Windshield Washer Nozzle - Front Right",
+      "quantity": 1,
+      "price": "$20.23"
+    },
+    {
+      "partNumber": "98510-1W010",
+      "partDescription": "Windshield Washer Pump",
+      "quantity": 1,
+      "price": "$94.50"
+    },
+    {
+      "partNumber": "9862214200",
+      "partDescription": "Windshield Washer Pump Grommet",
+      "quantity": 1,
+      "price": "$9.26"
+    },
+    {
+      "partNumber": "98310-1G000",
+      "partDescription": "Wiper Arm - Front Left",
+      "quantity": 1,
+      "price": "$94.50"
+    },
+    {
+      "partNumber": "98320-1G001",
+      "partDescription": "Wiper Arm - Front Right",
+      "quantity": 1,
+      "price": "$85.48"
+    },
+    {
+      "partNumber": "98815-2F000",
+      "partDescription": "Wiper Arm - Rear",
+      "quantity": 1,
+      "price": "$123.87"
+    },
+    {
+      "partNumber": "98380-1E050",
+      "partDescription": "Wiper Arm Cap",
+      "quantity": 1,
+      "price": "$3.32"
+    },
+    {
+      "partNumber": "98812-2F000",
+      "partDescription": "Wiper Arm Cap - Hatchback",
+      "quantity": 1,
+      "price": "$6.58"
+    },
+    {
+      "partNumber": "981362B000",
+      "partDescription": "Wiper Arm Nut",
+      "quantity": 1,
+      "price": "$4.44"
+    },
+    {
+      "partNumber": "1327006007K",
+      "partDescription": "Wiper Arm Nut - Hatchback",
+      "quantity": 1,
+      "price": "$1.27"
+    },
+    {
+      "partNumber": "99H09-AKA22-C",
+      "partDescription": "Wiper Blade - Front Left",
+      "quantity": 1,
+      "price": "$16.87"
+    },
+    {
+      "partNumber": "99H09-AKA16-C",
+      "partDescription": "Wiper Blade - Front Right",
+      "quantity": 1,
+      "price": "$16.87"
+    },
+    {
+      "partNumber": "00F09-AU014-RL2",
+      "partDescription": "Wiper Blade - Rear",
+      "quantity": 1,
+      "price": "$23.00"
+    },
+    {
+      "partNumber": "98356-2F600",
+      "partDescription": "Wiper Blade Clip - Front Left",
+      "quantity": 1,
+      "price": "$8.76"
+    },
+    {
+      "partNumber": "98356-2F400",
+      "partDescription": "Wiper Blade Clip - Front Right",
+      "quantity": 1,
+      "price": "$7.52"
+    },
+    {
+      "partNumber": "98351-1R000",
+      "partDescription": "Wiper Blade Refill - Front Left",
+      "quantity": 1,
+      "price": "$19.00"
+    },
+    {
+      "partNumber": "98120-1R010",
+      "partDescription": "Wiper Linkage",
+      "quantity": 1,
+      "price": "$175.29"
+    },
+    {
+      "partNumber": "98150-1G000",
+      "partDescription": "Wiper Linkage Seal",
+      "quantity": 1,
+      "price": "$1.24"
+    },
+    {
+      "partNumber": "98110-1G000",
+      "partDescription": "Wiper Motor - Front",
+      "quantity": 1,
+      "price": "$256.34"
+    },
+    {
+      "partNumber": "98700-1E000",
+      "partDescription": "Wiper Motor - Rear",
+      "quantity": 1,
+      "price": "$642.15"
+    },
+    {
+      "partNumber": "98712-2F000",
+      "partDescription": "Wiper Motor Seal - Hatchback",
+      "quantity": 1,
+      "price": "$23.10"
+    },
+    {
+      "partNumber": "93420-1C230",
+      "partDescription": "Wiper Switch - hatchback - Hatchback",
+      "quantity": 1,
+      "price": "$225.76"
+    }
+  ]
+}

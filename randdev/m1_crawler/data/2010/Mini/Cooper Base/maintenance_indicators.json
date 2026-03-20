@@ -1,0 +1,371 @@
+{
+  "header": {
+    "messages": [],
+    "date": "Fri, 20 Mar 2026 05:30:30 GMT",
+    "status": "OK",
+    "statusCode": 200
+  },
+  "body": {
+    "indicators": [
+      {
+        "name": "Brake Fluid Service",
+        "applications": [
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 2716,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Brake Fluid Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 258738997,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [],
+            "taxonomy": {
+              "action": "Drain, Refill & Bleed",
+              "commonName": "",
+              "groupID": 24,
+              "groupName": "Hydraulic System",
+              "literalName": "Brake Hydraulic System Drain, Refill & Bleed",
+              "subGroupID": 1,
+              "subGroupName": "@ALL",
+              "systemID": 2,
+              "systemName": "Brakes",
+              "taxonomyID": 11867
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          }
+        ]
+      },
+      {
+        "name": "Front Brake Service",
+        "applications": [
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 2718,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Front Brake Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23289846,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [],
+            "position": {
+              "name": "Front",
+              "pcdbPositionId": 22,
+              "positionId": 18,
+              "type": "MOTOR_Position"
+            },
+            "taxonomy": {
+              "action": "Inspect",
+              "commonName": "",
+              "groupID": 5,
+              "groupName": "Friction Items",
+              "literalName": "Brake Linings Inspect",
+              "subGroupID": 144,
+              "subGroupName": "Brake Linings",
+              "systemID": 2,
+              "systemName": "Brakes",
+              "taxonomyID": 11820
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          }
+        ]
+      },
+      {
+        "name": "Oil Service",
+        "applications": [
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1351,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Oil Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1871,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23188711,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [],
+            "taxonomy": {
+              "action": "R&R",
+              "commonName": "",
+              "groupID": 20,
+              "groupName": "Engine",
+              "literalName": "Engine Oil Filter R&R",
+              "subGroupID": 21,
+              "subGroupName": "Lubrication System",
+              "systemID": 7,
+              "systemName": "Powertrain",
+              "taxonomyID": 11747
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1351,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Oil Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1871,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23239328,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [],
+            "taxonomy": {
+              "action": "Drain & Refill",
+              "commonName": "",
+              "groupID": 20,
+              "groupName": "Engine",
+              "literalName": "Engine Oil Drain & Refill",
+              "subGroupID": 21,
+              "subGroupName": "Lubrication System",
+              "systemID": 7,
+              "systemName": "Powertrain",
+              "taxonomyID": 11785
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          }
+        ]
+      },
+      {
+        "name": "Rear Brake Service",
+        "applications": [
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 2715,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Rear Brake Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23290028,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [],
+            "position": {
+              "name": "Rear",
+              "pcdbPositionId": 30,
+              "positionId": 24,
+              "type": "MOTOR_Position"
+            },
+            "taxonomy": {
+              "action": "Inspect",
+              "commonName": "",
+              "groupID": 5,
+              "groupName": "Friction Items",
+              "literalName": "Brake Linings Inspect",
+              "subGroupID": 144,
+              "subGroupName": "Brake Linings",
+              "systemID": 2,
+              "systemName": "Brakes",
+              "taxonomyID": 11820
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          }
+        ]
+      },
+      {
+        "name": "Vehicle Check Service",
+        "applications": [
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1343,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Vehicle Check Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": false,
+                "notes": [],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23314390,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [],
+            "taxonomy": {
+              "action": "Inspect",
+              "commonName": "",
+              "groupID": 1,
+              "groupName": "@ALL",
+              "literalName": "Vehicle Fluid Levels Inspect",
+              "subGroupID": 176,
+              "subGroupName": "Filters & Fluids",
+              "systemID": 8,
+              "systemName": "Vehicle",
+              "taxonomyID": 11862
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          }
+        ]
+      }
+    ]
+  }
+}

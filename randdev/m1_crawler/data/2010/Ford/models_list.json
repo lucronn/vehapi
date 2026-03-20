@@ -1,0 +1,105 @@
+{
+  "contentSource": "Ford",
+  "models": [
+    {
+      "model": "Crown Victoria",
+      "id": "2010%3AFord%3ACrown+Victoria"
+    },
+    {
+      "model": "E-150",
+      "id": "2010%3AFord%3AE-150"
+    },
+    {
+      "model": "E-250",
+      "id": "2010%3AFord%3AE-250"
+    },
+    {
+      "model": "E-350",
+      "id": "2010%3AFord%3AE-350"
+    },
+    {
+      "model": "E-450",
+      "id": "2010%3AFord%3AE-450"
+    },
+    {
+      "model": "Edge",
+      "id": "2010%3AFord%3AEdge"
+    },
+    {
+      "model": "Escape",
+      "id": "2010%3AFord%3AEscape+-+M7"
+    },
+    {
+      "model": "Escape Hybrid",
+      "id": "2010%3AFord%3AEscape+Hybrid"
+    },
+    {
+      "model": "Expedition",
+      "id": "2010%3AFord%3AExpedition"
+    },
+    {
+      "model": "Explorer",
+      "id": "2010%3AFord%3AExplorer+-+U5+(U251+NA)"
+    },
+    {
+      "model": "Explorer Sport Trac",
+      "id": "2010%3AFord%3AExplorer+Sport+Trac+-+UK+(P251+NA)"
+    },
+    {
+      "model": "F-150",
+      "id": "2010%3AFord%3AF-150"
+    },
+    {
+      "model": "F-250",
+      "id": "2010%3AFord%3AF-250"
+    },
+    {
+      "model": "F-350",
+      "id": "2010%3AFord%3AF-350"
+    },
+    {
+      "model": "F-450",
+      "id": "2010%3AFord%3AF-450"
+    },
+    {
+      "model": "F-550",
+      "id": "2010%3AFord%3AF-550"
+    },
+    {
+      "model": "F-650/750",
+      "id": "2010%3AFord%3AF-650%2F750+-+FL"
+    },
+    {
+      "model": "Flex",
+      "id": "2010%3AFord%3AFlex"
+    },
+    {
+      "model": "Focus",
+      "id": "2010%3AFord%3AFocus+-+AU+(CW170+NA)"
+    },
+    {
+      "model": "Fusion",
+      "id": "2010%3AFord%3AFusion+-+DE+(CD338)"
+    },
+    {
+      "model": "Fusion Hybrid",
+      "id": "2010%3AFord%3AFusion+Hybrid"
+    },
+    {
+      "model": "Mustang",
+      "id": "2010%3AFord%3AMustang"
+    },
+    {
+      "model": "Ranger",
+      "id": "2010%3AFord%3ARanger+-+R3+(P150+NA)"
+    },
+    {
+      "model": "Taurus",
+      "id": "2010%3AFord%3ATaurus"
+    },
+    {
+      "model": "Transit Connect",
+      "id": "2010%3AFord%3ATransit+Connect+-+C7+(NA)"
+    }
+  ]
+}

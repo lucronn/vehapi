@@ -1,8 +1,10 @@
 # Vehicle Service API Frontend - Implementation Guide
 
-**Version**: 1.0  
-**Last Updated**: 2025-12-30  
-**Purpose**: Comprehensive guide for recreating the Vehicle Service API frontend application in any programming language or framework
+**Version**: 1.1  
+**Last Updated**: 2026-03-20  
+**Purpose**: Comprehensive guide for recreating the Vehicle Service API frontend application in any programming language or framework.  
+
+**Torque (this repo)**: Live delivery status is maintained in **`PROGRESS.md`** (repo root); Section **23.0** below is a snapshot aligned with that file as of **2026-03-20**.
 
 ## Table of Contents
 
@@ -95,11 +97,12 @@ graph TD
 
 ### 2.1 API Base Configuration
 
-**CRITICAL**: The application uses a pre-authenticated proxy endpoint:
+**CRITICAL**: The browser talks to **vehapiproxi** only (dev: Angular proxy → `/api`; prod: `environment.apiUrl`). **Do not** point the Torque SPA at `motor.com` / `sites.motor.com`.
 
-- **Base URL**: `https://us-central1-vehapi-torque.cloudfunctions.net/motorApiAuthProxy/`
-- **Authentication**: Handled by the proxy (no API keys required in application)
-- **Protocol**: HTTPS only
+- **Torque base URL**: Your deployed **`vehapiproxi`** origin + `/api` path (or local `http://localhost:3001` during backend dev), as configured in `environment*.ts` / `proxy.conf.json`.
+- **Legacy example** (older Firebase proxy): `https://us-central1-vehapi-torque.cloudfunctions.net/motorApiAuthProxy/` — only if that deployment is still in use.
+- **Authentication**: Motor/session credentials are held **inside the proxy**; the SPA uses **Supabase JWT** only where required (credits, article access, metadata). See `documentation/VEHAPIPROXI_API_CONSUMPTION.md`.
+- **Protocol**: HTTPS in production
 - **Content-Type**: `application/json` for request/response bodies
 
 ### 2.2 HTTP Client Setup
@@ -2988,6 +2991,38 @@ observable$
 
 ## 23. Implementation Checklist
 
+### 23.0 Torque repository — current progress (snapshot: 2026-03-20)
+
+> **Source of truth**: `PROGRESS.md` at the repository root. Update this subsection when major milestones ship.
+
+| Area | Status |
+|------|--------|
+| Stripe (checkout, portal, webhooks) | Complete |
+| Credits (balance, unlocks, transactions, verify-session) | Complete |
+| Section- & article-level access control + backend verification | Complete |
+| Lock overlay UX, credits in modal, navigation / mobile shell | Complete |
+| Vehicle data normalization (lazy / by-need, Supabase) | Complete |
+| Repo hygiene (`randdev/`, archived legacy docs & artifacts) | Complete |
+
+**Delivered (high level)**
+
+- [x] Angular 19 frontend (`src/`) with proxy to **`vehapiproxi`** (`/api` in dev; Vercel in production) — not limited to the legacy Firebase Cloud Function URL in §2.1
+- [x] Supabase auth + credits; Stripe checkout, billing portal, webhook fulfillment
+- [x] Article/catalog gating (`moduleType`), backend article access + cache hardening
+- [x] Auth HTTP behavior: Supabase `Authorization` only on credits and article routes that require it; stripped upstream for Motor proxy where needed
+- [x] Lazy normalization pipeline (articles, specs/fluids, maintenance intervals, parts); dashboard avoids eager full sync
+- [x] Independent backend deploy workflow when `vehapiproxi/**` changes (`deploy-backend.yml`)
+
+**Remaining / roadmap** (from `PROGRESS.md`)
+
+- [ ] Rate limiting on article content API (medium)
+- [ ] Full-vehicle unlock from lock overlay (low)
+- [ ] Optional: diagrams/component-locations normalized tables; extra API fields (parts/maintenance) as listed in `PROGRESS.md`
+
+### 23.1 Reference checklist (greenfield or M1-style port)
+
+The items below are a **technology-agnostic** checklist for building an equivalent client from scratch. They are **not** all unchecked for Torque — see **23.0** for this repo.
+
 ### Core Infrastructure
 
 - [ ] API client setup with proxy endpoint (`https://us-central1-vehapi-torque.cloudfunctions.net/motorApiAuthProxy/`)
@@ -3184,7 +3219,7 @@ observable$
 
 ### 25.1 Complete API Endpoint Reference
 
-See `API_CONSUMPTION_DOCUMENTATION.md` for complete API endpoint reference.
+See `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md` for complete API endpoint reference (upstream/M1 semantics; Torque calls vehapiproxi only).
 
 **Key Endpoints**:
 - Search: `GET /api/source/{contentSource}/vehicle/{vehicleId}/articles/v2`
@@ -3194,7 +3229,7 @@ See `API_CONSUMPTION_DOCUMENTATION.md` for complete API endpoint reference.
 - Bookmark Get: `GET /api/bookmark/{bookmarkId}`
 - Vehicles: `GET /api/years`, `GET /api/year/{year}/makes`, etc.
 - Parts: `GET /api/source/{contentSource}/vehicle/{vehicleId}/parts`
-- Maintenance Schedules: Multiple endpoints (see API_CONSUMPTION_DOCUMENTATION.md)
+- Maintenance Schedules: Multiple endpoints (see `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md`)
 - Graphics: `GET /api/source/{contentSource}/graphic/{id}`
 - User Settings: `GET /api/ui/userSettings`
 

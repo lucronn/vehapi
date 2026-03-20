@@ -1,0 +1,44 @@
+[
+  {
+    "id": "P:GUID-B9DD5E09-C5C4-429D-AF11-8C42199D9172",
+    "bucket": "Component Location Diagrams",
+    "title": "Automatic - 40TE Schematics and Diagrams (40TE - WITH VARIABLE LINE PRESSURE)",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 146
+  },
+  {
+    "id": "P:GUID-68B0B591-A1AE-4B37-8FA1-54DCF7CA3999",
+    "bucket": "Component Location Diagrams",
+    "title": "Automatic - 62TE Schematics and Diagrams",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 158
+  },
+  {
+    "id": "P:GUID-03C2DA36-D4F9-496A-816C-91C35AF61A54",
+    "bucket": "Component Location Diagrams",
+    "title": "SEALER LOCATIONS",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 3438
+  },
+  {
+    "id": "P:GUID-9D24B225-76FB-47E2-96FC-64D6B0187BE0",
+    "bucket": "Component Location Diagrams",
+    "title": "SEALERS AND SOUND DEADENERS",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 3439
+  },
+  {
+    "id": "P:GUID-1060230E-5D24-40B8-8910-E41ACF98F499",
+    "bucket": "Component Location Diagrams",
+    "title": "SOUND DEADENER LOCATIONS",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 3725
+  },
+  {
+    "id": "P:GUID-B81FDAAF-D632-4EC0-828E-5BCC70B045CF",
+    "bucket": "Component Location Diagrams",
+    "title": "STRUCTURAL ADHESIVE LOCATIONS",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 3791
+  }
+]

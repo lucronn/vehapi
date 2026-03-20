@@ -1,0 +1,16 @@
+[
+  {
+    "id": "P:GUID-9F6F7238-7786-4A71-9757-2DE348B7EED8",
+    "bucket": "Component Location Diagrams",
+    "title": "Automatic - 42RLE Schematics and Diagrams",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 112
+  },
+  {
+    "id": "P:GUID-0DCD3C84-0E6F-482C-9F3D-4414262AF7EF",
+    "bucket": "Component Location Diagrams",
+    "title": "Automatic - NAG1 Schematics and Diagrams",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 127
+  }
+]

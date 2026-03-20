@@ -19,7 +19,9 @@
 │   ├── src/             # function.js (entry), routes/, swagger.json, stripe, credits, supabase…
 │   └── API_CONSUMPTION_DOCUMENTATION.md  # upstream/M1 API behavior reference (not a client target)
 ├── api/                 # Vercel serverless shim → vehapiproxi
-├── documentation/       # IMPLEMENTATION_GUIDE.md, VEHAPIPROXI_API_CONSUMPTION.md, DEPLOYMENT.md…
+├── documentation/       # IMPLEMENTATION_GUIDE.md, VEHAPIPROXI_API_CONSUMPTION.md, DEPLOYMENT.md, AGENT_INSTRUCTIONS…
+├── vehapiproxi/         # API_CONSUMPTION_DOCUMENTATION.md (Motor proxy reference)
+├── randdev/             # optional / archived tooling (LOGGING, FIREBASE_SETUP, old crawler data)
 ├── scripts/             # build helpers (inject-eruda, validate models)
 ├── randdev/             # Dev utilities (crawler data)
 │   └── m1_crawler/     # Python crawler for year/make/model JSON
@@ -221,9 +223,10 @@ Checklist items mirror `documentation/IMPLEMENTATION_GUIDE.md` Section 23.
 |---|---|
 | `documentation/IMPLEMENTATION_GUIDE.md` | Comprehensive architecture, algorithms, and implementation specs (~3,400 lines) |
 | `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md` | M1/upstream API behavior reference (Torque calls vehapiproxi only) |
-| `documentation/VEHAPIPROXI_API_CONSUMPTION.md` | Torque proxy (`vehapiproxi`): routes, auth, CORS, middleware vs upstream Motor |
+| `documentation/VEHAPIPROXI_API_CONSUMPTION.md` | Torque proxy: routes, auth, CORS vs Motor (companion to `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md`) |
+| `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md` | Long-form Motor API / proxy consumption notes |
 | `documentation/DEPLOYMENT.md` | Multi-platform deployment guides |
-| `documentation/LOGGING.md` | Logging standards |
+| `randdev/LOGGING.md` | Logging standards (reference) |
 
 ## Agent rules (`.agents/rules/`)
 

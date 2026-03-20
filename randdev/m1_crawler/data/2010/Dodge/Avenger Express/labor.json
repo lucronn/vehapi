@@ -1,0 +1,55 @@
+[
+  {
+    "articleId": "L:23702659",
+    "title": "ABS Control Module R&R",
+    "labor": {
+      "header": {
+        "messages": [],
+        "date": "Fri, 20 Mar 2026 05:30:59 GMT",
+        "status": "OK",
+        "statusCode": 200
+      },
+      "body": {
+        "mainOperation": {
+          "subtitle": "General",
+          "id": 23702659,
+          "title": "ABS Control Module R&R",
+          "operationType": "Main Operation",
+          "position": "",
+          "qualifier": "",
+          "laborTime": 2.0,
+          "skillName": "General",
+          "parts": [
+            {
+              "partNumber": "68061733AA",
+              "partDescription": "ABS Control Module - Exc.Stability Control",
+              "quantity": 1,
+              "price": "$332.00"
+            },
+            {
+              "partNumber": "68067417AA",
+              "partDescription": "ABS Control Module - stability control",
+              "quantity": 1,
+              "price": "$247.00"
+            },
+            {
+              "partNumber": "05159024AA",
+              "partDescription": "ABS Control Module O-Ring",
+              "quantity": 1,
+              "price": "$9.45"
+            }
+          ]
+        },
+        "notes": [
+          {
+            "noteId": 53752,
+            "text": "Includes: The removal of component and all necessary components for access. Does not include: Brake Hydraulic System Bleed, system diagnosis, testing, reprogramming, or a vehicle road test."
+          }
+        ],
+        "includedOperations": [],
+        "optionalOperations": [],
+        "isPartsEntitlementActive": true
+      }
+    }
+  }
+]

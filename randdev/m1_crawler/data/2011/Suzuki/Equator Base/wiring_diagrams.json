@@ -1,0 +1,426 @@
+[
+  {
+    "id": "WIR:536140264",
+    "bucket": "Wiring Diagrams",
+    "title": "ABS",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986588?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536121080",
+    "bucket": "Wiring Diagrams",
+    "title": "Air Bags",
+    "subtitle": "Without Power Seats",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986614?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536529709",
+    "bucket": "Wiring Diagrams",
+    "title": "Air Bags",
+    "subtitle": "With Power Seats",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986603?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536367494",
+    "bucket": "Wiring Diagrams",
+    "title": "Audible Warning System",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986845?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:535997105",
+    "bucket": "Wiring Diagrams",
+    "title": "Body Controls",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986479?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536234926",
+    "bucket": "Wiring Diagrams",
+    "title": "Charging System",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986554?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536291454",
+    "bucket": "Wiring Diagrams",
+    "title": "Computer Data Lines",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986497?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536456749",
+    "bucket": "Wiring Diagrams",
+    "title": "Daytime Running Lamps",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986731?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536144916",
+    "bucket": "Wiring Diagrams",
+    "title": "Electrochromic Mirror",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986719?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536227026",
+    "bucket": "Wiring Diagrams",
+    "title": "Electronic Compass/Outside Temperature",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986822?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536037318",
+    "bucket": "Wiring Diagrams",
+    "title": "Entertainment (Audio Systems)",
+    "subtitle": "EXTENDED CAB, PREMIUM SOUND SYSTEM TYPE2",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986862?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536108447",
+    "bucket": "Wiring Diagrams",
+    "title": "Entertainment (Audio Systems)",
+    "subtitle": "BASE SOUND SYSTEM TYPE 1",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986848?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536384947",
+    "bucket": "Wiring Diagrams",
+    "title": "Entertainment (Audio Systems)",
+    "subtitle": "CREW CAB, PREMIUM SOUND SYSTEM TYPE2",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986876?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536193168",
+    "bucket": "Wiring Diagrams",
+    "title": "Fog Lamps",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986740?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:538969219",
+    "bucket": "Wiring Diagrams",
+    "title": "Fuel Controls",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986514?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536291448",
+    "bucket": "Wiring Diagrams",
+    "title": "Fuse Panel",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986453?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536291451",
+    "bucket": "Wiring Diagrams",
+    "title": "Ground Distribution",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986656?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536122628",
+    "bucket": "Wiring Diagrams",
+    "title": "Headlamps",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986723?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536153264",
+    "bucket": "Wiring Diagrams",
+    "title": "Heated Seats",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986626?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536234943",
+    "bucket": "Wiring Diagrams",
+    "title": "Horn",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986820?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536799598",
+    "bucket": "Wiring Diagrams",
+    "title": "HVAC Controls",
+    "subtitle": "MANUAL TEMPERATURE CONTROL",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986642?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536456756",
+    "bucket": "Wiring Diagrams",
+    "title": "Instrumentation",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986839?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536699917",
+    "bucket": "Wiring Diagrams",
+    "title": "Integrated Power Module",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986492?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536394358",
+    "bucket": "Wiring Diagrams",
+    "title": "Interior Lighting",
+    "subtitle": "Without Power Door Locks",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986807?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536538471",
+    "bucket": "Wiring Diagrams",
+    "title": "Interior Lighting",
+    "subtitle": "With Power Door Locks",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986790?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536186011",
+    "bucket": "Wiring Diagrams",
+    "title": "Keyless Entry",
+    "subtitle": "EXTENDED CAB",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986677?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536262570",
+    "bucket": "Wiring Diagrams",
+    "title": "Keyless Entry",
+    "subtitle": "CREW CAB",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986685?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536799608",
+    "bucket": "Wiring Diagrams",
+    "title": "Lighting Control Module",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986736?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536384937",
+    "bucket": "Wiring Diagrams",
+    "title": "Parking Lamp",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986751?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:538969215",
+    "bucket": "Wiring Diagrams",
+    "title": "Power Distribution",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986640?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536462113",
+    "bucket": "Wiring Diagrams",
+    "title": "Power Locks",
+    "subtitle": "CREW CAB",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986667?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536531741",
+    "bucket": "Wiring Diagrams",
+    "title": "Power Locks",
+    "subtitle": "EXTENDED CAB",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986658?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536122625",
+    "bucket": "Wiring Diagrams",
+    "title": "Power Mirrors",
+    "subtitle": "WITHOUT HEATED MIRROR",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986717?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536227017",
+    "bucket": "Wiring Diagrams",
+    "title": "Power Mirrors",
+    "subtitle": "WITH HEATED MIRROR",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986714?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:537180739",
+    "bucket": "Wiring Diagrams",
+    "title": "Power Seat",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986621?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536121070",
+    "bucket": "Wiring Diagrams",
+    "title": "Power Windows",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986487?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536153250",
+    "bucket": "Wiring Diagrams",
+    "title": "Power/Auxiliary Outlet",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986475?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536969905",
+    "bucket": "Wiring Diagrams",
+    "title": "Rear Window Defogger",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986818?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536212826",
+    "bucket": "Wiring Diagrams",
+    "title": "Reverse Lamps",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986759?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536037300",
+    "bucket": "Wiring Diagrams",
+    "title": "Security/Anti-Theft",
+    "subtitle": "EXTENDED CAB",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986689?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536435763",
+    "bucket": "Wiring Diagrams",
+    "title": "Security/Anti-Theft",
+    "subtitle": "CREW CAB",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986702?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:537902033",
+    "bucket": "Wiring Diagrams",
+    "title": "Security/Anti-Theft",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986706?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536234054",
+    "bucket": "Wiring Diagrams",
+    "title": "Starting",
+    "subtitle": "WITH CLUTCH INTERLOCK CANCEL SYSTEM",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986545?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536291455",
+    "bucket": "Wiring Diagrams",
+    "title": "Starting",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986518?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536969881",
+    "bucket": "Wiring Diagrams",
+    "title": "Starting",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986549?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536262583",
+    "bucket": "Wiring Diagrams",
+    "title": "Stop Lamp",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986755?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536435766",
+    "bucket": "Wiring Diagrams",
+    "title": "Sun Roof",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986711?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536367471",
+    "bucket": "Wiring Diagrams",
+    "title": "Tire Pressure Monitoring System",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986574?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536462127",
+    "bucket": "Wiring Diagrams",
+    "title": "Trailer Towing",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986768?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:538969224",
+    "bucket": "Wiring Diagrams",
+    "title": "Transfer Case Controls",
+    "subtitle": "WITH PART TIME 4WD",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986571?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536394335",
+    "bucket": "Wiring Diagrams",
+    "title": "Transmission Controls",
+    "subtitle": "Automatic Trans",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986562?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:537180754",
+    "bucket": "Wiring Diagrams",
+    "title": "Turn Signal Lamp",
+    "subtitle": "",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986745?w=240&h=220",
+    "sort": 0
+  },
+  {
+    "id": "WIR:536405156",
+    "bucket": "Wiring Diagrams",
+    "title": "Wiper/Washer",
+    "subtitle": "Front",
+    "thumbnailHref": "api/source/MOTOR/graphic/11986812?w=240&h=220",
+    "sort": 0
+  }
+]

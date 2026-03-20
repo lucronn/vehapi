@@ -1,0 +1,23 @@
+[
+  {
+    "id": "P:GUID-872FE059-1C9D-4072-BB1D-1DC12ED89C23",
+    "bucket": "Component Location Diagrams",
+    "title": "Automatic - 40TE Schematics and Diagrams (40/41TE - WITH VARIABLE LINE PRESSURE)",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 134
+  },
+  {
+    "id": "P:GUID-B19CA62B-955C-42F0-ACD9-67FCF351A14F",
+    "bucket": "Component Location Diagrams",
+    "title": "Automatic - 41TE Schematics and Diagrams (40/41TE - WITH VARIABLE LINE PRESSURE)",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 148
+  },
+  {
+    "id": "P:GUID-AE4E30F1-4FA2-4C1B-B850-B72DC2727F61",
+    "bucket": "Component Location Diagrams",
+    "title": "Automatic - 62TE Schematics and Diagrams",
+    "thumbnailHref": "images/multiple-diagrams-available.svg",
+    "sort": 160
+  }
+]

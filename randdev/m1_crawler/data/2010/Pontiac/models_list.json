@@ -1,0 +1,29 @@
+{
+  "contentSource": "GeneralMotors",
+  "models": [
+    {
+      "model": "Vibe - FWD",
+      "id": "3321"
+    },
+    {
+      "model": "G6",
+      "id": "3283"
+    },
+    {
+      "model": "G5",
+      "id": "3313"
+    },
+    {
+      "model": "Vibe - AWD",
+      "id": "3320"
+    },
+    {
+      "model": "Solstice",
+      "id": "3314"
+    },
+    {
+      "model": "G3",
+      "id": "3395"
+    }
+  ]
+}

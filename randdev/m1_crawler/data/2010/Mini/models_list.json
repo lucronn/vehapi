@@ -1,0 +1,65 @@
+{
+  "contentSource": "MOTOR",
+  "models": [
+    {
+      "model": "Cooper Base",
+      "id": "61130",
+      "engines": [
+        {
+          "id": "61130:3178",
+          "name": "1.6L L4 (N12B16A) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Cooper Clubman",
+      "id": "61131",
+      "engines": [
+        {
+          "id": "61131:3178",
+          "name": "1.6L L4 (N12B16A) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Cooper John Cooper Works",
+      "id": "61134",
+      "engines": [
+        {
+          "id": "61134:3596",
+          "name": "1.6L L4 (N14B16C) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Cooper John Cooper Works Clubman",
+      "id": "61135",
+      "engines": [
+        {
+          "id": "61135:3596",
+          "name": "1.6L L4 (N14B16C) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Cooper S",
+      "id": "61132",
+      "engines": [
+        {
+          "id": "61132:3296",
+          "name": "1.6L L4 (N14B16A) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Cooper S Clubman",
+      "id": "61133",
+      "engines": [
+        {
+          "id": "61133:3296",
+          "name": "1.6L L4 (N14B16A) Turbocharged GAS Electronic"
+        }
+      ]
+    }
+  ]
+}

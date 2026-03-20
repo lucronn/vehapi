@@ -1,0 +1,140 @@
+{
+  "F": {
+    "header": {
+      "messages": [],
+      "date": "Fri, 20 Mar 2026 05:31:29 GMT",
+      "status": "OK",
+      "statusCode": 200
+    },
+    "body": {
+      "applications": []
+    }
+  },
+  "N": {
+    "header": {
+      "messages": [],
+      "date": "Fri, 20 Mar 2026 05:31:30 GMT",
+      "status": "OK",
+      "statusCode": 200
+    },
+    "body": {
+      "applications": [
+        {
+          "maintenanceSchedules": [
+            {
+              "maintenanceScheduleId": 1921,
+              "documents": [],
+              "frequencyCode": "N",
+              "frequencyDescription": "OEM Doesn't Specify",
+              "indicator": "",
+              "intervalKilometer": 0,
+              "intervalMile": 0,
+              "intervalMonth": 0,
+              "intervalOperatingHours": 0,
+              "isActive": true,
+              "notes": [],
+              "severeServiceDescription": "Yes"
+            }
+          ],
+          "applicationId": 23188699,
+          "category": {
+            "article": "Scheduled Maintenance Times",
+            "id": 23,
+            "product": "Estimating",
+            "productType": "Estimating"
+          },
+          "qualifiers": [],
+          "taxonomy": {
+            "action": "R&R",
+            "commonName": "",
+            "groupID": 20,
+            "groupName": "Engine",
+            "literalName": "Engine Oil Filter R&R",
+            "subGroupID": 21,
+            "subGroupName": "Lubrication System",
+            "systemID": 7,
+            "systemName": "Powertrain",
+            "taxonomyID": 11747
+          },
+          "contentSilos": [
+            {
+              "id": 33,
+              "name": "Preventative Maintenance Schedules Service Time",
+              "sourceSilos": [
+                {
+                  "id": 2,
+                  "name": "PMSST"
+                }
+              ]
+            }
+          ],
+          "attributeMappings": [],
+          "isActive": true
+        },
+        {
+          "maintenanceSchedules": [
+            {
+              "maintenanceScheduleId": 1921,
+              "documents": [],
+              "frequencyCode": "N",
+              "frequencyDescription": "OEM Doesn't Specify",
+              "indicator": "",
+              "intervalKilometer": 0,
+              "intervalMile": 0,
+              "intervalMonth": 0,
+              "intervalOperatingHours": 0,
+              "isActive": true,
+              "notes": [],
+              "severeServiceDescription": "Yes"
+            }
+          ],
+          "applicationId": 23239316,
+          "category": {
+            "article": "Scheduled Maintenance Times",
+            "id": 23,
+            "product": "Estimating",
+            "productType": "Estimating"
+          },
+          "qualifiers": [],
+          "taxonomy": {
+            "action": "Drain & Refill",
+            "commonName": "",
+            "groupID": 20,
+            "groupName": "Engine",
+            "literalName": "Engine Oil Drain & Refill",
+            "subGroupID": 21,
+            "subGroupName": "Lubrication System",
+            "systemID": 7,
+            "systemName": "Powertrain",
+            "taxonomyID": 11785
+          },
+          "contentSilos": [
+            {
+              "id": 33,
+              "name": "Preventative Maintenance Schedules Service Time",
+              "sourceSilos": [
+                {
+                  "id": 2,
+                  "name": "PMSST"
+                }
+              ]
+            }
+          ],
+          "attributeMappings": [],
+          "isActive": true
+        }
+      ]
+    }
+  },
+  "R": {
+    "header": {
+      "messages": [],
+      "date": "Fri, 20 Mar 2026 05:31:31 GMT",
+      "status": "OK",
+      "statusCode": 200
+    },
+    "body": {
+      "applications": []
+    }
+  }
+}
