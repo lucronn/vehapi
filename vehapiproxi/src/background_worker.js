@@ -13,6 +13,18 @@ import {
 import { normalizeCategoryParams } from './categorize.js';
 import { buildContentItemFromCatalogArticle } from './content_item_mapper.js';
 import { extractTextFromPdfBase64 } from './pdf_native_text.js';
+import { extractTextFromPdfPageViaNemotron } from './nemotron_multimodal.js';
+
+const ENABLE_NEMOTRON_PDF_VISION_FALLBACK =
+    String(process.env.ENABLE_NEMOTRON_PDF_VISION_FALLBACK || '').toLowerCase() === 'true';
+const MIN_NATIVE_PDF_TEXT_LENGTH = 120;
+
+function htmlEscape(s) {
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
 
 function determineSchemaType(urlPath) {
     if (urlPath.includes('/dtcs') || urlPath.includes('/dtc/')) return 'dtcs';
@@ -275,13 +287,34 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                 const parsed = JSON.parse(rawData);
                 htmlContent = parsed?.body?.html || parsed?.html || null;
                 if (!htmlContent && parsed?.body?.pdf) {
-                    const pdfText = await extractTextFromPdfBase64(String(parsed.body.pdf), { maxPages: 40 });
+                    const pdfBase64 = String(parsed.body.pdf);
+                    let pdfText = await extractTextFromPdfBase64(pdfBase64, { maxPages: 40 });
+
+                    // Only invoke vision fallback for sparse/non-text PDFs and only when explicitly enabled.
+                    if (
+                        (!pdfText || pdfText.trim().length < MIN_NATIVE_PDF_TEXT_LENGTH) &&
+                        ENABLE_NEMOTRON_PDF_VISION_FALLBACK
+                    ) {
+                        try {
+                            const b64 = pdfBase64.replace(/^data:application\/pdf;base64,/i, '');
+                            const pdfBuf = Buffer.from(b64, 'base64');
+                            const visionText = await extractTextFromPdfPageViaNemotron(pdfBuf, 0, {
+                                instruction:
+                                    'Transcribe all readable text from this automotive service PDF page. ' +
+                                    'Preserve line breaks. Return only text.'
+                            });
+                            if (visionText && visionText.trim().length > pdfText.trim().length) {
+                                pdfText = visionText.trim();
+                            }
+                        } catch (visionErr) {
+                            logger.warn(
+                                `[${taskId}] Nemotron PDF fallback failed for ${urlPath}: ${visionErr.message}`
+                            );
+                        }
+                    }
+
                     if (pdfText && pdfText.length >= 20) {
-                        const esc = pdfText
-                            .replace(/&/g, '&amp;')
-                            .replace(/</g, '&lt;')
-                            .replace(/>/g, '&gt;');
-                        htmlContent = `<pre class="torque-native-pdf-text" data-source="native-pdf-text">${esc}</pre>`;
+                        htmlContent = `<pre class="torque-native-pdf-text" data-source="native-pdf-or-vision-text">${htmlEscape(pdfText)}</pre>`;
                     }
                 }
             } catch {
