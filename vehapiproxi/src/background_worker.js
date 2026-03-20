@@ -9,7 +9,9 @@ import {
     ensureVehicleExists,
     markVehicleNormalized,
     insertEvidenceIngest,
-    updateContentItemEnrichment
+    updateContentItemEnrichment,
+    findEntityIdsByExternalId,
+    insertEvidenceLinks
 } from './supabase.js';
 import { normalizeCategoryParams } from './categorize.js';
 import { buildContentItemFromCatalogArticle } from './content_item_mapper.js';
@@ -208,6 +210,7 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
     const startTime = Date.now();
     let status = 'COMPLETED';
     let errorMessage = null;
+    let evidenceId = null;
 
     try {
         if (targetSchema === 'metadata') {
@@ -335,6 +338,8 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
             });
             if (!ev.success) {
                 logger.warn(`[${taskId}] evidence_ingest skipped: ${ev.error}`);
+            } else {
+                evidenceId = ev.id || null;
             }
         } catch (evErr) {
             logger.warn(`[${taskId}] evidence_ingest failed: ${evErr.message}`);
@@ -435,6 +440,21 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                 );
                 if (!ci.success) {
                     logger.warn(`[${taskId}] content_item enrichment skipped: ${ci.error}`);
+                }
+            }
+
+            // Traceability link: evidence_ingest -> normalized entity rows.
+            if (
+                evidenceId &&
+                externalIdStr &&
+                ['procedures', 'dtcs', 'tsbs', 'specifications'].includes(targetSchema)
+            ) {
+                const ids = await findEntityIdsByExternalId(targetSchema, vehicleIdStr, externalIdStr);
+                if (ids.length > 0) {
+                    const links = await insertEvidenceLinks(evidenceId, targetSchema, ids, 'phase1-v1');
+                    if (!links.success) {
+                        logger.warn(`[${taskId}] evidence_link insert skipped: ${links.error}`);
+                    }
                 }
             }
         }

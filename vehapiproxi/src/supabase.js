@@ -200,7 +200,7 @@ export async function insertEvidenceIngest(row) {
                 'Content-Type': 'application/json',
                 apikey: cfg.key,
                 Authorization: `Bearer ${cfg.key}`,
-                Prefer: 'return=minimal'
+                Prefer: 'return=representation'
             },
             body: JSON.stringify(payload)
         });
@@ -209,9 +209,68 @@ export async function insertEvidenceIngest(row) {
             logger.error(`evidence_ingest insert failed [${response.status}]: ${errorText}`);
             return { success: false, error: errorText };
         }
-        return { success: true };
+        const rows = await response.json().catch(() => []);
+        return { success: true, id: Array.isArray(rows) && rows[0] ? rows[0].id : null };
     } catch (err) {
         logger.error('insertEvidenceIngest error:', err);
+        return { success: false, error: err.message };
+    }
+}
+
+export async function findEntityIdsByExternalId(table, vehicleId, externalId) {
+    const cfg = getSupabaseConfig();
+    if (!cfg || !table || !vehicleId || !externalId) return [];
+    try {
+        const url =
+            `${cfg.url}/rest/v1/${table}` +
+            `?vehicle_id=eq.${encodeURIComponent(vehicleId)}` +
+            `&external_id=eq.${encodeURIComponent(externalId)}` +
+            '&select=id';
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                apikey: cfg.key,
+                Authorization: `Bearer ${cfg.key}`
+            }
+        });
+        if (!response.ok) {
+            return [];
+        }
+        const rows = await response.json();
+        return Array.isArray(rows) ? rows.map((r) => r.id).filter(Boolean) : [];
+    } catch {
+        return [];
+    }
+}
+
+export async function insertEvidenceLinks(evidenceId, entityType, entityIds, extractorVersion = 'phase1-v1') {
+    const cfg = getSupabaseConfig();
+    if (!cfg || !evidenceId || !entityType || !Array.isArray(entityIds) || entityIds.length === 0) {
+        return { success: false, error: 'Missing link args' };
+    }
+    try {
+        const payload = entityIds.map((id) => ({
+            evidence_id: evidenceId,
+            entity_type: entityType,
+            entity_id: id,
+            extractor_version: extractorVersion
+        }));
+        const response = await fetch(`${cfg.url}/rest/v1/evidence_link`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                apikey: cfg.key,
+                Authorization: `Bearer ${cfg.key}`,
+                Prefer: 'return=minimal'
+            },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            return { success: false, error: errorText };
+        }
+        return { success: true };
+    } catch (err) {
         return { success: false, error: err.message };
     }
 }
