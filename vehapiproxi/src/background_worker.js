@@ -17,7 +17,14 @@ import { extractTextFromPdfPageViaNemotron } from './nemotron_multimodal.js';
 
 const ENABLE_NEMOTRON_PDF_VISION_FALLBACK =
     String(process.env.ENABLE_NEMOTRON_PDF_VISION_FALLBACK || '').toLowerCase() === 'true';
-const MIN_NATIVE_PDF_TEXT_LENGTH = 120;
+const MIN_NATIVE_PDF_TEXT_LENGTH = Number.parseInt(
+    process.env.MIN_NATIVE_PDF_TEXT_LENGTH || '120',
+    10
+);
+const PDF_VISION_FALLBACK_PAGE = Number.parseInt(
+    process.env.PDF_VISION_FALLBACK_PAGE || '0',
+    10
+);
 
 function htmlEscape(s) {
     return String(s)
@@ -343,7 +350,7 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                         try {
                             const b64 = pdfBase64.replace(/^data:application\/pdf;base64,/i, '');
                             const pdfBuf = Buffer.from(b64, 'base64');
-                            const visionText = await extractTextFromPdfPageViaNemotron(pdfBuf, 0, {
+                            const visionText = await extractTextFromPdfPageViaNemotron(pdfBuf, PDF_VISION_FALLBACK_PAGE, {
                                 instruction:
                                     'Transcribe all readable text from this automotive service PDF page. ' +
                                     'Preserve line breaks. Return only text.'
