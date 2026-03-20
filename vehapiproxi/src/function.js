@@ -22,7 +22,6 @@ import {
     getVehicleArticlesCount
 } from './supabase.js';
 import jwt from 'jsonwebtoken';
-import { generateCommonIssues } from './ai_parser.js';
 import { registerHealthEndpoint } from './routes/health.js';
 import { registerAuthEndpoints } from './routes/auth.js';
 import { registerCreditsEndpoints } from './routes/credits-endpoints.js';
@@ -36,18 +35,28 @@ import { normalizeMotorResponse, buildMenuFromNormalizedArticles } from './menu-
 // AI parser is loaded lazily to avoid cold-start crashes when no Nemotron API key (NVIDIA_API_KEY / LLM_API_KEY)
 let _rewriteArticleHtml = null;
 let _generateTutorialSteps = null;
+let _generateCommonIssues = null;
 async function getAiFunctions() {
-    if (_rewriteArticleHtml && _generateTutorialSteps) {
-        return { rewriteArticleHtml: _rewriteArticleHtml, generateTutorialSteps: _generateTutorialSteps };
+    if (_rewriteArticleHtml && _generateTutorialSteps && _generateCommonIssues) {
+        return {
+            rewriteArticleHtml: _rewriteArticleHtml,
+            generateTutorialSteps: _generateTutorialSteps,
+            generateCommonIssues: _generateCommonIssues
+        };
     }
     try {
         const mod = await import('./ai_parser.js');
         _rewriteArticleHtml = mod.rewriteArticleHtml;
         _generateTutorialSteps = mod.generateTutorialSteps;
+        _generateCommonIssues = mod.generateCommonIssues;
     } catch (e) {
         logger.warn('AI parser unavailable:', e.message);
     }
-    return { rewriteArticleHtml: _rewriteArticleHtml, generateTutorialSteps: _generateTutorialSteps };
+    return {
+        rewriteArticleHtml: _rewriteArticleHtml,
+        generateTutorialSteps: _generateTutorialSteps,
+        generateCommonIssues: _generateCommonIssues
+    };
 }
 
 // background_worker is loaded lazily to prevent cold-start crashes on serverless
