@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-03-19 (Nemotron: **`nemotron_client.js`** shared env `LLM_*` / `NVIDIA_API_KEY`; **`nemotron_multimodal.js`** + re-exports from `ai_parser.js`; **`npm run check:nemotron`**. Normalization **phase 1 shipped**: DDL `documentation/migrations/20260319_phase1_normalization.sql` + `supabase_schema.sql` tables `canonical_bucket`, `evidence_ingest`, `evidence_link`, `bucket_alias`, `content_item`; `npm run migrate:phase1`; worker dual-write + catalog `evidence_ingest`; `pdf_native_text.js` for PDF-only articles; `ContentItem` in `normalized_schema.ts`.)
+**Last updated**: 2026-03-19 (backend: **`vehapiproxi/src/routes/*`** — Express routes extracted from `function.js`; swagger + `deploy-backend.yml` tweak; Angular: auth interceptor, home, vehicle dashboard, data-sync / motor-api / vehicle-data updates. Nemotron + normalization phase 1 as before.) DDL `documentation/migrations/20260319_phase1_normalization.sql` + `supabase_schema.sql` tables `canonical_bucket`, `evidence_ingest`, `evidence_link`, `bucket_alias`, `content_item`; `npm run migrate:phase1`; worker dual-write + catalog `evidence_ingest`; `pdf_native_text.js` for PDF-only articles; `ContentItem` in `normalized_schema.ts`.)
 
 ## Summary
 

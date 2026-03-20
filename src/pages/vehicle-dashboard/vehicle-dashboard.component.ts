@@ -347,6 +347,9 @@ export class VehicleDashboardComponent {
   private async checkAndTriggerNormalization(cs: string, vid: string) {
     const name = this.vehicleName() || 'Vehicle';
     await this.dataSync.ensureVehicleRecord(cs, vid, name);
+    void this.dataSync.eagerSyncVehicleReferenceData(cs, vid).catch((err: unknown) =>
+      console.warn('[VehicleDashboard] Eager reference sync failed (non-fatal):', err)
+    );
   }
 
   // Orientation Selection

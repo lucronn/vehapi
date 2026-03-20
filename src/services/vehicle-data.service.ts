@@ -325,11 +325,6 @@ export class VehicleDataService {
             fluids: getFluids().pipe(catchError(() => of([]))),
             specs: getSpecs().pipe(catchError(() => of([])))
         }).pipe(
-            tap(result => {
-                if (result.fluids.length > 0) {
-                    this.dataSync.lazySyncFluids(contentSource, vehicleId).catch(() => {});
-                }
-            }),
             timeout(20000),
             catchError(err => {
                 console.warn('[VehicleDataService-V4] loadSpecs FATAL:', err);

@@ -1,4 +1,4 @@
-﻿name: Deploy Backend (vehapiproxi)
+name: Deploy Backend (vehapiproxi)
 
 on:
   push:
@@ -54,6 +54,4 @@ jobs:
           working-directory: ./
         env:
           VERCEL_FORCE_NO_BUILD: 1
-
-
 

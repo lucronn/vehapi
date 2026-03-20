@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Vehicle Service API",
-    "description": "Comprehensive API for accessing vehicle information, articles, maintenance schedules, parts, and related content.\n\n**Architecture Notes:**\n* **Environments:** This specification covers both the upstream Motor.com service and the custom Vercel Proxy. \n* **Routing/Sharding:** The `{contentSource}` parameter acts as a primary shard key, routing requests to specific OEM (Toyota, Ford) or aftermarket (MOTOR) databases.\n* **ID Hierarchy:** `{vehicleId}` represents the Base Model. `motorVehicleId` (passed as a query parameter) represents the highly specific Engine/Trim level.\n\n**Consumption guide (practical call flow):**\n* **Step 1 \u2014 Resolve Year/Make/Model:** `GET /api/years` \u2192 `GET /api/year/{year}/makes` \u2192 `GET /api/year/{year}/make/{make}/models`\n  - The **models response carries `contentSource`** (this is authoritative; do not guess from make name).\n* **Step 2 \u2014 Pick the vehicleId:** Choose a model row from `models` and use its `vehicleId` (format varies by source; treat as opaque string).\n* **Step 3 \u2014 If engine/trim is required:** For many non-`MOTOR` sources, call\n  `GET /api/source/{contentSource}/{vehicleId}/motorvehicles` and select an engine; pass the selected engine id as `motorVehicleId` on downstream calls.\n* **Step 4 \u2014 Content:** Use the `/api/source/{contentSource}/vehicle/{vehicleId}/...` endpoints.\n* **Toyota Delta mode:** When comparing quarters, the client uses `contentSource=ToyotaDelta` and calls `toyotadeltaarticles`\n  with `sourceQuarter` + `targetQuarter` (instead of `articles/v2`).\n",
+    "description": "Comprehensive API for accessing vehicle information, articles, maintenance schedules, parts, and related content.\n\n**Architecture Notes:**\n* **Environments:** This specification covers both the upstream Motor.com service and the custom Vercel Proxy. \n* **Routing/Sharding:** The `{contentSource}` parameter acts as a primary shard key, routing requests to specific OEM (Toyota, Ford) or aftermarket (MOTOR) databases.\n* **ID Hierarchy:** `{vehicleId}` represents the Base Model. `motorVehicleId` (passed as a query parameter) represents the highly specific Engine/Trim level.\n\n**Consumption guide (practical call flow):**\n* **Step 1 \u2014 Resolve Year/Make/Model:** `GET /api/years` \u2192 `GET /api/year/{year}/makes` \u2192 `GET /api/year/{year}/make/{make}/models`\n  - The **models response carries `contentSource`** (this is authoritative; do not guess from make name).\n* **Step 2 \u2014 Pick the vehicleId:** Choose a model row from `models` and use its `vehicleId` (format varies by source; treat as opaque string).\n* **Step 3 \u2014 If engine/trim is required:** For many non-`MOTOR` sources, call\n  `GET /api/source/{contentSource}/{vehicleId}/motorvehicles` and select an engine; pass the selected engine id as `motorVehicleId` on downstream calls.\n* **Step 4 \u2014 Content:** Use the `/api/source/{contentSource}/vehicle/{vehicleId}/...` endpoints.\n* **Toyota Delta mode:** When comparing quarters, the client uses `contentSource=ToyotaDelta` and calls `toyotadeltaarticles`\n  with `sourceQuarter` + `targetQuarter` (instead of `articles/v2`).\n\n**M1 connector frontend (reference):** Parameter usage and response shapes for `sites.motor.com/m1` are documented in **`vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md`** (e.g. `searchTerm` on search/parts/maintenance, `frequencyTypeCode` F/N/R for maintenance-by-frequency, labor only for `L:` article IDs, placeholders `-997`/`-998`/`-999`).\n",
     "version": "1.15.0",
     "contact": {
       "name": "API Support"
@@ -49,7 +49,7 @@
     },
     {
       "name": "Maintenance Schedules",
-      "description": "Operations for maintenance schedule information (Intervals and Frequencies)"
+      "description": "Maintenance schedules (indicators, frequency, intervals). M1 issues **separate** frequency requests per `frequencyTypeCode` (`F`, `N`, `R`) and passes `searchTerm` + `motorVehicleId` like other vehicle routes. See `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md`."
     },
     {
       "name": "Bookmarks",
@@ -1079,6 +1079,9 @@
           },
           {
             "$ref": "#/components/parameters/VehicleIdParam"
+          },
+          {
+            "$ref": "#/components/parameters/MotorVehicleIdQuery"
           }
         ],
         "responses": {
@@ -1101,7 +1104,7 @@
           "Search"
         ],
         "summary": "Get search results by vehicle ID",
-        "description": "Metadata for articles that match the provided vehicle and search term. Returns geo-blocking/entitlement data.\n\n**Parameters:**\n- `searchTerm` is optional (empty means \"all buckets\").\n- `motorVehicleId` is optional, but may be **required** for some `contentSource` values where `vehicleId` is model-level\n  and engine selection is separate (use `/motorvehicles` to discover valid values).\n\n**Toyota Delta mode:** do not use this endpoint when comparing quarters \u2014 use `toyotadeltaarticles`.\n",
+        "description": "Metadata for articles that match the provided vehicle and search term. Returns geo-blocking/entitlement data.\n\n**Parameters:**\n- `searchTerm` is optional (empty means \"all buckets\").\n- `motorVehicleId` is optional, but may be **required** for some `contentSource` values where `vehicleId` is model-level\n  and engine selection is separate (use `/motorvehicles` to discover valid values).\n\n**Response (M1):** JSON envelope with `header` and `body` where `body` contains `articleDetails`, `filterTabs`, and optional `vehicleGeoBlockingDetails` (see `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md`).\n\n**Toyota Delta mode:** do not use this endpoint when comparing quarters \u2014 use `toyotadeltaarticles`.\n",
         "operationId": "getSearchResultsByVehicleId",
         "parameters": [
           {
@@ -1197,6 +1200,9 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "$ref": "#/components/parameters/MotorVehicleIdQuery"
           }
         ],
         "responses": {
@@ -1571,6 +1577,9 @@
           },
           {
             "$ref": "#/components/parameters/VehicleIdParam"
+          },
+          {
+            "$ref": "#/components/parameters/MotorVehicleIdQuery"
           }
         ],
         "responses": {
@@ -1600,6 +1609,9 @@
           },
           {
             "$ref": "#/components/parameters/VehicleIdParam"
+          },
+          {
+            "$ref": "#/components/parameters/MotorVehicleIdQuery"
           }
         ],
         "responses": {
@@ -1629,6 +1641,9 @@
           },
           {
             "$ref": "#/components/parameters/VehicleIdParam"
+          },
+          {
+            "$ref": "#/components/parameters/MotorVehicleIdQuery"
           }
         ],
         "responses": {
@@ -1651,6 +1666,7 @@
           "Parts"
         ],
         "summary": "Get parts for vehicle",
+        "description": "M1 passes optional `searchTerm` (often empty) for server-side parts filtering. Include `motorVehicleId` when required for the selected `contentSource`.\n\nSee `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md`.\n",
         "operationId": "getPartsForVehicle",
         "parameters": [
           {
@@ -1689,7 +1705,7 @@
           "Assets"
         ],
         "summary": "Get labor details",
-        "description": "Returns labor/estimated work time data for an article.\n**M1 requirement:** `searchTerm` must be present (use empty string if no search).\n**articleId:** Use `L:` prefix only. P: (Procedure) and L: (Labor) are different ID spaces;\nprocedure P:551733272 has labor at L:25760276, not L:551733272.\n",
+        "description": "Returns labor/estimated work time data for an article.\n**M1 requirement:** `searchTerm` must be present (use empty string if no search).\n**articleId:** Use **`L:`**-prefixed labor IDs only. P: (Procedure) and L: (Labor) are different ID spaces;\nprocedure P:551733272 has labor at L:25760276, not L:551733272.\n**Placeholders:** virtual article IDs `-997`, `-998`, `-999` are **not** labor-detail targets (handled elsewhere in the M1 UI).\n\nSee `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md`.\n",
         "operationId": "getLaborDetails",
         "parameters": [
           {
@@ -1746,6 +1762,7 @@
           "Maintenance Schedules"
         ],
         "summary": "Get maintenance schedules by frequency",
+        "description": "The M1 connector calls this **once per** `frequencyTypeCode` (`F`, `N`, `R` \u2014 fixed / normal / related severities) to populate maintenance-by-frequency UI (`MaintenanceSchedulesFacade.searchByFrequency`). Pass `motorVehicleId` when `vehicleId` is model-level (e.g. `GeneralMotors`).\n\nSee `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md`.\n",
         "operationId": "getMaintenanceByFrequency",
         "parameters": [
           {
@@ -1755,8 +1772,12 @@
             "$ref": "#/components/parameters/VehicleIdParam"
           },
           {
+            "$ref": "#/components/parameters/MotorVehicleIdQuery"
+          },
+          {
             "name": "frequencyTypeCode",
             "in": "query",
+            "description": "Single-letter frequency bucket. M1 frontend issues separate requests for `F`, `N`, and `R`.",
             "schema": {
               "type": "string",
               "enum": [
@@ -1800,6 +1821,7 @@
           "Maintenance Schedules"
         ],
         "summary": "Get maintenance schedules by interval",
+        "description": "Supports `intervalType` + `interval` (e.g. Miles + 5000). M1 passes `searchTerm` (often empty) and `motorVehicleId` when required. Works across `contentSource` values that expose maintenance data\u2014not limited to `MOTOR`.\n\nSee `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md`.\n",
         "operationId": "getMaintenanceSchedulesByInterval",
         "parameters": [
           {
@@ -1807,6 +1829,9 @@
           },
           {
             "$ref": "#/components/parameters/VehicleIdParam"
+          },
+          {
+            "$ref": "#/components/parameters/MotorVehicleIdQuery"
           },
           {
             "name": "intervalType",
@@ -1857,6 +1882,7 @@
           "Maintenance Schedules"
         ],
         "summary": "Get indicators with maintenance schedules",
+        "description": "M1 `MaintenanceSchedulesFacade.searchByIndicators`. Pass `motorVehicleId` when the path `vehicleId` is model-level.\n\nSee `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md`.\n",
         "operationId": "getIndicatorsWithMaintenanceSchedules",
         "parameters": [
           {
@@ -1864,6 +1890,9 @@
           },
           {
             "$ref": "#/components/parameters/VehicleIdParam"
+          },
+          {
+            "$ref": "#/components/parameters/MotorVehicleIdQuery"
           },
           {
             "name": "severity",
@@ -1962,6 +1991,7 @@
           "Bookmarks"
         ],
         "summary": "Get bookmark",
+        "description": "Resolves saved bookmark content. Response may include `isOutdated` when upstream indicates the article changed since the bookmark was created (`vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md`).\n",
         "operationId": "getBookmark",
         "parameters": [
           {
@@ -2216,7 +2246,8 @@
         "allowEmptyValue": true,
         "schema": {
           "type": "string"
-        }
+        },
+        "description": "Server-side filter on catalog/search routes. **M1 UI** passes this query param on articles/v2, parts, maintenance schedules, and labor (often as an empty string for \u201call\u201d). Optional; omit vs `''` behavior may match upstream defaults.\n\nSee `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md`.\n"
       },
       "SourceQuarterQuery": {
         "name": "sourceQuarter",
@@ -2338,8 +2369,41 @@
       },
       "ArticleResponse": {
         "type": "object",
-        "description": "Article response containing article content and metadata",
+        "description": "Article detail payload. **Upstream/M1** commonly returns `html`, optional base64 `pdf`, `documentId`, dates, and silo arrays (`vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md`). The **proxy/Torque** may normalize into `content` / `title` for app consumption.",
         "properties": {
+          "html": {
+            "type": "string",
+            "description": "Raw or processed HTML from Motor when applicable"
+          },
+          "pdf": {
+            "type": "string",
+            "description": "Base64-encoded PDF when the article is PDF-backed"
+          },
+          "documentId": {
+            "type": "string"
+          },
+          "publishedDate": {
+            "type": "string"
+          },
+          "releaseDate": {
+            "type": "string"
+          },
+          "isOutdated": {
+            "type": "boolean",
+            "description": "Present for bookmarks / revision tracking when upstream supplies it"
+          },
+          "contentSilos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sourceSilos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "id": {
             "type": "string"
           },
@@ -2347,7 +2411,8 @@
             "type": "string"
           },
           "content": {
-            "type": "string"
+            "type": "string",
+            "description": "Normalized article body (proxy/Torque)"
           },
           "metadata": {
             "type": "object",
@@ -2465,34 +2530,83 @@
           }
         }
       },
+      "MakeListItem": {
+        "type": "object",
+        "description": "Make row as returned by M1 `GET /api/year/{year}/makes`.",
+        "properties": {
+          "makeId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "makeName": {
+            "type": "string"
+          }
+        }
+      },
       "MakeListResponse": {
         "type": "object",
-        "description": "List of makes response",
+        "description": "List of makes. M1 typically returns `items` as `{ makeId, makeName }` objects; string-only entries may appear in some environments.",
         "properties": {
           "items": {
             "type": "array",
             "items": {
-              "type": "string"
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "$ref": "#/components/schemas/MakeListItem"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "ModelRow": {
+        "type": "object",
+        "description": "Single model line from `GET /api/year/{year}/make/{make}/models`. Use `id` (M1) or legacy `vehicleId` as the path vehicle identifier; for `MOTOR`, prefer `engines[].id` when engines are present.",
+        "properties": {
+          "model": {
+            "type": "string"
+          },
+          "modelName": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "description": "Primary vehicle identifier from M1 models API"
+          },
+          "vehicleId": {
+            "type": "string",
+            "description": "Alternate field name in some clients"
+          },
+          "engines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              }
             }
           }
         }
       },
       "ModelsResponseResponse": {
         "type": "object",
-        "description": "Models response",
+        "description": "Models for a year/make. **`contentSource` is authoritative** for all subsequent `/api/source/{contentSource}/vehicle/...` calls.",
         "properties": {
+          "contentSource": {
+            "$ref": "#/components/schemas/ContentSource"
+          },
           "models": {
             "type": "array",
             "items": {
-              "type": "object",
-              "properties": {
-                "model": {
-                  "type": "string"
-                },
-                "vehicleId": {
-                  "type": "string"
-                }
-              }
+              "$ref": "#/components/schemas/ModelRow"
             }
           }
         }
@@ -2557,55 +2671,51 @@
           }
         }
       },
-      "SearchResultsResponse": {
+      "VehicleGeoBlockingDetails": {
         "type": "object",
-        "description": "Search results response",
+        "description": "Geo / entitlement flags on articles/v2 (M1 may show a blocking modal).",
         "properties": {
-          "results": {
+          "isGeoBlocked": {
+            "type": "boolean",
+            "example": false
+          },
+          "isLaborContentEntitled": {
+            "type": "boolean",
+            "example": false
+          }
+        }
+      },
+      "SearchResultsBody": {
+        "type": "object",
+        "description": "`body` object inside Motor/M1 JSON for `articles/v2` (and Toyota Delta articles). Matches M1 `SearchResultsResponse` usage in `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md`.",
+        "properties": {
+          "articleDetails": {
+            "type": "array",
+            "description": "Article rows used by the M1 search store (same shape as `Article` in this spec).",
+            "items": {
+              "$ref": "#/components/schemas/Article"
+            }
+          },
+          "filterTabs": {
             "type": "array",
             "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "title": {
-                  "type": "string"
-                },
-                "articleId": {
-                  "type": "string"
-                },
-                "bucket": {
-                  "type": "string"
-                },
-                "subtitle": {
-                  "type": "string"
-                },
-                "sort": {
-                  "type": "integer"
-                },
-                "source": {
-                  "type": "string"
-                }
-              }
+              "$ref": "#/components/schemas/FilterTab"
             }
-          },
-          "totalCount": {
-            "type": "integer",
-            "format": "int32"
           },
           "vehicleGeoBlockingDetails": {
-            "type": "object",
-            "properties": {
-              "isGeoBlocked": {
-                "type": "boolean",
-                "example": false
-              },
-              "isLaborContentEntitled": {
-                "type": "boolean",
-                "example": false
-              }
-            }
+            "$ref": "#/components/schemas/VehicleGeoBlockingDetails"
+          }
+        }
+      },
+      "SearchResultsResponse": {
+        "type": "object",
+        "description": "Motor/M1 envelope for `GET .../articles/v2` and `.../toyotadeltaarticles`. The M1 connector reads **`body.articleDetails`** and **`body.filterTabs`**. Some proxies or clients may forward an **unwrapped** `body` object only.\n\n**Note:** Older/incorrect specs sometimes showed a top-level `results` array\u2014that is **not** the upstream M1 shape.",
+        "properties": {
+          "header": {
+            "$ref": "#/components/schemas/ResponseHeader"
+          },
+          "body": {
+            "$ref": "#/components/schemas/SearchResultsBody"
           }
         }
       },
@@ -2621,12 +2731,21 @@
                 "partNumber": {
                   "type": "string"
                 },
+                "partDescription": {
+                  "type": "string",
+                  "description": "Human-readable description of the part (common key from Motor/M1 responses)."
+                },
                 "description": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Same semantic as `partDescription` when the API returns this property name instead."
                 },
                 "quantity": {
                   "type": "integer",
                   "format": "int32"
+                },
+                "isAdded": {
+                  "type": "boolean",
+                  "description": "When true, part is associated with a labor operation in the M1 UI"
                 }
               }
             }

@@ -1,9 +1,10 @@
 import { Injectable, inject, signal, isDevMode } from '@angular/core';
-import { from, lastValueFrom, of } from 'rxjs';
-import { catchError, concatMap, mergeMap, tap } from 'rxjs/operators';
+import { lastValueFrom } from 'rxjs';
 import { MotorApiService } from './motor-api.service';
 import { AiRewriteService } from './ai-rewrite.service';
 import { SupabaseService } from './supabase.service';
+import { normalizeCategoryParams } from '../utils/categorize.util';
+import type { Article } from '../models/motor.models';
 
 @Injectable({
     providedIn: 'root'
@@ -17,6 +18,14 @@ export class DataSyncService {
     isSyncing = signal(false);
     syncProgress = signal({ current: 0, total: 0, message: 'Ready' });
     private inProgressArticleSyncs = new Set<string>();
+    /** One eager reference-data run per vehicle at a time (dashboard remounts). */
+    private eagerReferenceSyncInFlight = new Set<string>();
+
+    /** Mile intervals to prefetch into `maintenance_schedules` (each skipped if already present). */
+    private readonly eagerMaintenanceIntervalsMiles = [7500, 15000, 30000, 45000, 60000, 100000];
+
+    /** Motor maintenance-by-frequency type codes (not mile intervals). */
+    private readonly eagerMaintenanceFrequencyCodes = ['F', 'N', 'R'] as const;
 
     async checkNormalizationStatus(vehicleId: string): Promise<boolean> {
         const { data } = await this.supabase.client
@@ -30,9 +39,10 @@ export class DataSyncService {
 
     /**
      * Lightweight vehicle registration — called on dashboard load.
-     * Only creates/updates the vehicle record. No silo API calls.
-     * Article catalog is populated by the proxy background worker when
-     * articles/v2 passes through; silo data is synced lazily by each section.
+     * Only creates/updates the vehicle row (no API). Heavy reference data is
+     * filled by {@link eagerSyncVehicleReferenceData} (catalog metadata, specifications
+     * from catalog articles, parts, maintenance). Full article HTML stays lazy per article.
+     * Fluids → Motor `/fluids` sync is intentionally disabled for now.
      */
     async ensureVehicleRecord(contentSource: string, vehicleId: string, vehicleName: string): Promise<void> {
         const parts = vehicleName.split(' ');
@@ -53,6 +63,297 @@ export class DataSyncService {
     }
 
     /**
+     * Eagerly syncs non–full-HTML reference data for a vehicle: article catalog
+     * (metadata + silo buckets only), fluids, parts, and common maintenance
+     * intervals. Skips work when data already exists to limit repeat API traffic.
+     * Does **not** fetch per-article HTML (that remains {@link syncSingleArticle}).
+     */
+    async eagerSyncVehicleReferenceData(contentSource: string, vehicleId: string): Promise<void> {
+        const key = `${contentSource}:${vehicleId}`;
+        if (this.eagerReferenceSyncInFlight.has(key)) {
+            return;
+        }
+        this.eagerReferenceSyncInFlight.add(key);
+
+        this.isSyncing.set(true);
+        this.syncProgress.set({ current: 0, total: 100, message: 'Starting…' });
+
+        const setStep = (pct: number, message: string) =>
+            this.syncProgress.set({ current: pct, total: 100, message });
+
+        try {
+            const [{ data: vehicleRow }, { count: articleCount }] = await Promise.all([
+                this.supabase.client
+                    .from('vehicles')
+                    .select('is_normalized')
+                    .eq('external_id', vehicleId)
+                    .maybeSingle(),
+                this.supabase.client
+                    .from('articles')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('vehicle_id', vehicleId)
+            ]);
+
+            const catalogLikelyComplete = !!vehicleRow?.is_normalized && (articleCount ?? 0) >= 10;
+
+            setStep(5, 'Article catalog…');
+            if (!catalogLikelyComplete) {
+                await this.syncArticleCatalogMetadataOnly(contentSource, vehicleId);
+            }
+
+            setStep(30, 'Specifications…');
+            await this.syncSpecificationsIfMissing(contentSource, vehicleId);
+
+            // FLUIDS: disabled — `/fluids` pipeline deferred (see lazySyncFluids).
+
+            setStep(55, 'Parts catalog…');
+            await this.syncPartsIfMissing(contentSource, vehicleId);
+
+            setStep(70, 'Maintenance schedules…');
+            await Promise.all([
+                ...this.eagerMaintenanceIntervalsMiles.map((interval) =>
+                    this.lazySyncMaintenanceInterval(contentSource, vehicleId, interval)
+                ),
+                ...this.eagerMaintenanceFrequencyCodes.map((code) =>
+                    this.lazySyncMaintenanceByFrequency(contentSource, vehicleId, code)
+                )
+            ]);
+
+            setStep(100, 'Done');
+        } catch (e) {
+            console.warn('[DataSync] eagerSyncVehicleReferenceData failed (non-fatal):', e);
+        } finally {
+            this.isSyncing.set(false);
+            this.eagerReferenceSyncInFlight.delete(key);
+            this.syncProgress.set({ current: 0, total: 100, message: 'Ready' });
+        }
+    }
+
+    /**
+     * One `articles/v2` call (empty search) → upsert catalog rows without clobbering
+     * stored `original_content` / `enhanced_content` when already present.
+     */
+    private async syncArticleCatalogMetadataOnly(contentSource: string, vehicleId: string): Promise<void> {
+        const res = await lastValueFrom(this.motorApi.searchArticles(contentSource, vehicleId, ''));
+        if (res.header.statusCode !== 200) {
+            console.warn('[DataSync] searchArticles for catalog failed', res.header);
+            return;
+        }
+
+        const details = (res.body as { articleDetails?: Article[] })?.articleDetails ?? [];
+        if (details.length === 0) {
+            return;
+        }
+
+        const { data: existingRows, error: existingErr } = await this.supabase.client
+            .from('articles')
+            .select('original_id, original_content, enhanced_content')
+            .eq('vehicle_id', vehicleId);
+
+        if (existingErr) {
+            console.warn('[DataSync] Could not read existing articles for merge:', existingErr);
+        }
+
+        const existingById = new Map<string, { original_content: string | null; enhanced_content: string | null }>();
+        for (const row of existingRows ?? []) {
+            const oid = (row as { original_id: string }).original_id;
+            existingById.set(oid, {
+                original_content: (row as { original_content: string | null }).original_content ?? null,
+                enhanced_content: (row as { enhanced_content: string | null }).enhanced_content ?? null
+            });
+        }
+
+        const now = new Date().toISOString();
+        const rows = details.map((a) => {
+            const parentBucket = a.parentBucket ?? 'Other';
+            const bucket = a.bucket ?? 'Uncategorized';
+            const { rootName, subName } = normalizeCategoryParams(a.title ?? '', parentBucket, bucket);
+            const bucketVal = subName ?? bucket;
+            const prev = existingById.get(a.id);
+            const preserveHtml = prev?.original_content && prev.original_content.length > 0;
+            const preserveEnhanced = prev?.enhanced_content && prev.enhanced_content.length > 0;
+
+            return {
+                vehicle_id: vehicleId,
+                original_id: a.id,
+                title: a.title ?? null,
+                subtitle: a.subtitle ?? null,
+                code: a.code ?? null,
+                description: a.description ?? null,
+                bucket: bucketVal,
+                parent_bucket: rootName,
+                thumbnail_href: a.thumbnailHref ?? null,
+                bulletin_number: a.bulletinNumber ?? null,
+                release_date: a.releaseDate ?? null,
+                sort: typeof a.sort === 'number' ? a.sort : null,
+                content_source: contentSource,
+                source: contentSource,
+                original_content: preserveHtml ? prev!.original_content : null,
+                enhanced_content: preserveEnhanced ? prev!.enhanced_content : null,
+                updated_at: now
+            };
+        });
+
+        const chunkSize = 200;
+        for (let i = 0; i < rows.length; i += chunkSize) {
+            const chunk = rows.slice(i, i + chunkSize);
+            const { error } = await this.supabase.client
+                .from('articles')
+                .upsert(chunk, { onConflict: 'vehicle_id,original_id' });
+            if (error) {
+                console.warn('[DataSync] Article catalog upsert chunk failed:', error);
+            }
+        }
+
+        if (details.length > 0) {
+            const { error: normErr } = await this.supabase.client
+                .from('vehicles')
+                .update({ is_normalized: true, updated_at: now })
+                .eq('external_id', vehicleId);
+            if (normErr) {
+                console.warn('[DataSync] is_normalized update failed:', normErr);
+            }
+        }
+    }
+
+    /**
+     * Cache years / makes / models (+ embedded engines) JSON for proxy metadataCacheMiddleware.
+     * Use paths without `/api` prefix (e.g. `/years`, `/year/2020/makes`).
+     */
+    async cacheVehicleMetadata(apiPath: string, payload: unknown): Promise<void> {
+        let path = apiPath.startsWith('/api/') ? apiPath.slice(4) : apiPath;
+        if (!path.startsWith('/')) {
+            path = `/${path}`;
+        }
+        let data: object;
+        try {
+            data = JSON.parse(JSON.stringify(payload)) as object;
+        } catch {
+            console.warn('[DataSync] cacheVehicleMetadata: payload not serializable, skipping', path);
+            return;
+        }
+        try {
+            const { error } = await this.supabase.client.from('vehicle_metadata').upsert(
+                { path, data, updated_at: new Date().toISOString() },
+                { onConflict: 'path' }
+            );
+            if (error) {
+                console.warn('[DataSync] cacheVehicleMetadata upsert failed:', path, error);
+            }
+        } catch (e) {
+            console.warn('[DataSync] cacheVehicleMetadata failed (non-fatal):', path, e);
+        }
+    }
+
+    /**
+     * Upsert `specifications` rows from `articles` catalog metadata (no article HTML).
+     * Skips when non-fluid spec rows already exist.
+     */
+    private async syncSpecificationsIfMissing(_contentSource: string, vehicleId: string): Promise<void> {
+        const { count, error: countErr } = await this.supabase.client
+            .from('specifications')
+            .select('*', { count: 'exact', head: true })
+            .eq('vehicle_id', vehicleId)
+            .neq('category', 'Fluids');
+
+        if (countErr) {
+            console.warn('[DataSync] syncSpecificationsIfMissing count error:', countErr);
+        }
+        if ((count ?? 0) > 0) {
+            return;
+        }
+
+        const { data: rows, error } = await this.supabase.client
+            .from('articles')
+            .select('original_id,title,description,bucket,parent_bucket')
+            .eq('vehicle_id', vehicleId);
+
+        if (error) {
+            console.warn('[DataSync] syncSpecificationsIfMissing articles read failed:', error);
+            return;
+        }
+
+        const specRows = this.buildSpecificationUpsertsFromCatalogRows(vehicleId, rows ?? []);
+        if (specRows.length === 0) {
+            return;
+        }
+
+        const chunkSize = 150;
+        for (let i = 0; i < specRows.length; i += chunkSize) {
+            const chunk = specRows.slice(i, i + chunkSize);
+            const { error: upErr } = await this.supabase.client
+                .from('specifications')
+                .upsert(chunk, { onConflict: 'vehicle_id,category,name' });
+            if (upErr) {
+                console.warn('[DataSync] specifications upsert chunk failed:', upErr);
+            }
+        }
+    }
+
+    private buildSpecificationUpsertsFromCatalogRows(
+        vehicleId: string,
+        rows: { original_id: string; title: string | null; description: string | null; bucket: string | null; parent_bucket: string | null }[]
+    ): Record<string, unknown>[] {
+        const now = new Date().toISOString();
+        const out: Record<string, unknown>[] = [];
+        for (const r of rows) {
+            const bucket = r.bucket ?? '';
+            const parent = r.parent_bucket ?? '';
+            const title = r.title ?? '';
+            if (!this.isSpecificationCatalogArticle(bucket, parent, title)) {
+                continue;
+            }
+            const category = parent.trim() || 'Specifications';
+            const name = title.trim() || `Article ${r.original_id}`;
+            out.push({
+                vehicle_id: vehicleId,
+                category,
+                name,
+                value: (r.description ?? '').trim() || null,
+                unit: null,
+                display_text: null,
+                metadata: { originalArticleId: r.original_id, bucket, parent_bucket: parent },
+                updated_at: now
+            });
+        }
+        return out;
+    }
+
+    /** Spec-like catalog entries; excludes fluids silos (fluids handled later). */
+    private isSpecificationCatalogArticle(bucket: string, parent: string, title: string): boolean {
+        const b = bucket.toLowerCase();
+        const p = parent.toLowerCase();
+        const t = title.toLowerCase();
+        if (p.includes('fluid') || b.includes('fluid') || p.includes('fluids') || b.includes('fluids')) {
+            return false;
+        }
+        return (
+            b.includes('specification') ||
+            b.includes('specs') ||
+            t.includes('specification') ||
+            t.includes('specs') ||
+            t.includes('torque') ||
+            t.includes('alignment') ||
+            t.includes('tire')
+        );
+    }
+
+    private async syncPartsIfMissing(contentSource: string, vehicleId: string): Promise<void> {
+        const { count, error } = await this.supabase.client
+            .from('parts')
+            .select('*', { count: 'exact', head: true })
+            .eq('vehicle_id', vehicleId);
+
+        if (error) {
+            console.warn('[DataSync] syncPartsIfMissing count error:', error);
+        }
+        if ((count ?? 0) > 0) {
+            return;
+        }
+        await this.syncParts(contentSource, vehicleId);
+    }
+
+    /**
      * Lazily sync common issues — called by the common-issues section.
      * Checks Supabase cache first; only hits the AI endpoint when missing.
      */
@@ -60,9 +361,12 @@ export class DataSyncService {
         await this.syncCommonIssues(contentSource, vehicleId, vehicleName);
     }
 
-    /** Lazily sync fluids into specifications table — called by specs section. */
-    async lazySyncFluids(contentSource: string, vehicleId: string): Promise<void> {
-        await this.syncFluids(contentSource, vehicleId);
+    /**
+     * Lazily sync fluids — **disabled**: Motor `/fluids` + specifications hydration deferred.
+     * Specs section still loads non-fluid specifications via catalog-derived rows + article list.
+     */
+    async lazySyncFluids(_contentSource: string, _vehicleId: string): Promise<void> {
+        return;
     }
 
     /** Lazily sync parts — called by parts section. */
@@ -105,6 +409,61 @@ export class DataSyncService {
             }
         } catch (e) {
             console.warn(`[DataSync] Maintenance sync failed for interval ${interval}`, e);
+        }
+    }
+
+    /**
+     * Sync maintenance schedules for Motor frequency type F / N / R (not mileage-based).
+     * Uses `interval_unit: 'Frequency'` and small sentinel `interval_value` per code so rows
+     * do not collide with mile intervals (7500+).
+     */
+    async lazySyncMaintenanceByFrequency(
+        contentSource: string,
+        vehicleId: string,
+        code: 'F' | 'N' | 'R'
+    ): Promise<void> {
+        const frequencyIntervalValue = code === 'F' ? 1 : code === 'N' ? 2 : 3;
+        try {
+            const { count, error: cErr } = await this.supabase.client
+                .from('maintenance_schedules')
+                .select('*', { count: 'exact', head: true })
+                .eq('vehicle_id', vehicleId)
+                .eq('interval_unit', 'Frequency')
+                .eq('frequency_code', code);
+
+            if (cErr) {
+                console.warn('[DataSync] lazySyncMaintenanceByFrequency count error:', cErr);
+            }
+            if ((count ?? 0) > 0) {
+                return;
+            }
+
+            const res = await lastValueFrom(
+                this.motorApi.getMaintenanceByFrequency(contentSource, vehicleId, code, 'All')
+            );
+            const schedules =
+                (res.body as any)?.schedules || (res.body as any)?.items || (res.body as any)?.data || [];
+
+            if (schedules.length === 0) {
+                return;
+            }
+
+            const rows = schedules.map((s: any) => ({
+                vehicle_id: vehicleId,
+                interval_value: frequencyIntervalValue,
+                interval_unit: 'Frequency',
+                action: s.action || 'Inspect/Replace',
+                item: s.description || s.item || '',
+                description: s.description ?? null,
+                frequency_code: code,
+                updated_at: new Date().toISOString()
+            }));
+
+            await this.supabase.client
+                .from('maintenance_schedules')
+                .upsert(rows, { onConflict: 'vehicle_id,interval_value,action,item' });
+        } catch (e) {
+            console.warn(`[DataSync] Maintenance frequency sync failed for ${code}`, e);
         }
     }
 
@@ -200,26 +559,9 @@ export class DataSyncService {
     }
 
 
-    private async syncFluids(cs: string, vid: string) {
-        try {
-            const res = await lastValueFrom(this.motorApi.getFluids(cs, vid));
-            const fluids = res.body?.data || [];
-            if (fluids.length > 0) {
-                const specData = fluids.map((f: any) => ({
-                    vehicle_id: vid,
-                    category: 'Fluids',
-                    name: f.title ?? '',
-                    value: f.capacity ?? '',
-                    unit: f.unit ?? null,
-                    display_text: (f.capacity || f.specification) ? `${f.capacity || ''} - ${f.specification || ''}`.trim() : null,
-                    metadata: (f.id != null || f.bucket != null || f.specification != null) ? { id: f.id, bucket: f.bucket, specification: f.specification } : null,
-                    updated_at: new Date().toISOString()
-                }));
-                await this.supabase.client.from('specifications').upsert(specData, { onConflict: 'vehicle_id,category,name' });
-            }
-        } catch (e) {
-            console.error('Fluids sync failed', e);
-        }
+    /** Motor `/fluids` → `specifications` — disabled until fluids pipeline is finalized. */
+    private async syncFluids(_cs: string, _vid: string): Promise<void> {
+        return;
     }
 
     /** Parts: payload matches DB columns (vehicle_id, part_number, description, manufacturer, list_price, dealer_price). NormalizedPart also has quantity, fitment_notes for when API/DB support them. */

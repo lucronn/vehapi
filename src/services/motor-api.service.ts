@@ -74,8 +74,7 @@ export class MotorApiService {
     if (body) {
       console.log(`   Body:`, body);
     }
-    console.log(`   Proxy: ${this.baseUrl}`);
-    console.log(`   Target: sites.motor.com/m1`);
+    console.log(`   API base (vehapiproxi only): ${this.baseUrl}`);
     console.groupEnd();
   }
 
@@ -132,7 +131,7 @@ export class MotorApiService {
     if (duration !== undefined) {
       console.log(`   Duration: ${duration}ms`);
     }
-    console.log(`   Flow: Frontend → Proxy → sites.motor.com/m1`);
+    console.log(`   Flow: Frontend → vehapiproxi (upstream not called from browser)`);
     console.groupEnd();
   }
 

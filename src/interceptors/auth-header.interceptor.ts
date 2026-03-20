@@ -19,7 +19,7 @@ export const authHeaderInterceptor: HttpInterceptorFn = (req, next) => {
   // We attach:
   // - `/api/credits/*` (secureAuthMiddleware)
   // - `/api/source/:source/vehicle/:vehicleId/article/:articleId` (articleAccessMiddleware)
-  // - optional `/api/source/:source/vehicle/:vehicleId/article/:articleId/html`
+  // - optional `/html`, `/metadata` under article content
   const urlNoQuery = req.url.split('?')[0];
   const path = (() => {
     try {

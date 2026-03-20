@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, ElementRef, HostListener, ViewChild, OnInit, DestroyRef, ChangeDetectorRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, ElementRef, HostListener, ViewChild, OnInit, DestroyRef, ChangeDetectorRef } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -7,6 +7,7 @@ import { Subject, debounceTime, distinctUntilChanged, firstValueFrom, catchError
 
 import { MotorApiService } from '../../services/motor-api.service';
 import { VehiclePersistenceService } from '../../services/vehicle-persistence.service';
+import { DataSyncService } from '../../services/data-sync.service';
 import { LogoComponent } from '../../components/logo/logo.component';
 import { Make, Model, Engine, PersistedVehicle } from '../../models/motor.models';
 import { LucideAngularModule, Search, X, ArrowRight, ArrowUpRight, ArrowLeft } from 'lucide-angular';
@@ -28,9 +29,19 @@ export class HomeComponent implements OnInit {
   readonly icons = { Search, X, ArrowRight, ArrowUpRight, ArrowLeft };
   private motorApi = inject(MotorApiService);
   private persistence = inject(VehiclePersistenceService);
+  private dataSync = inject(DataSyncService);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
   private cdr = inject(ChangeDetectorRef);
+
+  constructor() {
+    effect(() => {
+      const res = this.years();
+      if (res?.body && Array.isArray(res.body) && res.header?.statusCode === 200) {
+        void this.dataSync.cacheVehicleMetadata('/years', res);
+      }
+    });
+  }
 
   @ViewChild('searchInputRef') searchInputRef!: ElementRef<HTMLInputElement>;
   @ViewChild('desktopSuggestionsContainer') desktopSuggestionsContainerRef!: ElementRef<HTMLDivElement>;
@@ -510,6 +521,9 @@ export class HomeComponent implements OnInit {
         this.motorApi.getMakes(suggestion.value as number).subscribe({
           next: (res) => {
             this.makes.set(res.body);
+            if (res.header?.statusCode === 200) {
+              void this.dataSync.cacheVehicleMetadata(`/year/${suggestion.value as number}/makes`, res);
+            }
             this.isLoading.set(false);
             if (res.body && res.body.length > 0) {
               this.showSuggestions.set(true);
@@ -530,6 +544,10 @@ export class HomeComponent implements OnInit {
           this.motorApi.getModels(year, (suggestion.value as Make).makeName).subscribe({
             next: (res) => {
               this.models.set(res.body.models);
+              if (res.header?.statusCode === 200) {
+                const makeSeg = encodeURIComponent((suggestion.value as Make).makeName);
+                void this.dataSync.cacheVehicleMetadata(`/year/${year}/make/${makeSeg}/models`, res);
+              }
               // Capture the content source from the response
               if (res.body.contentSource) {
                 this.currentContentSource.set(res.body.contentSource);

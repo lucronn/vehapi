@@ -55,7 +55,7 @@ export class ProceduresSectionComponent implements OnInit {
             groups[category].push(p);
         });
 
-        // Sort categories alphabetically match sites.motor.com style or just basic sort
+        // Sort categories alphabetically (M1-style ordering)
         return Object.keys(groups).sort().map(category => ({
             name: category,
             items: groups[category]
