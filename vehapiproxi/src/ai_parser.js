@@ -1,21 +1,10 @@
+/**
+ * Nemotron (NVIDIA) — text parsing, rewrite, tutorials, common-issues.
+ * Multimodal (PDF page → PNG, image OCR via vision model): `./nemotron_multimodal.js` (re-exported below).
+ * @see docs/plans/2026-03-18-normalization-schema-design.md Appendix A
+ */
 import logger from './logger.js';
-
-import OpenAI from 'openai';
-
-const NEMOTRON_BASE_URL = 'https://integrate.api.nvidia.com/v1';
-const NEMOTRON_MODEL = 'nvidia/nemotron-3-super-120b-a12b';
-
-let _openaiClient = null;
-function getNemotronClient() {
-    if (_openaiClient) return _openaiClient;
-    const apiKey = (process.env.NVIDIA_API_KEY || process.env.NVAPI_KEY || '').trim();
-    if (!apiKey) return null;
-    _openaiClient = new OpenAI({
-        apiKey,
-        baseURL: NEMOTRON_BASE_URL,
-    });
-    return _openaiClient;
-}
+import { getNemotronClient, getNemotronTextModel } from './nemotron_client.js';
 
 // Schema definitions aligned with Supabase/TypeScript for maximum retention and accessibility.
 // Single source of truth for AI output structure.
@@ -161,7 +150,7 @@ const MAX_RETRIES = 3;
 async function callAI(prompt, schema = null) {
     const openai = getNemotronClient();
     if (!openai) {
-        throw new Error('Nemotron unavailable — NVIDIA_API_KEY (or NVAPI_KEY) not configured');
+        throw new Error('Nemotron unavailable — set NVIDIA_API_KEY, NVAPI_KEY, or LLM_API_KEY');
     }
 
     let finalPrompt = prompt;
@@ -172,7 +161,7 @@ async function callAI(prompt, schema = null) {
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         try {
             const completion = await openai.chat.completions.create({
-                model: NEMOTRON_MODEL,
+                model: getNemotronTextModel(),
                 messages: [{"role":"user","content":finalPrompt}],
                 temperature: 1,
                 top_p: 0.95,
@@ -335,3 +324,10 @@ Create 4-8 high-quality common issues tailored to this specific vehicle.`;
         return [];
     }
 }
+
+export {
+    callNemotronMultimodal,
+    rasterizePdfPageToPngDataUri,
+    extractTextFromImageDataUri,
+    extractTextFromPdfPageViaNemotron
+} from './nemotron_multimodal.js';

@@ -15,13 +15,16 @@
 │   ├── utils/           # pure helper functions
 │   ├── environments/    # environment.ts / environment.prod.ts
 │   └── styles.css       # global Tailwind + design-system tokens
-├── vehapiproxi/         # Express backend (Motor API proxy, Stripe, Supabase, AI)
-│   └── src/             # function.js (entry), stripe.js, credits.js, supabase.js, ai_parser.js, auth.js…
+├── vehapiproxi/         # Express backend (proxy only from browser; Stripe, Supabase, AI)
+│   ├── src/             # function.js (entry), routes/, swagger.json, stripe, credits, supabase…
+│   └── API_CONSUMPTION_DOCUMENTATION.md  # upstream/M1 API behavior reference (not a client target)
 ├── api/                 # Vercel serverless shim → vehapiproxi
-├── documentation/       # IMPLEMENTATION_GUIDE.md, API_CONSUMPTION_DOCUMENTATION.md, DEPLOYMENT.md…
+├── documentation/       # IMPLEMENTATION_GUIDE.md, VEHAPIPROXI_API_CONSUMPTION.md, DEPLOYMENT.md…
 ├── scripts/             # build helpers (inject-eruda, validate models)
-├── m1_crawler/          # Python crawler for year/make/model JSON
-├── _extracted_theme/    # extracted UI kit (reference only)
+├── randdev/             # Dev utilities (crawler data)
+│   └── m1_crawler/     # Python crawler for year/make/model JSON
+ ├── oldfiles/           # Archived/legacy docs + reference artifacts
+ │   └── _extracted_theme/  # extracted UI kit (reference only)
 ├── .cursor/             # Cursor rules and skills
 ├── .agents/             # agent rules (gh.md, token_efficiency.md)
 ├── .github/workflows/   # CI/CD (deploy.yml → Vercel)
@@ -82,7 +85,7 @@ node src/index.js        # Express on port 3001
 | `SUPABASE_JWT_SECRET` | JWT verification secret |
 | `STRIPE_SANDBOX_SKEY` | Stripe secret key |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
-| `NVIDIA_API_KEY` | NVIDIA API key (Nemotron — parsing, rewrite, tutorials, common-issues) |
+| `NVIDIA_API_KEY` (or `LLM_API_KEY`) | NVIDIA API key (Nemotron — parsing, rewrite, tutorials, common-issues). Optional: `LLM_URL` (e.g. `.../v1/chat/completions` → base for SDK), `LLM_MODEL` / `NEMOTRON_MODEL`, `NEMOTRON_BASE_URL` — see `vehapiproxi/src/nemotron_client.js` |
 | `LIBRARY_BARCODE` / `EBSCO_USER` / `EBSCO_PASSWORD` | Motor API auth credentials |
 
 ### Frontend environments
@@ -217,8 +220,8 @@ Checklist items mirror `documentation/IMPLEMENTATION_GUIDE.md` Section 23.
 | File | What it covers |
 |---|---|
 | `documentation/IMPLEMENTATION_GUIDE.md` | Comprehensive architecture, algorithms, and implementation specs (~3,400 lines) |
-| `documentation/API_CONSUMPTION_DOCUMENTATION.md` | API consumption patterns, state management, data flow |
-| `documentation/AGENT_INSTRUCTIONS.md` | Step-by-step agent build instructions |
+| `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md` | M1/upstream API behavior reference (Torque calls vehapiproxi only) |
+| `documentation/VEHAPIPROXI_API_CONSUMPTION.md` | Torque proxy (`vehapiproxi`): routes, auth, CORS, middleware vs upstream Motor |
 | `documentation/DEPLOYMENT.md` | Multi-platform deployment guides |
 | `documentation/LOGGING.md` | Logging standards |
 
@@ -234,5 +237,5 @@ These are non-negotiable features of the application:
 1. **Mobile-first design** — maximize screen space, bottom navigation, 44px touch targets, safe-area insets.
 2. **AI content rewriting** — all text content from the Motor API must be AI-rewritten; PDFs and images remain untouched.
 3. **Stepper tutorials** — AI-generated interactive step-by-step tutorials from article content, mobile-optimized with swipe navigation.
-4. **API proxy** — all Motor API calls route through `vehapiproxi`, never directly to Motor.
+4. **API proxy** — the SPA uses **`vehapiproxi` only** (`environment.apiUrl` / dev proxy). **Never** call `motor.com`, `api.motor.com`, or `sites.motor.com` from `src/`; upstream Motor is server-side inside the proxy.
 5. **Credit system** — Stripe-powered credit purchase and module-unlock flow.
