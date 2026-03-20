@@ -254,6 +254,51 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
 
         await ensureVehicleExists(vehicleIdStr, extractContentSource(urlPath));
 
+        // L0 traceability for single-article / parse-target payloads.
+        // Keep metadata compact here; full payload retention can move to Storage later.
+        try {
+            const rawTrimmed = typeof rawData === 'string' ? rawData.trim() : '';
+            const isHtmlPayload = rawTrimmed.startsWith('<');
+            const evSha = crypto.createHash('sha256').update(rawData).digest('hex');
+            let summary = { kind: `${targetSchema}_payload`, rawLength: rawData.length };
+            let contentType = 'text/plain';
+            if (!isHtmlPayload) {
+                try {
+                    const parsed = JSON.parse(rawData);
+                    const hasHtml = Boolean(parsed?.body?.html || parsed?.html);
+                    const hasPdf = Boolean(parsed?.body?.pdf);
+                    summary = {
+                        ...summary,
+                        hasHtml,
+                        hasPdf,
+                        bodyKeys: parsed?.body && typeof parsed.body === 'object' ? Object.keys(parsed.body).slice(0, 20) : []
+                    };
+                    contentType = 'application/json';
+                } catch {
+                    /* keep text/plain */
+                }
+            } else {
+                summary = { ...summary, hasHtml: true };
+                contentType = 'text/html';
+            }
+
+            const ev = await insertEvidenceIngest({
+                url_path: urlPath.slice(0, 4000),
+                http_status: 200,
+                content_type: contentType,
+                body_json: summary,
+                sha256: evSha,
+                vehicle_external_id: vehicleIdStr,
+                content_source: extractContentSource(urlPath),
+                source_label: `${targetSchema}_content`
+            });
+            if (!ev.success) {
+                logger.warn(`[${taskId}] evidence_ingest skipped: ${ev.error}`);
+            }
+        } catch (evErr) {
+            logger.warn(`[${taskId}] evidence_ingest failed: ${evErr.message}`);
+        }
+
         const parsedData = await parseWithAI(rawData, targetSchema);
 
         const externalIdStr = extractExternalId(urlPath, targetSchema);
