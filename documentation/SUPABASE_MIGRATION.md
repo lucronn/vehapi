@@ -2,6 +2,18 @@
 
 The vehicle data pipeline uses Supabase for normalized content (articles, procedures, DTCs, TSBs, specifications, etc.). The schema in **`supabase_schema.sql`** (repo root) is aligned with the pipeline (`vehapiproxi`, `data-sync`, `vehicle-data.service`) and the contract in `src/models/normalized_schema.ts`; see `.cursor/skills/vehicle-data-normalization-migration/SKILL.md` for the full checklist and artifacts.
 
+## Phase 1 normalization (additive — existing projects)
+
+Adds **`canonical_bucket`**, **`evidence_ingest`**, **`evidence_link`**, **`bucket_alias`**, **`content_item`** without dropping legacy tables.
+
+1. Set `SUPABASE_DB_URL` (or `SUPABASE_URL` + `SUPABASE_DB_PASSWORD`) as for the full migration.
+2. From `vehapiproxi`: **`npm run migrate:phase1`**  
+   (runs `documentation/migrations/20260319_phase1_normalization.sql`).
+
+The background worker dual-writes **`content_item`** next to **`articles`** when this schema is present; if the table is missing, it logs a warning and continues.
+
+---
+
 ## Option A: Run the migration script (recommended)
 
 From the repo root, with a Postgres connection string set:
@@ -53,6 +65,8 @@ The script reads `supabase_schema.sql` from the repo root and executes it agains
 | `specifications`     | `vehicle_id, category, name`    | Specs/fluids                     |
 | `parts`              | `vehicle_id, part_number`        | Parts catalog                   |
 | `maintenance_schedules` | `vehicle_id, interval_value, action, item` | Maintenance intervals |
+| `content_item` | `vehicle_external_id, motor_article_id, content_source` | Unified catalog (phase 1; dual-write with `articles`) |
+| `evidence_ingest` | (append-only) | L0 API/catalog capture metadata + `sha256` |
 
 ## Test: one article per category
 

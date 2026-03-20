@@ -20,7 +20,8 @@ const UPSERT_CONFLICT_COLUMNS = {
     specifications: 'vehicle_id,category,name',
     categories: 'name,type',
     vehicle_metadata: 'path',
-    articles: 'vehicle_id,original_id'
+    articles: 'vehicle_id,original_id',
+    content_item: 'vehicle_external_id,motor_article_id,content_source'
 };
 
 /**
@@ -171,6 +172,50 @@ export async function getArticleMetadata(vehicleId, articleId) {
  * @param {string} table The target table name (e.g., 'dtcs', 'tsbs', 'procedures')
  * @param {Object|Array} data The parsed data matching the table schema
  */
+/**
+ * Append-only L0 evidence row (catalog snapshots, API captures).
+ * @param {object} row evidence_ingest columns
+ */
+export async function insertEvidenceIngest(row) {
+    const cfg = getSupabaseConfig();
+    if (!cfg) {
+        return { success: false, error: 'Supabase credentials not configured' };
+    }
+    try {
+        const payload = {
+            fetched_at: row.fetched_at || new Date().toISOString(),
+            url_path: row.url_path ?? null,
+            http_status: row.http_status ?? null,
+            content_type: row.content_type ?? null,
+            body_json: row.body_json ?? null,
+            body_storage_ref: row.body_storage_ref ?? null,
+            sha256: row.sha256 ?? null,
+            vehicle_external_id: row.vehicle_external_id ?? null,
+            content_source: row.content_source ?? 'MOTOR',
+            source_label: row.source_label ?? null
+        };
+        const response = await fetch(`${cfg.url}/rest/v1/evidence_ingest`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                apikey: cfg.key,
+                Authorization: `Bearer ${cfg.key}`,
+                Prefer: 'return=minimal'
+            },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            logger.error(`evidence_ingest insert failed [${response.status}]: ${errorText}`);
+            return { success: false, error: errorText };
+        }
+        return { success: true };
+    } catch (err) {
+        logger.error('insertEvidenceIngest error:', err);
+        return { success: false, error: err.message };
+    }
+}
+
 export async function insertParsedData(table, data) {
     const cfg = getSupabaseConfig();
     if (!cfg) {
@@ -331,13 +376,26 @@ export async function wasAlreadyParsed(sourcePath) {
 }
 
 /**
+ * Align metadata keys with `metadataCacheMiddleware` (mounted at `/api`, so lookup path is `/years`, not `/api/years`).
+ * @param {string} urlPath
+ * @returns {string}
+ */
+export function normalizeVehicleMetadataPath(urlPath) {
+    if (!urlPath || typeof urlPath !== 'string') return urlPath;
+    if (urlPath.startsWith('/api/')) return urlPath.slice(4);
+    return urlPath;
+}
+
+/**
  * Upserts vehicle metadata into the vehicle_metadata table.
- * @param {string} path The request path (e.g., /api/years)
+ * @param {string} path The request path (e.g., /years or /api/years — normalized to /years)
  * @param {Object} data The response JSON
  */
 export async function insertMetadata(path, data) {
     const cfg = getSupabaseConfig();
     if (!cfg) return { success: false };
+
+    path = normalizeVehicleMetadataPath(path);
 
     try {
         const url = `${cfg.url}/rest/v1/vehicle_metadata?on_conflict=path`;
@@ -378,6 +436,8 @@ export async function insertMetadata(path, data) {
 export async function getMetadata(path) {
     const cfg = getSupabaseConfig();
     if (!cfg) return null;
+
+    path = normalizeVehicleMetadataPath(path);
 
     try {
         const url = `${cfg.url}/rest/v1/vehicle_metadata?path=eq.${encodeURIComponent(path)}&select=data`;

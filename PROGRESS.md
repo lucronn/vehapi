@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-03-19 (bug fixes, logging cleanup, null safety)
+**Last updated**: 2026-03-19 (normalization **phase 1 shipped**: DDL `documentation/migrations/20260319_phase1_normalization.sql` + `supabase_schema.sql` tables `canonical_bucket`, `evidence_ingest`, `evidence_link`, `bucket_alias`, `content_item`; `npm run migrate:phase1`; worker dual-write + catalog `evidence_ingest`; `pdf_native_text.js` for PDF-only articles; `ContentItem` in `normalized_schema.ts`.)
 
 ## Summary
 
@@ -12,7 +12,8 @@
 | Article-Level Content Locking | Complete |
 | UI/UX Copy Cleanup | Complete |
 | Lock Overlay UX | Complete |
-| Data Normalization Pipeline | Complete (lazy by-need) |
+| Repo Structure Cleanup (`randdev/` + `oldfiles/`) | Complete |
+| Data Normalization Pipeline | **In redesign** — greenfield schema + technician-truth layers (see `docs/plans/`); current pipeline still active until cutover |
 
 ## Implementation Checklist
 
@@ -33,7 +34,7 @@
 - [x] Article titles visible before purchase (all titles shown when locked; users can selectively unlock)
 - [x] Direct URL access to articles is blocked (missing moduleType → locked; sidebar/browse-all pass moduleType)
 - [x] Backend verifies article access (Bearer token + Supabase bucket lookup + unlock check)
-- [x] Article lock overlay: Back to Dashboard closes modal in window mode; Refresh button; Unlock single article (100 credits); Unlock section when moduleType known
+- [x] Article lock overlay: Back to Dashboard closes modal in window mode; Refresh button; Unlock single article (100 credits)
 - [x] Payments in modal: Get Credits opens credits modal; Stripe checkout in popup (no page refresh)
 
 ### UI/UX Cleanup
@@ -55,28 +56,21 @@
 ## Bugs & Known Issues
 
 - **Fixed 2026-03-18**: Motor/Article API 401 Unauthorized while logged in — interceptor previously forwarded Supabase `Authorization: Bearer ...` to Motor-proxy endpoints (years/catalog/parts/name), causing Motor to reject requests; now only attaches Bearer for `/api/credits/*` and `/api/source/*/vehicle/*/article/*` paths.
-- **Fixed 2026-03-18**: Credits dashboard request storm (`/api/credits/balance` and `/api/credits/transactions`) caused by auth signal churn — `getIdToken()` no longer re-emits identical auth state, and credits bootstrap effect now keys off stable `userId` instead of full user object.
 - **Fixed 2026-03-19**: Stripe redirect credit authorization sometimes failed due to Supabase session hydration race; `AuthService.getIdToken()` now always hydrates `_session/_user` signals, and `CreditsService.verifySession()` waits for `authService.user()` before calling `/api/credits/verify-session`.
 - **Fixed (pending deploy)**: Motor.com session/auth breaks after buying/unlocking a single article — proxy forwarded Supabase `Authorization` header to Motor.com for article requests; backend now strips `Authorization` header in `vehapiproxi/src/function.js` `onProxyReq` before forwarding upstream.
 - **Fixed 2026-03-19**: Unauthenticated requests (cookies cleared) could still retrieve cached article content — `articleAccessMiddleware` was matching the wrong path shape because it expected `/api/source/...` even though it runs under `app.use('/api', ...)` (now correctly enforces `/source/...`).
 - **Fixed 2026-03-19**: Hardened `articleContentCacheMiddleware` to only cache/serve the exact article-content route (not `/article/:id/title` or other sub-routes), preventing cached HTML leakage on unauthenticated calls.
 - **Fixed 2026-03-19**: Reordered backend unlock checks so individually purchased articles (`article:${articleId}`) and `full` unlocks are honored even if article bucket metadata is missing/unmappable.
-- **Fixed 2026-03-18**: CORS blocked API calls from vehapi.vercel.app to vehapiproxi.vercel.app — proxy was removing `access-control-allow-credentials`; now sets it to `true` when `Origin` is present so credentialed requests (withCredentials) succeed. Motor cookies still stripped via cookie/set-cookie removal.
-- **Fixed 2026-03-19**: `/auth/status` CORS regression and status polling spam — backend now uses explicit allowed-origin reflection (no wildcard for credentialed requests) for direct Express routes and proxy responses; frontend auth-status pollers now stop when idle/error and use bounded/backoff retry to prevent continuous request storms.
+- **Hardened (pending deploy)**: Ensure no Motor.com auth artifacts leak past the proxy — proxy response header stripping includes `Authorization`/`WWW-Authenticate` and removes `access-control-allow-credentials`.
 - **Fixed (pending deploy)**: Backend `vehapiproxi` was not deploying independently after Mar 13; added `deploy-backend.yml` to deploy backend when `vehapiproxi/**` changes.
-- **Fixed 2026-03-19**: Locked/unlocked logic refactor — extracted article-access.js and menu-normalizer.js; Supabase-served articles no longer re-normalized; 403 response includes moduleType for frontend unlock-section; article metadata endpoint for direct-URL moduleType resolution.
-- **Fixed 2026-03-19**: Verbose console.log in production — guarded debug logging in article-viewer, vehicle-data.service, data-sync.service, motor-api.service with `isDevMode()` or `environment.production` checks.
-- **Fixed 2026-03-19**: motor-api.service AbortError check — clarified operator precedence with explicit `isAbortError` variable for HttpErrorResponse-wrapped cancellations.
-- **Fixed 2026-03-19**: article-access.js null safety — `checkArticleAccess` now guards against non-array `vehicleUnlocks` to prevent runtime errors.
-- **Fixed 2026-03-19**: npm audit — applied `npm audit fix`; immutable, minimatch, qs vulnerabilities resolved. Remaining (cookie, tar) require `--force` and may break Angular CLI.
 
 ## What's Left to Do
 
 | Priority | Task |
 |----------|------|
+| **High** | Approve/refine `docs/plans/2026-03-18-normalization-schema-design.md`; new Supabase DDL + phased L0→L1→RAG pipeline |
 | Medium | Rate limiting on article content API |
 | Low | Full-vehicle unlock option from lock overlay |
-| Low | npm audit: cookie, tar vulnerabilities (require `npm audit fix --force`; may break Angular CLI) |
 
 ## Vehicle data normalization / migration
 
@@ -86,37 +80,39 @@
 - [x] **supabase_schema.sql** – Articles table: added code, description, sort, bulletin_number, release_date columns + parent_bucket index. Migration SQL included.
 - [x] **supabase.js** – ensureVehicleExists (FK safety), markVehicleNormalized, checkArticleContent (articles table cache). UPSERT_CONFLICT_COLUMNS unchanged.
 - [x] **background_worker.js** – Creates vehicle record before FK-dependent inserts. Articles include all Motor API fields (code, description, sort, bulletin_number, release_date). Marks vehicle normalized after catalog ingest. extractExternalId returns per-article IDs for DTCs/TSBs. Improved content_html extraction (JSON body.html fallback).
-- [x] **function.js** – Article content cache checks both normalized tables AND articles table. Modular article-access.js and menu-normalizer.js. Supabase-served articles use buildMenuFromNormalizedArticles (no re-normalization). Motor API responses use normalizeMotorResponse.
+- [x] **function.js** – Article content cache checks both normalized tables AND articles table. Articles cache applies normalizeMotorResponse for consistent filterTabs. articles/v2 normalizeMotorResponse always applied (not only for large catalogs).
 - [x] **vehicle-data.service.ts** – Section strategies: comprehensive bucket names matching normalizeCategoryParams output (DTCs, TSBs, procedures, diagrams, component-locations). Article filter checks both bucket AND parent_bucket. loadSectionData always uses articles table for list view (simplified flow).
-- [x] **data-sync.service.ts** – syncFullVehicle includes parts sync. Sets is_normalized=true after completion. syncSingleArticle stores all article fields (code, description, bulletin_number, release_date, sort).
-- [x] **vehicle-dashboard.component.ts** – Dashboard calls ensureVehicleRecord only (0 API calls). No eager syncFullVehicle.
-- [x] **Lazy normalization** – Each silo syncs on-demand: fluids when specs section opens, maintenance per-interval, parts when parts section opens. syncSingleArticle accepts pre-fetched HTML to avoid double-fetch.
+- [x] **data-sync.service.ts** – Eager: catalog metadata, `specifications` rows from catalog articles (non-fluid), parts if empty, mileage intervals + maintenance F/N/R frequency. Fluids API sync commented/disabled. `cacheVehicleMetadata` for home wizard. `syncSingleArticle` still lazy.
+- [x] **home.component.ts** – Writes `vehicle_metadata` for `/years`, `/year/:y/makes`, `/year/:y/make/:make/models` (models payload includes engines).
+- [x] **supabase.js** – `normalizeVehicleMetadataPath` so proxy + app use `/years` keys consistently with `metadataCacheMiddleware`.
+- [x] **vehicle-dashboard.component.ts** – After `ensureVehicleRecord`, fires `eagerSyncVehicleReferenceData` (non-blocking) so Supabase fills without opening each section.
+- [x] **Lazy normalization** – Common issues still on-demand; maintenance intervals also prefetched by eager sync (section path remains idempotent). Per-article HTML only via `syncSingleArticle` / article viewer.
+- [x] **background_worker.js** – `extractContentSource(urlPath)` for `ensureVehicleExists` + article rows (not hard-coded `MOTOR`).
 - [x] **ai_parser.js** – SCHEMAS for dtcs, tsbs, procedures, specifications unchanged (already aligned).
+- [x] **Phase 1 (2026-03-19)** — SQL: `documentation/migrations/20260319_phase1_normalization.sql` + `supabase_schema.sql` extended. Worker: `insertEvidenceIngest` on articles/v2 catalog; `content_item` upsert via `content_item_mapper.js`. Native PDF text: `pdf_native_text.js` in procedure path when `body.html` missing. Scripts: `npm run migrate:phase1`. Types: `ContentItem` in `normalized_schema.ts`.
 
-### Data flow (lazy / by-need)
+### Data flow (eager reference + lazy article body)
 
 ```
-Dashboard load → ensureVehicleRecord (0 API calls)
-                → searchArticles → proxy → articles/v2 → background_worker stores catalog
+Dashboard load → ensureVehicleRecord (0 Motor calls)
+                → eagerSyncVehicleReferenceData (background): articles/v2 catalog metadata,
+                  specifications (from articles), parts if empty, mileage + F/N/R maintenance
+                → Home wizard → vehicle_metadata (years / makes / models+engines)
+                → searchArticles still runs for UI; proxy may also enqueue background_worker catalog
 
-Section opened → Supabase articles table → section list (cached)
-               OR → Motor API fallback → display + lazy cache to Supabase
+Section opened → Supabase articles / specs / parts / maintenance when present
+               OR → Motor API fallback → display + lazy* sync
 
 Article opened → proxy article content (cached or Motor API)
-               → syncSingleArticle with pre-fetched HTML (no double-fetch)
+               → syncSingleArticle with pre-fetched HTML (no double-fetch for list HTML)
                → background_worker AI parse into procedures/dtcs/tsbs tables
 
-Specs opened → Supabase specifications → display
-             OR → Motor API fluids → display + lazySyncFluids (fire-and-forget)
-
-Maintenance opened → Supabase maintenance_schedules for selected interval
-                   OR → Motor API for that interval → display + lazySyncMaintenanceInterval
-
-Parts opened → Supabase parts → display
-             OR → Motor API → display + lazySyncParts
+Specs / parts / maintenance sections → mostly cached after eager sync; lazy paths remain for gaps
 ```
 
 ### What remains (optional)
 
+- **Fluids** – Re-enable `getFluids` → `specifications` when ready (`lazySyncFluids` / `syncFluids`).
 - **Diagrams/component-locations** – No normalized table; section lists use articles only.
 - **Future API fields** – Parts: quantity, fitment_notes. Maintenance: is_severe_service, labor_time_hours.
+- **vehicle_metadata** – Existing rows keyed as `/api/years` may need one-time SQL path fix to `/years` for cache hits.

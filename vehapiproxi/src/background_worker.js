@@ -1,7 +1,18 @@
+import crypto from 'node:crypto';
 import logger from './logger.js';
 import { parseWithAI } from './ai_parser.js';
-import { insertParsedData, logAiProcessing, wasAlreadyParsed, insertMetadata, ensureVehicleExists, markVehicleNormalized } from './supabase.js';
+import {
+    insertParsedData,
+    logAiProcessing,
+    wasAlreadyParsed,
+    insertMetadata,
+    ensureVehicleExists,
+    markVehicleNormalized,
+    insertEvidenceIngest
+} from './supabase.js';
 import { normalizeCategoryParams } from './categorize.js';
+import { buildContentItemFromCatalogArticle } from './content_item_mapper.js';
+import { extractTextFromPdfBase64 } from './pdf_native_text.js';
 
 function determineSchemaType(urlPath) {
     if (urlPath.includes('/dtcs') || urlPath.includes('/dtc/')) return 'dtcs';
@@ -21,6 +32,12 @@ function determineSchemaType(urlPath) {
 function extractVehicleId(urlPath) {
     const m = urlPath.match(/vehicle\/([^/?]+)/);
     return m ? m[1] : null;
+}
+
+/** Content source segment from proxy paths like `/api/source/FORD/vehicle/...`. */
+function extractContentSource(urlPath) {
+    const m = urlPath.match(/\/source\/([^/]+)\//i);
+    return m ? m[1].toUpperCase() : 'MOTOR';
 }
 
 /**
@@ -155,9 +172,28 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
         if (targetSchema === 'articles') {
             const parsedJson = JSON.parse(rawData);
             if (parsedJson?.body?.articleDetails && vehicleIdStr) {
-                await ensureVehicleExists(vehicleIdStr, 'MOTOR');
+                const contentSource = extractContentSource(urlPath);
+                await ensureVehicleExists(vehicleIdStr, contentSource);
 
-                const articles = parsedJson.body.articleDetails.map(a => {
+                const sha256 = crypto.createHash('sha256').update(rawData).digest('hex');
+                const ev = await insertEvidenceIngest({
+                    url_path: urlPath.slice(0, 4000),
+                    http_status: 200,
+                    content_type: 'application/json',
+                    body_json: {
+                        kind: 'articles_v2_catalog',
+                        articleCount: parsedJson.body.articleDetails.length
+                    },
+                    sha256,
+                    vehicle_external_id: vehicleIdStr,
+                    content_source: contentSource,
+                    source_label: 'articles_v2_catalog'
+                });
+                if (!ev.success) {
+                    logger.warn(`evidence_ingest (catalog) skipped: ${ev.error}`);
+                }
+
+                const articles = parsedJson.body.articleDetails.map((a) => {
                     const { rootName, subName } = normalizeCategoryParams(a.title, a.parentBucket, a.bucket);
                     return {
                         vehicle_id: vehicleIdStr,
@@ -172,15 +208,24 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                         bulletin_number: a.bulletinNumber ?? null,
                         release_date: a.releaseDate ?? null,
                         sort: typeof a.sort === 'number' ? a.sort : null,
-                        content_source: a.contentSource || 'MOTOR'
+                        content_source: a.contentSource || contentSource
                     };
                 });
                 const result = await insertParsedData('articles', articles);
                 if (!result.success) {
                     status = 'FAILED';
                     errorMessage = result.error?.message || result.error || 'Articles Insert Failed';
-                } else if (articles.length > 0) {
-                    await markVehicleNormalized(vehicleIdStr);
+                } else {
+                    const ciRows = parsedJson.body.articleDetails.map((a) =>
+                        buildContentItemFromCatalogArticle(a, vehicleIdStr, contentSource)
+                    );
+                    const ciResult = await insertParsedData('content_item', ciRows);
+                    if (!ciResult.success) {
+                        logger.warn(`content_item upsert skipped (run phase-1 migration?): ${ciResult.error}`);
+                    }
+                    if (articles.length > 0) {
+                        await markVehicleNormalized(vehicleIdStr);
+                    }
                 }
             }
             return;
@@ -195,7 +240,7 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
             return;
         }
 
-        await ensureVehicleExists(vehicleIdStr, 'MOTOR');
+        await ensureVehicleExists(vehicleIdStr, extractContentSource(urlPath));
 
         const parsedData = await parseWithAI(rawData, targetSchema);
 
@@ -229,7 +274,19 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
             try {
                 const parsed = JSON.parse(rawData);
                 htmlContent = parsed?.body?.html || parsed?.html || null;
-            } catch { /* not JSON, ignore */ }
+                if (!htmlContent && parsed?.body?.pdf) {
+                    const pdfText = await extractTextFromPdfBase64(String(parsed.body.pdf), { maxPages: 40 });
+                    if (pdfText && pdfText.length >= 20) {
+                        const esc = pdfText
+                            .replace(/&/g, '&amp;')
+                            .replace(/</g, '&lt;')
+                            .replace(/>/g, '&gt;');
+                        htmlContent = `<pre class="torque-native-pdf-text" data-source="native-pdf-text">${esc}</pre>`;
+                    }
+                }
+            } catch {
+                /* not JSON, ignore */
+            }
         }
 
         if (htmlContent) {

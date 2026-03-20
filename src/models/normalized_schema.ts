@@ -48,6 +48,44 @@ export interface NormalizedArticle {
 }
 
 /**
+ * Unified catalog row (Supabase `content_item`) — dual-written with `articles` during normalization phase 1.
+ * @see documentation/migrations/20260319_phase1_normalization.sql
+ */
+export interface ContentItem {
+  id?: string;
+  kind: string;
+  motor_article_id: string;
+  vehicle_external_id: string;
+  variant_id?: string | null;
+  content_source: string;
+  motor_title?: string | null;
+  motor_subtitle?: string | null;
+  motor_description?: string | null;
+  motor_parent_bucket?: string | null;
+  motor_bucket?: string | null;
+  motor_code?: string | null;
+  motor_sort?: number | null;
+  bulletin_number?: string | null;
+  release_date?: string | null;
+  thumbnail_href?: string | null;
+  canonical_silo_code?: string | null;
+  canonical_category_id?: string | null;
+  canonical_subcategory_id?: string | null;
+  tags?: string[];
+  display_title?: string | null;
+  display_subtitle?: string | null;
+  display_description?: string | null;
+  display_long_description?: string | null;
+  search_text?: string | null;
+  enrichment_source?: string | null;
+  enrichment_version?: string | null;
+  enriched_at?: string | null;
+  metadata_json?: Record<string, unknown>;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
  * Hierarchical Category (formerly Buckets)
  */
 export interface NormalizedCategory {
