@@ -39,13 +39,14 @@ export function bucketToModuleType(bucket, parentBucket) {
  * @returns {{ allowed: boolean, moduleType?: string }}
  */
 export function checkArticleAccess(vehicleUnlocks, articleId, moduleType) {
+    const unlocks = Array.isArray(vehicleUnlocks) ? vehicleUnlocks : [];
     const articleKey = `article:${articleId}`;
-    if (vehicleUnlocks.includes(articleKey) || vehicleUnlocks.includes('full')) {
+    if (unlocks.includes(articleKey) || unlocks.includes('full')) {
         return { allowed: true };
     }
     if (!moduleType) {
         return { allowed: false };
     }
-    const hasAccess = vehicleUnlocks.includes(moduleType);
+    const hasAccess = unlocks.includes(moduleType);
     return { allowed: hasAccess, moduleType };
 }
