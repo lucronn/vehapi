@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-03-19 (**Repo cleanup commit**: `_extracted_theme` removed from root; `m1_crawler` sample data + tooling under `randdev/`; Motor API consumption doc at `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md`; misc moves to `randdev/oldfiles`; kept `documentation/DEPLOYMENT.md` + `AGENT_INSTRUCTIONS.md`. Routes refactor + Nemotron + phase-1 normalization on `main` as before.) DDL `documentation/migrations/20260319_phase1_normalization.sql` + `supabase_schema.sql` tables `canonical_bucket`, `evidence_ingest`, `evidence_link`, `bucket_alias`, `content_item`; `npm run migrate:phase1`; worker dual-write + catalog `evidence_ingest`; `pdf_native_text.js` for PDF-only articles; `ContentItem` in `normalized_schema.ts`.)
+**Last updated**: 2026-03-19 (`.gitignore`: `.cursor/settings.json`. **Repo cleanup commit**: `_extracted_theme` removed from root; `m1_crawler` sample data + tooling under `randdev/`; Motor API consumption doc at `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md`; misc moves to `randdev/oldfiles`; kept `documentation/DEPLOYMENT.md` + `AGENT_INSTRUCTIONS.md`. Routes refactor + Nemotron + phase-1 normalization on `main` as before.) DDL `documentation/migrations/20260319_phase1_normalization.sql` + `supabase_schema.sql` tables `canonical_bucket`, `evidence_ingest`, `evidence_link`, `bucket_alias`, `content_item`; `npm run migrate:phase1`; worker dual-write + catalog `evidence_ingest`; `pdf_native_text.js` for PDF-only articles; `ContentItem` in `normalized_schema.ts`.)
 
 ## Summary
 
