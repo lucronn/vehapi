@@ -8,7 +8,8 @@ import {
     insertMetadata,
     ensureVehicleExists,
     markVehicleNormalized,
-    insertEvidenceIngest
+    insertEvidenceIngest,
+    updateContentItemEnrichment
 } from './supabase.js';
 import { normalizeCategoryParams } from './categorize.js';
 import { buildContentItemFromCatalogArticle } from './content_item_mapper.js';
@@ -31,6 +32,39 @@ function htmlEscape(s) {
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
+}
+
+function buildEnrichmentFromParsedData(schemaType, parsedData, htmlContent) {
+    const fromText = (v) => (typeof v === 'string' ? v.trim() : '');
+    const cap = (s, n = 360) => (s.length > n ? `${s.slice(0, n - 3)}...` : s);
+
+    let desc = '';
+    if (schemaType === 'procedures' && parsedData && typeof parsedData === 'object') {
+        const step1 = Array.isArray(parsedData.steps) && parsedData.steps.length > 0 ? fromText(parsedData.steps[0]?.text) : '';
+        desc = fromText(parsedData.description) || step1;
+    } else if ((schemaType === 'dtcs' || schemaType === 'tsbs' || schemaType === 'specifications') && parsedData) {
+        const row = Array.isArray(parsedData) ? parsedData[0] : parsedData;
+        if (row && typeof row === 'object') {
+            desc = fromText(row.summary) || fromText(row.description) || fromText(row.display_text) || fromText(row.content);
+        }
+    }
+
+    if (!desc && typeof htmlContent === 'string' && htmlContent.trim()) {
+        desc = htmlContent
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    const displayDescription = cap(desc);
+    const searchText = cap(`${displayDescription} ${fromText(htmlContent || '')}`.replace(/\s+/g, ' '), 8000);
+    return {
+        display_description: displayDescription || null,
+        search_text: searchText || null,
+        enrichment_source: 'rules+parsed_content',
+        enrichment_version: 'phase1-v2',
+        enriched_at: new Date().toISOString()
+    };
 }
 
 function determineSchemaType(urlPath) {
@@ -388,6 +422,21 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
         if (!result.success) {
             status = 'FAILED';
             errorMessage = result.error?.message || result.error || 'DB Insert Failed';
+        } else {
+            // Lazy catalog enrichment: when parsing article bodies, improve content_item discoverability.
+            const isArticleId = Boolean(urlPath.match(/\/article\/([^?/]+)/));
+            if (isArticleId && externalIdStr) {
+                const patch = buildEnrichmentFromParsedData(targetSchema, parsedData, htmlContent);
+                const ci = await updateContentItemEnrichment(
+                    vehicleIdStr,
+                    externalIdStr,
+                    extractContentSource(urlPath),
+                    patch
+                );
+                if (!ci.success) {
+                    logger.warn(`[${taskId}] content_item enrichment skipped: ${ci.error}`);
+                }
+            }
         }
 
     } catch (error) {

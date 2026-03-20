@@ -216,6 +216,49 @@ export async function insertEvidenceIngest(row) {
     }
 }
 
+/**
+ * Updates catalog enrichment fields on content_item for one vehicle/article/source row.
+ */
+export async function updateContentItemEnrichment(vehicleExternalId, motorArticleId, contentSource, patch) {
+    const cfg = getSupabaseConfig();
+    if (!cfg) {
+        return { success: false, error: 'Supabase credentials not configured' };
+    }
+    if (!vehicleExternalId || !motorArticleId || !contentSource) {
+        return { success: false, error: 'Missing content_item key fields' };
+    }
+    try {
+        const url =
+            `${cfg.url}/rest/v1/content_item` +
+            `?vehicle_external_id=eq.${encodeURIComponent(vehicleExternalId)}` +
+            `&motor_article_id=eq.${encodeURIComponent(motorArticleId)}` +
+            `&content_source=eq.${encodeURIComponent(contentSource)}`;
+
+        const response = await fetch(url, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                apikey: cfg.key,
+                Authorization: `Bearer ${cfg.key}`,
+                Prefer: 'return=minimal'
+            },
+            body: JSON.stringify({
+                ...patch,
+                updated_at: new Date().toISOString()
+            })
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            logger.error(`content_item enrichment update failed [${response.status}]: ${errorText}`);
+            return { success: false, error: errorText };
+        }
+        return { success: true };
+    } catch (err) {
+        logger.error('updateContentItemEnrichment error:', err);
+        return { success: false, error: err.message };
+    }
+}
+
 export async function insertParsedData(table, data) {
     const cfg = getSupabaseConfig();
     if (!cfg) {
