@@ -81,6 +81,18 @@ Or from `vehapiproxi`: `npm run test:normalization` (set `VEHICLE_ID` in `.env`)
 
 The script: (1) clears that vehicle’s data from Supabase, (2) ensures the vehicle row exists, (3) fetches the articles catalog, (4) picks one article per bucket, (5) requests each article’s HTML (proxy enqueues background normalization), (6) waits ~35s, (7) prints row counts per table.
 
+## Test: evidence traceability for one article
+
+Verifies the phase-1 links after one article parse: `content_item` enrichment + `evidence_ingest` + `evidence_link`.
+
+```bash
+# From vehapiproxi, with proxy running and env configured:
+VEHICLE_ID=2854 CONTENT_SOURCE=MOTOR npm run verify:evidence-links
+
+# Optional: pin a specific article
+VEHICLE_ID=2854 ARTICLE_ID=123456 npm run verify:evidence-links
+```
+
 ## Vercel deployment (proxy)
 
 When deploying the proxy to Vercel (from repo root, with rewrites to `/api/index.js`):
