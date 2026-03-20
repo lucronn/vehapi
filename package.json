@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "ng serve",
-    "build": "ng build && node scripts/inject-eruda.cjs",
+    "build": "ng build && node randdev/scripts/inject-eruda.cjs",
     "preview": "ng serve --configuration=production"
   },
   "dependencies": {
