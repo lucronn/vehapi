@@ -9,6 +9,7 @@
     "cursor:auto-loop": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/cursor-auto-continue-loop.ps1 -IntervalSeconds 120 -MaxRounds 10",
     "dev": "ng serve",
     "build": "ng build && node randdev/scripts/inject-eruda.cjs",
+    "verify:prod-readiness": "node scripts/verify-production-readiness.mjs",
     "preview": "ng serve --configuration=production"
   },
   "dependencies": {

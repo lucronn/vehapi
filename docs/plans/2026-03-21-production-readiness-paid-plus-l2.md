@@ -220,3 +220,19 @@ git commit -m "docs: release checklist for paid v1 + L2 GA"
 ## Verification before “done”
 
 Use superpowers:verification-before-completion: `npm run build`, backend start smoke, Stripe test mode flow, L2 search curl test, and checklist in `documentation/RELEASE_CHECKLIST.md`.
+
+---
+
+## Completion status (repo, 2026-03-21)
+
+| Task area | Status |
+|-----------|--------|
+| Tasks 1–3 (deploy baseline, rate limits, observability) | Shipped on `main` |
+| Tasks 4–6 (RLS migration files, L2 RPC + `/api/l2/search`, Angular L2 panel + feature flag) | Shipped on `main` |
+| Task 7 (`media_asset` PDF ingest) | Shipped on `main` |
+| Task 8 (`documentation/RELEASE_CHECKLIST.md`) | Shipped on `main` |
+| **Ops (not in git)** | Apply SQL migrations on Supabase (`migrate:rls-tightening`, `migrate:match-content-chunks-rpc`); enable `environment.features.l2Search` in prod when ready |
+
+**Automated verification:** `npm run verify:prod-readiness` (root). **Worker/API integration:** `cd vehapiproxi && npm run verify:evidence-links -- --local` when secrets available.
+
+**Note:** Multi-step “subagent-driven” review (implementer → spec review → quality review per task) is a **Cursor workflow**; this document’s tasks are implemented; use `verify:prod-readiness` + checklist for repeatable validation.

@@ -24,6 +24,16 @@ Use before tagging production or after major proxy/DB changes. Repeat critical f
 - [ ] Dev: `environment.features.l2Search === true` — run a semantic query on the vehicle dashboard; results or empty state without 5xx
 - [ ] Prod: only after DB migrations (`match_content_chunks` RPC) and `l2Search` flag enabled
 
+## Automated local checks (no secrets)
+
+From repo root:
+
+```bash
+npm run verify:prod-readiness
+```
+
+Runs `npm run build` plus `node --check` on critical `vehapiproxi` entrypoints (proxy, worker, L2, Stripe, rate limit).
+
 ## Regression scripts (developer)
 
 ```bash
