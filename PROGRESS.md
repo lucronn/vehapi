@@ -135,3 +135,15 @@ Specs / parts / maintenance sections → mostly cached after eager sync; lazy pa
 - **Diagrams/component-locations** – No normalized table; section lists use articles only.
 - **Future API fields** – Parts: quantity, fitment_notes. Maintenance: is_severe_service, labor_time_hours.
 - **vehicle_metadata** – Existing rows keyed as `/api/years` may need one-time SQL path fix to `/years` for cache hits.
+
+## Deploy verification baseline (production readiness)
+
+**Recorded:** 2026-03-21 — branch **`feat/production-readiness`** @ **`8a41e8c`** (aligned with `main` when the program started). Vercel **deployment id / time** for production must be confirmed in the Vercel dashboard (not available from git alone).
+
+| Issue (was “pending deploy” in Bugs) | Fix location (see `git log`) | In repo @ `8a41e8c` | Prod deploy checked |
+|--------------------------------------|------------------------------|---------------------|---------------------|
+| Supabase `Authorization` forwarded to Motor broke Motor session after unlock | `vehapiproxi/src/function.js` `onProxyReq` — strip `authorization` | Yes (`c57339c` and follow-ups) | [ ] |
+| Motor auth artifacts in responses to browser | `onProxyRes` strip `authorization` / `www-authenticate` / creds | Yes (`2d91e05` and follow-ups) | [ ] |
+| Backend not deploying when only `vehapiproxi/**` changes | `.github/workflows/deploy-backend.yml` | Yes (`5f63d04`, `6d4d6db`, …) | [ ] |
+
+**Local smoke (2026-03-21):** `npm install` at repo root → `npm run build` succeeds; `node --check vehapiproxi/src/index.js` succeeds.
