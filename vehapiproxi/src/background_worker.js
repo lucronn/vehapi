@@ -10,6 +10,7 @@ import {
     markVehicleNormalized,
     insertEvidenceIngest,
     updateContentItemEnrichment,
+    fetchContentItemId,
     findEntityIdsByExternalId,
     insertEvidenceLinks,
     deleteProcedureStepsForArticle,
@@ -17,9 +18,10 @@ import {
     deleteProcedurePartsForArticle
 } from './supabase.js';
 import { normalizeCategoryParams } from './categorize.js';
-import { buildContentItemFromCatalogArticle } from './content_item_mapper.js';
+import { buildContentItemFromCatalogArticle, buildMinimalContentItemFromParse } from './content_item_mapper.js';
 import { extractTextFromPdfBase64 } from './pdf_native_text.js';
 import { extractTextFromPdfPageViaNemotron } from './nemotron_multimodal.js';
+import { ingestL2ContentChunksIfEnabled } from './l2_rag_ingest.js';
 
 const ENABLE_NEMOTRON_PDF_VISION_FALLBACK =
     String(process.env.ENABLE_NEMOTRON_PDF_VISION_FALLBACK || '').toLowerCase() === 'true';
@@ -31,6 +33,24 @@ const PDF_VISION_FALLBACK_PAGE = Number.parseInt(
     process.env.PDF_VISION_FALLBACK_PAGE || '0',
     10
 );
+
+let _warnedMissingProcedureToolTables = false;
+
+function isMissingProcedureToolTableError(errText) {
+    const s = String(errText || '');
+    return (
+        /PGRST205/i.test(s) &&
+        (/procedure_tool/i.test(s) || /procedure_part/i.test(s) || /Could not find the table/i.test(s))
+    );
+}
+
+function warnProcedureToolTablesOnce(errText) {
+    if (_warnedMissingProcedureToolTables || !isMissingProcedureToolTableError(errText)) return;
+    _warnedMissingProcedureToolTables = true;
+    logger.warn(
+        'procedure_tool / procedure_part not in PostgREST schema (run migrate:l1-procedure-tool-part?) — suppressing further tool/part delete/insert warnings'
+    );
+}
 
 function htmlEscape(s) {
     return String(s)
@@ -158,8 +178,9 @@ function buildProcedurePartRows(normalized) {
         const parts = Array.isArray(proc.parts_required) ? proc.parts_required : [];
         parts.forEach((p, idx) => {
             const pr = p && typeof p === 'object' ? p : {};
-            const qty =
-                typeof pr.quantity === 'number' && !Number.isNaN(pr.quantity) ? pr.quantity : 1;
+            const qtyRaw =
+                typeof pr.quantity === 'number' && !Number.isNaN(pr.quantity) ? pr.quantity : null;
+            const qty = qtyRaw != null ? qtyRaw : 1;
             rows.push({
                 vehicle_id: vid,
                 source_article_id: aid,
@@ -228,10 +249,10 @@ function extractVehicleId(urlPath) {
     return m ? m[1] : null;
 }
 
-/** Content source segment from proxy paths like `/api/source/FORD/vehicle/...`. */
+/** Content source segment from proxy paths like `/api/source/GeneralMotors/vehicle/...` (preserve Motor casing). */
 function extractContentSource(urlPath) {
     const m = urlPath.match(/\/source\/([^/]+)\//i);
-    return m ? m[1].toUpperCase() : 'MOTOR';
+    return m ? m[1] : 'MOTOR';
 }
 
 /**
@@ -283,10 +304,11 @@ function normalizeForSupabase(data, schemaType) {
             note: s.note || null
         }));
         out.tools_required = ensureArray(out.tools_required);
-        out.parts_required = ensureArray(out.parts_required).map(p => ({
+        out.parts_required = ensureArray(out.parts_required).map((p) => ({
             part_number: p.part_number || null,
             description: p.description ?? '',
-            quantity: typeof p.quantity === 'number' ? p.quantity : 1
+            quantity:
+                typeof p.quantity === 'number' && !Number.isNaN(p.quantity) ? p.quantity : null
         }));
         out.time_estimate_hours = ensureNum(out.time_estimate_hours);
     } else if (schemaType === 'specifications') {
@@ -353,6 +375,9 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
     let status = 'COMPLETED';
     let errorMessage = null;
     let evidenceId = null;
+    let promptTokens = null;
+    let completionTokens = null;
+    let totalTokensUsed = 0;
 
     try {
         if (targetSchema === 'metadata') {
@@ -487,7 +512,9 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
             logger.warn(`[${taskId}] evidence_ingest failed: ${evErr.message}`);
         }
 
-        const parsedData = await parseWithAI(rawData, targetSchema);
+        const { parsed: parsedData, usage: parseUsage } = await parseWithAI(rawData, targetSchema, {
+            urlPath
+        });
 
         const externalIdStr = extractExternalId(urlPath, targetSchema);
 
@@ -573,16 +600,33 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
             // Lazy catalog enrichment: when parsing article bodies, improve content_item discoverability.
             const isArticleId = Boolean(urlPath.match(/\/article\/([^?/]+)/));
             if (isArticleId && externalIdStr) {
+                const cs = extractContentSource(urlPath);
+                if (!(await fetchContentItemId(vehicleIdStr, externalIdStr, cs))) {
+                    const minimal = buildMinimalContentItemFromParse({
+                        vehicleExternalId: vehicleIdStr,
+                        motorArticleId: externalIdStr,
+                        contentSource: cs,
+                        targetSchema
+                    });
+                    const ciIns = await insertParsedData('content_item', [minimal], { returnRepresentation: true });
+                    if (!ciIns.success) {
+                        logger.warn(`[${taskId}] content_item parse-path upsert skipped: ${ciIns.error}`);
+                    }
+                }
                 const patch = buildEnrichmentFromParsedData(targetSchema, parsedData, htmlContent);
-                const ci = await updateContentItemEnrichment(
-                    vehicleIdStr,
-                    externalIdStr,
-                    extractContentSource(urlPath),
-                    patch
-                );
+                const ci = await updateContentItemEnrichment(vehicleIdStr, externalIdStr, cs, patch);
                 if (!ci.success) {
                     logger.warn(`[${taskId}] content_item enrichment skipped: ${ci.error}`);
                 }
+                await ingestL2ContentChunksIfEnabled({
+                    taskId,
+                    vehicleExternalId: vehicleIdStr,
+                    motorArticleId: externalIdStr,
+                    contentSource: cs,
+                    targetSchema,
+                    htmlContent,
+                    parsedData
+                });
             }
 
             // Traceability link: evidence_ingest -> normalized entity rows.
@@ -637,15 +681,19 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                     }
                     const delT = await deleteProcedureToolsForArticle(vid, aid);
                     if (!delT.success) {
-                        logger.warn(
-                            `[${taskId}] procedure_tool delete skipped (run migrate:l1-procedure-tool-part?): ${delT.error}`
-                        );
+                        if (isMissingProcedureToolTableError(delT.error)) warnProcedureToolTablesOnce(delT.error);
+                        else
+                            logger.warn(
+                                `[${taskId}] procedure_tool delete skipped (run migrate:l1-procedure-tool-part?): ${delT.error}`
+                            );
                     }
                     const delP = await deleteProcedurePartsForArticle(vid, aid);
                     if (!delP.success) {
-                        logger.warn(
-                            `[${taskId}] procedure_part delete skipped (run migrate:l1-procedure-tool-part?): ${delP.error}`
-                        );
+                        if (isMissingProcedureToolTableError(delP.error)) warnProcedureToolTablesOnce(delP.error);
+                        else
+                            logger.warn(
+                                `[${taskId}] procedure_part delete skipped (run migrate:l1-procedure-tool-part?): ${delP.error}`
+                            );
                     }
                 }
                 const stepRows = buildProcedureStepRows(normalized);
@@ -667,7 +715,8 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                 if (toolRows.length > 0) {
                     const pt = await insertParsedData('procedure_tool', toolRows, { returnRepresentation: true });
                     if (!pt.success) {
-                        logger.warn(`[${taskId}] procedure_tool insert skipped: ${pt.error}`);
+                        if (isMissingProcedureToolTableError(pt.error)) warnProcedureToolTablesOnce(pt.error);
+                        else logger.warn(`[${taskId}] procedure_tool insert skipped: ${pt.error}`);
                     } else if (evidenceId && Array.isArray(pt.rows) && pt.rows.length > 0) {
                         const toolIds = pt.rows.map((r) => r.id).filter(Boolean);
                         if (toolIds.length > 0) {
@@ -682,7 +731,8 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                 if (partRows.length > 0) {
                     const pp = await insertParsedData('procedure_part', partRows, { returnRepresentation: true });
                     if (!pp.success) {
-                        logger.warn(`[${taskId}] procedure_part insert skipped: ${pp.error}`);
+                        if (isMissingProcedureToolTableError(pp.error)) warnProcedureToolTablesOnce(pp.error);
+                        else logger.warn(`[${taskId}] procedure_part insert skipped: ${pp.error}`);
                     } else if (evidenceId && Array.isArray(pp.rows) && pp.rows.length > 0) {
                         const partIds = pp.rows.map((r) => r.id).filter(Boolean);
                         if (partIds.length > 0) {
@@ -708,7 +758,9 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
             category: targetSchema,
             status,
             error_message: errorMessage,
-            tokens_used: 0
+            tokens_used: totalTokensUsed || null,
+            prompt_tokens: promptTokens,
+            completion_tokens: completionTokens
         }).catch(e => logger.warn('Failed to log AI processing metrics to Supabase.', e));
 
         logger.info(`Finished background task [${taskId}] in ${duration}ms. Status: ${status}`);

@@ -136,8 +136,8 @@ export class VehicleDataService {
         }
         // Implicit switch for known non-Motor sources if motorVehicleId exists?
         // For now, only switch if explicitly requested or if it's a known pattern.
-        // Legacy Maintenance Facade: ALWAYS uses Motor.
-        return { contentSource: contentSource.toUpperCase(), vehicleId };
+        // Preserve Motor path casing (e.g. GeneralMotors); upstream routes are case-sensitive.
+        return { contentSource, vehicleId };
     }
 
     /**

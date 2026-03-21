@@ -207,4 +207,10 @@ Below is a **conceptual** set of tables (names negotiable). Intent is **one row 
 - **Always first:** **native PDF text** to minimize API volume.  
 - **One stack** for AI keeps ops and compliance simple.
 
-*Updated 2026-03-18 — Nemotron-first per project direction.*
+### A.5 Parser hardening (implemented in vehapiproxi)
+
+- **Zod** (`ArticleExtractionSchema` in `ai_parser_schemas.js`) validates procedure extraction JSON; up to **3** Nemotron self-correction rounds with the validation error appended to the user prompt; persistent failures are written to **`failed_extractions`** (DLQ).
+- **`p-limit`** caps concurrent structured Nemotron calls (**`NEMOTRON_STRUCTURED_CONCURRENCY`**, default **3**) to reduce HTTP 429s.
+- **`ai_processing_logs`** may store **`prompt_tokens`** and **`completion_tokens`** (additive migration `20260325_failed_extractions_and_ai_log_tokens.sql`); `tokens_used` remains the combined total for cost tracking.
+
+*Updated 2026-03-18 — Nemotron-first per project direction; A.5 added 2026-03-20.*

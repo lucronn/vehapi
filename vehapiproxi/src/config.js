@@ -1,6 +1,11 @@
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import logger from './logger.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// Prefer vehapiproxi/.env next to this file so `node` cwd (repo root vs vehapiproxi) does not matter.
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 dotenv.config();
 
 export const config = {

@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-03-24 — **Orchestrator / docs:** `AGENTS.md` progress section aligned with **`.cursor/WORKER_LOOP.md`** (hook toggles optional; **`npm run cursor:auto-once`** → `scripts/continue-once.ps1`). Prior: L1 **`procedure_tool` + `procedure_part`** (2026-03-23). **Next:** L2 `content_chunk`/embeddings or diagram/labor L1 — **blocked for full regression** without `SUPABASE_*` / Motor / NVIDIA in `.env` (run `verify:evidence-links` when creds available).
+**Last updated**: 2026-03-21 — **Worker:** parse-path article tasks **upsert minimal `content_item`** when missing (unblocks L2 + enrichment); **PGRST205** missing `procedure_tool`/`procedure_part` warns once. Prior: **`verify:evidence-links`** SPA-shell shard probe. Prior: **Article shard:** `getArticleContent` keeps OEM `contentSource` when `motorVehicleId` is set (no longer forces `MOTOR`); `resolveSourceParams` + worker `extractContentSource` preserve casing (`GeneralMotors`). Proxy warns on M1 SPA shell HTML for `/article/` paths. Prior 2026-03-20 — **AI parse hardening:** Zod (`ai_parser_schemas.js`) + procedure self-correction retries, **`failed_extractions`** DLQ, **`p-limit`** on structured Nemotron (`NEMOTRON_STRUCTURED_CONCURRENCY`), token counts in **`ai_processing_logs`** (`migrate:ai-hardening`). **L2** opt-in ingest unchanged. **Evidence verify:** default **`http://localhost:3001`**.
 
 ## Summary
 
@@ -19,7 +19,7 @@
 
 - **Shipped:** Phase 1 — `evidence_ingest`, `content_item` upsert + post-parse enrichment (`updateContentItemEnrichment`), catalog path in `vehapiproxi/src/background_worker.js` + `content_item_mapper.js`; `evidence_link` after parse for **procedures** (parent row) **/ dtcs / tsbs** + L1 **`procedure_step`** / **`procedure_tool`** / **`procedure_part`** + **`spec_fact`** when schema present (legacy **`specifications`** → `spec_fact` only); native PDF text (`pdf_native_text.js`) and optional sparse-PDF Nemotron vision (`nemotron_multimodal.js`, `ENABLE_NEMOTRON_PDF_VISION_FALLBACK=true`); `npm run verify:evidence-links`; optional Cursor worker-loop (`hooks.json` → `auto-continue.mjs`, default ON — see `.cursor/WORKER_LOOP.md`).
 - **Workspace (git):** `.cursor/WORKER_LOOP.md`, `.cursor/hooks.json`, `.cursor/hooks/*.mjs`, and `.cursor/agents/` may be **untracked** until committed — hooks only run in clones that have them. Loop toggle files (`.cursor/worker-loop.enabled` / `.disabled` / `.after-response`) are **gitignored** when present; default auto-continue is ON once hooks are registered (see `WORKER_LOOP.md`). **Desktop continue (Windows):** root **`npm run cursor:auto-once`** invokes **`scripts/continue-once.ps1`** (paste + Enter); see `scripts/automation/README.md`.
-- **Next (code):** L2 **`content_chunk`** + embeddings (pgvector or external) per plan; parallel domains (wiring diagrams, labor, TSB+DTC depth). L1 **`spec_fact`**, **`maintenance_task`**, **`procedure_step`**, **`procedure_tool`**, **`procedure_part`** shipped in repo.
+- **Next (code):** L2 **query path** (RAG retrieval API + UI) and **`media_asset`** wiring; parallel domains (wiring diagrams, labor, TSB+DTC depth). L1 **`spec_fact`**, **`maintenance_task`**, **`procedure_step`**, **`procedure_tool`**, **`procedure_part`** + L2 **DDL** + **chunk ingest** (flagged) shipped in repo.
 - **Regression:** after `background_worker.js` or evidence mapping changes, run `verify:evidence-links` with local `.env` (`SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`); no automated CI run without injected secrets — not a product bug.
 - **Worker assumption:** L1 tables + RLS follow `supabase_schema.sql`; thread writes from existing parse outputs before expanding ingest sources.
 
@@ -81,7 +81,7 @@
 |----------|------|
 | **High** | Greenfield plan: `docs/plans/2026-03-18-normalization-schema-design.md`; L1 facts line (spec, maintenance, procedure steps/tools/parts) in repo; **next:** L2/RAG or diagram/labor L1 as scoped |
 | Medium | Rate limiting on article content API |
-| Medium | Phase-1 worker regression: after `vehapiproxi` or `background_worker.js` changes, `cd vehapiproxi && npm run verify:evidence-links -- --vehicle=<id> --source=<CONTENT_SOURCE>` (requires `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` in `.env`; optional `--proxy=http://localhost:3000` for dev; use catalog-valid `--source` if proxy returns 500) |
+| Medium | Phase-1 worker regression: `cd vehapiproxi && npm run verify:evidence-links -- --local --vehicle=<id>` with **local** `ng serve` + `node src/index.js`, `SKIP_ARTICLE_ACCESS_AUTH=true` + `NODE_ENV=development` in `vehapiproxi/.env` (no user JWT). Or Vercel: `--token=<user access_token>`. Needs `SUPABASE_*` in `.env`. |
 | Low | Commit `.cursor/hooks.json`, `.cursor/hooks/*.mjs`, `.cursor/WORKER_LOOP.md` (and `.cursor/agents/*`) when the team should share Cursor auto-continue / orchestrator docs |
 | Low | (cleared 2026-03-24) AGENTS.md ↔ WORKER_LOOP: hook toggles + `npm run cursor:auto-once` / `continue-once.ps1` documented |
 | Low | Full-vehicle unlock option from lock overlay |

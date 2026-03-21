@@ -11,6 +11,7 @@
 -- DROP TABLE IF EXISTS public.system_sessions CASCADE;
 
 -- Drop vehicle/content tables (reverse dependency order)
+DROP TABLE IF EXISTS public.failed_extractions CASCADE;
 DROP TABLE IF EXISTS public.ai_processing_logs CASCADE;
 DROP TABLE IF EXISTS public.vehicle_metadata CASCADE;
 DROP TABLE IF EXISTS public.common_issues_cache CASCADE;
@@ -28,11 +29,15 @@ DROP TABLE IF EXISTS public.procedure_step CASCADE;
 DROP TABLE IF EXISTS public.procedures CASCADE;
 DROP TABLE IF EXISTS public.articles CASCADE;
 DROP TABLE IF EXISTS public.evidence_link CASCADE;
+DROP TABLE IF EXISTS public.content_chunk CASCADE;
+DROP TABLE IF EXISTS public.media_asset CASCADE;
 DROP TABLE IF EXISTS public.content_item CASCADE;
 DROP TABLE IF EXISTS public.bucket_alias CASCADE;
 DROP TABLE IF EXISTS public.evidence_ingest CASCADE;
 DROP TABLE IF EXISTS public.canonical_bucket CASCADE;
 DROP TABLE IF EXISTS public.vehicles CASCADE;
+
+CREATE EXTENSION IF NOT EXISTS vector;
 
 -- -----------------------------------------------------------------------------
 -- 1. VEHICLES (root; no FK to other app tables)
@@ -287,10 +292,25 @@ CREATE TABLE public.ai_processing_logs (
     status TEXT NOT NULL,
     error_message TEXT,
     tokens_used INTEGER,
+    prompt_tokens INTEGER,
+    completion_tokens INTEGER,
     processed_at TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE INDEX idx_ai_processing_logs_source_status ON public.ai_processing_logs(source_file, status);
+
+CREATE TABLE public.failed_extractions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    article_id TEXT NOT NULL,
+    raw_text TEXT,
+    error_message TEXT NOT NULL,
+    url_path TEXT,
+    category TEXT,
+    created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX idx_failed_extractions_article ON public.failed_extractions(article_id);
+CREATE INDEX idx_failed_extractions_created ON public.failed_extractions(created_at DESC);
 
 -- -----------------------------------------------------------------------------
 -- 10. COMMON_ISSUES_CACHE (AI-generated common issues per vehicle)
@@ -465,6 +485,38 @@ CREATE INDEX idx_content_item_vehicle ON public.content_item(vehicle_external_id
 CREATE INDEX idx_content_item_silo ON public.content_item(vehicle_external_id, canonical_silo_code);
 CREATE INDEX idx_content_item_kind ON public.content_item(vehicle_external_id, kind);
 
+-- -----------------------------------------------------------------------------
+-- L2 RAG — media blobs + vector chunks (pgvector)
+-- -----------------------------------------------------------------------------
+CREATE TABLE public.media_asset (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vehicle_external_id TEXT REFERENCES public.vehicles(external_id) ON DELETE CASCADE,
+    content_source TEXT NOT NULL DEFAULT 'MOTOR',
+    motor_graphic_id TEXT,
+    mime_type TEXT,
+    sha256 TEXT,
+    source_label TEXT,
+    storage_path TEXT,
+    metadata_json JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_media_asset_vehicle ON public.media_asset(vehicle_external_id);
+
+CREATE TABLE public.content_chunk (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    content_item_id UUID REFERENCES public.content_item(id) ON DELETE CASCADE,
+    chunk_index INTEGER NOT NULL,
+    text_content TEXT NOT NULL,
+    embedding vector(1024),
+    media_asset_id UUID REFERENCES public.media_asset(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX idx_content_chunk_embedding_hnsw ON public.content_chunk USING hnsw (embedding vector_ip_ops);
+CREATE INDEX idx_content_chunk_item_id ON public.content_chunk(content_item_id);
+
 INSERT INTO public.canonical_bucket (code, display_name, description, module_type, sort_order)
 VALUES
     ('silo_dtcs', 'Diagnostic Codes (DTC)', 'DTC articles and diagnostics', 'dtcs', 10),
@@ -495,6 +547,7 @@ ALTER TABLE public.spec_fact ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vehicle_metadata ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ai_processing_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.failed_extractions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.common_issues_cache ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.parts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.maintenance_schedules ENABLE ROW LEVEL SECURITY;
@@ -504,6 +557,8 @@ ALTER TABLE public.bucket_alias ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.evidence_ingest ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.evidence_link ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.content_item ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.media_asset ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.content_chunk ENABLE ROW LEVEL SECURITY;
 
 -- Permissive policies (MVP; tighten for production)
 CREATE POLICY "Allow all vehicles" ON public.vehicles FOR ALL USING (true) WITH CHECK (true);
@@ -519,6 +574,7 @@ CREATE POLICY "Allow all spec_fact" ON public.spec_fact FOR ALL USING (true) WIT
 CREATE POLICY "Allow all categories" ON public.categories FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all vehicle_metadata" ON public.vehicle_metadata FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all ai_processing_logs" ON public.ai_processing_logs FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all failed_extractions" ON public.failed_extractions FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all common_issues_cache" ON public.common_issues_cache FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all parts" ON public.parts FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all maintenance_schedules" ON public.maintenance_schedules FOR ALL USING (true) WITH CHECK (true);
@@ -528,6 +584,8 @@ CREATE POLICY "Allow all bucket_alias" ON public.bucket_alias FOR ALL USING (tru
 CREATE POLICY "Allow all evidence_ingest" ON public.evidence_ingest FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all evidence_link" ON public.evidence_link FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all content_item" ON public.content_item FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all media_asset" ON public.media_asset FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all content_chunk" ON public.content_chunk FOR ALL USING (true) WITH CHECK (true);
 
 -- =============================================================================
 -- MIGRATION: Add missing article catalog fields (run on existing deployments)

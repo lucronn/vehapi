@@ -3,11 +3,76 @@
  * Multimodal (PDF page → PNG, image OCR via vision model): `./nemotron_multimodal.js` (re-exported below).
  * @see docs/plans/2026-03-18-normalization-schema-design.md Appendix A
  */
+import pLimit from 'p-limit';
 import logger from './logger.js';
 import { getNemotronClient, getNemotronTextModel } from './nemotron_client.js';
+import { htmlToMarkdownForLlm, extractArticleHtmlFromMotorPayload } from './html_preprocess.js';
+import { ArticleExtractionSchema, formatZodError } from './ai_parser_schemas.js';
+import { insertFailedExtraction } from './supabase.js';
+
+const STRUCTURED_CONCURRENCY = Math.max(
+    1,
+    Number.parseInt(process.env.NEMOTRON_STRUCTURED_CONCURRENCY || '3', 10)
+);
+const structuredLimit = pLimit(STRUCTURED_CONCURRENCY);
+
+const SYSTEM_JSON_ONLY =
+    'You are a strict JSON generator for automotive service data. Output ONLY valid JSON. ' +
+    'Do not include preambles, explanations, markdown code fences, apologies, or chain-of-thought reasoning. ' +
+    'Begin your response with { or [ and end with } or ].';
+
+/** No reasoning tokens, no meta-commentary — JSON only. */
+const ZERO_MONOLOGUE =
+    '\nZero-Monologue: Do not narrate your thinking or reveal internal reasoning. Do not explain. ' +
+    'Return JSON only — no text before or after the JSON object.';
+
+const SYSTEM_JSON_STRICT = SYSTEM_JSON_ONLY + ZERO_MONOLOGUE;
+
+const FEW_SHOT_PROCEDURES = `
+Example valid output (illustrative only; use real content from the document):
+{"article_title":"Front brake service","article_description":"Optional short summary","procedures":[{"title":"Remove caliper","description":"","steps":[{"order":0,"text":"Loosen lug nuts before lifting."}],"tools_required":["torque wrench"],"parts_required":[{"description":"Brake pads","quantity":2}]}]}
+`;
+
+/** One Motor document may contain multiple distinct procedures — each entry has its own steps array. */
+const PROCEDURE_ITEM_SCHEMA = {
+    type: 'OBJECT',
+    properties: {
+        title: { type: 'STRING' },
+        description: { type: 'STRING' },
+        steps: {
+            type: 'ARRAY',
+            items: {
+                type: 'OBJECT',
+                properties: {
+                    order: { type: 'INTEGER' },
+                    text: { type: 'STRING' },
+                    image_url: { type: 'STRING' },
+                    warning: { type: 'STRING' },
+                    note: { type: 'STRING' }
+                },
+                required: ['text']
+            }
+        },
+        tools_required: { type: 'ARRAY', items: { type: 'STRING' } },
+        parts_required: {
+            type: 'ARRAY',
+            items: {
+                type: 'OBJECT',
+                properties: {
+                    part_number: { type: 'STRING' },
+                    description: { type: 'STRING' },
+                    quantity: { type: 'INTEGER' }
+                },
+                required: ['description']
+            }
+        },
+        time_estimate_hours: { type: 'NUMBER' },
+        cautions: { type: 'STRING' }
+    },
+    required: ['title', 'steps']
+};
 
 // Schema definitions aligned with Supabase/TypeScript for maximum retention and accessibility.
-// Single source of truth for AI output structure.
 const SCHEMAS = {
     dtcs: {
         type: 'ARRAY',
@@ -55,42 +120,18 @@ const SCHEMAS = {
             required: ['bulletin_number', 'title']
         }
     },
+    /** Top-level `procedures` array — collapsed to one L0 `procedures` row in `collapseProceduresForL1`. */
     procedures: {
         type: 'OBJECT',
         properties: {
-            title: { type: 'STRING' },
-            description: { type: 'STRING' },
-            steps: {
+            article_title: { type: 'STRING' },
+            article_description: { type: 'STRING' },
+            procedures: {
                 type: 'ARRAY',
-                items: {
-                    type: 'OBJECT',
-                    properties: {
-                        order: { type: 'INTEGER' },
-                        text: { type: 'STRING' },
-                        image_url: { type: 'STRING' },
-                        warning: { type: 'STRING' },
-                        note: { type: 'STRING' }
-                    },
-                    required: ['order', 'text']
-                }
-            },
-            tools_required: { type: 'ARRAY', items: { type: 'STRING' } },
-            parts_required: {
-                type: 'ARRAY',
-                items: {
-                    type: 'OBJECT',
-                    properties: {
-                        part_number: { type: 'STRING' },
-                        description: { type: 'STRING' },
-                        quantity: { type: 'INTEGER' }
-                    },
-                    required: ['description', 'quantity']
-                }
-            },
-            time_estimate_hours: { type: 'NUMBER' },
-            cautions: { type: 'STRING' }
+                items: PROCEDURE_ITEM_SCHEMA
+            }
         },
-        required: ['title']
+        required: ['procedures']
     },
     specifications: {
         type: 'ARRAY',
@@ -123,7 +164,6 @@ const SCHEMAS = {
     }
 };
 
-// Schema for tutorial generation
 const TUTORIAL_SCHEMA = {
     type: 'ARRAY',
     items: {
@@ -140,42 +180,210 @@ const TUTORIAL_SCHEMA = {
 };
 
 const MAX_RETRIES = 3;
+/** Zod self-correction rounds (each triggers a new Nemotron call). */
+const ZOD_PROCEDURE_ATTEMPTS = 3;
+
+function parseMaxTokens() {
+    const n = Number.parseInt(process.env.NEMOTRON_MAX_OUTPUT_TOKENS || process.env.NEMOTRON_MAX_TOKENS || '32768', 10);
+    return Number.isFinite(n) && n > 0 ? n : 32768;
+}
+
+function stripJsonFences(s) {
+    let t = String(s || '').trim();
+    if (t.startsWith('```json')) t = t.replace(/^```json\n?/i, '');
+    else if (t.startsWith('```')) t = t.replace(/^```\n?/, '');
+    if (t.endsWith('```')) t = t.replace(/\n?```$/, '');
+    return t.trim();
+}
 
 /**
- * Internal helper that calls the Nemotron API via OpenAI SDK.
- * @param {string} prompt Text prompt to send
- * @param {object|null} schema Optional JSON schema for structured output
- * @returns {string} Raw text response
+ * Collapse multi-procedure Nemotron output into one `procedures` table row (single external_id per article).
+ * Preserves section boundaries by prefixing the first step of each sub-procedure with a Markdown heading line.
  */
-async function callAI(prompt, schema = null) {
+export function collapseProceduresForL1(parsed) {
+    if (!parsed || typeof parsed !== 'object') return parsed;
+    if (!Array.isArray(parsed.procedures) || parsed.procedures.length === 0) {
+        return parsed;
+    }
+
+    const procs = parsed.procedures;
+    const title = procs.map((p) => p.title).filter(Boolean).join(' · ') || 'Service procedures';
+    const description =
+        procs.map((p) => p.description).filter(Boolean).join('\n\n') || null;
+
+    const mergedSteps = [];
+    let order = 0;
+    for (const p of procs) {
+        const secTitle = (p.title && String(p.title).trim()) || 'Procedure';
+        const steps = Array.isArray(p.steps) ? p.steps : [];
+        steps.forEach((s, idx) => {
+            const text = typeof s.text === 'string' ? s.text : '';
+            const block =
+                idx === 0
+                    ? `**${secTitle}**\n\n${text}`
+                    : text;
+            mergedSteps.push({
+                order: order++,
+                text: block,
+                image_url: s.image_url || null,
+                warning: s.warning || null,
+                note: s.note || null
+            });
+        });
+    }
+
+    const tools = [];
+    const parts = [];
+    for (const p of procs) {
+        if (Array.isArray(p.tools_required)) {
+            tools.push(...p.tools_required.map((t) => String(t)));
+        }
+        if (Array.isArray(p.parts_required)) {
+            parts.push(...p.parts_required);
+        }
+    }
+
+    const cautionsList = procs.map((p) => p.cautions).filter(Boolean);
+    const cautions = cautionsList.length ? cautionsList.join('\n\n') : parsed.cautions || null;
+
+    let time_estimate_hours = parsed.time_estimate_hours ?? null;
+    for (const p of procs) {
+        if (typeof p.time_estimate_hours === 'number' && !Number.isNaN(p.time_estimate_hours)) {
+            time_estimate_hours = p.time_estimate_hours;
+            break;
+        }
+    }
+
+    return {
+        title,
+        description,
+        steps: mergedSteps,
+        tools_required: [...new Set(tools)],
+        parts_required: parts,
+        cautions,
+        time_estimate_hours
+    };
+}
+
+function mergeUsage(a, b) {
+    const pt = (a?.prompt_tokens || 0) + (b?.prompt_tokens || 0);
+    const ct = (a?.completion_tokens || 0) + (b?.completion_tokens || 0);
+    return { prompt_tokens: pt, completion_tokens: ct, total_tokens: pt + ct };
+}
+
+function normalizeUsage(u) {
+    if (!u) return { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+    const pt = u.prompt_tokens ?? 0;
+    const ct = u.completion_tokens ?? 0;
+    const tt = u.total_tokens ?? pt + ct;
+    return { prompt_tokens: pt, completion_tokens: ct, total_tokens: tt };
+}
+
+function extractArticleIdFromMeta(meta) {
+    const p = meta?.urlPath;
+    if (!p || typeof p !== 'string') return null;
+    const m = p.match(/\/article\/([^?/]+)/);
+    return m ? m[1] : null;
+}
+
+function safeJsonParse(text) {
+    const cleaned = stripJsonFences(text);
+    try {
+        return JSON.parse(cleaned);
+    } catch (e1) {
+        const m = cleaned.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+        if (m) {
+            try {
+                return JSON.parse(m[0]);
+            } catch (e2) {
+                logger.warn(`safeJsonParse: brace-extract failed: ${e2.message}`);
+            }
+        }
+        throw new Error(`Invalid JSON from model: ${e1.message}`);
+    }
+}
+
+/**
+ * Structured Nemotron call: non-streaming, no thinking budget, large max_tokens — avoids truncated JSON.
+ * Globally throttled via p-limit (NEMOTRON_STRUCTURED_CONCURRENCY, default 3) to reduce 429s.
+ * @returns {Promise<{ text: string, usage: { prompt_tokens?: number, completion_tokens?: number, total_tokens?: number } | null }>}
+ */
+async function callStructuredCompletion(userPrompt, schema) {
     const openai = getNemotronClient();
     if (!openai) {
         throw new Error('Nemotron unavailable — set NVIDIA_API_KEY, NVAPI_KEY, or LLM_API_KEY');
     }
 
-    let finalPrompt = prompt;
+    const schemaBlock = `\n\nReturn JSON that matches this schema (types are conceptual; output valid JSON only):\n${JSON.stringify(schema, null, 2)}`;
+
+    const useJsonObjectMode =
+        String(process.env.NEMOTRON_JSON_RESPONSE || process.env.OPENAI_JSON_MODE || '').toLowerCase() === 'true' ||
+        process.env.NEMOTRON_JSON_RESPONSE === '1';
+
+    const body = {
+        model: getNemotronTextModel(),
+        messages: [
+            { role: 'system', content: SYSTEM_JSON_STRICT },
+            { role: 'user', content: userPrompt + schemaBlock }
+        ],
+        temperature: 0.2,
+        top_p: 0.9,
+        max_tokens: parseMaxTokens(),
+        stream: false
+    };
+
+    // OpenAI `json_object` requires a JSON object at root — not valid for array-root schemas (dtcs, tsbs, …).
+    if (useJsonObjectMode && schema && schema.type === 'OBJECT') {
+        body.response_format = { type: 'json_object' };
+    }
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            const completion = await structuredLimit(() => openai.chat.completions.create(body));
+            const fullContent = completion.choices[0]?.message?.content;
+            if (!fullContent || !String(fullContent).trim()) {
+                throw new Error('Nemotron returned empty content');
+            }
+            return { text: String(fullContent).trim(), usage: completion.usage ?? null };
+        } catch (error) {
+            const code = error?.status || error?.code;
+            const isRate = code === 429 || String(error?.message || '').includes('429');
+            logger.warn(`Nemotron structured API error (attempt ${attempt + 1}): ${error.message}`);
+            if (attempt === MAX_RETRIES) throw error;
+            const backoff = isRate ? 5000 * (attempt + 1) : 2000 * (attempt + 1);
+            await new Promise((r) => setTimeout(r, backoff));
+        }
+    }
+}
+
+/**
+ * Free-form text (rewrite) — streaming optional; thinking disabled to save tokens.
+ */
+async function callAI(prompt, schema = null) {
     if (schema) {
-        finalPrompt += `\n\nCRITICAL: You MUST return ONLY valid JSON matching this exact schema structure (no markdown formatting, no comments):\n${JSON.stringify(schema, null, 2)}`;
+        const r = await callStructuredCompletion(prompt.replace(/\s*$/, ''), schema);
+        return r.text;
+    }
+
+    const openai = getNemotronClient();
+    if (!openai) {
+        throw new Error('Nemotron unavailable — set NVIDIA_API_KEY, NVAPI_KEY, or LLM_API_KEY');
     }
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         try {
             const completion = await openai.chat.completions.create({
                 model: getNemotronTextModel(),
-                messages: [{"role":"user","content":finalPrompt}],
-                temperature: 1,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.7,
                 top_p: 0.95,
-                max_tokens: 16384,
-                reasoning_budget: 16384,
-                chat_template_kwargs: {"enable_thinking":true},
-                stream: true
+                max_tokens: Math.min(parseMaxTokens(), 8192),
+                stream: true,
+                chat_template_kwargs: { enable_thinking: false }
             });
 
             let fullContent = '';
             for await (const chunk of completion) {
-                const reasoning = chunk.choices[0]?.delta?.reasoning_content;
-                if (reasoning) process.stdout.write(reasoning);
-
                 if (chunk.choices[0]?.delta?.content) {
                     fullContent += chunk.choices[0].delta.content;
                 }
@@ -184,34 +392,18 @@ async function callAI(prompt, schema = null) {
             if (!fullContent) {
                 throw new Error('Nemotron returned no text in response');
             }
-
-            if (schema) {
-                fullContent = fullContent.trim();
-                if (fullContent.startsWith('```json')) fullContent = fullContent.replace(/^```json\n?/, '');
-                else if (fullContent.startsWith('```')) fullContent = fullContent.replace(/^```\n?/, '');
-                if (fullContent.endsWith('```')) fullContent = fullContent.replace(/\n?```$/, '');
-                fullContent = fullContent.trim();
-            }
-
             return fullContent;
         } catch (error) {
             logger.warn(`Nemotron API error (attempt ${attempt + 1}): ${error.message}`);
             if (attempt === MAX_RETRIES) throw error;
-            await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+            await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
         }
     }
 }
 
-/**
- * Rewrites the text content of an HTML article using AI while preserving structure and media.
- * Images (<img>, <mtr-image>) and PDFs are kept untouched; only text nodes are rewritten.
- * @param {string} html Raw HTML from the Motor API
- * @returns {Promise<string>} Rewritten HTML string
- */
 export async function rewriteArticleHtml(html) {
     if (!html || !html.trim()) return html;
 
-    // Trim input to avoid token limits
     const trimmed = html.slice(0, 12000);
 
     const prompt = `You are an automotive technical writer. Rephrase the text content in the following HTML article in your own words while maintaining technical accuracy, the original meaning, step sequences, safety warnings, and HTML structure.
@@ -232,16 +424,9 @@ ${trimmed}`;
     return rewritten.trim();
 }
 
-/**
- * Generates interactive tutorial steps from an article's HTML content.
- * @param {string} html Processed article HTML
- * @param {string} title Article title for context
- * @returns {Promise<Array>} Array of TutorialStep objects
- */
 export async function generateTutorialSteps(html, title = '') {
     if (!html || !html.trim()) return [];
 
-    // Strip HTML tags to get plain text for the prompt (keeps token count manageable)
     const plainText = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 8000);
 
     const prompt = `You are an automotive service expert. Generate a step-by-step interactive tutorial from the following vehicle service article.
@@ -260,46 +445,112 @@ Requirements for each step:
 
 Create between 3 and 12 meaningful steps covering the full procedure. Only include steps that are genuinely actionable. Preserve safety warnings and technical accuracy.`;
 
-    const text = await callAI(prompt, TUTORIAL_SCHEMA);
-    return JSON.parse(text);
+    const { text } = await callStructuredCompletion(prompt, TUTORIAL_SCHEMA);
+    return safeJsonParse(text);
 }
 
 /**
- * Parses raw JSON from the Motor API into a structured format via Nemotron (NVIDIA).
- * @param {string} rawData JSON string of the raw response
- * @param {string} targetSchema The key in SCHEMAS (e.g. 'dtcs' or 'tsbs')
+ * @param {unknown} rawData
+ * @param {string} targetSchema
+ * @param {{ urlPath?: string }} [meta] urlPath enables DLQ article_id + failed_extractions.url_path
+ * @returns {Promise<{ parsed: unknown, usage: { prompt_tokens: number, completion_tokens: number, total_tokens: number } }>}
  */
-export async function parseWithAI(rawData, targetSchema) {
+export async function parseWithAI(rawData, targetSchema, meta = {}) {
     if (!SCHEMAS[targetSchema]) {
         throw new Error(`Schema ${targetSchema} is not defined in ai_parser.js`);
     }
 
-    const rawStr = typeof rawData === 'string' ? rawData : JSON.stringify(rawData);
-    const MAX_CHARS = 150000; // ~37k tokens; Gemini 2.0 Flash supports 1M - no truncation for typical articles
-    const trimmedData = rawStr.slice(0, MAX_CHARS);
-    const wasTruncated = rawStr.length > MAX_CHARS;
-
-    if (wasTruncated) {
-        logger.warn(`parseWithAI: input truncated from ${rawStr.length} to ${MAX_CHARS} chars for ${targetSchema}`);
-    }
     const schemaHints = {
         tsbs: 'Format issue_date as YYYY-MM-DD when present. Preserve full content including HTML.',
         dtcs: 'For diagnostic_steps: test=what to measure, result_match=expected value/criteria, action_if_match=next step if pass, action_if_not_match=action if fail. Use empty string for missing action fields.',
-        procedures: 'Extract parts_required (part_number, description, quantity) when present. Include image_url in steps if image references exist. time_estimate_hours as number when given.',
+        procedures:
+            'Identify EVERY distinct procedure or major section in the document. Output one object per distinct procedure in `procedures`, each with its own `steps` array. Do not merge unrelated procedures. ' +
+            'Include optional `article_title` and `article_description` when inferable. ' +
+            'For parts_required: include every line with a description; use quantity only when the OEM text gives a number (otherwise omit quantity). Never omit an entire parts_required array because quantity is unknown.',
         specifications: 'Use metadata for any extra key-value pairs that do not fit category/name/value/unit.'
     };
-    const hint = schemaHints[targetSchema] ? `\n\nSchema-specific: ${schemaHints[targetSchema]}` : '';
-    const prompt = `You are an automotive data parser. Extract ALL relevant technical information from the provided raw JSON response and map it strictly to the output schema. Capture every item — do not skip any. If some optional fields are not present, omit them or provide empty arrays/strings. Do not hallucinate data.${hint}${wasTruncated ? '\n\nNote: The data below was truncated. Extract everything that IS present.' : ''}\n\nRaw Data:\n${trimmedData}`;
 
-    const text = await callAI(prompt, SCHEMAS[targetSchema]);
-    return JSON.parse(text);
+    let userPrompt;
+    const MAX_CHARS = 150000;
+
+    if (targetSchema === 'procedures') {
+        const { html } = extractArticleHtmlFromMotorPayload(
+            typeof rawData === 'string' ? rawData : JSON.stringify(rawData)
+        );
+        if (!html || !html.trim()) {
+            const rawStr = typeof rawData === 'string' ? rawData : JSON.stringify(rawData);
+            userPrompt =
+                `Parse the following Motor API payload into the schema. If HTML is embedded in JSON, infer procedures from it.\n\n${FEW_SHOT_PROCEDURES}\n\n` +
+                `${schemaHints.procedures}\n\n---\n\n${rawStr.slice(0, MAX_CHARS)}`;
+        } else {
+            const md = htmlToMarkdownForLlm(html, { maxChars: MAX_CHARS });
+            userPrompt =
+                `You are an automotive data parser. The following Markdown was converted from a Motor service document (tables/lists preserved). ` +
+                `Extract ALL distinct procedures; each procedure must have its own title and steps array. ` +
+                `Map parts_required with description required; include quantity only when stated.\n\n${FEW_SHOT_PROCEDURES}\n\n${schemaHints.procedures}\n\n---\n\n${md}`;
+        }
+
+        let correctionSuffix = '';
+        let totalUsage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+        let lastErr = '';
+
+        for (let zAttempt = 0; zAttempt < ZOD_PROCEDURE_ATTEMPTS; zAttempt++) {
+            const { text, usage } = await callStructuredCompletion(userPrompt + correctionSuffix, SCHEMAS.procedures);
+            totalUsage = mergeUsage(totalUsage, usage);
+
+            let parsedRaw;
+            try {
+                parsedRaw = safeJsonParse(text);
+            } catch (e) {
+                lastErr = `Invalid JSON: ${e.message}`;
+                correctionSuffix = `\n\nYour previous JSON failed validation with this error: ${lastErr}. Fix the formatting and return ONLY the corrected JSON.`;
+                continue;
+            }
+
+            const v = ArticleExtractionSchema.safeParse(parsedRaw);
+            if (v.success) {
+                const collapsed = collapseProceduresForL1(v.data);
+                return { parsed: collapsed, usage: normalizeUsage(totalUsage) };
+            }
+
+            lastErr = formatZodError(v.error);
+            correctionSuffix = `\n\nYour previous JSON failed validation with this error: ${lastErr}. Fix the formatting and return ONLY the corrected JSON.`;
+        }
+
+        const rawText = typeof rawData === 'string' ? rawData : JSON.stringify(rawData);
+        const articleId = extractArticleIdFromMeta(meta) || 'unknown';
+        await insertFailedExtraction({
+            article_id: articleId,
+            raw_text: rawText.slice(0, 120000),
+            error_message: `Zod validation failed after ${ZOD_PROCEDURE_ATTEMPTS} attempts: ${lastErr}`,
+            url_path: meta.urlPath || null,
+            category: 'procedures'
+        });
+
+        throw new Error(
+            `Procedure JSON validation failed after ${ZOD_PROCEDURE_ATTEMPTS} correction attempts: ${lastErr}`
+        );
+    }
+
+    const rawStr = typeof rawData === 'string' ? rawData : JSON.stringify(rawData);
+    const trimmedData = rawStr.slice(0, MAX_CHARS);
+    const wasTruncated = rawStr.length > MAX_CHARS;
+    if (wasTruncated) {
+        logger.warn(`parseWithAI: input truncated from ${rawStr.length} to ${MAX_CHARS} chars for ${targetSchema}`);
+    }
+    const hint = schemaHints[targetSchema] ? `\n\nSchema-specific: ${schemaHints[targetSchema]}` : '';
+    userPrompt =
+        `You are an automotive data parser. Extract ALL relevant technical information from the provided raw data and map it strictly to the output schema. ` +
+        `Capture every item — do not skip any. If some optional fields are not present, omit them or provide empty arrays/strings. Do not hallucinate data.${hint}` +
+        (wasTruncated ? '\n\nNote: The data below was truncated. Extract everything that IS present.' : '') +
+        `\n\nRaw Data:\n${trimmedData}`;
+
+    const { text, usage } = await callStructuredCompletion(userPrompt, SCHEMAS[targetSchema]);
+    const parsed = safeJsonParse(text);
+
+    return { parsed, usage: normalizeUsage(usage) };
 }
 
-/**
- * Generates common issues for a given vehicle using Nemotron (NVIDIA).
- * @param {string} vehicleName The year make model of the vehicle.
- * @returns {Promise<Array>} Array of CommonIssue objects.
- */
 export async function generateCommonIssues(vehicleName) {
     if (!vehicleName || !vehicleName.trim()) return [];
 
@@ -317,8 +568,8 @@ For each issue, provide:
 Create 4-8 high-quality common issues tailored to this specific vehicle.`;
 
     try {
-        const text = await callAI(prompt, SCHEMAS.common_issues);
-        return JSON.parse(text);
+        const { text } = await callStructuredCompletion(prompt, SCHEMAS.common_issues);
+        return safeJsonParse(text);
     } catch (err) {
         logger.error(`generateCommonIssues failed for ${vehicleName}:`, err);
         return [];

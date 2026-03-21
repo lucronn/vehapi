@@ -25,6 +25,32 @@ export function inferKindAndSilo(rootName) {
  * @param {string} vehicleIdStr
  * @param {string} contentSource
  */
+/**
+ * When an article body is parsed without a prior `articles/v2` catalog sync, insert a minimal `content_item`
+ * row so enrichment, L2 chunks, and FK semantics stay aligned with `(vehicle, article_id, content_source)`.
+ */
+export function buildMinimalContentItemFromParse({ vehicleExternalId, motorArticleId, contentSource, targetSchema }) {
+    const map = {
+        procedures: { kind: 'procedure', canonical_silo_code: 'procedures' },
+        dtcs: { kind: 'dtc', canonical_silo_code: 'dtcs' },
+        tsbs: { kind: 'tsb', canonical_silo_code: 'tsbs' },
+        specifications: { kind: 'spec_article', canonical_silo_code: 'specs' }
+    };
+    const m = map[targetSchema] || { kind: 'other', canonical_silo_code: 'other' };
+    const now = new Date().toISOString();
+    return {
+        ...m,
+        motor_article_id: String(motorArticleId),
+        vehicle_external_id: String(vehicleExternalId),
+        content_source: contentSource,
+        enrichment_source: 'parse_path',
+        enrichment_version: 'phase1-v1',
+        enriched_at: now,
+        updated_at: now,
+        search_text: ''
+    };
+}
+
 export function buildContentItemFromCatalogArticle(a, vehicleIdStr, contentSource) {
     const rawParent = a.parentBucket != null ? String(a.parentBucket) : null;
     const rawBucket = a.bucket != null ? String(a.bucket) : null;

@@ -27,6 +27,52 @@ const UPSERT_CONFLICT_COLUMNS = {
 };
 
 /**
+ * PostgREST rejects unknown columns (PGRST204). Many projects only have a subset of `articles` columns.
+ * Default: minimal keys. Full catalog row (subtitle, description, code, …) when ARTICLES_UPSERT_EXTENDED=true
+ * and the DB matches `supabase_schema.sql` public.articles.
+ */
+function articlesRowsForRest(rows) {
+    const extended =
+        String(process.env.ARTICLES_UPSERT_EXTENDED || '').toLowerCase() === 'true' ||
+        process.env.ARTICLES_UPSERT_EXTENDED === '1';
+    const minimal = new Set([
+        'vehicle_id',
+        'original_id',
+        'title',
+        'content_source',
+        'bucket',
+        'parent_bucket'
+    ]);
+    const extendedOnly = new Set([
+        'subtitle',
+        'description',
+        'code',
+        'thumbnail_href',
+        'bulletin_number',
+        'release_date',
+        'sort',
+        'original_content',
+        'enhanced_content',
+        'source'
+    ]);
+    const allowed = new Set(minimal);
+    if (extended) {
+        for (const k of extendedOnly) {
+            allowed.add(k);
+        }
+    }
+    return rows.map((row) => {
+        const out = {};
+        for (const k of Object.keys(row)) {
+            if (allowed.has(k)) {
+                out[k] = row[k];
+            }
+        }
+        return out;
+    });
+}
+
+/**
  * Ensures a vehicle record exists in the vehicles table.
  * Must be called before inserting into any table that references vehicles(external_id).
  * @param {string} vehicleId The Motor API vehicle ID (external_id)
@@ -408,6 +454,92 @@ export async function updateContentItemEnrichment(vehicleExternalId, motorArticl
 }
 
 /**
+ * @returns {Promise<string | null>} content_item.id UUID or null
+ */
+export async function fetchContentItemId(vehicleExternalId, motorArticleId, contentSource) {
+    const cfg = getSupabaseConfig();
+    if (!cfg || !vehicleExternalId || !motorArticleId || !contentSource) {
+        return null;
+    }
+    try {
+        const url =
+            `${cfg.url}/rest/v1/content_item` +
+            `?select=id` +
+            `&vehicle_external_id=eq.${encodeURIComponent(vehicleExternalId)}` +
+            `&motor_article_id=eq.${encodeURIComponent(motorArticleId)}` +
+            `&content_source=eq.${encodeURIComponent(contentSource)}` +
+            `&limit=1`;
+        const response = await fetch(url, {
+            headers: {
+                apikey: cfg.key,
+                Authorization: `Bearer ${cfg.key}`,
+                Accept: 'application/json'
+            }
+        });
+        if (!response.ok) {
+            return null;
+        }
+        const rows = await response.json();
+        const id = rows?.[0]?.id;
+        return typeof id === 'string' ? id : null;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Delete all L2 chunks for a catalog item (before replace).
+ */
+export async function deleteContentChunksForContentItem(contentItemId) {
+    const cfg = getSupabaseConfig();
+    if (!cfg || !contentItemId) {
+        return { success: false, error: 'Missing config or content_item id' };
+    }
+    try {
+        const url =
+            `${cfg.url}/rest/v1/content_chunk` +
+            `?content_item_id=eq.${encodeURIComponent(contentItemId)}`;
+        const response = await fetch(url, {
+            method: 'DELETE',
+            headers: {
+                apikey: cfg.key,
+                Authorization: `Bearer ${cfg.key}`,
+                Prefer: 'return=minimal'
+            }
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            return { success: false, error: errorText };
+        }
+        return { success: true };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
+}
+
+/**
+ * Replace L2 chunks for one `content_item` (delete then insert).
+ * @param {string} contentItemId
+ * @param {Array<{ chunk_index: number, text_content: string, embedding: number[] }>} rows
+ */
+export async function replaceContentChunksForContentItem(contentItemId, rows) {
+    const del = await deleteContentChunksForContentItem(contentItemId);
+    if (!del.success) {
+        return del;
+    }
+    if (!rows || rows.length === 0) {
+        return { success: true };
+    }
+    const payload = rows.map((r) => ({
+        content_item_id: contentItemId,
+        chunk_index: r.chunk_index,
+        text_content: r.text_content,
+        embedding: r.embedding
+    }));
+    return insertParsedData('content_chunk', payload);
+}
+
+/**
  * @param {string} table
  * @param {Object|Array} data
  * @param {{ returnRepresentation?: boolean }} [options] If true and upsert, returns merged rows (ids for evidence_link).
@@ -419,9 +551,13 @@ export async function insertParsedData(table, data, options = {}) {
         return { success: false, error: 'Supabase credentials not configured' };
     }
 
-    const rows = Array.isArray(data) ? data : [data];
+    let rows = Array.isArray(data) ? data : [data];
     if (rows.length === 0) {
         return { success: true, rows: [] };
+    }
+
+    if (table === 'articles') {
+        rows = articlesRowsForRest(rows);
     }
 
     const onConflict = UPSERT_CONFLICT_COLUMNS[table];
@@ -472,7 +608,8 @@ export async function insertParsedData(table, data, options = {}) {
 
 /**
  * Logs the AI processing task to monitor accuracy and failures.
- * Table ai_processing_logs has: source_file, category, status, error_message, tokens_used, processed_at (no vehicle_id).
+ * Table ai_processing_logs has: source_file, category, status, error_message, tokens_used,
+ * optional prompt_tokens / completion_tokens (migration 20260325), processed_at (no vehicle_id).
  * Worker sends source_file, category, status, error_message, tokens_used; we add processed_at here.
  */
 export async function logAiProcessing(logData) {
@@ -480,15 +617,21 @@ export async function logAiProcessing(logData) {
     if (!cfg) return;
 
     try {
-        const payload = {
-            source_file: logData.source_file,
+        const base = {
+            source_file: normalizeSourcePathForDedup(logData.source_file) || logData.source_file,
             category: logData.category ?? null,
             status: logData.status,
             error_message: logData.error_message ?? null,
             tokens_used: logData.tokens_used ?? null,
             processed_at: new Date().toISOString()
         };
-        const response = await fetch(`${cfg.url}/rest/v1/ai_processing_logs`, {
+        const withTokens = {
+            ...base,
+            prompt_tokens: logData.prompt_tokens ?? null,
+            completion_tokens: logData.completion_tokens ?? null
+        };
+
+        let response = await fetch(`${cfg.url}/rest/v1/ai_processing_logs`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -496,12 +639,28 @@ export async function logAiProcessing(logData) {
                 'Authorization': `Bearer ${cfg.key}`,
                 'Prefer': 'return=minimal'
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(withTokens)
         });
 
         if (!response.ok) {
             const errorText = await response.text();
-            logger.error(`Failed to write to ai_processing_logs [${response.status}]: ${errorText}`);
+            const missingTokenCols = /prompt_tokens|completion_tokens|PGRST204/i.test(errorText);
+            if (missingTokenCols) {
+                response = await fetch(`${cfg.url}/rest/v1/ai_processing_logs`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': cfg.key,
+                        'Authorization': `Bearer ${cfg.key}`,
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify(base)
+                });
+            }
+            if (!response.ok) {
+                const err2 = missingTokenCols ? await response.text() : errorText;
+                logger.error(`Failed to write to ai_processing_logs [${response.status}]: ${err2}`);
+            }
         }
     } catch (err) {
         logger.error(`Failed to write to ai_processing_logs:`, err);
@@ -509,9 +668,59 @@ export async function logAiProcessing(logData) {
 }
 
 /**
- * Checks for a cached article in any of the content tables by its external_id (Motor Article ID).
- * @param {string} articleId The Motor API article ID
- * @returns {Object|null} The cached article data or null if not found
+ * Dead letter queue when procedure JSON fails Zod validation after self-correction retries.
+ * Table: failed_extractions (run migration 20260325_failed_extractions_and_ai_log_tokens.sql).
+ */
+export async function insertFailedExtraction(row) {
+    const cfg = getSupabaseConfig();
+    if (!cfg) {
+        return { success: false, error: 'Supabase not configured' };
+    }
+    const article_id = row.article_id != null ? String(row.article_id) : '';
+    if (!article_id) {
+        return { success: false, error: 'article_id required' };
+    }
+    try {
+        const payload = {
+            article_id,
+            raw_text: row.raw_text != null ? String(row.raw_text).slice(0, 120000) : null,
+            error_message: String(row.error_message || 'unknown').slice(0, 8000),
+            url_path: row.url_path != null ? String(row.url_path).slice(0, 4000) : null,
+            category: row.category != null ? String(row.category).slice(0, 128) : null
+        };
+        const response = await fetch(`${cfg.url}/rest/v1/failed_extractions`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                apikey: cfg.key,
+                Authorization: `Bearer ${cfg.key}`,
+                Prefer: 'return=minimal'
+            },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            logger.error(`failed_extractions insert [${response.status}]: ${errorText}`);
+            return { success: false, error: errorText };
+        }
+        return { success: true };
+    } catch (err) {
+        logger.error('insertFailedExtraction error:', err);
+        return { success: false, error: err.message };
+    }
+}
+
+/**
+ * Single-article URL paths may be /article/:id or /article/:id/html — use one canonical form for ai_processing_logs.
+ */
+export function normalizeSourcePathForDedup(path) {
+    if (!path || typeof path !== 'string') return path;
+    return path.replace(/(\/article\/[^/?]+)\/html$/i, '$1');
+}
+
+/**
+ * Checks for a cached article in normalized content tables by Motor article id.
+ * Note: `specifications` has no external_id (natural key is vehicle+category+name); use `spec_fact.source_article_id`.
  */
 export async function checkParsedArticle(articleId) {
     const cfg = getSupabaseConfig();
@@ -520,11 +729,17 @@ export async function checkParsedArticle(articleId) {
         return null;
     }
 
-    const tables = ['procedures', 'tsbs', 'dtcs', 'specifications'];
+    const idEq = encodeURIComponent(articleId);
+    const lookups = [
+        { table: 'procedures', filter: `external_id=eq.${idEq}` },
+        { table: 'tsbs', filter: `external_id=eq.${idEq}` },
+        { table: 'dtcs', filter: `external_id=eq.${idEq}` },
+        { table: 'spec_fact', filter: `source_article_id=eq.${idEq}` }
+    ];
 
-    for (const table of tables) {
+    for (const { table, filter } of lookups) {
         try {
-            const url = `${cfg.url}/rest/v1/${table}?external_id=eq.${articleId}`;
+            const url = `${cfg.url}/rest/v1/${table}?${filter}&select=*&limit=1`;
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -563,19 +778,25 @@ export async function wasAlreadyParsed(sourcePath) {
     const cfg = getSupabaseConfig();
     if (!cfg) return false;
 
+    const norm = normalizeSourcePathForDedup(sourcePath);
+    const variants = [...new Set([sourcePath, norm].filter(Boolean))];
+
     try {
-        const encoded = encodeURIComponent(sourcePath);
-        const url = `${cfg.url}/rest/v1/ai_processing_logs?source_file=eq.${encoded}&status=eq.COMPLETED&select=id&limit=1`;
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'apikey': cfg.key,
-                'Authorization': `Bearer ${cfg.key}`,
-            },
-        });
-        if (!response.ok) return false;
-        const rows = await response.json();
-        return rows && rows.length > 0;
+        for (const p of variants) {
+            const encoded = encodeURIComponent(p);
+            const url = `${cfg.url}/rest/v1/ai_processing_logs?source_file=eq.${encoded}&status=eq.COMPLETED&select=id&limit=1`;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'apikey': cfg.key,
+                    'Authorization': `Bearer ${cfg.key}`,
+                },
+            });
+            if (!response.ok) continue;
+            const rows = await response.json();
+            if (rows && rows.length > 0) return true;
+        }
+        return false;
     } catch {
         return false;
     }

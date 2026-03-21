@@ -72,6 +72,23 @@ async function getEnqueue() {
     return _enqueueParsingTask;
 }
 
+/** Motor article HTML is `text/html` — must enqueue here; JSON-only enqueue would skip procedures/evidence for /article/.../html. */
+function enqueueBackgroundParse(req, responseBuffer) {
+    getEnqueue()
+        .then((enqueue) => {
+            if (enqueue) {
+                try {
+                    enqueue(req.path, responseBuffer);
+                } catch (qErr) {
+                    logger.error('Failed to enqueue background parsing task:', qErr);
+                }
+            }
+        })
+        .catch(() => {
+            /* worker unavailable */
+        });
+}
+
 const require = createRequire(import.meta.url);
 const swaggerDocument = require('./swagger.json');
 
@@ -79,6 +96,11 @@ const swaggerDocument = require('./swagger.json');
 validateConfig();
 
 const app = express();
+
+/** When `x-vehapi-verify: 1`, skip Supabase-first caches so requests hit Motor and enqueue background parsing (verify script only). */
+function isVerifyBypass(req) {
+    return String(req.get('x-vehapi-verify') || '').trim() === '1';
+}
 
 // Enable CORS
 // Use explicit origin reflection for credentialed requests and avoid wildcard
@@ -327,6 +349,26 @@ const articleAccessMiddleware = async (req, res, next) => {
     const vehicleId = decodeURIComponent(articleContentMatch[1]);
     const articleId = articleContentMatch[2];
 
+    const skipFlag = String(process.env.SKIP_ARTICLE_ACCESS_AUTH || '')
+        .trim()
+        .toLowerCase();
+    const skipArticleAuth =
+        ['true', '1', 'yes'].includes(skipFlag) && process.env.NODE_ENV !== 'production';
+
+    if (['true', '1', 'yes'].includes(skipFlag) && process.env.NODE_ENV === 'production') {
+        logger.warn(
+            '[DEV] SKIP_ARTICLE_ACCESS_AUTH is set but NODE_ENV=production — article auth not skipped. ' +
+                'Unset NODE_ENV or set NODE_ENV=development in vehapiproxi/.env (see .env.example).'
+        );
+    }
+
+    if (skipArticleAuth) {
+        logger.warn(
+            `[DEV] SKIP_ARTICLE_ACCESS_AUTH: bypassing article JWT/unlock for ${vehicleId}/${articleId} (never set in production)`
+        );
+        return next();
+    }
+
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ error: 'Authorization required to access article content' });
@@ -376,6 +418,9 @@ const articleContentCacheMiddleware = async (req, res, next) => {
     const articleContentMatch = path.match(/^\/source\/[^/]+\/vehicle\/([^/]+)\/article\/([^/]+)(?:\/html)?$/);
 
     if (articleContentMatch && req.method === 'GET') {
+        if (isVerifyBypass(req)) {
+            return next();
+        }
         try {
             const articleId = articleContentMatch[2];
             const vehicleId = decodeURIComponent(articleContentMatch[1]);
@@ -573,6 +618,19 @@ app.use('/', authMiddleware, createProxyMiddleware({
                 }
                 // HTML is inherently whitespace-agnostic; skip costly regex cleanup to improve performance.
                 logger.info('Skipping HTML whitespace normalization for performance');
+                if (/\/article\//i.test(req.path)) {
+                    const bodySnippet = responseData.slice(0, 8000);
+                    if (
+                        bodySnippet.includes('<title>Vehicle Information</title>') &&
+                        bodySnippet.includes('base href="/m1/"')
+                    ) {
+                        logger.warn(
+                            `Motor returned M1 SPA shell HTML for ${req.path} — wrong shard? ` +
+                                'Use the models response contentSource (e.g. GeneralMotors vs MOTOR), not a guessed source.'
+                        );
+                    }
+                    enqueueBackgroundParse(req, responseBuffer);
+                }
             } else if (contentType.includes('application/json')) {
                 // =============== IOS / SERVERLESS CRASH PROTECTION ===============
                 // Massive arrays (like 5,000+ items) will crash iOS Safari due to massive
@@ -654,16 +712,7 @@ app.use('/', authMiddleware, createProxyMiddleware({
                 // =================================================================
 
                 // Enqueue for background AI parsing and caching to Supabase
-                // Done via lazy dynamic import to prevent cold-start crashes on serverless
-                getEnqueue().then(enqueue => {
-                    if (enqueue) {
-                        try {
-                            enqueue(req.path, responseBuffer);
-                        } catch (qErr) {
-                            logger.error('Failed to enqueue background parsing task:', qErr);
-                        }
-                    }
-                }).catch(() => { /* silently ignore if worker unavailable */ });
+                enqueueBackgroundParse(req, responseBuffer);
             }
 
             logResponse(req, res, normalizedData, proxyRes.statusCode >= 400 ? new Error(`HTTP ${proxyRes.statusCode}`) : null);

@@ -366,7 +366,8 @@ export interface NormalizedDiagram {
 
 /**
  * AI Processing Log Status
- * DB table ai_processing_logs has: source_file, category, status, error_message, tokens_used, processed_at (no vehicle_id).
+ * DB table ai_processing_logs has: source_file, category, status, error_message, tokens_used,
+ * optional prompt_tokens / completion_tokens (migration 20260325), processed_at (no vehicle_id).
  */
 export interface AIProcessingLog {
   id?: string;
@@ -376,5 +377,7 @@ export interface AIProcessingLog {
   status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
   error_message?: string;
   tokens_used?: number;
+  prompt_tokens?: number;
+  completion_tokens?: number;
   processed_at?: string;
 }

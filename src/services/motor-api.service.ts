@@ -390,10 +390,25 @@ export class MotorApiService {
   }
 
   getArticleContent(contentSource: string, vehicleId: string, articleId: string, motorVehicleId?: string): Observable<ApiResponse<ArticleContentData>> {
-    const effectiveSource = motorVehicleId ? 'MOTOR' : contentSource;
-    const effectiveId = motorVehicleId || vehicleId;
+    // Motor shards by contentSource (e.g. GeneralMotors vs MOTOR). Only remap to MOTOR when the
+    // caller is already on the MOTOR shard (legacy composite engine id flows). For OEM sources,
+    // keep contentSource and pass motorVehicleId as a query param per upstream API.
+    const csNorm = (contentSource || 'MOTOR').toUpperCase();
+    let effectiveSource = contentSource;
+    let effectiveId = vehicleId;
+    let params: { motorVehicleId?: string } | undefined;
+    if (motorVehicleId) {
+      if (csNorm === 'MOTOR') {
+        effectiveSource = 'MOTOR';
+        effectiveId = motorVehicleId;
+      } else {
+        effectiveSource = contentSource;
+        effectiveId = vehicleId;
+        params = { motorVehicleId };
+      }
+    }
     const url = `${this.baseUrl}/api/source/${effectiveSource}/vehicle/${effectiveId}/article/${articleId}`;
-    return this.getWithLogging<ApiResponse<ArticleContentData>>(url).pipe(
+    return this.getWithLogging<ApiResponse<ArticleContentData>>(url, params).pipe(
       map(res => {
         // Normalize content fields to 'html' for components
         if (res && res.body && !res.body.html) {

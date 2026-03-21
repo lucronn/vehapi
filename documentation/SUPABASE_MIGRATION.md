@@ -48,6 +48,28 @@ Adds **`procedure_tool`** (string lines from `tools_required`) and **`procedure_
 2. From `vehapiproxi`: **`npm run migrate:l1-procedure-tool-part`**  
    (runs `documentation/migrations/20260323_l1_procedure_tool_and_part.sql`).
 
+## L2 `content_chunk` + `media_asset` + pgvector (additive — after phase 1)
+
+Adds **`media_asset`** (minimal blob metadata), **`content_chunk`** (text + `vector(1024)` + FK to `content_item` and optional `media_asset`), **`CREATE EXTENSION vector`**, HNSW index on `embedding`, and permissive RLS. Requires Supabase **pgvector** (standard on hosted projects).
+
+1. Same DB URL env as phase 1 (`SUPABASE_DB_URL` or `SUPABASE_URL` + `SUPABASE_DB_PASSWORD`).
+2. From `vehapiproxi`: **`npm run migrate:l2-content-chunk`**  
+   (runs `documentation/migrations/20260324_l2_content_chunk_pgvector.sql`).
+
+Embedding dimension **1024** must match the model you use when inserting rows; change the migration and `supabase_schema.sql` if you standardize on another size.
+
+**Background worker (optional):** set `ENABLE_L2_EMBEDDINGS=true` and `EMBEDDING_MODEL` in `vehapiproxi/.env` (same NVIDIA key as chat). After each successful article parse, the worker chunks Markdown (from article HTML when present), calls the embeddings API, deletes prior `content_chunk` rows for that `content_item`, and inserts new rows. Tune `L2_EMBEDDING_DIMS` to match your model output.
+
+## AI parser hardening — `failed_extractions` + token columns (additive)
+
+Adds **`prompt_tokens`** and **`completion_tokens`** to **`ai_processing_logs`** (alongside existing **`tokens_used`** total), and **`failed_extractions`** (DLQ when procedure JSON fails Zod validation after self-correction retries).
+
+1. Same DB URL env as other additive migrations.
+2. From `vehapiproxi`: **`npm run migrate:ai-hardening`**  
+   (runs `documentation/migrations/20260325_failed_extractions_and_ai_log_tokens.sql`).
+
+If token columns are missing, `logAiProcessing` automatically retries the insert without `prompt_tokens` / `completion_tokens` so logs still work until you migrate.
+
 ---
 
 ## Option A: Run the migration script (recommended)
@@ -123,10 +145,12 @@ Verifies the phase-1 links after one article parse: `content_item` enrichment + 
 
 By default the script calls the **production** API on **`https://vehapiproxi.vercel.app`** (no local proxy needed). You can still point at a local dev server with `PROXY_URL=http://localhost:3000` or `--proxy=http://localhost:3000`.
 
+**Content source (`--source` / `CONTENT_SOURCE`):** Defaults to `MOTOR`. If the article response is the M1 **SPA shell** (wrong shard—common for GM when `MOTOR` is used), the script **auto-tries** other shards (`GeneralMotors`, `Ford`, …) until it gets real article HTML/JSON, then logs `Auto-switched CONTENT_SOURCE to …`. You can still set `--source=GeneralMotors` explicitly when you already know the catalog (e.g. from `GET …/models`).
+
 ```bash
 # From vehapiproxi, Supabase env configured (same project the deployed proxy uses).
-# IMPORTANT: use the vehicle's actual content source (example below is for vehicle 2854).
 # Prefer CLI flags: `npm run` often does not forward `VAR=value` into the Node script.
+# For GM-heavy vehicles, --source=GeneralMotors avoids an extra probe round-trip.
 npm run verify:evidence-links -- --vehicle=2854 --source=GeneralMotors
 
 # Optional: pin a specific article
