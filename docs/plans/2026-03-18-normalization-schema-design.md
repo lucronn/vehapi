@@ -172,7 +172,7 @@ Below is a **conceptual** set of tables (names negotiable). Intent is **one row 
 
 ## 9. Next step
 
-**In repo (2026-03-19):** Phase-1 DDL — `documentation/migrations/20260319_phase1_normalization.sql` (+ full `supabase_schema.sql`); `npm run migrate:phase1`; worker dual-writes **`content_item`** + L0 **`evidence_ingest`** on articles/v2 catalog; **native PDF text** → `content_html` when HTML absent (`pdf_native_text.js`). **Next:** `spec_fact` / maintenance / procedure L1 tables, `evidence_link` population, Nemotron fallback on sparse PDFs, RAG chunks.
+**In repo (2026-03-19):** Phase-1 DDL — `documentation/migrations/20260319_phase1_normalization.sql` (+ full `supabase_schema.sql`); `npm run migrate:phase1`; worker dual-writes **`content_item`** + L0 **`evidence_ingest`** on articles/v2 catalog; **native PDF text** → `content_html` when HTML absent (`pdf_native_text.js`). **In repo (2026-03-20):** L1 **`spec_fact`** — `documentation/migrations/20260320_l1_spec_fact.sql`; `npm run migrate:l1-spec-fact`; worker dual-writes from parsed specs + **`evidence_link`** (`entity_type=spec_fact`) when L0 insert succeeds. **Next:** `maintenance_task` L1, structured **`procedure`** L1 (beyond current `procedures` table), Nemotron/RAG as scoped.
 
 ---
 

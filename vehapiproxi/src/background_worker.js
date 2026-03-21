@@ -36,6 +36,60 @@ function htmlEscape(s) {
         .replace(/>/g, '&gt;');
 }
 
+/** L1 spec_type heuristic from Motor-style category + name (docs/plans normalization design). */
+function inferSpecType(category, name) {
+    const hay = `${String(category || '').toLowerCase()} ${String(name || '').toLowerCase()}`;
+    if (/\btorque\b|ft-lb|\bnm\b|lb-ft|n\.m|newton/.test(hay)) return 'torque';
+    if (/fluid|oil|coolant|brake fluid|atf|transmission fluid|dexos|antifreeze/.test(hay)) return 'fluid';
+    if (/tire|inflation|pressure|psi\b/.test(hay)) return 'tire_pressure';
+    if (/capacity|volume|quart|liter|litre|gallon|cc\b/.test(hay)) return 'capacity';
+    if (/dimension|clearance|gap\b|thickness|runout/.test(hay)) return 'dimension';
+    return 'other';
+}
+
+function parseLeadingNumber(valueStr) {
+    if (valueStr == null) return { num: null, text: '' };
+    const s = String(valueStr).trim();
+    if (!s) return { num: null, text: '' };
+    const m = s.match(/^-?[\d.]+/);
+    if (!m) return { num: null, text: s };
+    const num = parseFloat(m[0]);
+    if (Number.isNaN(num)) return { num: null, text: s };
+    return { num, text: s };
+}
+
+/**
+ * Maps legacy `specifications` upsert rows → `spec_fact` L1 rows (same natural key: vehicle_id, category, name).
+ */
+function specificationRowsToSpecFacts(normalized, sourceArticleId) {
+    const arr = Array.isArray(normalized) ? normalized : normalized ? [normalized] : [];
+    return arr
+        .map((row) => {
+            const category = row.category != null ? String(row.category).trim() : '';
+            const name = row.name != null ? String(row.name).trim() : '';
+            const valueStr = row.value != null ? String(row.value) : '';
+            const { num, text } = parseLeadingNumber(valueStr);
+            return {
+                vehicle_id: row.vehicle_id,
+                category,
+                name,
+                spec_type: inferSpecType(category, name),
+                component: null,
+                value_num: num,
+                value_text: num != null ? null : text || null,
+                unit: row.unit || null,
+                display_text: row.display_text || null,
+                conditions: null,
+                confidence: 1,
+                source_article_id: sourceArticleId || null,
+                metadata: row.metadata && typeof row.metadata === 'object' ? row.metadata : null,
+                extractor_version: 'l1-v1',
+                updated_at: new Date().toISOString()
+            };
+        })
+        .filter((r) => r.vehicle_id && r.category && r.name);
+}
+
 function buildEnrichmentFromParsedData(schemaType, parsedData, htmlContent) {
     const fromText = (v) => (typeof v === 'string' ? v.trim() : '');
     const cap = (s, n = 360) => (s.length > n ? `${s.slice(0, n - 3)}...` : s);
@@ -157,6 +211,9 @@ function normalizeForSupabase(data, schemaType) {
         out.unit = (out.unit != null && typeof out.unit === 'string') ? out.unit : null;
         out.display_text = (out.display_text != null && typeof out.display_text === 'string') ? out.display_text : null;
         out.metadata = out.metadata && typeof out.metadata === 'object' ? out.metadata : null;
+        // `specifications` table has no external_id / content_html — strip before REST upsert.
+        delete out.external_id;
+        delete out.content_html;
     }
 
     return out;
@@ -413,7 +470,7 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
             }
         }
 
-        if (htmlContent) {
+        if (htmlContent && targetSchema !== 'specifications') {
             const payload = Array.isArray(normalized) ? normalized : [normalized];
             payload.forEach(row => {
                 if (!row.content_html) {
@@ -444,16 +501,33 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
             }
 
             // Traceability link: evidence_ingest -> normalized entity rows.
-            if (
-                evidenceId &&
-                externalIdStr &&
-                ['procedures', 'dtcs', 'tsbs', 'specifications'].includes(targetSchema)
-            ) {
+            if (evidenceId && externalIdStr && ['procedures', 'dtcs', 'tsbs'].includes(targetSchema)) {
                 const ids = await findEntityIdsByExternalId(targetSchema, vehicleIdStr, externalIdStr);
                 if (ids.length > 0) {
                     const links = await insertEvidenceLinks(evidenceId, targetSchema, ids, 'phase1-v1');
                     if (!links.success) {
                         logger.warn(`[${taskId}] evidence_link insert skipped: ${links.error}`);
+                    }
+                }
+            }
+
+            // L1 spec_fact dual-write + evidence_link (specifications table has no external_id for bulk fingerprint).
+            if (targetSchema === 'specifications') {
+                const articleMatch = urlPath.match(/\/article\/([^?/]+)/);
+                const sourceArticleId = articleMatch ? articleMatch[1] : null;
+                const specFactRows = specificationRowsToSpecFacts(normalized, sourceArticleId);
+                if (specFactRows.length > 0) {
+                    const sf = await insertParsedData('spec_fact', specFactRows, { returnRepresentation: true });
+                    if (!sf.success) {
+                        logger.warn(`[${taskId}] spec_fact upsert skipped (run migrate:l1-spec-fact?): ${sf.error}`);
+                    } else if (evidenceId && Array.isArray(sf.rows) && sf.rows.length > 0) {
+                        const factIds = sf.rows.map((r) => r.id).filter(Boolean);
+                        if (factIds.length > 0) {
+                            const links = await insertEvidenceLinks(evidenceId, 'spec_fact', factIds, 'l1-v1');
+                            if (!links.success) {
+                                logger.warn(`[${taskId}] spec_fact evidence_link skipped: ${links.error}`);
+                            }
+                        }
                     }
                 }
             }

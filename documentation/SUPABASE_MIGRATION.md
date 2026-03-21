@@ -12,6 +12,16 @@ Adds **`canonical_bucket`**, **`evidence_ingest`**, **`evidence_link`**, **`buck
 
 The background worker dual-writes **`content_item`** next to **`articles`** when this schema is present; if the table is missing, it logs a warning and continues.
 
+## L1 `spec_fact` (additive — after phase 1)
+
+Adds **`spec_fact`** for technician-truth spec rows (dual-written from AI-parsed specifications). Run on projects that already applied phase 1.
+
+1. Same DB URL env as phase 1.
+2. From `vehapiproxi`: **`npm run migrate:l1-spec-fact`**  
+   (runs `documentation/migrations/20260320_l1_spec_fact.sql`).
+
+If `spec_fact` is missing, the worker logs a warning and continues; legacy **`specifications`** upserts are unchanged.
+
 ---
 
 ## Option A: Run the migration script (recommended)
@@ -85,12 +95,29 @@ The script: (1) clears that vehicle’s data from Supabase, (2) ensures the vehi
 
 Verifies the phase-1 links after one article parse: `content_item` enrichment + `evidence_ingest` + `evidence_link`.
 
+By default the script calls the **production** API on **`https://vehapiproxi.vercel.app`** (no local proxy needed). You can still point at a local dev server with `PROXY_URL=http://localhost:3000` or `--proxy=http://localhost:3000`.
+
 ```bash
-# From vehapiproxi, with proxy running and env configured:
-VEHICLE_ID=2854 CONTENT_SOURCE=MOTOR npm run verify:evidence-links
+# From vehapiproxi, Supabase env configured (same project the deployed proxy uses).
+# IMPORTANT: use the vehicle's actual content source (example below is for vehicle 2854).
+# Prefer CLI flags: `npm run` often does not forward `VAR=value` into the Node script.
+npm run verify:evidence-links -- --vehicle=2854 --source=GeneralMotors
 
 # Optional: pin a specific article
-VEHICLE_ID=2854 ARTICLE_ID=123456 npm run verify:evidence-links
+npm run verify:evidence-links -- --vehicle=2854 --article=123456
+
+# If article HTML is auth-gated on deployed proxy, provide a user bearer token:
+npm run verify:evidence-links -- --vehicle=2854 --source=GeneralMotors --token=<supabase_access_token>
+
+# Local proxy instead of Vercel
+npm run verify:evidence-links -- --vehicle=2854 --proxy=http://localhost:3000
+
+# Alternatives if your shell forwards env correctly:
+export VEHICLE_ID=2854 CONTENT_SOURCE=MOTOR && npm run verify:evidence-links
+env VEHICLE_ID=2854 npm run verify:evidence-links
+
+# Or call node directly (env prefix always applies to node):
+VEHICLE_ID=2854 node scripts/verify-evidence-links-one-article.js
 ```
 
 ## Vercel deployment (proxy)

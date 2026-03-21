@@ -18,6 +18,7 @@ const UPSERT_CONFLICT_COLUMNS = {
     tsbs: 'vehicle_id,bulletin_number',
     dtcs: 'vehicle_id,code',
     specifications: 'vehicle_id,category,name',
+    spec_fact: 'vehicle_id,category,name',
     categories: 'name,type',
     vehicle_metadata: 'path',
     articles: 'vehicle_id,original_id',
@@ -318,7 +319,12 @@ export async function updateContentItemEnrichment(vehicleExternalId, motorArticl
     }
 }
 
-export async function insertParsedData(table, data) {
+/**
+ * @param {string} table
+ * @param {Object|Array} data
+ * @param {{ returnRepresentation?: boolean }} [options] If true and upsert, returns merged rows (ids for evidence_link).
+ */
+export async function insertParsedData(table, data, options = {}) {
     const cfg = getSupabaseConfig();
     if (!cfg) {
         logger.warn(`Skipping Supabase insert into ${table}: credentials not set.`);
@@ -327,13 +333,18 @@ export async function insertParsedData(table, data) {
 
     const rows = Array.isArray(data) ? data : [data];
     if (rows.length === 0) {
-        return { success: true };
+        return { success: true, rows: [] };
     }
 
     const onConflict = UPSERT_CONFLICT_COLUMNS[table];
+    const returnRepresentation = Boolean(options.returnRepresentation);
     const prefer = onConflict
-        ? 'return=minimal,resolution=merge-duplicates'
-        : 'return=minimal';
+        ? returnRepresentation
+            ? 'return=representation,resolution=merge-duplicates'
+            : 'return=minimal,resolution=merge-duplicates'
+        : returnRepresentation
+            ? 'return=representation'
+            : 'return=minimal';
 
     try {
         let url = `${cfg.url}/rest/v1/${table}`;
@@ -359,6 +370,11 @@ export async function insertParsedData(table, data) {
         }
 
         logger.info(`✓ Upserted ${rows.length} row(s) into Supabase table: ${table}`);
+        if (returnRepresentation) {
+            const body = await response.json().catch(() => []);
+            const out = Array.isArray(body) ? body : body ? [body] : [];
+            return { success: true, rows: out };
+        }
         return { success: true };
     } catch (err) {
         logger.error(`Unexpected error inserting into ${table}:`, err);

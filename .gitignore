@@ -14,6 +14,14 @@ dist-ssr
 
 # Editor directories and files
 .cursor/settings.json
+# Local: enable Cursor agent auto-continue (see .cursor/WORKER_LOOP.md)
+.cursor/worker-loop.enabled
+.cursor/worker-loop.disabled
+.cursor/worker-loop.after-response
+.cursor/hooks/auto-continue.log
+.cursor/hooks/hooks-smoke.log
+.cursor/hooks/after-agent-response.log
+.cursor/hooks/after-agent-response-state.json
 .vscode/*
 !.vscode/extensions.json
 .idea

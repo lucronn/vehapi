@@ -202,6 +202,30 @@ export interface NormalizedSpecification {
 }
 
 /**
+ * L1 spec row (Supabase `spec_fact`) — dual-written from AI-parsed specifications.
+ * @see documentation/migrations/20260320_l1_spec_fact.sql
+ */
+export interface NormalizedSpecFact {
+  id?: string;
+  vehicle_id: string;
+  category: string;
+  name: string;
+  spec_type: string;
+  component?: string | null;
+  value_num?: number | null;
+  value_text?: string | null;
+  unit?: string | null;
+  display_text?: string | null;
+  conditions?: Record<string, unknown> | null;
+  confidence?: number | null;
+  source_article_id?: string | null;
+  metadata?: Record<string, unknown> | null;
+  extractor_version?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
  * Maintenance Schedule Item
  * DB columns: vehicle_id, interval_value, interval_unit, action, item, description, frequency_code.
  * is_severe_service, labor_time_hours are in contract for future API/schema use.

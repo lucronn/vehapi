@@ -13,6 +13,7 @@
         "debug": "NODE_ENV=development node src/index.js",
         "migrate:schema": "node scripts/run-migrate-schema.js",
         "migrate:phase1": "node scripts/run-migrate-additive-phase1.js",
+        "migrate:l1-spec-fact": "node scripts/run-migrate-l1-spec-fact.js",
         "test:normalization": "node scripts/test-normalization-one-per-category.js",
         "check:nemotron": "node scripts/check-nemotron.mjs",
         "verify:evidence-links": "node scripts/verify-evidence-links-one-article.js"

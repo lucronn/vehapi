@@ -16,6 +16,7 @@ DROP TABLE IF EXISTS public.vehicle_metadata CASCADE;
 DROP TABLE IF EXISTS public.common_issues_cache CASCADE;
 DROP TABLE IF EXISTS public.maintenance_schedules CASCADE;
 DROP TABLE IF EXISTS public.parts CASCADE;
+DROP TABLE IF EXISTS public.spec_fact CASCADE;
 DROP TABLE IF EXISTS public.specifications CASCADE;
 DROP TABLE IF EXISTS public.categories CASCADE;
 DROP TABLE IF EXISTS public.dtcs CASCADE;
@@ -164,6 +165,33 @@ CREATE TABLE public.specifications (
 );
 
 CREATE INDEX idx_specifications_vehicle_id ON public.specifications(vehicle_id);
+
+-- -----------------------------------------------------------------------------
+-- 6b. SPEC_FACT (L1 technician-truth specifications; dual-written from AI parse)
+-- -----------------------------------------------------------------------------
+CREATE TABLE public.spec_fact (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vehicle_id TEXT NOT NULL REFERENCES public.vehicles(external_id) ON DELETE CASCADE,
+    category TEXT NOT NULL,
+    name TEXT NOT NULL,
+    spec_type TEXT NOT NULL DEFAULT 'other',
+    component TEXT,
+    value_num NUMERIC,
+    value_text TEXT,
+    unit TEXT,
+    display_text TEXT,
+    conditions JSONB,
+    confidence REAL DEFAULT 1,
+    source_article_id TEXT,
+    metadata JSONB,
+    extractor_version TEXT DEFAULT 'l1-v1',
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(vehicle_id, category, name)
+);
+
+CREATE INDEX idx_spec_fact_vehicle_id ON public.spec_fact(vehicle_id);
+CREATE INDEX idx_spec_fact_vehicle_type ON public.spec_fact(vehicle_id, spec_type);
 
 -- -----------------------------------------------------------------------------
 -- 7. CATEGORIES (hierarchical buckets)
@@ -375,6 +403,7 @@ ALTER TABLE public.procedures ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tsbs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.dtcs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.specifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.spec_fact ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vehicle_metadata ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ai_processing_logs ENABLE ROW LEVEL SECURITY;
@@ -394,6 +423,7 @@ CREATE POLICY "Allow all procedures" ON public.procedures FOR ALL USING (true) W
 CREATE POLICY "Allow all tsbs" ON public.tsbs FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all dtcs" ON public.dtcs FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all specifications" ON public.specifications FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all spec_fact" ON public.spec_fact FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all categories" ON public.categories FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all vehicle_metadata" ON public.vehicle_metadata FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all ai_processing_logs" ON public.ai_processing_logs FOR ALL USING (true) WITH CHECK (true);
