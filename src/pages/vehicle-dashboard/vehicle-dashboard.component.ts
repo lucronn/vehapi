@@ -31,6 +31,8 @@ import { PartsSectionComponent } from './components/sections/parts-section/parts
 import { CommonIssuesSectionComponent } from './components/sections/common-issues-section/common-issues-section.component';
 import { SyncProgressOverlayComponent } from './components/layout/sync-progress-overlay/sync-progress-overlay.component';
 import { CategoryTreeComponent } from '../../components/category-tree/category-tree.component';
+import { L2SearchPanelComponent } from './components/layout/l2-search-panel/l2-search-panel.component';
+import { environment } from '../../environments/environment';
 
 // Icons
 import { LucideAngularModule, Menu, X, House, TriangleAlert, FileText, Wrench, Package, Lightbulb, CreditCard } from 'lucide-angular';
@@ -73,7 +75,8 @@ export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'comp
     AuthModalComponent,
     SyncProgressOverlayComponent,
     CommonIssuesSectionComponent,
-    CategoryTreeComponent
+    CategoryTreeComponent,
+    L2SearchPanelComponent
   ],
 })
 export class VehicleDashboardComponent {
@@ -86,6 +89,9 @@ export class VehicleDashboardComponent {
   private persistence = inject(VehiclePersistenceService);
 
   readonly icons = { Menu, X, House, TriangleAlert, FileText, Wrench, Package, Lightbulb, CreditCard };
+
+  /** L2 semantic search panel (feature-flagged). */
+  readonly l2SearchEnabled = environment.features?.l2Search === true;
 
   // Route parameters
   params = toSignal(this.route.paramMap);

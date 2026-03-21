@@ -540,6 +540,51 @@ export async function replaceContentChunksForContentItem(contentItemId, rows) {
 }
 
 /**
+ * Vector similarity search over L2 chunks for one vehicle (RPC `match_content_chunks`).
+ * @param {{ queryEmbedding: number[], vehicleExternalId: string, matchCount: number }} args
+ */
+export async function matchContentChunksRpc({ queryEmbedding, vehicleExternalId, matchCount }) {
+    const cfg = getSupabaseConfig();
+    if (!cfg) {
+        return { success: false, error: 'Supabase not configured' };
+    }
+    try {
+        const response = await fetch(`${cfg.url}/rest/v1/rpc/match_content_chunks`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                apikey: cfg.key,
+                Authorization: `Bearer ${cfg.key}`,
+                Prefer: 'return=representation'
+            },
+            body: JSON.stringify({
+                query_embedding: queryEmbedding,
+                vehicle_external_id_filter: vehicleExternalId,
+                match_count: matchCount
+            })
+        });
+        if (!response.ok) {
+            const t = await response.text();
+            return { success: false, error: t || `RPC ${response.status}` };
+        }
+        const rows = await response.json();
+        const chunks = (Array.isArray(rows) ? rows : []).map((r) => ({
+            chunkId: r.chunk_id,
+            contentItemId: r.content_item_id,
+            motorArticleId: r.motor_article_id,
+            canonicalSiloCode: r.canonical_silo_code,
+            contentSource: r.content_source,
+            chunkIndex: r.chunk_index,
+            text: r.text_content,
+            score: r.similarity
+        }));
+        return { success: true, chunks };
+    } catch (err) {
+        return { success: false, error: err.message || String(err) };
+    }
+}
+
+/**
  * @param {string} table
  * @param {Object|Array} data
  * @param {{ returnRepresentation?: boolean }} [options] If true and upsert, returns merged rows (ids for evidence_link).

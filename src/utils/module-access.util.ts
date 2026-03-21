@@ -18,6 +18,24 @@ const BUCKET_TO_MODULE: Array<{ patterns: string[]; module: string }> = [
  * Derives the credits module type from an article's bucket or parentBucket.
  * Returns null if no match (caller should treat as locked).
  */
+/** Map normalized `content_item.canonical_silo_code` → credits `moduleType` query param. */
+export function siloCodeToModuleType(silo: string | null | undefined): string {
+  const map: Record<string, string> = {
+    dtcs: 'dtcs',
+    tsbs: 'tsbs',
+    procedures: 'procedures',
+    diagrams: 'diagrams',
+    'component-locations': 'diagrams',
+    specs: 'specs',
+    parts: 'parts',
+    maintenance: 'maintenance',
+    labor: 'procedures',
+    other: 'procedures'
+  };
+  if (!silo) return 'procedures';
+  return map[silo] ?? 'procedures';
+}
+
 export function bucketToModuleType(bucket?: string | null, parentBucket?: string | null): string | null {
   const combined = [bucket, parentBucket].filter(Boolean).join(' ').toLowerCase();
   if (!combined) return null;

@@ -12,6 +12,7 @@ import swaggerUi from 'swagger-ui-express';
 import { createRequire } from 'module';
 import { createCheckoutSession, createBillingPortalSession, handleWebhook, verifyAndFulfillSession } from './stripe.js';
 import { getUserData, unlockModule, getTransactions } from './credits.js';
+import { runL2VehicleChunkSearch } from './l2_retrieval.js';
 import { 
     insertParsedData, 
     checkParsedArticle,
@@ -257,6 +258,35 @@ const secureAuthMiddleware = async (req, res, next) => {
 
 // --- CREDIT SYSTEM ENDPOINTS ---
 registerCreditsEndpoints(app, secureAuthMiddleware);
+
+// L2 RAG — vector search over content_chunk (requires DB RPC + embeddings; service role only for RPC)
+app.post('/api/l2/search', express.json({ limit: '24kb' }), secureAuthMiddleware, async (req, res) => {
+    try {
+        const vehicleExternalId =
+            typeof req.body?.vehicleExternalId === 'string' ? req.body.vehicleExternalId.trim() : '';
+        const query = typeof req.body?.query === 'string' ? req.body.query.trim() : '';
+        const matchCount = Math.min(24, Math.max(1, parseInt(req.body?.matchCount ?? '8', 10)));
+        if (!vehicleExternalId || !query) {
+            return res.status(400).json({ error: 'vehicleExternalId and query are required' });
+        }
+        const userData = await getUserData(req.userId);
+        const unlocks = userData.unlocks?.[vehicleExternalId] || [];
+        const allowed = unlocks.includes('full') || unlocks.length > 0;
+        if (!allowed) {
+            return res.status(403).json({
+                error: 'Unlock at least one module for this vehicle before using search'
+            });
+        }
+        const result = await runL2VehicleChunkSearch({ vehicleExternalId, query, matchCount });
+        if (!result.success) {
+            return res.status(503).json({ error: result.error || 'L2 search unavailable' });
+        }
+        return res.json({ chunks: result.chunks });
+    } catch (e) {
+        logger.error('L2 search failed', { message: e?.message, stack: e?.stack });
+        return res.status(500).json({ error: 'L2 search failed' });
+    }
+});
 
 // Article metadata (bucket, moduleType) for frontend access resolution when moduleType is missing
 registerArticleMetadataEndpoint(app, secureAuthMiddleware, logger);

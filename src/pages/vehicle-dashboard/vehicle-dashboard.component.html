@@ -194,6 +194,9 @@
         }
       </div>
       }
+      @if (l2SearchEnabled) {
+      <app-l2-search-panel [contentSource]="contentSource()" [vehicleId]="vehicleId()" />
+      }
     </div>
 
     <!-- Orientation Selector Modal -->

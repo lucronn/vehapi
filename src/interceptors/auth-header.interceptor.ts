@@ -32,8 +32,9 @@ export const authHeaderInterceptor: HttpInterceptorFn = (req, next) => {
 
   const isCreditsEndpoint = path.startsWith('/api/credits/');
   const isArticleContentEndpoint = /^\/api\/source\/[^/]+\/vehicle\/[^/]+\/article\/[^/]+(?:\/html|\/metadata)?$/.test(path);
+  const isL2SearchEndpoint = path === '/api/l2/search' || path.startsWith('/api/l2/');
 
-  if (!isCreditsEndpoint && !isArticleContentEndpoint) {
+  if (!isCreditsEndpoint && !isArticleContentEndpoint && !isL2SearchEndpoint) {
     return next(req);
   }
 

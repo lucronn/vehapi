@@ -48,6 +48,22 @@ import { MOTOR_API_BASE_URL } from '../utils/motor-api.constants';
 import { MotorHtmlProcessorService } from './motor-html-processor.service';
 import { environment } from '../environments/environment';
 
+/** L2 RAG chunk row from POST /api/l2/search */
+export interface L2SearchChunk {
+  chunkId: string;
+  contentItemId: string;
+  motorArticleId: string;
+  canonicalSiloCode: string | null;
+  contentSource: string | null;
+  chunkIndex: number;
+  text: string;
+  score: number;
+}
+
+export interface L2SearchResponse {
+  chunks: L2SearchChunk[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class MotorApiService {
   private http = inject(HttpClient);
@@ -884,5 +900,18 @@ export class MotorApiService {
    */
   logout(): Observable<any> {
     return this.http.get(`${this.baseUrl}/logout`, { observe: 'response' });
+  }
+
+  /**
+   * L2 vector search (requires Supabase RPC + embeddings; backend enforces unlocks).
+   */
+  l2Search(vehicleExternalId: string, query: string, matchCount = 8): Observable<L2SearchResponse> {
+    const url = `${this.baseUrl}/api/l2/search`;
+    this.logRequest('POST', url, undefined, { vehicleExternalId, matchCount });
+    return this.http.post<L2SearchResponse>(
+      url,
+      { vehicleExternalId, query, matchCount },
+      { withCredentials: true }
+    );
   }
 }
