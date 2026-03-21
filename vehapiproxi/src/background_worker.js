@@ -15,7 +15,8 @@ import {
     insertEvidenceLinks,
     deleteProcedureStepsForArticle,
     deleteProcedureToolsForArticle,
-    deleteProcedurePartsForArticle
+    deleteProcedurePartsForArticle,
+    upsertMediaAssetPdfFromArticleBody
 } from './supabase.js';
 import { normalizeCategoryParams } from './categorize.js';
 import { buildContentItemFromCatalogArticle, buildMinimalContentItemFromParse } from './content_item_mapper.js';
@@ -33,6 +34,9 @@ const PDF_VISION_FALLBACK_PAGE = Number.parseInt(
     process.env.PDF_VISION_FALLBACK_PAGE || '0',
     10
 );
+
+/** Persist `media_asset` row for article `body.pdf` bytes (sha256 + mime). Set false to skip. */
+const ENABLE_MEDIA_ASSET_PDF = String(process.env.ENABLE_MEDIA_ASSET_PDF || 'true').toLowerCase() !== 'false';
 
 let _warnedMissingProcedureToolTables = false;
 
@@ -548,6 +552,23 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                 htmlContent = parsed?.body?.html || parsed?.html || null;
                 if (!htmlContent && parsed?.body?.pdf) {
                     const pdfBase64 = String(parsed.body.pdf);
+                    const b64Raw = pdfBase64.replace(/^data:application\/pdf;base64,/i, '');
+                    const pdfBuf = Buffer.from(b64Raw, 'base64');
+                    if (ENABLE_MEDIA_ASSET_PDF && externalIdStr && pdfBuf.length > 0) {
+                        try {
+                            const mar = await upsertMediaAssetPdfFromArticleBody({
+                                vehicleExternalId: vehicleIdStr,
+                                contentSource: extractContentSource(urlPath),
+                                motorArticleId: externalIdStr,
+                                pdfBuffer: pdfBuf
+                            });
+                            if (!mar.success) {
+                                logger.warn(`[${taskId}] media_asset (PDF) skipped: ${mar.error}`);
+                            }
+                        } catch (maErr) {
+                            logger.warn(`[${taskId}] media_asset (PDF) failed: ${maErr.message}`);
+                        }
+                    }
                     let pdfText = await extractTextFromPdfBase64(pdfBase64, { maxPages: 40 });
 
                     // Only invoke vision fallback for sparse/non-text PDFs and only when explicitly enabled.
@@ -556,8 +577,6 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                         ENABLE_NEMOTRON_PDF_VISION_FALLBACK
                     ) {
                         try {
-                            const b64 = pdfBase64.replace(/^data:application\/pdf;base64,/i, '');
-                            const pdfBuf = Buffer.from(b64, 'base64');
                             const visionText = await extractTextFromPdfPageViaNemotron(pdfBuf, PDF_VISION_FALLBACK_PAGE, {
                                 instruction:
                                     'Transcribe all readable text from this automotive service PDF page. ' +

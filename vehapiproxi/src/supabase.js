@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import logger from './logger.js';
 
 // Use the Supabase REST API directly via fetch - no SDK needed
@@ -579,6 +580,60 @@ export async function matchContentChunksRpc({ queryEmbedding, vehicleExternalId,
             score: r.similarity
         }));
         return { success: true, chunks };
+    } catch (err) {
+        return { success: false, error: err.message || String(err) };
+    }
+}
+
+/**
+ * Record PDF bytes from Motor article JSON (`body.pdf`) in `media_asset` for traceability / future diagram work.
+ * Idempotent per (vehicle_external_id, motor_graphic_id) where graphic id is `pdf:{motorArticleId}`.
+ *
+ * @param {{ vehicleExternalId: string, contentSource: string, motorArticleId: string, pdfBuffer: Buffer }} args
+ */
+export async function upsertMediaAssetPdfFromArticleBody({
+    vehicleExternalId,
+    contentSource,
+    motorArticleId,
+    pdfBuffer
+}) {
+    const cfg = getSupabaseConfig();
+    if (!cfg || !vehicleExternalId || !motorArticleId || !pdfBuffer || pdfBuffer.length === 0) {
+        return { success: false, error: 'Missing config or PDF bytes' };
+    }
+    const sha256 = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
+    const motorGraphicId = `pdf:${motorArticleId}`;
+    try {
+        const q =
+            `${cfg.url}/rest/v1/media_asset?vehicle_external_id=eq.${encodeURIComponent(vehicleExternalId)}` +
+            `&motor_graphic_id=eq.${encodeURIComponent(motorGraphicId)}&select=id&limit=1`;
+        const check = await fetch(q, {
+            headers: {
+                apikey: cfg.key,
+                Authorization: `Bearer ${cfg.key}`,
+                Accept: 'application/json'
+            }
+        });
+        if (check.ok) {
+            const rows = await check.json();
+            if (Array.isArray(rows) && rows.length > 0) {
+                return { success: true, skipped: true, id: rows[0].id };
+            }
+        }
+        return insertParsedData('media_asset', [
+            {
+                vehicle_external_id: vehicleExternalId,
+                content_source: contentSource || 'MOTOR',
+                motor_graphic_id: motorGraphicId,
+                mime_type: 'application/pdf',
+                sha256,
+                source_label: 'article_body_pdf',
+                metadata_json: {
+                    byte_length: pdfBuffer.length,
+                    ingested_by: 'background_worker'
+                }
+            }
+        ]);
     } catch (err) {
         return { success: false, error: err.message || String(err) };
     }
