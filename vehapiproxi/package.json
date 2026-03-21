@@ -22,7 +22,8 @@
         "test:normalization": "node scripts/test-normalization-one-per-category.js",
         "check:nemotron": "node scripts/check-nemotron.mjs",
         "verify:evidence-links": "node scripts/verify-evidence-links-one-article.js",
-        "verify:evidence-links:local": "node scripts/verify-evidence-links-one-article.js --local"
+        "verify:evidence-links:local": "node scripts/verify-evidence-links-one-article.js --local",
+        "test:article-rate-limit": "node scripts/test-article-rate-limit.js"
     },
     "keywords": [
         "proxy",
@@ -39,6 +40,7 @@
         "cors": "^2.8.5",
         "dotenv": "^16.6.1",
         "express": "^4.18.2",
+        "express-rate-limit": "^7.5.1",
         "http-proxy-middleware": "^2.0.6",
         "jsonwebtoken": "^9.0.2",
         "node-fetch": "^3.3.2",

@@ -3,6 +3,7 @@ import cors from 'cors';
 import { createProxyMiddleware, responseInterceptor } from 'http-proxy-middleware';
 import fs from 'fs';
 import path from 'path';
+import { randomUUID } from 'crypto';
 import { fileURLToPath } from 'url';
 import { config, validateConfig } from './config.js';
 import { authManager } from './auth.js';
@@ -30,6 +31,7 @@ import { registerDebugEndpoints } from './routes/debug.js';
 import { registerMakeIdResolutionEndpoints } from './routes/make-id-resolution.js';
 import { registerOrientationEndpoints } from './routes/orientations.js';
 import { registerArticleMetadataEndpoint } from './routes/article-metadata.js';
+import { createArticleContentRateLimiter, articleContentRateLimitGate } from './rate_limit.js';
 import { bucketToModuleType, checkArticleAccess } from './article-access.js';
 import { normalizeMotorResponse, buildMenuFromNormalizedArticles } from './menu-normalizer.js';
 // AI parser is loaded lazily to avoid cold-start crashes when no Nemotron API key (NVIDIA_API_KEY / LLM_API_KEY)
@@ -96,6 +98,15 @@ const swaggerDocument = require('./swagger.json');
 validateConfig();
 
 const app = express();
+app.set('trust proxy', 1);
+
+/** Correlation id for logs (preserve `x-request-id` / `x-correlation-id` when present). */
+app.use((req, res, next) => {
+    const incoming = req.get('x-request-id') || req.get('x-correlation-id');
+    req.correlationId = incoming || randomUUID();
+    if (!req.requestId) req.requestId = req.correlationId;
+    next();
+});
 
 /** When `x-vehapi-verify: 1`, skip Supabase-first caches so requests hit Motor and enqueue background parsing (verify script only). */
 function isVerifyBypass(req) {
@@ -405,6 +416,7 @@ const articleAccessMiddleware = async (req, res, next) => {
     });
 };
 
+app.use('/api', articleContentRateLimitGate(createArticleContentRateLimiter()));
 app.use('/api', articleAccessMiddleware);
 app.use('/api', metadataCacheMiddleware);
 app.use('/api', articlesCacheMiddleware);
@@ -725,13 +737,30 @@ app.use('/', authMiddleware, createProxyMiddleware({
         }
     }),
     onError: (err, req, res) => {
-        logger.error('Proxy error:', err);
+        const cid = req.correlationId || req.requestId || 'unknown';
+        logger.error('Proxy error:', { message: err?.message, stack: err?.stack, correlationId: cid, path: req.path });
         if (!res.headersSent) {
             res.status(500).send('Proxy Error');
         }
     }
 }));
 
+app.use((err, req, res, _next) => {
+    const cid = req.correlationId || req.requestId || 'unknown';
+    const uid = req.userId || null;
+    logger.error('Unhandled error', {
+        message: err?.message,
+        stack: err?.stack,
+        path: req.path,
+        method: req.method,
+        correlationId: cid,
+        userId: uid,
+        status: err.status || 500
+    });
+    if (!res.headersSent) {
+        res.status(err.status || 500).json({ error: 'Internal server error', correlationId: cid });
+    }
+});
 
 export { app };
 export default app;

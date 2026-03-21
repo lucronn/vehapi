@@ -135,7 +135,7 @@ function truncateBody(body, maxLength = 1000) {
 
 // Enhanced logging functions
 export function logRequest(req, metadata = {}) {
-    const requestId = randomUUID();
+    const requestId = req.requestId || randomUUID();
     req.requestId = requestId;
     req.startTime = Date.now();
 

@@ -150,16 +150,26 @@ export async function handleWebhook(req, res) {
         const stripeCustomerId = session.customer;
 
         if (userId && credits) {
-            await addCredits(userId, credits, {
-                stripeSessionId: session.id,
-                stripePaymentIntent: session.payment_intent,
-                usdCents
-            });
-            logger.info(`Added ${credits} credits to user ${userId}`);
+            try {
+                await addCredits(userId, credits, {
+                    stripeSessionId: session.id,
+                    stripePaymentIntent: session.payment_intent,
+                    usdCents
+                });
+                logger.info(`Added ${credits} credits to user ${userId}`);
 
-            // Store stripe customer ID for future portal access
-            if (stripeCustomerId) {
-                await setStripeCustomerId(userId, stripeCustomerId);
+                if (stripeCustomerId) {
+                    await setStripeCustomerId(userId, stripeCustomerId);
+                }
+            } catch (fulfillErr) {
+                logger.error('Stripe webhook fulfillment failed', {
+                    message: fulfillErr?.message,
+                    stack: fulfillErr?.stack,
+                    eventId: event.id,
+                    eventType: event.type,
+                    userId
+                });
+                return res.status(500).json({ error: 'Fulfillment failed' });
             }
         }
     }

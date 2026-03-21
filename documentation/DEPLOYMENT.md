@@ -109,6 +109,15 @@ All platforms above support custom domains:
 
 ---
 
+## Observability (vehapiproxi / Vercel)
+
+- **Runtime logs:** Vercel captures stdout/stderr from the Node serverless function. Winston is configured for JSON-friendly structured fields (`vehapiproxi/src/logger.js`).
+- **Correlation:** Each request gets a `correlationId` (from `x-request-id` / `x-correlation-id` when sent, otherwise generated). Error responses may include `correlationId` for support triage.
+- **Log drains / APM:** In the Vercel project → **Settings → Log Drains**, connect Datadog, Axiom, or another provider to ship JSON logs. Alternatively, poll the Vercel Observability UI for 5xx spikes after deploys.
+- **Alerts:** Configure alerts on the log drain or Vercel monitoring for elevated 5xx rates and failed Stripe webhook fulfillment (logged as `Stripe webhook fulfillment failed`).
+
+---
+
 ## 📝 Notes
 
 - The app uses hash routing (`#`), so all routes work with static hosting
