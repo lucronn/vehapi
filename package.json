@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "cursor:continue": "node scripts/cursor-worker-continue.cjs",
-    "cursor:auto-once": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/cursor-auto-continue-once.ps1",
+    "cursor:auto-once": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/continue-once.ps1",
     "cursor:auto-loop": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/cursor-auto-continue-loop.ps1 -IntervalSeconds 120 -MaxRounds 10",
     "dev": "ng serve",
     "build": "ng build && node randdev/scripts/inject-eruda.cjs",

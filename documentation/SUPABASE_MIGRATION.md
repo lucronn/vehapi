@@ -22,6 +22,32 @@ Adds **`spec_fact`** for technician-truth spec rows (dual-written from AI-parsed
 
 If `spec_fact` is missing, the worker logs a warning and continues; legacy **`specifications`** upserts are unchanged.
 
+## L1 `maintenance_task` (additive — after phase 1)
+
+Adds **`maintenance_task`** for L1 maintenance rows, dual-written from the Angular app whenever **`maintenance_schedules`** upserts succeed (`DataSyncService` — mile intervals + F/N/R frequency).
+
+1. Same DB URL env as phase 1.
+2. From `vehapiproxi`: **`npm run migrate:l1-maintenance-task`**  
+   (runs `documentation/migrations/20260321_l1_maintenance_task.sql`).
+
+If the table is missing, sync logs a short console warning and legacy **`maintenance_schedules`** behavior is unchanged.
+
+## L1 `procedure_step` (additive — after phase 1)
+
+Adds **`procedure_step`** — one row per repair step, written by the **proxy background worker** after each successful **`procedures`** upsert (delete prior steps for that article, then insert; **`evidence_link`** rows use `entity_type=procedure_step` when L0 evidence exists).
+
+1. Same DB URL env as phase 1.
+2. From `vehapiproxi`: **`npm run migrate:l1-procedure-step`**  
+   (runs `documentation/migrations/20260322_l1_procedure_step.sql`).
+
+## L1 `procedure_tool` + `procedure_part` (additive — after phase 1)
+
+Adds **`procedure_tool`** (string lines from `tools_required`) and **`procedure_part`** (structured rows from `parts_required`). The worker deletes prior rows per article then inserts; **`evidence_link`** uses `entity_type` `procedure_tool` / `procedure_part` when L0 evidence exists.
+
+1. Same DB URL env as phase 1.
+2. From `vehapiproxi`: **`npm run migrate:l1-procedure-tool-part`**  
+   (runs `documentation/migrations/20260323_l1_procedure_tool_and_part.sql`).
+
 ---
 
 ## Option A: Run the migration script (recommended)

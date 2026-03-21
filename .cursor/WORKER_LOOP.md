@@ -14,7 +14,7 @@ Per [Cursor Agent hooks docs](https://cursor.com/docs/agent/hooks), **`followup_
 npm run cursor:continue
 ```
 
-**External desktop automation (Windows):** focus Cursor → paste → Enter on a timer or hotkey. See **`scripts/automation/README.md`** (`cursor-auto-continue-once.ps1`, `cursor-auto-continue-loop.ps1`, optional `cursor-continue-hotkey.ahk`). This is **not** official Cursor support; wrong focus can paste into the wrong control.
+**External desktop automation (Windows):** focus Cursor → paste → Enter on a timer or hotkey. See **`scripts/automation/README.md`** (`continue-once.ps1` (npm `cursor:auto-once`), `cursor-auto-continue-loop.ps1`, optional `cursor-continue-hotkey.ahk`). This is **not** official Cursor support; wrong focus can paste into the wrong control.
 
 ---
 

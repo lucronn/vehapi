@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Poll: every N seconds, run cursor-auto-continue-once.ps1 (clipboard + paste + Enter).
+  Poll: every N seconds, run continue-once.ps1 (clipboard + paste + Enter).
 
 .DESCRIPTION
   Time-based, not "when agent finishes" — tune -IntervalSeconds to your model + task length.
@@ -24,7 +24,7 @@ param(
     [string]$PreSendKeys = ''
 )
 
-$once = Join-Path $PSScriptRoot 'cursor-auto-continue-once.ps1'
+$once = Join-Path $PSScriptRoot 'continue-once.ps1'
 $round = 0
 
 while ($true) {

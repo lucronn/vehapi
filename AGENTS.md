@@ -215,7 +215,7 @@ This project uses `PROGRESS.md` at the repo root as the living status document. 
 3. Update "What's Left to Do" when adding or removing scope.
 4. Set **Last updated** to today's date.
 
-**Cursor “continue” loop:** per-message auto-loop via hooks is **not reliable** (`stop` often doesn’t fire; `afterAgentResponse` doesn’t consume `followup_message`). Use **`npm run cursor:continue`** for clipboard, or **Windows desktop automation**: `scripts/automation/README.md` (`cursor:auto-once`, `cursor:auto-loop`, optional AutoHotkey). Details: `.cursor/WORKER_LOOP.md`.
+**Cursor “continue” loop:** per-message auto-loop via hooks is **not reliable** (`stop` often doesn’t fire; `afterAgentResponse` doesn’t consume `followup_message`). Use **`npm run cursor:continue`** for clipboard, or **Windows desktop automation**: root **`npm run cursor:auto-once`** (runs `scripts/continue-once.ps1`), **`npm run cursor:auto-loop`**, optional AutoHotkey — see `scripts/automation/README.md`. Hook toggles **`.cursor/worker-loop.disabled`** / optional **`.cursor/worker-loop.enabled`** / **`.cursor/worker-loop.after-response`** are gitignored; **default ON** when hooks are registered (no flag required for the common case). Details: **`.cursor/WORKER_LOOP.md`**.
 
 Checklist items mirror `documentation/IMPLEMENTATION_GUIDE.md` Section 23.
 

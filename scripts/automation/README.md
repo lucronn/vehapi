@@ -5,6 +5,7 @@ Cursor does not expose a supported API to inject chat messages. These scripts **
 ## Requirements
 
 - **Windows** + **PowerShell 5+**
+- **`scripts/continue-once.ps1`** is the canonical script ( **`npm run cursor:auto-once`** calls it by name). It uses **WScript.Shell** only (`AppActivate` + `SendKeys`) — **no `Add-Type` / C#**. `cursor-auto-continue-once.ps1` is a thin wrapper for older links.
 - **Node** on PATH (for clipboard refresh via `cursor-worker-continue.cjs`)
 - **Cursor** running with a **normal** (non-minimized) window
 
@@ -14,19 +15,19 @@ Cursor does not expose a supported API to inject chat messages. These scripts **
 2. From repo root:
 
 ```powershell
-.\scripts\cursor-auto-continue-once.ps1
+.\scripts\continue-once.ps1
 ```
 
 Optional: try to focus chat first (depends on your keybindings):
 
 ```powershell
-.\scripts\cursor-auto-continue-once.ps1 -PreSendKeys '^l'
+.\scripts\continue-once.ps1 -PreSendKeys '^l'
 ```
 
 If clipboard is already correct:
 
 ```powershell
-.\scripts\cursor-auto-continue-once.ps1 -SkipClipboard
+.\scripts\continue-once.ps1 -SkipClipboard
 ```
 
 Or via npm:

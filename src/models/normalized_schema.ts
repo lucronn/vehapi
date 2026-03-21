@@ -137,6 +137,56 @@ export interface NormalizedProcedure {
 }
 
 /**
+ * L1 atomic procedure step (Supabase `procedure_step`) — dual-written from worker after `procedures` upsert.
+ * @see documentation/migrations/20260322_l1_procedure_step.sql
+ */
+export interface NormalizedProcedureStep {
+  id?: string;
+  vehicle_id: string;
+  source_article_id: string;
+  step_index: number;
+  display_order?: number | null;
+  step_text: string;
+  image_url?: string | null;
+  warning?: string | null;
+  note?: string | null;
+  extractor_version?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
+ * L1 tool line (Supabase `procedure_tool`) — from `tools_required` after `procedures` upsert.
+ * @see documentation/migrations/20260323_l1_procedure_tool_and_part.sql
+ */
+export interface NormalizedProcedureTool {
+  id?: string;
+  vehicle_id: string;
+  source_article_id: string;
+  line_index: number;
+  tool_text: string;
+  extractor_version?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
+ * L1 part line (Supabase `procedure_part`) — from `parts_required` after `procedures` upsert.
+ */
+export interface NormalizedProcedurePart {
+  id?: string;
+  vehicle_id: string;
+  source_article_id: string;
+  line_index: number;
+  part_number?: string | null;
+  description: string;
+  quantity?: number;
+  extractor_version?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
  * Technical Service Bulletin (TSB)
  * DB column for full HTML is content_html; AI/output uses content (pipeline maps content → content_html).
  */
@@ -241,6 +291,27 @@ export interface NormalizedMaintenanceSchedule {
   frequency_code?: string;
   is_severe_service: boolean;
   labor_time_hours?: number;
+}
+
+/**
+ * L1 maintenance row (Supabase `maintenance_task`) — dual-written with `maintenance_schedules`.
+ * @see documentation/migrations/20260321_l1_maintenance_task.sql
+ */
+export interface NormalizedMaintenanceTask {
+  id?: string;
+  vehicle_id: string;
+  interval_value: number;
+  interval_unit: string;
+  action: string;
+  item: string;
+  description?: string | null;
+  frequency_code?: string | null;
+  ingest_source?: string;
+  severity_bucket?: string | null;
+  metadata_json?: Record<string, unknown>;
+  extractor_version?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 /**

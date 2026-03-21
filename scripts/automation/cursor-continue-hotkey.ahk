@@ -2,7 +2,7 @@
 #SingleInstance Force
 ; Repo root = two levels up from scripts\automation
 repo := A_ScriptDir "\..\.."
-once := repo "\scripts\cursor-auto-continue-once.ps1"
+once := repo "\scripts\continue-once.ps1"
 
 ; Ctrl+Alt+F9 — one continue (clipboard refresh + focus Cursor + paste + Enter)
 ^!F9:: {

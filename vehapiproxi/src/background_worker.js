@@ -11,7 +11,10 @@ import {
     insertEvidenceIngest,
     updateContentItemEnrichment,
     findEntityIdsByExternalId,
-    insertEvidenceLinks
+    insertEvidenceLinks,
+    deleteProcedureStepsForArticle,
+    deleteProcedureToolsForArticle,
+    deleteProcedurePartsForArticle
 } from './supabase.js';
 import { normalizeCategoryParams } from './categorize.js';
 import { buildContentItemFromCatalogArticle } from './content_item_mapper.js';
@@ -88,6 +91,88 @@ function specificationRowsToSpecFacts(normalized, sourceArticleId) {
             };
         })
         .filter((r) => r.vehicle_id && r.category && r.name);
+}
+
+/**
+ * L1 rows for `procedure_step` — `step_index` is stable 0..n-1 array position (delete+insert per article).
+ */
+function buildProcedureStepRows(normalized) {
+    const list = Array.isArray(normalized) ? normalized : normalized ? [normalized] : [];
+    const rows = [];
+    for (const proc of list) {
+        const vid = proc.vehicle_id;
+        const aid = proc.external_id;
+        if (!vid || !aid) continue;
+        const steps = Array.isArray(proc.steps) ? proc.steps : [];
+        steps.forEach((s, idx) => {
+            const displayOrder = typeof s.order === 'number' ? s.order : null;
+            rows.push({
+                vehicle_id: vid,
+                source_article_id: aid,
+                step_index: idx,
+                display_order: displayOrder,
+                step_text: typeof s.text === 'string' ? s.text : '',
+                image_url: s.image_url || null,
+                warning: s.warning || null,
+                note: s.note || null,
+                extractor_version: 'l1-v1',
+                updated_at: new Date().toISOString()
+            });
+        });
+    }
+    return rows;
+}
+
+/** L1 `procedure_tool` rows from `tools_required` string array. */
+function buildProcedureToolRows(normalized) {
+    const list = Array.isArray(normalized) ? normalized : normalized ? [normalized] : [];
+    const rows = [];
+    for (const proc of list) {
+        const vid = proc.vehicle_id;
+        const aid = proc.external_id;
+        if (!vid || !aid) continue;
+        const tools = Array.isArray(proc.tools_required) ? proc.tools_required : [];
+        tools.forEach((t, idx) => {
+            const toolText = typeof t === 'string' ? t : String(t ?? '');
+            rows.push({
+                vehicle_id: vid,
+                source_article_id: aid,
+                line_index: idx,
+                tool_text: toolText,
+                extractor_version: 'l1-v1',
+                updated_at: new Date().toISOString()
+            });
+        });
+    }
+    return rows;
+}
+
+/** L1 `procedure_part` rows from `parts_required` object array. */
+function buildProcedurePartRows(normalized) {
+    const list = Array.isArray(normalized) ? normalized : normalized ? [normalized] : [];
+    const rows = [];
+    for (const proc of list) {
+        const vid = proc.vehicle_id;
+        const aid = proc.external_id;
+        if (!vid || !aid) continue;
+        const parts = Array.isArray(proc.parts_required) ? proc.parts_required : [];
+        parts.forEach((p, idx) => {
+            const pr = p && typeof p === 'object' ? p : {};
+            const qty =
+                typeof pr.quantity === 'number' && !Number.isNaN(pr.quantity) ? pr.quantity : 1;
+            rows.push({
+                vehicle_id: vid,
+                source_article_id: aid,
+                line_index: idx,
+                part_number: pr.part_number || null,
+                description: typeof pr.description === 'string' ? pr.description : '',
+                quantity: qty,
+                extractor_version: 'l1-v1',
+                updated_at: new Date().toISOString()
+            });
+        });
+    }
+    return rows;
 }
 
 function buildEnrichmentFromParsedData(schemaType, parsedData, htmlContent) {
@@ -526,6 +611,84 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                             const links = await insertEvidenceLinks(evidenceId, 'spec_fact', factIds, 'l1-v1');
                             if (!links.success) {
                                 logger.warn(`[${taskId}] spec_fact evidence_link skipped: ${links.error}`);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // L1 procedure_step: replace steps per (vehicle, article) then insert; evidence_link to step rows.
+            if (targetSchema === 'procedures') {
+                const procList = Array.isArray(normalized) ? normalized : normalized ? [normalized] : [];
+                const pairKeys = new Map();
+                for (const proc of procList) {
+                    if (proc.vehicle_id && proc.external_id) {
+                        const k = `${proc.vehicle_id}::${proc.external_id}`;
+                        pairKeys.set(k, [proc.vehicle_id, proc.external_id]);
+                    }
+                }
+                for (const [, pair] of pairKeys) {
+                    const [vid, aid] = pair;
+                    const del = await deleteProcedureStepsForArticle(vid, aid);
+                    if (!del.success) {
+                        logger.warn(
+                            `[${taskId}] procedure_step delete skipped (run migrate:l1-procedure-step?): ${del.error}`
+                        );
+                    }
+                    const delT = await deleteProcedureToolsForArticle(vid, aid);
+                    if (!delT.success) {
+                        logger.warn(
+                            `[${taskId}] procedure_tool delete skipped (run migrate:l1-procedure-tool-part?): ${delT.error}`
+                        );
+                    }
+                    const delP = await deleteProcedurePartsForArticle(vid, aid);
+                    if (!delP.success) {
+                        logger.warn(
+                            `[${taskId}] procedure_part delete skipped (run migrate:l1-procedure-tool-part?): ${delP.error}`
+                        );
+                    }
+                }
+                const stepRows = buildProcedureStepRows(normalized);
+                if (stepRows.length > 0) {
+                    const ps = await insertParsedData('procedure_step', stepRows, { returnRepresentation: true });
+                    if (!ps.success) {
+                        logger.warn(`[${taskId}] procedure_step insert skipped: ${ps.error}`);
+                    } else if (evidenceId && Array.isArray(ps.rows) && ps.rows.length > 0) {
+                        const stepIds = ps.rows.map((r) => r.id).filter(Boolean);
+                        if (stepIds.length > 0) {
+                            const links = await insertEvidenceLinks(evidenceId, 'procedure_step', stepIds, 'l1-v1');
+                            if (!links.success) {
+                                logger.warn(`[${taskId}] procedure_step evidence_link skipped: ${links.error}`);
+                            }
+                        }
+                    }
+                }
+                const toolRows = buildProcedureToolRows(normalized);
+                if (toolRows.length > 0) {
+                    const pt = await insertParsedData('procedure_tool', toolRows, { returnRepresentation: true });
+                    if (!pt.success) {
+                        logger.warn(`[${taskId}] procedure_tool insert skipped: ${pt.error}`);
+                    } else if (evidenceId && Array.isArray(pt.rows) && pt.rows.length > 0) {
+                        const toolIds = pt.rows.map((r) => r.id).filter(Boolean);
+                        if (toolIds.length > 0) {
+                            const links = await insertEvidenceLinks(evidenceId, 'procedure_tool', toolIds, 'l1-v1');
+                            if (!links.success) {
+                                logger.warn(`[${taskId}] procedure_tool evidence_link skipped: ${links.error}`);
+                            }
+                        }
+                    }
+                }
+                const partRows = buildProcedurePartRows(normalized);
+                if (partRows.length > 0) {
+                    const pp = await insertParsedData('procedure_part', partRows, { returnRepresentation: true });
+                    if (!pp.success) {
+                        logger.warn(`[${taskId}] procedure_part insert skipped: ${pp.error}`);
+                    } else if (evidenceId && Array.isArray(pp.rows) && pp.rows.length > 0) {
+                        const partIds = pp.rows.map((r) => r.id).filter(Boolean);
+                        if (partIds.length > 0) {
+                            const links = await insertEvidenceLinks(evidenceId, 'procedure_part', partIds, 'l1-v1');
+                            if (!links.success) {
+                                logger.warn(`[${taskId}] procedure_part evidence_link skipped: ${links.error}`);
                             }
                         }
                     }

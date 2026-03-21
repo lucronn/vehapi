@@ -19,6 +19,7 @@ const UPSERT_CONFLICT_COLUMNS = {
     dtcs: 'vehicle_id,code',
     specifications: 'vehicle_id,category,name',
     spec_fact: 'vehicle_id,category,name',
+    maintenance_task: 'vehicle_id,interval_value,action,item',
     categories: 'name,type',
     vehicle_metadata: 'path',
     articles: 'vehicle_id,original_id',
@@ -241,6 +242,93 @@ export async function findEntityIdsByExternalId(table, vehicleId, externalId) {
         return Array.isArray(rows) ? rows.map((r) => r.id).filter(Boolean) : [];
     } catch {
         return [];
+    }
+}
+
+/**
+ * Removes L1 procedure_step rows for one Motor article (before re-inserting fresh steps).
+ */
+export async function deleteProcedureStepsForArticle(vehicleId, sourceArticleId) {
+    const cfg = getSupabaseConfig();
+    if (!cfg || !vehicleId || !sourceArticleId) {
+        return { success: false, error: 'Missing vehicle_id or source_article_id' };
+    }
+    try {
+        const url =
+            `${cfg.url}/rest/v1/procedure_step` +
+            `?vehicle_id=eq.${encodeURIComponent(vehicleId)}` +
+            `&source_article_id=eq.${encodeURIComponent(sourceArticleId)}`;
+        const response = await fetch(url, {
+            method: 'DELETE',
+            headers: {
+                apikey: cfg.key,
+                Authorization: `Bearer ${cfg.key}`,
+                Prefer: 'return=minimal'
+            }
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            return { success: false, error: errorText };
+        }
+        return { success: true };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
+}
+
+export async function deleteProcedureToolsForArticle(vehicleId, sourceArticleId) {
+    const cfg = getSupabaseConfig();
+    if (!cfg || !vehicleId || !sourceArticleId) {
+        return { success: false, error: 'Missing vehicle_id or source_article_id' };
+    }
+    try {
+        const url =
+            `${cfg.url}/rest/v1/procedure_tool` +
+            `?vehicle_id=eq.${encodeURIComponent(vehicleId)}` +
+            `&source_article_id=eq.${encodeURIComponent(sourceArticleId)}`;
+        const response = await fetch(url, {
+            method: 'DELETE',
+            headers: {
+                apikey: cfg.key,
+                Authorization: `Bearer ${cfg.key}`,
+                Prefer: 'return=minimal'
+            }
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            return { success: false, error: errorText };
+        }
+        return { success: true };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
+}
+
+export async function deleteProcedurePartsForArticle(vehicleId, sourceArticleId) {
+    const cfg = getSupabaseConfig();
+    if (!cfg || !vehicleId || !sourceArticleId) {
+        return { success: false, error: 'Missing vehicle_id or source_article_id' };
+    }
+    try {
+        const url =
+            `${cfg.url}/rest/v1/procedure_part` +
+            `?vehicle_id=eq.${encodeURIComponent(vehicleId)}` +
+            `&source_article_id=eq.${encodeURIComponent(sourceArticleId)}`;
+        const response = await fetch(url, {
+            method: 'DELETE',
+            headers: {
+                apikey: cfg.key,
+                Authorization: `Bearer ${cfg.key}`,
+                Prefer: 'return=minimal'
+            }
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            return { success: false, error: errorText };
+        }
+        return { success: true };
+    } catch (err) {
+        return { success: false, error: err.message };
     }
 }
 

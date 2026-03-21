@@ -14,6 +14,7 @@
 DROP TABLE IF EXISTS public.ai_processing_logs CASCADE;
 DROP TABLE IF EXISTS public.vehicle_metadata CASCADE;
 DROP TABLE IF EXISTS public.common_issues_cache CASCADE;
+DROP TABLE IF EXISTS public.maintenance_task CASCADE;
 DROP TABLE IF EXISTS public.maintenance_schedules CASCADE;
 DROP TABLE IF EXISTS public.parts CASCADE;
 DROP TABLE IF EXISTS public.spec_fact CASCADE;
@@ -21,6 +22,9 @@ DROP TABLE IF EXISTS public.specifications CASCADE;
 DROP TABLE IF EXISTS public.categories CASCADE;
 DROP TABLE IF EXISTS public.dtcs CASCADE;
 DROP TABLE IF EXISTS public.tsbs CASCADE;
+DROP TABLE IF EXISTS public.procedure_part CASCADE;
+DROP TABLE IF EXISTS public.procedure_tool CASCADE;
+DROP TABLE IF EXISTS public.procedure_step CASCADE;
 DROP TABLE IF EXISTS public.procedures CASCADE;
 DROP TABLE IF EXISTS public.articles CASCADE;
 DROP TABLE IF EXISTS public.evidence_link CASCADE;
@@ -100,6 +104,63 @@ CREATE TABLE public.procedures (
 
 CREATE INDEX idx_procedures_vehicle_id ON public.procedures(vehicle_id);
 CREATE INDEX idx_procedures_external_id ON public.procedures(external_id);
+
+-- -----------------------------------------------------------------------------
+-- 3b. PROCEDURE_STEP (L1 — atomic steps; dual-written from worker AI parse)
+-- -----------------------------------------------------------------------------
+CREATE TABLE public.procedure_step (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vehicle_id TEXT NOT NULL REFERENCES public.vehicles(external_id) ON DELETE CASCADE,
+    source_article_id TEXT NOT NULL,
+    step_index INTEGER NOT NULL,
+    display_order INTEGER,
+    step_text TEXT NOT NULL DEFAULT '',
+    image_url TEXT,
+    warning TEXT,
+    note TEXT,
+    extractor_version TEXT DEFAULT 'l1-v1',
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(vehicle_id, source_article_id, step_index)
+);
+
+CREATE INDEX idx_procedure_step_vehicle_id ON public.procedure_step(vehicle_id);
+CREATE INDEX idx_procedure_step_vehicle_article ON public.procedure_step(vehicle_id, source_article_id);
+
+-- -----------------------------------------------------------------------------
+-- 3c. PROCEDURE_TOOL / PROCEDURE_PART (L1 — tools & parts line items from AI parse)
+-- -----------------------------------------------------------------------------
+CREATE TABLE public.procedure_tool (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vehicle_id TEXT NOT NULL REFERENCES public.vehicles(external_id) ON DELETE CASCADE,
+    source_article_id TEXT NOT NULL,
+    line_index INTEGER NOT NULL,
+    tool_text TEXT NOT NULL DEFAULT '',
+    extractor_version TEXT DEFAULT 'l1-v1',
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(vehicle_id, source_article_id, line_index)
+);
+
+CREATE INDEX idx_procedure_tool_vehicle_id ON public.procedure_tool(vehicle_id);
+CREATE INDEX idx_procedure_tool_vehicle_article ON public.procedure_tool(vehicle_id, source_article_id);
+
+CREATE TABLE public.procedure_part (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vehicle_id TEXT NOT NULL REFERENCES public.vehicles(external_id) ON DELETE CASCADE,
+    source_article_id TEXT NOT NULL,
+    line_index INTEGER NOT NULL,
+    part_number TEXT,
+    description TEXT NOT NULL DEFAULT '',
+    quantity NUMERIC DEFAULT 1,
+    extractor_version TEXT DEFAULT 'l1-v1',
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(vehicle_id, source_article_id, line_index)
+);
+
+CREATE INDEX idx_procedure_part_vehicle_id ON public.procedure_part(vehicle_id);
+CREATE INDEX idx_procedure_part_vehicle_article ON public.procedure_part(vehicle_id, source_article_id);
 
 -- -----------------------------------------------------------------------------
 -- 4. TSBS (Technical Service Bulletins)
@@ -284,6 +345,30 @@ CREATE INDEX idx_maintenance_schedules_vehicle_id ON public.maintenance_schedule
 CREATE INDEX idx_maintenance_schedules_vehicle_interval ON public.maintenance_schedules(vehicle_id, interval_value);
 
 -- -----------------------------------------------------------------------------
+-- 12b. MAINTENANCE_TASK (L1 — dual-written with maintenance_schedules from app sync)
+-- -----------------------------------------------------------------------------
+CREATE TABLE public.maintenance_task (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vehicle_id TEXT NOT NULL REFERENCES public.vehicles(external_id) ON DELETE CASCADE,
+    interval_value INTEGER NOT NULL,
+    interval_unit TEXT NOT NULL DEFAULT 'Miles',
+    action TEXT NOT NULL,
+    item TEXT NOT NULL,
+    description TEXT,
+    frequency_code TEXT,
+    ingest_source TEXT NOT NULL DEFAULT 'motor_interval',
+    severity_bucket TEXT,
+    metadata_json JSONB DEFAULT '{}'::jsonb,
+    extractor_version TEXT DEFAULT 'l1-client-v1',
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(vehicle_id, interval_value, action, item)
+);
+
+CREATE INDEX idx_maintenance_task_vehicle_id ON public.maintenance_task(vehicle_id);
+CREATE INDEX idx_maintenance_task_vehicle_interval ON public.maintenance_task(vehicle_id, interval_value);
+
+-- -----------------------------------------------------------------------------
 -- 13. NORMALIZATION PHASE 1 — canonical_bucket, L0 evidence, content_item
 -- (aligned with documentation/migrations/20260319_phase1_normalization.sql)
 -- -----------------------------------------------------------------------------
@@ -400,6 +485,9 @@ ON CONFLICT (code) DO NOTHING;
 ALTER TABLE public.vehicles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.articles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.procedures ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.procedure_step ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.procedure_tool ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.procedure_part ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tsbs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.dtcs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.specifications ENABLE ROW LEVEL SECURITY;
@@ -410,6 +498,7 @@ ALTER TABLE public.ai_processing_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.common_issues_cache ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.parts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.maintenance_schedules ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.maintenance_task ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.canonical_bucket ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bucket_alias ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.evidence_ingest ENABLE ROW LEVEL SECURITY;
@@ -420,6 +509,9 @@ ALTER TABLE public.content_item ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow all vehicles" ON public.vehicles FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all articles" ON public.articles FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all procedures" ON public.procedures FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all procedure_step" ON public.procedure_step FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all procedure_tool" ON public.procedure_tool FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all procedure_part" ON public.procedure_part FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all tsbs" ON public.tsbs FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all dtcs" ON public.dtcs FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all specifications" ON public.specifications FOR ALL USING (true) WITH CHECK (true);
@@ -430,6 +522,7 @@ CREATE POLICY "Allow all ai_processing_logs" ON public.ai_processing_logs FOR AL
 CREATE POLICY "Allow all common_issues_cache" ON public.common_issues_cache FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all parts" ON public.parts FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all maintenance_schedules" ON public.maintenance_schedules FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all maintenance_task" ON public.maintenance_task FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all canonical_bucket" ON public.canonical_bucket FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all bucket_alias" ON public.bucket_alias FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all evidence_ingest" ON public.evidence_ingest FOR ALL USING (true) WITH CHECK (true);

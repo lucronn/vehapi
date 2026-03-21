@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-03-20 — **L1 `spec_fact`:** migration `documentation/migrations/20260320_l1_spec_fact.sql`, `npm run migrate:l1-spec-fact`, `supabase_schema.sql` + worker dual-write from AI specs (`insertParsedData` + `evidence_link` as `spec_fact`). Specifications path: no `content_html`/`external_id` sent to legacy table. Prior: external automation scripts; Phase 1 shipped. **Next L1 slice:** `maintenance_task` table + worker.
+**Last updated**: 2026-03-24 — **Orchestrator / docs:** `AGENTS.md` progress section aligned with **`.cursor/WORKER_LOOP.md`** (hook toggles optional; **`npm run cursor:auto-once`** → `scripts/continue-once.ps1`). Prior: L1 **`procedure_tool` + `procedure_part`** (2026-03-23). **Next:** L2 `content_chunk`/embeddings or diagram/labor L1 — **blocked for full regression** without `SUPABASE_*` / Motor / NVIDIA in `.env` (run `verify:evidence-links` when creds available).
 
 ## Summary
 
@@ -17,9 +17,9 @@
 
 ### Active worker direction (normalization)
 
-- **Shipped:** Phase 1 — `evidence_ingest`, `content_item` upsert + post-parse enrichment (`updateContentItemEnrichment`), catalog path in `vehapiproxi/src/background_worker.js` + `content_item_mapper.js`; `evidence_link` after parse for **procedures / dtcs / tsbs** + for **`spec_fact`** rows when schema present (legacy **`specifications`** has no `external_id` — links target L1 facts); native PDF text (`pdf_native_text.js`) and optional sparse-PDF Nemotron vision (`nemotron_multimodal.js`, `ENABLE_NEMOTRON_PDF_VISION_FALLBACK=true`); `npm run verify:evidence-links`; optional Cursor worker-loop (`hooks.json` → `auto-continue.mjs`, default ON — see `.cursor/WORKER_LOOP.md`).
-- **Workspace (git):** As of this pass, `.cursor/WORKER_LOOP.md`, `.cursor/hooks.json`, `.cursor/hooks/*.mjs`, and `.cursor/agents/` are **untracked** (`git status`) — hooks only run in clones that have them. Loop toggle files (`.cursor/worker-loop.enabled` / `.disabled` / `.after-response`) are **gitignored** when present; default auto-continue is ON once hooks are registered (see `WORKER_LOOP.md`).
-- **Next (code):** L1 **`maintenance_task`** migration + worker wiring, then richer **`procedure`** L1 / plan §3.5; parallel domains per plan (wiring diagrams, labor, TSB+DTC depth, etc.). **`spec_fact`** migration + worker path shipped in repo (`migrate:l1-spec-fact`).
+- **Shipped:** Phase 1 — `evidence_ingest`, `content_item` upsert + post-parse enrichment (`updateContentItemEnrichment`), catalog path in `vehapiproxi/src/background_worker.js` + `content_item_mapper.js`; `evidence_link` after parse for **procedures** (parent row) **/ dtcs / tsbs** + L1 **`procedure_step`** / **`procedure_tool`** / **`procedure_part`** + **`spec_fact`** when schema present (legacy **`specifications`** → `spec_fact` only); native PDF text (`pdf_native_text.js`) and optional sparse-PDF Nemotron vision (`nemotron_multimodal.js`, `ENABLE_NEMOTRON_PDF_VISION_FALLBACK=true`); `npm run verify:evidence-links`; optional Cursor worker-loop (`hooks.json` → `auto-continue.mjs`, default ON — see `.cursor/WORKER_LOOP.md`).
+- **Workspace (git):** `.cursor/WORKER_LOOP.md`, `.cursor/hooks.json`, `.cursor/hooks/*.mjs`, and `.cursor/agents/` may be **untracked** until committed — hooks only run in clones that have them. Loop toggle files (`.cursor/worker-loop.enabled` / `.disabled` / `.after-response`) are **gitignored** when present; default auto-continue is ON once hooks are registered (see `WORKER_LOOP.md`). **Desktop continue (Windows):** root **`npm run cursor:auto-once`** invokes **`scripts/continue-once.ps1`** (paste + Enter); see `scripts/automation/README.md`.
+- **Next (code):** L2 **`content_chunk`** + embeddings (pgvector or external) per plan; parallel domains (wiring diagrams, labor, TSB+DTC depth). L1 **`spec_fact`**, **`maintenance_task`**, **`procedure_step`**, **`procedure_tool`**, **`procedure_part`** shipped in repo.
 - **Regression:** after `background_worker.js` or evidence mapping changes, run `verify:evidence-links` with local `.env` (`SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`); no automated CI run without injected secrets — not a product bug.
 - **Worker assumption:** L1 tables + RLS follow `supabase_schema.sql`; thread writes from existing parse outputs before expanding ingest sources.
 
@@ -79,11 +79,11 @@
 
 | Priority | Task |
 |----------|------|
-| **High** | Greenfield plan: `docs/plans/2026-03-18-normalization-schema-design.md`; **L1 `spec_fact`** in repo (`20260320_l1_spec_fact.sql` + worker); **next:** `maintenance_task` migration + worker; then procedure/L2/RAG as scoped |
+| **High** | Greenfield plan: `docs/plans/2026-03-18-normalization-schema-design.md`; L1 facts line (spec, maintenance, procedure steps/tools/parts) in repo; **next:** L2/RAG or diagram/labor L1 as scoped |
 | Medium | Rate limiting on article content API |
 | Medium | Phase-1 worker regression: after `vehapiproxi` or `background_worker.js` changes, `cd vehapiproxi && npm run verify:evidence-links -- --vehicle=<id> --source=<CONTENT_SOURCE>` (requires `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` in `.env`; optional `--proxy=http://localhost:3000` for dev; use catalog-valid `--source` if proxy returns 500) |
 | Low | Commit `.cursor/hooks.json`, `.cursor/hooks/*.mjs`, `.cursor/WORKER_LOOP.md` (and `.cursor/agents/*`) when the team should share Cursor auto-continue / orchestrator docs |
-| Low | **Doc drift:** `AGENTS.md` still says create `.cursor/worker-loop.enabled` to enable the loop; implementation is **default ON** when hooks load — optional `worker-loop.enabled` is back-compat only (`auto-continue.mjs`). Align that sentence with `.cursor/WORKER_LOOP.md` |
+| Low | (cleared 2026-03-24) AGENTS.md ↔ WORKER_LOOP: hook toggles + `npm run cursor:auto-once` / `continue-once.ps1` documented |
 | Low | Full-vehicle unlock option from lock overlay |
 
 ## Vehicle data normalization / migration
@@ -92,7 +92,7 @@
 
 - [x] **normalized_schema.ts** – NormalizedArticle added (all Motor API catalog fields). NormalizedVehicle has is_normalized. Existing interfaces unchanged.
 - [x] **supabase_schema.sql** – Articles table: added code, description, sort, bulletin_number, release_date columns + parent_bucket index. Migration SQL included.
-- [x] **supabase.js** – ensureVehicleExists (FK safety), markVehicleNormalized, checkArticleContent (articles table cache). UPSERT_CONFLICT_COLUMNS unchanged.
+- [x] **supabase.js** – ensureVehicleExists (FK safety), markVehicleNormalized, checkArticleContent (articles table cache). `UPSERT_CONFLICT_COLUMNS` extended for L1 tables (`spec_fact`, `maintenance_task`, etc.); helpers for evidence + procedure deletes.
 - [x] **background_worker.js** – Creates vehicle record before FK-dependent inserts. Articles include all Motor API fields (code, description, sort, bulletin_number, release_date). Marks vehicle normalized after catalog ingest. extractExternalId returns per-article IDs for DTCs/TSBs. Improved content_html extraction (JSON body.html fallback).
 - [x] **function.js** – Article content cache checks both normalized tables AND articles table. Articles cache applies normalizeMotorResponse for consistent filterTabs. articles/v2 normalizeMotorResponse always applied (not only for large catalogs).
 - [x] **vehicle-data.service.ts** – Section strategies: comprehensive bucket names matching normalizeCategoryParams output (DTCs, TSBs, procedures, diagrams, component-locations). Article filter checks both bucket AND parent_bucket. loadSectionData always uses articles table for list view (simplified flow).
@@ -107,6 +107,9 @@
 - [x] **Phase 1 verification (2026-03-20)** — added `vehapiproxi/scripts/verify-evidence-links-one-article.js` (`npm run verify:evidence-links`); supports `--vehicle`, `--source`, `--proxy`, `--token`; now suggests valid `--source` when catalog returns 500 on Vercel.
 - [x] **Phase 1 worker traceability & PDF (code)** — `insertEvidenceLinks` after successful parse when `evidence_ingest` returns id; `content_item` enrichment from parsed body text; PDF pipeline native extract then optional Nemotron page vision (see `background_worker.js`, `nemotron_multimodal.js`).
 - [x] **L1 spec_fact (2026-03-20)** — SQL: `documentation/migrations/20260320_l1_spec_fact.sql`; `npm run migrate:l1-spec-fact`; `supabase.js` `UPSERT_CONFLICT_COLUMNS.spec_fact`, `insertParsedData(..., { returnRepresentation })`; worker maps parsed specs → `spec_fact` + `evidence_link` (`l1-v1`); `NormalizedSpecFact` in `normalized_schema.ts`.
+- [x] **L1 maintenance_task (2026-03-21)** — SQL: `documentation/migrations/20260321_l1_maintenance_task.sql`; `npm run migrate:l1-maintenance-task`; `supabase.js` `UPSERT_CONFLICT_COLUMNS.maintenance_task`; `data-sync.service.ts` `dualWriteMaintenanceTaskL1` after schedule upserts; `NormalizedMaintenanceTask` in `normalized_schema.ts`.
+- [x] **L1 procedure_step (2026-03-22)** — SQL: `documentation/migrations/20260322_l1_procedure_step.sql`; `npm run migrate:l1-procedure-step`; `deleteProcedureStepsForArticle` + worker `buildProcedureStepRows`; `evidence_link` (`procedure_step`, `l1-v1`); `NormalizedProcedureStep` in `normalized_schema.ts`.
+- [x] **L1 procedure_tool + procedure_part (2026-03-23)** — SQL: `documentation/migrations/20260323_l1_procedure_tool_and_part.sql`; `npm run migrate:l1-procedure-tool-part`; deletes + `buildProcedureToolRows` / `buildProcedurePartRows`; `evidence_link`; `NormalizedProcedureTool` / `NormalizedProcedurePart` in `normalized_schema.ts`.
 
 ### Data flow (eager reference + lazy article body)
 

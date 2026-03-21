@@ -27,6 +27,56 @@ export class DataSyncService {
     /** Motor maintenance-by-frequency type codes (not mile intervals). */
     private readonly eagerMaintenanceFrequencyCodes = ['F', 'N', 'R'] as const;
 
+    /**
+     * L1 `maintenance_task` — same composite key as `maintenance_schedules` (idempotent dual-write).
+     * No-op if table missing (migration not applied); logs a short warning.
+     */
+    private async dualWriteMaintenanceTaskL1(
+        rows: {
+            vehicle_id: string;
+            interval_value: number;
+            interval_unit: string;
+            action: string;
+            item: string;
+            description: string | null;
+            frequency_code: string | null;
+        }[],
+        ingestSource: 'motor_interval' | 'motor_frequency'
+    ): Promise<void> {
+        if (rows.length === 0) return;
+        const now = new Date().toISOString();
+        const severityFromCode = (code: string | null | undefined): string | null => {
+            if (!code) return null;
+            if (code === 'F') return 'fixed_severe';
+            if (code === 'N') return 'normal';
+            if (code === 'R') return 'related';
+            return null;
+        };
+        const taskRows = rows.map((r) => ({
+            vehicle_id: r.vehicle_id,
+            interval_value: r.interval_value,
+            interval_unit: r.interval_unit || 'Miles',
+            action: r.action,
+            item: r.item,
+            description: r.description,
+            frequency_code: r.frequency_code,
+            ingest_source: ingestSource,
+            severity_bucket:
+                ingestSource === 'motor_frequency' ? severityFromCode(r.frequency_code) : null,
+            metadata_json: {},
+            extractor_version: 'l1-client-v1',
+            updated_at: now
+        }));
+
+        const { error } = await this.supabase.client
+            .from('maintenance_task')
+            .upsert(taskRows, { onConflict: 'vehicle_id,interval_value,action,item' });
+
+        if (error) {
+            console.warn('[DataSync] maintenance_task L1 upsert skipped:', error.message);
+        }
+    }
+
     async checkNormalizationStatus(vehicleId: string): Promise<boolean> {
         const { data } = await this.supabase.client
             .from('vehicles')
@@ -406,6 +456,7 @@ export class DataSyncService {
                 await this.supabase.client
                     .from('maintenance_schedules')
                     .upsert(rows, { onConflict: 'vehicle_id,interval_value,action,item' });
+                await this.dualWriteMaintenanceTaskL1(rows, 'motor_interval');
             }
         } catch (e) {
             console.warn(`[DataSync] Maintenance sync failed for interval ${interval}`, e);
@@ -462,6 +513,7 @@ export class DataSyncService {
             await this.supabase.client
                 .from('maintenance_schedules')
                 .upsert(rows, { onConflict: 'vehicle_id,interval_value,action,item' });
+            await this.dualWriteMaintenanceTaskL1(rows, 'motor_frequency');
         } catch (e) {
             console.warn(`[DataSync] Maintenance frequency sync failed for ${code}`, e);
         }
