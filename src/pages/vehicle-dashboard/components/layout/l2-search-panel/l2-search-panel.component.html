@@ -27,13 +27,13 @@
       <p class="text-xs text-torque-muted">No chunks matched. Ingest may still be running or embeddings disabled.</p>
     }
     <ul class="space-y-3 max-h-72 overflow-y-auto overscroll-contain">
-      @for (c of results(); track c.chunkId) {
+      @for (c of results(); track c.citation.chunk_id) {
         <li class="text-xs border-b border-white/5 pb-3 last:border-0">
           <a
-            [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', c.motorArticleId]"
-            [queryParams]="{ moduleType: moduleTypeForSilo(c.canonicalSiloCode) }"
+            [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', c.citation.motor_article_id]"
+            [queryParams]="{ moduleType: moduleTypeForSilo(c.citation.canonical_silo_code) }"
             class="text-torque-cyan hover:underline font-medium break-all">
-            {{ c.motorArticleId }}
+            {{ c.citation.motor_article_id }}
           </a>
           @if (c.score != null) {
             <span class="text-[10px] text-torque-muted ml-2 font-mono">score {{ c.score | number : '1.2-3' }}</span>

@@ -48,16 +48,22 @@ import { MOTOR_API_BASE_URL } from '../utils/motor-api.constants';
 import { MotorHtmlProcessorService } from './motor-html-processor.service';
 import { environment } from '../environments/environment';
 
-/** L2 RAG chunk row from POST /api/l2/search */
+/** L1 citation bundle (POST /api/vehicle/:id/l2/search). */
+export interface L2SearchCitation {
+  content_item_id: string;
+  motor_article_id: string;
+  canonical_silo_code: string | null;
+  content_source: string | null;
+  chunk_id: string;
+  chunk_index: number;
+}
+
+/** L2 RAG chunk row from vector search */
 export interface L2SearchChunk {
-  chunkId: string;
-  contentItemId: string;
-  motorArticleId: string;
-  canonicalSiloCode: string | null;
-  contentSource: string | null;
-  chunkIndex: number;
   text: string;
+  content_item_id: string;
   score: number;
+  citation: L2SearchCitation;
 }
 
 export interface L2SearchResponse {
@@ -906,12 +912,9 @@ export class MotorApiService {
    * L2 vector search (requires Supabase RPC + embeddings; backend enforces unlocks).
    */
   l2Search(vehicleExternalId: string, query: string, matchCount = 8): Observable<L2SearchResponse> {
-    const url = `${this.baseUrl}/api/l2/search`;
-    this.logRequest('POST', url, undefined, { vehicleExternalId, matchCount });
-    return this.http.post<L2SearchResponse>(
-      url,
-      { vehicleExternalId, query, matchCount },
-      { withCredentials: true }
-    );
+    const enc = encodeURIComponent(vehicleExternalId);
+    const url = `${this.baseUrl}/api/vehicle/${enc}/l2/search`;
+    this.logRequest('POST', url, undefined, { matchCount });
+    return this.http.post<L2SearchResponse>(url, { query, matchCount }, { withCredentials: true });
   }
 }
