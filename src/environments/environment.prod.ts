@@ -1,7 +1,10 @@
 export const environment = {
     production: true,
-    /** Same-origin `/api` — Vercel rewrites to serverless; avoids cross-origin CORS to a separate proxy host. */
-    apiUrl: '/api',
+    /**
+     * Dedicated vehapiproxi deployment. The Torque SPA (`vehapi.vercel.app`) is a separate Vercel project,
+     * so same-origin `/api` would hit the wrong app — use the proxy host explicitly.
+     */
+    apiUrl: 'https://vehapiproxi.vercel.app/api',
     features: {
         l2Search: false
     },
