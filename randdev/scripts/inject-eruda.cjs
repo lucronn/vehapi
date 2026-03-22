@@ -2,7 +2,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const distIndex = path.join(__dirname, '..', 'dist', 'index.html');
+// Script lives at randdev/scripts — repo root is two levels up.
+const distIndex = path.join(__dirname, '..', '..', 'dist', 'index.html');
 
 if (!fs.existsSync(distIndex)) {
     console.log('[inject-eruda] dist/index.html not found, skipping.');

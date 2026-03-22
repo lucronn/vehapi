@@ -117,19 +117,51 @@ function isVerifyBypass(req) {
 // Enable CORS
 // Use explicit origin reflection for credentialed requests and avoid wildcard
 // fallback in any cross-origin browser response.
-const allowedOrigins = new Set([
-    'https://vehapi.vercel.app','https://vehapiproxi.vercel.app',
-    'http://localhost:3000'
-]);
+function normalizeOriginHeader(origin) {
+    if (origin == null) return '';
+    const v = Array.isArray(origin) ? origin[0] : origin;
+    return typeof v === 'string' ? v.trim() : '';
+}
+
+function buildAllowedOrigins() {
+    const origins = new Set([
+        'https://vehapi.vercel.app',
+        'https://vehapiproxi.vercel.app',
+        'http://localhost:3000',
+        'http://127.0.0.1:3000'
+    ]);
+    const extra = process.env.CORS_ALLOWED_ORIGINS || process.env.ALLOWED_ORIGINS;
+    if (extra) {
+        for (const part of extra.split(/[\s,]+/).map((s) => s.trim()).filter(Boolean)) {
+            origins.add(part);
+        }
+    }
+    // Vercel sets VERCEL_URL (hostname only) per deployment — allows preview URLs without manual env.
+    const vercelUrl = process.env.VERCEL_URL;
+    if (vercelUrl) {
+        const host = String(vercelUrl).replace(/^https?:\/\//i, '').split('/')[0];
+        if (host) {
+            origins.add(`https://${host}`);
+        }
+    }
+    return origins;
+}
+
+const allowedOrigins = buildAllowedOrigins();
+
+function isOriginAllowed(origin) {
+    const o = normalizeOriginHeader(origin);
+    return Boolean(o && allowedOrigins.has(o));
+}
 
 const corsOptionsDelegate = (req, callback) => {
-    const requestOrigin = req.headers.origin;
+    const requestOrigin = normalizeOriginHeader(req.headers.origin);
     let corsOptions;
 
     if (!requestOrigin) {
         // Non-browser/server-to-server calls: no CORS headers needed.
         corsOptions = { origin: false, credentials: true };
-    } else if (allowedOrigins.has(requestOrigin)) {
+    } else if (isOriginAllowed(requestOrigin)) {
         corsOptions = { origin: requestOrigin, credentials: true };
     } else {
         corsOptions = { origin: false, credentials: true };
@@ -583,8 +615,8 @@ app.use('/', authMiddleware, createProxyMiddleware({
     },
     onProxyRes: responseInterceptor(async (responseBuffer, proxyRes, req, res) => {
         // STRICTLY override CORS to hide upstream source
-        const requestOrigin = req.headers['origin'];
-        if (requestOrigin && allowedOrigins.has(requestOrigin)) {
+        const requestOrigin = normalizeOriginHeader(req.headers.origin);
+        if (isOriginAllowed(requestOrigin)) {
             res.setHeader('access-control-allow-origin', requestOrigin);
             // Required when frontend sends withCredentials: true (Supabase auth). Cannot use * with credentials.
             res.setHeader('access-control-allow-credentials', 'true');
