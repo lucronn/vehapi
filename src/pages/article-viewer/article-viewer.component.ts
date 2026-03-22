@@ -1,546 +1,179 @@
-import { ChangeDetectionStrategy, Component, computed, inject, Input, signal, ViewEncapsulation, OnInit, OnChanges, SimpleChanges, SecurityContext } from '@angular/core';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { ChangeDetectionStrategy, Component, computed, inject, Signal, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { map, switchMap, of, catchError, Subject, takeUntil } from 'rxjs';
+import { map, switchMap, of } from 'rxjs';
 
 import { MotorApiService } from '../../services/motor-api.service';
-import { MotorHtmlProcessorService } from '../../services/motor-html-processor.service';
-import { AiRewriteService } from '../../services/ai-rewrite.service';
-import { LucideAngularModule, ArrowLeft, Maximize2, List, X, Sparkles, BookOpen, Lock, RefreshCw } from 'lucide-angular';
-import { CreditsModalComponent } from '../../components/credits-modal/credits-modal.component';
-import { ImageViewerModalComponent } from './components/image-viewer-modal/image-viewer-modal.component';
-import { TutorialComponent } from '../../components/tutorial/tutorial.component';
-import { TutorialStep } from '../../models/motor.models';
-import { WindowManagerService } from '../../services/window-manager.service';
-import { DataSyncService } from '../../services/data-sync.service';
-import { CreditsService } from '../../services/credits.service';
-import { Router } from '@angular/router';
 
-export interface TableOfContents {
-  id: string;
-  title: string;
-  level: number;
-}
-
-// Optimized Regex Constants
-const LEGACY_ATTR_REGEX = /\s(?:style|text|align|valign|b(?:gcolor|order)|c(?:olor|ell(?:padding|spacing)))=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi;
-const FONT_TAG_REGEX = /<\/?font[^>]*>/gi;
-const SPECIFIC_TAG_REGEX = /<(?:table|tr|td|div|p|span)\s+[^>]*>/gi;
-const WIDTH_HEIGHT_REGEX = /\s(?:width|height)=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi;
-
-// Helper to remove width/height from specific tags
-function cleanSpecificTag(match: string): string {
-  // Rely on regex replacement which is efficient and handles case-insensitivity correctly
-  return match.replace(WIDTH_HEIGHT_REGEX, '');
+interface ArticleViewData {
+  contentSource: string;
+  vehicleId: string;
+  content: SafeHtml;
 }
 
 @Component({
   selector: 'app-article-viewer',
-  templateUrl: './article-viewer.component.html',
-  styleUrls: ['./article-viewer.component.css'],
+  template: `
+<div class="min-h-screen bg-gray-900 text-gray-300 p-4 sm:p-6 lg:p-8">
+  <div class="max-w-4xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+      <a [routerLink]="['/vehicle', contentSource(), vehicleId()]" class="text-cyan-400 hover:text-cyan-300 inline-block">&larr; Back to Dashboard</a>
+    </div>
+    
+    <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6 sm:p-8 lg:p-10">
+      @if (!isLoading()) {
+        <div class="motor-content" [innerHTML]="displayContent()"></div>
+      } @else {
+        <!-- Loading Skeleton -->
+        <div class="space-y-4 animate-pulse">
+          <div class="text-center text-cyan-300 mb-4">Loading article...</div>
+          <div class="h-8 bg-gray-700 rounded w-3/4"></div>
+          <div class="h-4 bg-gray-700 rounded w-full"></div>
+          <div class="h-4 bg-gray-700 rounded w-5/6"></div>
+          <div class="h-4 bg-gray-700 rounded w-full"></div>
+          <div class="h-8 bg-gray-700 rounded w-1/2 mt-8"></div>
+          <div class="h-4 bg-gray-700 rounded w-full"></div>
+          <div class="h-4 bg-gray-700 rounded w-full"></div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+  `,
+  styles: [`
+.motor-content h1, .motor-content h2, .motor-content h3 {
+  color: #22d3ee; /* cyan-400 */
+  border-bottom: 1px solid #4b5563; /* gray-600 */
+  padding-bottom: 0.5rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+}
+.motor-content p {
+  margin-bottom: 1rem;
+  line-height: 1.75;
+}
+.motor-content ul, .motor-content ol {
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+  list-style-position: outside;
+}
+.motor-content li {
+  margin-bottom: 0.5rem;
+}
+.motor-content a {
+  color: #67e8f9; /* cyan-300 */
+  text-decoration: underline;
+}
+.motor-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+.motor-content th, .motor-content td {
+  border: 1px solid #4b5563; /* gray-600 */
+  padding: 0.75rem;
+  text-align: left;
+}
+.motor-content th {
+  background-color: #1f2937; /* gray-800 */
+}
+.motor-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid #4b5563;
+}
+.motor-content .note, .motor-content .caution, .motor-content .warning {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-left-width: 4px;
+  border-radius: 0.25rem;
+}
+.motor-content .note {
+  background-color: #1e3a8a; /* blue-900 */
+  border-color: #3b82f6; /* blue-500 */
+  color: #bfdbfe; /* blue-200 */
+}
+.motor-content .caution, .motor-content .warning {
+  background-color: #b91c1c; /* red-700 */
+  border-color: #ef4444; /* red-500 */
+  color: #fecaca; /* red-200 */
+}
+/* Prose styles for Gemini content */
+.prose table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+}
+.prose th, .prose td {
+    border: 1px solid #4b5563;
+    padding: 0.75rem;
+    text-align: left;
+}
+.prose th {
+    background-color: #1f2937;
+}
+.prose ul, .prose ol {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+  `],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterModule, LucideAngularModule, ImageViewerModalComponent, TutorialComponent],
-  standalone: true
+  imports: [CommonModule, RouterModule],
 })
-export class ArticleViewerComponent implements OnInit, OnChanges {
-  // Inputs for Window Mode
-  @Input() contentSource?: string;
-  @Input() vehicleId?: string;
-  @Input() articleId?: string;
-  @Input() articleTitleInput?: string;
-  @Input() htmlContentInput?: string;
-  @Input() windowId?: string;
-  @Input() moduleType?: string;
-
+export class ArticleViewerComponent {
   private route = inject(ActivatedRoute);
   private motorApi = inject(MotorApiService);
-  private motorHtml = inject(MotorHtmlProcessorService);
-  private aiRewrite = inject(AiRewriteService);
   private sanitizer = inject(DomSanitizer);
-  private windowManager = inject(WindowManagerService);
-  private dataSync = inject(DataSyncService);
-  protected creditsService = inject(CreditsService);
-  private router = inject(Router);
 
-  readonly icons = { ArrowLeft, Maximize2, List, X, Sparkles, BookOpen, Lock, RefreshCw };
+  // --- Data Signal from Route ---
+  private viewData: Signal<ArticleViewData | null>;
 
-  // Use a Subject to trigger data loading when inputs change or on init
-  private loadTrigger = new Subject<void>();
+  // --- Derived Signals for Template ---
+  readonly contentSource: Signal<string>;
+  readonly vehicleId: Signal<string>;
+  readonly isLoading: Signal<boolean>;
+  readonly displayContent: Signal<SafeHtml | string>;
 
-  // State
-  private internalArticleId = signal<string | null>(null);
-  articleTitle = signal<string>('');
-  articleContent = signal<string>('');
-  sections = signal<TableOfContents[]>([]);
-  isMobileTocOpen = signal(false);
-  isLoading = signal(false);
-  error = signal<string | null>(null);
-  articleSubtitle = signal<string>('');
-  isCached = signal<boolean>(false);
+  constructor() {
+    this.viewData = toSignal(
+      this.route.paramMap.pipe(
+        switchMap(params => {
+          const contentSource = params.get('contentSource');
+          const vehicleId = params.get('vehicleId');
+          const articleId = params.get('articleId');
+    
+          if (contentSource && vehicleId && articleId) {
+            return this.motorApi.getArticleContent(contentSource, vehicleId, articleId).pipe(
+              map(content => ({
+                contentSource,
+                vehicleId,
+                content: this.processAndSanitizeHtml(content),
+              } as ArticleViewData))
+            );
+          }
+          return of(null);
+        })
+      ), { initialValue: null }
+    );
 
-  selectedImageUrl = signal<string | null>(null);
-  pdfDataUri = signal<SafeResourceUrl | null>(null); // Set when article is a PDF
-  isRetrying = signal(false); // Re-auth in progress
-  retryCount = signal(0);
-  params = toSignal(this.route.paramMap);
-
-  // AI rewriting & tutorial state
-  isRewriting = signal(false);
-  tutorialSteps = signal<TutorialStep[]>([]);
-  isGeneratingTutorial = signal(false);
-  showTutorial = signal(false);
-
-  /** Raw processed HTML kept for tutorial generation */
-  protected rawHtmlForTutorial = '';
-
-  /** Whether content is locked behind a credit paywall */
-  isLocked = computed(() => {
-    const mod = this.resolvedModuleType();
-    const vid = this.vehicleIdSig();
-    const aid = this.internalArticleId();
-    if (!vid) return false;
-    // When moduleType is missing (e.g. direct URL), treat as locked to prevent bypass
-    if (!mod) return true;
-    return !this.creditsService.hasAccess(vid, mod, aid ?? undefined);
-  });
-
-  resolvedModuleType = signal<string | null>(null);
-
-  // Signal-safe accessors for template — fall back to route params when inputs are undefined
-  contentSourceSig = computed(() => this.contentSource || this.params()?.get('contentSource') || '');
-  vehicleIdSig = computed(() => this.vehicleId || this.params()?.get('vehicleId') || '');
-
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes['articleId']) {
-      this.internalArticleId.set(this.articleId!);
-    }
-
-    if (changes['articleId'] || changes['vehicleId'] || changes['contentSource']) {
-      // If we have all required inputs, load data
-      if (this.contentSource && this.vehicleId && this.internalArticleId()) {
-        this.loadData();
-      }
-    }
+    this.contentSource = computed(() => this.viewData()?.contentSource ?? '');
+    this.vehicleId = computed(() => this.viewData()?.vehicleId ?? '');
+    this.isLoading = computed(() => this.viewData() === null);
+    this.displayContent = computed(() => this.viewData()?.content ?? '');
   }
 
-  ngOnInit() {
-    if (this.moduleType) {
-      this.resolvedModuleType.set(this.moduleType);
-    }
-
-    if (this.articleId) {
-      this.internalArticleId.set(this.articleId);
-    }
-
-    const state = typeof window !== 'undefined' ? window.history.state : null;
-    if (state && state.content) {
-      this.htmlContentInput = state.content;
-      if (state.title) this.articleTitleInput = state.title;
-    }
-
-    if (!this.contentSource || !this.vehicleId || !this.internalArticleId()) {
-      this.route.paramMap.subscribe(params => {
-        this.contentSource = params.get('contentSource') ?? '';
-        this.vehicleId = params.get('vehicleId') ?? '';
-        const aid = params.get('articleId') ?? '';
-        this.internalArticleId.set(aid);
-
-        this.route.queryParamMap.subscribe(qp => {
-          const title = qp.get('title');
-          if (title && !this.articleTitleInput) {
-            this.articleTitleInput = title;
-            this.articleTitle.set(this.cleanTitle(title));
-          }
-          const mod = qp.get('moduleType');
-          if (mod && !this.resolvedModuleType()) {
-            this.resolvedModuleType.set(mod);
-          }
-          this.loadData();
-        });
-      });
-    } else {
-      this.loadData();
-    }
-
-    // Resolve moduleType from metadata when missing (e.g. direct URL)
-    if (!this.resolvedModuleType() && this.contentSource && this.vehicleId && this.internalArticleId()) {
-      this.motorApi.getArticleMetadata(this.contentSource, this.vehicleId, this.internalArticleId()!).subscribe({
-        next: (meta) => {
-          if (meta.moduleType) {
-            this.resolvedModuleType.set(meta.moduleType);
-            this.loadData(); // Retry load now that we know moduleType
-          }
-        },
-        error: () => { /* ignore */ }
-      });
-    }
-
-    if (this.articleTitleInput) {
-      this.articleTitle.set(this.cleanTitle(this.articleTitleInput));
-    }
-
-    if (this.htmlContentInput) {
-      this.articleContent.set(this.sanitizer.sanitize(SecurityContext.HTML, this.htmlContentInput) || '');
-      this.isLoading.set(false);
-      return;
-    }
-  }
-
-  loadData() {
-    if (this.htmlContentInput) {
-      const { sections } = this.processHtml(this.htmlContentInput, this.contentSource || '', this.vehicleId || '');
-      this.sections.set(sections);
-      return;
-    }
-    const aid = this.internalArticleId();
-    if (!this.contentSource || !this.vehicleId || !aid) return;
-
-    if (this.isLocked()) {
-      this.isLoading.set(false);
-      return;
-    }
-
-    this.isLoading.set(true);
-    this.error.set(null);
-    this.isCached.set(false);
-
-    // Fetch Title if not provided
-    if (!this.articleTitleInput) {
-      this.motorApi.getArticleTitle(this.contentSource, this.vehicleId, aid).subscribe({
-        next: (res) => {
-          const rawTitle = res.body || aid || '';
-          const cleaned = this.cleanTitle(rawTitle);
-          this.articleTitle.set(cleaned);
-          if (this.windowId) {
-            this.windowManager.updateTitle(this.windowId, cleaned);
-          }
-        },
-        error: () => this.articleTitle.set('Article')
-      });
-    }
-
-    // Fetch Content
-    this.motorApi.getArticleContent(this.contentSource, this.vehicleId, aid).subscribe({
-      next: (content) => {
-        if (!content || !content.body || !(content.body as any).html) {
-          console.error('[ArticleViewer] API returned empty content body or html');
-        }
-
-        this.isCached.set(content.header?.isCached || false);
-
-        const rawHtml = (content.body as any)?.html || '';
-        const pdfUri = (content.body as any)?.pdfDataUri || null;
-
-        if (pdfUri) {
-          // PDF content — set safe URI for inline viewer, clear HTML
-          this.pdfDataUri.set(this.sanitizer.bypassSecurityTrustResourceUrl(pdfUri));
-          this.articleContent.set('');
-          this.sections.set([]);
-          this.isLoading.set(false);
-          return;
-        }
-
-        this.pdfDataUri.set(null);
-        const { htmlString, safeHtml, sections } = this.processHtml(rawHtml, this.contentSource!, this.vehicleId!);
-
-        if (!htmlString || htmlString.trim() === '') {
-          this.articleContent.set('');
-        } else {
-          // Show original content immediately
-          this.articleContent.set(safeHtml);
-          // Store for tutorial generation
-          this.rawHtmlForTutorial = htmlString;
-          // Save content to Supabase (passes pre-fetched HTML to avoid double-fetch)
-          this.dataSync.syncSingleArticle(this.contentSource!, this.vehicleId!, {
-            id: aid,
-            title: this.articleTitle(),
-            bucket: (content.body as any)?.bucket || '',
-            parentBucket: (content.body as any)?.parentBucket || ''
-          }, rawHtml);
-          // Background AI rewrite
-          this.triggerAiRewrite(htmlString);
-        }
-
-        this.sections.set(sections);
-        this.isLoading.set(false);
-        // Reset scroll position when loading new article content in modal
-        try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) { }
-      },
-      error: (err) => {
-        console.error('[ArticleViewer] Failed to load article:', err);
-        const status = err?.status;
-        const body = err?.error;
-
-        // 403 with moduleType = access denied (not unlocked) — show lock overlay
-        if (status === 403 && body?.moduleType) {
-          this.resolvedModuleType.set(body.moduleType);
-          this.error.set(null);
-          this.isLoading.set(false);
-          return;
-        }
-
-        if ((status === 401 || status === 403) && this.retryCount() < 3) {
-          // Auth expired — proxy is re-authenticating, poll and retry
-          this.isRetrying.set(true);
-          this.retryCount.update(n => n + 1);
-          this.pollAndRetry();
-        } else {
-          this.isRetrying.set(false);
-          this.retryCount.set(0);
-          let msg = 'Could not load this article.';
-          if (status === 404) msg = 'Article not found.';
-          else if (status === 401 || status === 403) msg = 'Session expired. Please refresh and try again.';
-          else if (status === 500) msg = 'Server error — the data service is temporarily unavailable.';
-          else if (status === 0) msg = 'Network error — check your connection and try again.';
-          this.error.set(msg);
-          this.isLoading.set(false);
-        }
-      }
+  private processAndSanitizeHtml(html: string): SafeHtml {
+    if (!html) return '';
+    const processedHtml = html.replace(/src="(\/api\/[^"]+)"/g, (match, relativePath) => {
+        const fullUrl = this.motorApi.getGraphicUrl(relativePath);
+        return `src="${fullUrl}"`;
     });
-  }
-
-  /** Poll /auth/status until ready, then re-attempt loadData */
-  private pollAndRetry() {
-    let attempts = 0;
-    const maxAttempts = 12;
-
-    const poll = () => {
-      if (attempts++ > maxAttempts) {
-        this.isRetrying.set(false);
-        this.error.set('Re-authentication timed out. Please refresh the page.');
-        this.isLoading.set(false);
-        return;
-      }
-
-      this.motorApi.getAuthStatus().subscribe({
-        next: (status) => {
-          const sessionValid = (status as any)?.sessionValid === true;
-          if (status?.status === 'success' || sessionValid) {
-            this.isRetrying.set(false);
-            this.loadData();
-          } else if (status?.status === 'authenticating') {
-            // Keep polling while backend refreshes Motor session.
-            setTimeout(poll, 800);
-          } else {
-            // Idle/error/unknown should back off to avoid request storms.
-            const backoffMs = Math.min(2500, 800 + attempts * 200);
-            setTimeout(poll, backoffMs);
-          }
-        },
-        error: () => {
-          const backoffMs = Math.min(3000, 1000 + attempts * 250);
-          setTimeout(poll, backoffMs);
-        }
-      });
-    };
-
-    setTimeout(poll, 1000); // Give it 1s head start
-  }
-
-  /** Rewrites article HTML in the background and updates content when done */
-  private triggerAiRewrite(htmlString: string) {
-    if (!htmlString) return;
-    this.isRewriting.set(true);
-    this.aiRewrite.rewriteArticleHtml(htmlString, this.articleTitle()).subscribe({
-      next: (rewritten) => {
-        if (rewritten && rewritten !== htmlString) {
-          const safe = this.sanitizer.sanitize(SecurityContext.HTML, rewritten) || '';
-          if (safe) {
-            this.articleContent.set(safe);
-            this.rawHtmlForTutorial = rewritten;
-          }
-        }
-        this.isRewriting.set(false);
-      },
-      error: () => this.isRewriting.set(false)
-    });
-  }
-
-  /** Generates tutorial steps from the current article HTML */
-  startTutorial() {
-    if (this.isGeneratingTutorial()) return;
-    const html = this.rawHtmlForTutorial;
-    if (!html) return;
-    this.isGeneratingTutorial.set(true);
-    this.showTutorial.set(false);
-    this.aiRewrite.generateTutorialSteps(html, this.articleTitle()).subscribe({
-      next: (steps) => {
-        this.tutorialSteps.set(steps);
-        this.showTutorial.set(steps.length > 0);
-        this.isGeneratingTutorial.set(false);
-      },
-      error: () => this.isGeneratingTutorial.set(false)
-    });
-  }
-
-  closeTutorial() {
-    this.showTutorial.set(false);
-  }
-
-  private cleanTitle(rawTitle: string): string {
-    if (!rawTitle) return '';
-    // Remove internal IDs like "ID: X:ABC-123"
-    let cleaned = rawTitle.replace(/ID:\s*[A-Z]:[\w\-:]+/i, '').trim();
-    // Remove section refs like "Section 303-01A"
-    cleaned = cleaned.replace(/Section\s+\d{3}-\d{2}[\sA-Za-z-]*$/i, '').trim();
-
-    // Handle pipe-delimited titles: "PART A | PART B; date range"
-    if (cleaned.includes('|') || cleaned.includes(';')) {
-      // Split on pipe first
-      const pipeParts = cleaned.split('|').map(s => s.trim()).filter(Boolean);
-      const primary = pipeParts[0] || cleaned;
-      const rest = pipeParts.slice(1).join(' — ');
-
-      // From the rest, strip date/year ranges like "2018 – 2020 MY Camry"
-      const subtitleParts = rest
-        .split(';')
-        .map(s => s.trim())
-        .filter(s => s && !/^\d{4}\s*[–\-]\s*\d{4}/i.test(s));
-
-      const subtitle = subtitleParts.join(' — ');
-      this.articleSubtitle.set(subtitle);
-
-      // Title-case the primary part: "AIR CONDITIONING SYSTEM" → "Air Conditioning System"
-      return this.toTitleCase(primary);
-    }
-
-    this.articleSubtitle.set('');
-    return cleaned || rawTitle;
-  }
-
-  private toTitleCase(str: string): string {
-    if (!str) return '';
-    // If it's all uppercase, convert to title case
-    if (str === str.toUpperCase() && str.length > 3) {
-      const minorWords = new Set(['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'in', 'of', 'on', 'or', 'the', 'to', 'with']);
-      return str.toLowerCase().split(/\s+/).map((word, i) => {
-        if (i === 0 || !minorWords.has(word)) {
-          return word.charAt(0).toUpperCase() + word.slice(1);
-        }
-        return word;
-      }).join(' ');
-    }
-    return str;
-  }
-
-  private processHtml(html: string, contentSource: string, vehicleId: string): { htmlString: string, safeHtml: string, sections: TableOfContents[] } {
-    if (!html) return { htmlString: '', safeHtml: '', sections: [] };
-
-    let processed = this.motorHtml.processHtmlContent(html, contentSource, vehicleId);
-
-    // Remove legacy attributes
-    processed = processed.replace(LEGACY_ATTR_REGEX, '');
-    processed = processed.replace(FONT_TAG_REGEX, '');
-    processed = processed.replace(SPECIFIC_TAG_REGEX, cleanSpecificTag);
-
-    const sections: TableOfContents[] = [];
-    let headerCount = 0;
-
-    processed = processed.replace(/<(h[1-3])([^>]*)>(.*?)<\/\1>/gi, (match, tag, attrs, content) => {
-      const plainTitle = content.replace(/<[^>]+>/g, '').trim();
-      if (!plainTitle) return match;
-
-      const level = parseInt(tag.charAt(1), 10);
-      const id = `section-${headerCount++}`;
-      sections.push({ id, title: plainTitle, level });
-
-      let newAttrs = attrs;
-      if (newAttrs.includes('class=')) {
-        newAttrs = newAttrs.replace(/class=["']([^"']*)["']/, `class="$1 enhanced-${tag}" id="${id}"`);
-      } else {
-        newAttrs += ` class="enhanced-${tag}" id="${id}"`;
-      }
-
-      return `<${tag}${newAttrs}>${content}</${tag}>`;
-    });
-
-    return {
-      htmlString: processed,
-      safeHtml: this.sanitizer.sanitize(SecurityContext.HTML, processed) || '',
-      sections
-    };
-  }
-
-  onContentClick(event: MouseEvent) {
-    const target = event.target as HTMLElement;
-
-    // Handle image clicks
-    if (target.tagName === 'IMG') {
-      const img = target as HTMLImageElement;
-      this.selectedImageUrl.set(img.src);
-      return;
-    }
-
-    // Handle link clicks (intercept for window mode)
-    const anchor = target.closest('a');
-    if (anchor) {
-      const href = anchor.getAttribute('href');
-      // Intercept if it's an internal article link (starts with #/vehicle/)
-      if (href && href.startsWith('#/vehicle/') && href.includes('/article/')) {
-        // If we have an articleId input, we are in a modal window
-        if (this.articleId) {
-          event.preventDefault();
-          const parts = href.split('/article/');
-          if (parts.length > 1) {
-            const newArticleId = parts[1];
-            this.internalArticleId.set(newArticleId);
-            this.articleTitleInput = undefined; // Clear existing title input to force reload
-            this.loadData();
-          }
-        }
-      }
-    }
-  }
-
-  closeImageViewer() {
-    this.selectedImageUrl.set(null);
-  }
-
-  navigateToCredits() {
-    this.windowManager.openWindow('Get Credits', CreditsModalComponent);
-  }
-
-  goBackToDashboard() {
-    if (this.windowId) {
-      this.windowManager.closeWindow(this.windowId);
-    } else {
-      this.router.navigate(['/vehicle', this.contentSourceSig(), this.vehicleIdSig()]);
-    }
-  }
-
-  async refreshAndRetry() {
-    await this.creditsService.refreshBalance();
-    this.loadData();
-  }
-
-  async unlockThisArticle() {
-    const vid = this.vehicleIdSig();
-    const aid = this.internalArticleId();
-    if (!vid || !aid) return;
-    const ok = await this.creditsService.unlockArticle(vid, vid, aid);
-    if (ok) this.loadData();
-  }
-
-  async unlockSection(moduleType: string) {
-    const vid = this.vehicleIdSig();
-    if (!vid) return;
-    const cost = this.creditsService.getCostForModule(moduleType);
-    const ok = await this.creditsService.unlockModule(vid, vid, moduleType, cost);
-    if (ok) this.loadData();
-  }
-
-  scrollToSection(id: string) {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      this.isMobileTocOpen.set(false);
-    }
-  }
-
-  toggleMobileToc() {
-    this.isMobileTocOpen.update(v => !v);
+    return this.sanitizer.bypassSecurityTrustHtml(processedHtml);
   }
 }

@@ -1,6 +1,0 @@
-httpx
-asyncio
-python-dotenv
-beautifulsoup4
-tqdm
-playwright>=1.40.0

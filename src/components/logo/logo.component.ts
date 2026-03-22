@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, effect, inject, afterNextRender } from '@angular/core';
+
+import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, inject, AfterViewInit, NgZone } from '@angular/core';
 import * as THREE from 'three';
 
 @Component({
@@ -6,7 +7,7 @@ import * as THREE from 'three';
   template: `<canvas #canvas class="w-full h-full block"></canvas>`,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LogoComponent implements OnDestroy {
+export class LogoComponent implements AfterViewInit, OnDestroy {
   @ViewChild('canvas', { static: true }) private canvasRef!: ElementRef<HTMLCanvasElement>;
 
   private renderer!: THREE.WebGLRenderer;
@@ -15,15 +16,16 @@ export class LogoComponent implements OnDestroy {
   private mesh!: THREE.Mesh;
   private frameId: number | null = null;
   private elRef = inject(ElementRef);
+  private ngZone = inject(NgZone);
 
-  constructor() {
-    afterNextRender(() => {
-        this.initThree();
-        this.animate();
-
-        const resizeObserver = new ResizeObserver(() => this.onResize());
-        resizeObserver.observe(this.elRef.nativeElement);
+  ngAfterViewInit(): void {
+    this.initThree();
+    this.ngZone.runOutsideAngular(() => {
+      this.animate();
     });
+
+    const resizeObserver = new ResizeObserver(() => this.onResize());
+    resizeObserver.observe(this.elRef.nativeElement);
   }
 
   private initThree(): void {
