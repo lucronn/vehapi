@@ -4,7 +4,36 @@ These mirror the **Superpowers** `subagent-driven-development` skill templates s
 
 **Typical order (one task at a time):** 1) Implementer → 2) Spec reviewer → 3) Code quality reviewer (only after spec is ✅).
 
-## Quick start (3 minutes)
+## Automated prompt builder (recommended)
+
+From repo root (PowerShell / bash):
+
+```bash
+# List tasks in the production-readiness plan
+npm run plan:tasks
+
+# Or any plan file:
+npm run plan:prompt -- --list-tasks --plan docs/plans/2026-03-21-production-readiness-paid-plus-l2.md
+```
+
+Build a ready-to-paste prompt and **copy to clipboard** (Windows/macOS/Linux with `xclip`):
+
+```bash
+npm run plan:prompt -- --task 5 --role implementer --clipboard
+```
+
+Optional: `--plan path/to/plan.md`, `--context "..."`, `--cwd X:\path\worktree`.
+
+**After implementer finishes**, save their report to e.g. `report.txt`, then:
+
+```bash
+npm run plan:prompt -- --task 5 --role spec --report report.txt --clipboard
+npm run plan:prompt -- --task 5 --role quality --report report.txt --clipboard
+```
+
+Implementation: `scripts/subagent-prompt.mjs`.
+
+## Quick start (manual copy-paste)
 
 1. Pick **one task** from an implementation plan (e.g. `docs/plans/2026-03-21-production-readiness-paid-plus-l2.md` or a new plan).
 2. **New Cursor chat** or **Task** with a **fresh context** (no polluted history).
