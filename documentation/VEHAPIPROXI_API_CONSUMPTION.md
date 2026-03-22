@@ -23,7 +23,7 @@ For **M1/upstream** behavior (query params, `searchTerm`, labor IDs, maintenance
 | Environment | Typical base |
 |-------------|----------------|
 | **Local dev** | Angular `http://localhost:3000` with `proxy.conf.json` → **`/api`** (same origin; proxy forwards to `vehapiproxi`). |
-| **Production** | Absolute proxy URL from `environment.prod.ts` (e.g. `https://…vercel.app/api`) **or** dedicated **`https://vehapiproxi.vercel.app`** for routes that are not under the SPA’s `/api` prefix (see below). |
+| **Production** | Same-origin **`/api`** from the SPA origin, with `vercel.json` rewriting `/api/*`, `/auth/*`, `/logout`, and `/health` to the proxy function. |
 
 **Path prefixes**
 
@@ -41,7 +41,6 @@ The proxy uses an **allowlist** of `Origin` values (see `vehapiproxi/src/functio
 **Allowed origins (as implemented)** include:
 
 - `https://vehapi.vercel.app`
-- `https://vehapiproxi.vercel.app`
 - `http://localhost:3000`
 
 Add new production origins in code if you deploy the SPA elsewhere.
@@ -130,11 +129,12 @@ Then the request continues to the proxy.
 
 ## 7. Frontend consumption guidelines (Torque)
 
-1. **Default:** use **`HttpClient`** with your environment **`apiUrl`** (`/api` in dev).
+1. **Default:** use **`HttpClient`** with your environment **`apiUrl`** (`/api` in dev and production).
 2. **`withCredentials: true`** only where you rely on **cookies** to the proxy (rare for Supabase JWT flows); credentialed CORS requires an allowed origin.
 3. **Attach `Authorization: Bearer`** only for:
    - `/api/credits/*`
    - `/api/source/*/vehicle/*/article/*/metadata`
+   - `/api/vehicle/*/l2/search`
    - Article content URLs that require unlock (see app interceptor rules in `src/` — avoid attaching Bearer to catalog/year/make/model calls to prevent Motor 401s).
 4. **Do not** call Motor domains from the browser for API data.
 

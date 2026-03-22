@@ -143,7 +143,7 @@ The script: (1) clears that vehicle’s data from Supabase, (2) ensures the vehi
 
 Verifies the phase-1 links after one article parse: `content_item` enrichment + `evidence_ingest` + `evidence_link`.
 
-By default the script calls the **production** API on **`https://vehapiproxi.vercel.app`** (no local proxy needed). You can still point at a local dev server with `PROXY_URL=http://localhost:3000` or `--proxy=http://localhost:3000`.
+By default the script calls the local proxy on `http://localhost:3001` (or Angular dev server if you pass `--proxy=http://localhost:3000`). For a deployed environment, pass the explicit proxy base with `--proxy=https://<your-app-origin>` so verification follows the same-origin release architecture.
 
 **Content source (`--source` / `CONTENT_SOURCE`):** Defaults to `MOTOR`. If the article response is the M1 **SPA shell** (wrong shard—common for GM when `MOTOR` is used), the script **auto-tries** other shards (`GeneralMotors`, `Ford`, …) until it gets real article HTML/JSON, then logs `Auto-switched CONTENT_SOURCE to …`. You can still set `--source=GeneralMotors` explicitly when you already know the catalog (e.g. from `GET …/models`).
 

@@ -34,6 +34,8 @@ npm run verify:prod-readiness
 
 Runs `npm run build` plus `node --check` on critical `vehapiproxi` entrypoints (proxy, worker, L2, Stripe, rate limit).
 
+- [ ] `npm run verify:prod-readiness` passes on Node 22 locally or in CI
+
 ## Regression scripts (developer)
 
 ```bash
@@ -46,7 +48,9 @@ Requires local proxy + `.env` per `PROGRESS.md` (or use `--token` against deploy
 ## Deploy
 
 - [ ] `main` builds in CI (Angular + any backend workflow)
+- [ ] CI release gate runs on Node 22 and executes `npm run verify:prod-readiness`
 - [ ] Vercel env: `SUPABASE_*`, Stripe, Motor credentials, embedding vars if using L2
+- [ ] DB migrations applied in target environment before release: RLS tightening, `match_content_chunks` RPC, and any pending normalization/L2 migrations
 
 ## Rollback
 

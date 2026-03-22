@@ -45,7 +45,6 @@ ALTER TABLE public.media_asset ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.content_chunk ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Allow all media_asset" ON public.media_asset;
-CREATE POLICY "Allow all media_asset" ON public.media_asset FOR ALL USING (true) WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Allow all content_chunk" ON public.content_chunk;
-CREATE POLICY "Allow all content_chunk" ON public.content_chunk FOR ALL USING (true) WITH CHECK (true);
+-- No replacement policies: default deny for anon/authenticated roles.
+-- vehapiproxi uses the service role and bypasses RLS for L2/media operations.

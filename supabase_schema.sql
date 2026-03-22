@@ -560,7 +560,9 @@ ALTER TABLE public.content_item ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.media_asset ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.content_chunk ENABLE ROW LEVEL SECURITY;
 
--- Permissive policies (MVP; tighten for production)
+-- Client-readable tables keep permissive policies for the MVP browser app.
+-- Server-only normalization / evidence / L2 tables should default deny for anon/authenticated
+-- roles; vehapiproxi uses the service role and bypasses RLS.
 CREATE POLICY "Allow all vehicles" ON public.vehicles FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all articles" ON public.articles FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all procedures" ON public.procedures FOR ALL USING (true) WITH CHECK (true);
@@ -581,11 +583,10 @@ CREATE POLICY "Allow all maintenance_schedules" ON public.maintenance_schedules 
 CREATE POLICY "Allow all maintenance_task" ON public.maintenance_task FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all canonical_bucket" ON public.canonical_bucket FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all bucket_alias" ON public.bucket_alias FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all evidence_ingest" ON public.evidence_ingest FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all evidence_link" ON public.evidence_link FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all content_item" ON public.content_item FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all media_asset" ON public.media_asset FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all content_chunk" ON public.content_chunk FOR ALL USING (true) WITH CHECK (true);
+
+-- No replacement policies on these tables: default deny for direct clients.
+-- Apply the additive migration `documentation/migrations/20260321_rls_staging_tightening.sql`
+-- on existing environments that still have the older broad policies.
 
 -- =============================================================================
 -- MIGRATION: Add missing article catalog fields (run on existing deployments)

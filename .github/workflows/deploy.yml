@@ -21,12 +21,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
       - name: Install dependencies
         run: npm ci
-      - name: Build
-        run: npm run build
+      - name: Production readiness gate
+        run: npm run verify:prod-readiness
       - name: Upload dist
         uses: actions/upload-artifact@v4
         with:

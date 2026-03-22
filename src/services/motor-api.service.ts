@@ -756,7 +756,11 @@ export class MotorApiService {
     return this.http.get<AuthStatusResponse>(`${this.baseUrl}/auth/status`, { withCredentials: true }).pipe(
       timeout(5000),
       catchError(error => {
-        if (!environment.production) {
+        const isAbortLike =
+          error?.name === 'AbortError' ||
+          error?.status === 0 ||
+          `${error?.message || ''}`.includes('aborted');
+        if (!environment.production && !isAbortLike) {
           console.error('[Auth Polling] Failed:', error);
         }
         // If we can't reach the status endpoint, assume error

@@ -58,7 +58,7 @@ This Angular application can be deployed to various platforms. Here are the reco
 3. Connect repository
 4. Build settings:
    - Build command: `npm run build`
-   - Build output: `dist/browser`
+   - Build output: `dist`
 5. Deploy!
 
 **Pros:** Free, fast, unlimited bandwidth
@@ -80,23 +80,23 @@ npm run build
 npm run preview
 ```
 
-The built files will be in `dist/browser/`
+The built files will be in `dist/`
 
 ---
 
 ## 🔧 Environment Variables
 
-If you need to configure the API base URL, you can:
+If you need to configure the API base URL, keep browser traffic pointed at the same deployed app:
 
 1. Create `src/environments/environment.prod.ts`:
 ```typescript
 export const environment = {
   production: true,
-  apiUrl: 'https://your-api-url.com'
+  apiUrl: '/api'
 };
 ```
 
-2. Update `motor-api.service.ts` to use it
+2. Only use an absolute URL when you are intentionally deploying the SPA and proxy on different origins and have updated CORS allowlists accordingly.
 
 ---
 
@@ -115,6 +115,12 @@ All platforms above support custom domains:
 - **Correlation:** Each request gets a `correlationId` (from `x-request-id` / `x-correlation-id` when sent, otherwise generated). Error responses may include `correlationId` for support triage.
 - **Log drains / APM:** In the Vercel project → **Settings → Log Drains**, connect Datadog, Axiom, or another provider to ship JSON logs. Alternatively, poll the Vercel Observability UI for 5xx spikes after deploys.
 - **Alerts:** Configure alerts on the log drain or Vercel monitoring for elevated 5xx rates and failed Stripe webhook fulfillment (logged as `Stripe webhook fulfillment failed`).
+
+## Release Runtime Parity
+
+- CI should run on **Node 22** to match the root and `vehapiproxi` package engine requirements.
+- Before deploy, run `npm run verify:prod-readiness` from repo root. This performs the production Angular build and syntax-checks the critical proxy modules used in release.
+- For DB-backed release validation, apply the documented Supabase migrations first, then run the manual checks in [RELEASE_CHECKLIST.md](./RELEASE_CHECKLIST.md).
 
 ---
 
