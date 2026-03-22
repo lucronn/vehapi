@@ -1,0 +1,1682 @@
+{
+  "header": {
+    "messages": [],
+    "date": "Tue, 10 Mar 2026 16:52:11 GMT",
+    "status": "OK",
+    "statusCode": 200
+  },
+  "body": {
+    "intervals": [
+      {
+        "interval": 3000,
+        "applications": [
+          {
+            "maintenanceScheduleId": 193,
+            "applicationID": 23189034
+          },
+          {
+            "maintenanceScheduleId": 193,
+            "applicationID": 23239651
+          }
+        ]
+      },
+      {
+        "interval": 3750,
+        "applications": [
+          {
+            "maintenanceScheduleId": 1631,
+            "applicationID": 23246334
+          }
+        ]
+      },
+      {
+        "interval": 5000,
+        "applications": [
+          {
+            "maintenanceScheduleId": 298,
+            "applicationID": 23163124
+          },
+          {
+            "maintenanceScheduleId": 298,
+            "applicationID": 23191385
+          },
+          {
+            "maintenanceScheduleId": 298,
+            "applicationID": 23242870
+          },
+          {
+            "maintenanceScheduleId": 298,
+            "applicationID": 23250277
+          },
+          {
+            "maintenanceScheduleId": 298,
+            "applicationID": 23315036
+          },
+          {
+            "maintenanceScheduleId": 298,
+            "applicationID": 23372319
+          },
+          {
+            "maintenanceScheduleId": 298,
+            "applicationID": 23446410
+          },
+          {
+            "maintenanceScheduleId": 298,
+            "applicationID": 23556848
+          },
+          {
+            "maintenanceScheduleId": 298,
+            "applicationID": 23571784
+          },
+          {
+            "maintenanceScheduleId": 298,
+            "applicationID": 23586513
+          },
+          {
+            "maintenanceScheduleId": 864,
+            "applicationID": 23125311
+          },
+          {
+            "maintenanceScheduleId": 864,
+            "applicationID": 23125312
+          },
+          {
+            "maintenanceScheduleId": 864,
+            "applicationID": 23173126
+          },
+          {
+            "maintenanceScheduleId": 864,
+            "applicationID": 23173178
+          },
+          {
+            "maintenanceScheduleId": 864,
+            "applicationID": 23337973
+          },
+          {
+            "maintenanceScheduleId": 864,
+            "applicationID": 23356721
+          },
+          {
+            "maintenanceScheduleId": 864,
+            "applicationID": 23402114
+          },
+          {
+            "maintenanceScheduleId": 864,
+            "applicationID": 23502034
+          },
+          {
+            "maintenanceScheduleId": 1631,
+            "applicationID": 23246334
+          }
+        ]
+      },
+      {
+        "interval": 6250,
+        "applications": [
+          {
+            "maintenanceScheduleId": 1631,
+            "applicationID": 23246334
+          }
+        ]
+      },
+      {
+        "interval": 7500,
+        "applications": [
+          {
+            "maintenanceScheduleId": 1071,
+            "applicationID": 23189034
+          },
+          {
+            "maintenanceScheduleId": 1071,
+            "applicationID": 23239651
+          },
+          {
+            "maintenanceScheduleId": 743,
+            "applicationID": 22972812
+          },
+          {
+            "maintenanceScheduleId": 908,
+            "applicationID": 23208985
+          },
+          {
+            "maintenanceScheduleId": 1631,
+            "applicationID": 23246334
+          }
+        ]
+      }
+    ],
+    "applications": [
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 193,
+            "documents": [],
+            "frequencyCode": "1",
+            "frequencyDescription": "1st",
+            "indicator": "",
+            "intervalKilometer": 4800,
+            "intervalMile": 3000,
+            "intervalMonth": 3,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          },
+          {
+            "maintenanceScheduleId": 1071,
+            "documents": [],
+            "frequencyCode": "2",
+            "frequencyDescription": "2nd",
+            "indicator": "",
+            "intervalKilometer": 12000,
+            "intervalMile": 7500,
+            "intervalMonth": 8,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23189034,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "R&R",
+          "commonName": "",
+          "groupID": 20,
+          "groupName": "Engine",
+          "literalName": "Engine Oil Filter R&R",
+          "subGroupID": 21,
+          "subGroupName": "Lubrication System",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11747
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 193,
+            "documents": [],
+            "frequencyCode": "1",
+            "frequencyDescription": "1st",
+            "indicator": "",
+            "intervalKilometer": 4800,
+            "intervalMile": 3000,
+            "intervalMonth": 3,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          },
+          {
+            "maintenanceScheduleId": 1071,
+            "documents": [],
+            "frequencyCode": "2",
+            "frequencyDescription": "2nd",
+            "indicator": "",
+            "intervalKilometer": 12000,
+            "intervalMile": 7500,
+            "intervalMonth": 8,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23239651,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "Drain & Refill",
+          "commonName": "",
+          "groupID": 20,
+          "groupName": "Engine",
+          "literalName": "Engine Oil Drain & Refill",
+          "subGroupID": 21,
+          "subGroupName": "Lubrication System",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11785
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 298,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 8000,
+            "intervalMile": 5000,
+            "intervalMonth": 0,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 1226,
+                "text": "Adjust if necessary."
+              },
+              {
+                "noteId": 3858,
+                "text": "Replace if necessary."
+              }
+            ],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23163124,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [
+          {
+            "qualifierId": 6162,
+            "description": "Canada Only",
+            "sequence": 0,
+            "type": "Vehicle Attribute"
+          }
+        ],
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 20,
+          "groupName": "Engine",
+          "literalName": "Accessory Drive Belt Inspect",
+          "subGroupID": 33,
+          "subGroupName": "Accessory Drive Belt",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11740
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [
+          {
+            "id": 4222,
+            "type": "EN"
+          }
+        ],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 298,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 8000,
+            "intervalMile": 5000,
+            "intervalMonth": 0,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23191385,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [
+          {
+            "qualifierId": 6162,
+            "description": "Canada Only",
+            "sequence": 0,
+            "type": "Vehicle Attribute"
+          }
+        ],
+        "taxonomy": {
+          "action": "R&R",
+          "commonName": "",
+          "groupID": 20,
+          "groupName": "Engine",
+          "literalName": "Engine Oil Filter R&R",
+          "subGroupID": 21,
+          "subGroupName": "Lubrication System",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11747
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [
+          {
+            "id": 4222,
+            "type": "EN"
+          }
+        ],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 298,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 8000,
+            "intervalMile": 5000,
+            "intervalMonth": 0,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23242870,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [
+          {
+            "qualifierId": 6162,
+            "description": "Canada Only",
+            "sequence": 0,
+            "type": "Vehicle Attribute"
+          }
+        ],
+        "taxonomy": {
+          "action": "Drain & Refill",
+          "commonName": "",
+          "groupID": 20,
+          "groupName": "Engine",
+          "literalName": "Engine Oil Drain & Refill",
+          "subGroupID": 21,
+          "subGroupName": "Lubrication System",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11785
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [
+          {
+            "id": 4222,
+            "type": "EN"
+          }
+        ],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 298,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 8000,
+            "intervalMile": 5000,
+            "intervalMonth": 0,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 2177,
+                "text": "Check tread depth, condition, tire age, wear pattern, and pressure of all tires, including spare."
+              }
+            ],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23250277,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [
+          {
+            "qualifierId": 6162,
+            "description": "Canada Only",
+            "sequence": 0,
+            "type": "Vehicle Attribute"
+          }
+        ],
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 9,
+          "groupName": "Tire & Wheel",
+          "literalName": "Tire & Wheel Assembly Inspect",
+          "subGroupID": 141,
+          "subGroupName": "Tire & Wheel Assembly",
+          "systemID": 6,
+          "systemName": "Suspension",
+          "taxonomyID": 11787
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [
+          {
+            "id": 4222,
+            "type": "EN"
+          }
+        ],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 298,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 8000,
+            "intervalMile": 5000,
+            "intervalMonth": 0,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 2561,
+                "text": "Inspect and adjust all fluid levels, including both differentials."
+              }
+            ],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23315036,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [
+          {
+            "qualifierId": 6162,
+            "description": "Canada Only",
+            "sequence": 0,
+            "type": "Vehicle Attribute"
+          }
+        ],
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 1,
+          "groupName": "@ALL",
+          "literalName": "Vehicle Fluid Levels Inspect",
+          "subGroupID": 176,
+          "subGroupName": "Filters & Fluids",
+          "systemID": 8,
+          "systemName": "Vehicle",
+          "taxonomyID": 11862
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [
+          {
+            "id": 4222,
+            "type": "EN"
+          }
+        ],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 298,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 8000,
+            "intervalMile": 5000,
+            "intervalMonth": 0,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 2562,
+                "text": "Inspect axle boot condition."
+              }
+            ],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23372319,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [
+          {
+            "qualifierId": 6162,
+            "description": "Canada Only",
+            "sequence": 0,
+            "type": "Vehicle Attribute"
+          }
+        ],
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 18,
+          "groupName": "Driveline",
+          "literalName": "CV Joint Boot Inspect",
+          "subGroupID": 37,
+          "subGroupName": "Axle",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11895
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [
+          {
+            "id": 4222,
+            "type": "EN"
+          }
+        ],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 298,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 8000,
+            "intervalMile": 5000,
+            "intervalMonth": 0,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 1910,
+                "text": "Check function of all lights."
+              }
+            ],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23446410,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [
+          {
+            "qualifierId": 6162,
+            "description": "Canada Only",
+            "sequence": 0,
+            "type": "Vehicle Attribute"
+          }
+        ],
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 6,
+          "groupName": "Exterior Lighting",
+          "literalName": "Exterior Lighting Inspect",
+          "subGroupID": 1,
+          "subGroupName": "@ALL",
+          "systemID": 3,
+          "systemName": "Electrical",
+          "taxonomyID": 11966
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [
+          {
+            "id": 4222,
+            "type": "EN"
+          }
+        ],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 298,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 8000,
+            "intervalMile": 5000,
+            "intervalMonth": 0,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 1259,
+                "text": "Replace if necessary."
+              }
+            ],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23556848,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [
+          {
+            "qualifierId": 6162,
+            "description": "Canada Only",
+            "sequence": 0,
+            "type": "Vehicle Attribute"
+          }
+        ],
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 11,
+          "groupName": "Wiper & Washer System",
+          "literalName": "Windshield Wiper Blade Inspect",
+          "subGroupID": 124,
+          "subGroupName": "Wiper Linkage",
+          "systemID": 3,
+          "systemName": "Electrical",
+          "taxonomyID": 12072
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [
+          {
+            "id": 4222,
+            "type": "EN"
+          }
+        ],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 298,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 8000,
+            "intervalMile": 5000,
+            "intervalMonth": 0,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 1878,
+                "text": "Check for proper operation."
+              }
+            ],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23571784,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [
+          {
+            "qualifierId": 6162,
+            "description": "Canada Only",
+            "sequence": 0,
+            "type": "Vehicle Attribute"
+          }
+        ],
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 11,
+          "groupName": "Wiper & Washer System",
+          "literalName": "Windshield Washer System Inspect",
+          "subGroupID": 157,
+          "subGroupName": "Washer System",
+          "systemID": 3,
+          "systemName": "Electrical",
+          "taxonomyID": 12079
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [
+          {
+            "id": 4222,
+            "type": "EN"
+          }
+        ],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 298,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 8000,
+            "intervalMile": 5000,
+            "intervalMonth": 0,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23586513,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [
+          {
+            "qualifierId": 6162,
+            "description": "Canada Only",
+            "sequence": 0,
+            "type": "Vehicle Attribute"
+          }
+        ],
+        "taxonomy": {
+          "action": "Road Test",
+          "commonName": "",
+          "groupID": 1,
+          "groupName": "@ALL",
+          "literalName": "Vehicle Road Test",
+          "subGroupID": 1,
+          "subGroupName": "@ALL",
+          "systemID": 8,
+          "systemName": "Vehicle",
+          "taxonomyID": 12127
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [
+          {
+            "id": 4222,
+            "type": "EN"
+          }
+        ],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 743,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 12000,
+            "intervalMile": 7500,
+            "intervalMonth": 12,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 22972812,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "R&R",
+          "commonName": "",
+          "groupID": 12,
+          "groupName": "Air Distribution",
+          "literalName": "Cabin Air Filter R&R",
+          "subGroupID": 34,
+          "subGroupName": "Air Filter",
+          "systemID": 4,
+          "systemName": "HVAC",
+          "taxonomyID": 11230
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 864,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 8000,
+            "intervalMile": 5000,
+            "intervalMonth": 6,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23125311,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [
+          {
+            "qualifierId": 6162,
+            "description": "Canada Only",
+            "sequence": 0,
+            "type": "Vehicle Attribute"
+          }
+        ],
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 31,
+          "groupName": "Trans",
+          "literalName": "Trans Fluid Level Inspect",
+          "subGroupID": 95,
+          "subGroupName": "Trans Assembly",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11736
+        },
+        "transmissionDetails": {
+          "transmissionId": 1565,
+          "transmissionControlTypeName": "Manual",
+          "transmissionSpeeds": "5"
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [
+          {
+            "id": 4222,
+            "type": "EN"
+          },
+          {
+            "id": 1565,
+            "type": "TR"
+          }
+        ],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 864,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 8000,
+            "intervalMile": 5000,
+            "intervalMonth": 6,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23125312,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [
+          {
+            "qualifierId": 6162,
+            "description": "Canada Only",
+            "sequence": 0,
+            "type": "Vehicle Attribute"
+          }
+        ],
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 31,
+          "groupName": "Trans",
+          "literalName": "Trans Fluid Level Inspect",
+          "subGroupID": 95,
+          "subGroupName": "Trans Assembly",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11736
+        },
+        "transmissionDetails": {
+          "transmissionId": 1566,
+          "transmissionControlTypeName": "Automatic",
+          "transmissionSpeeds": "4"
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [
+          {
+            "id": 4222,
+            "type": "EN"
+          },
+          {
+            "id": 1566,
+            "type": "TR"
+          }
+        ],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 864,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 8000,
+            "intervalMile": 5000,
+            "intervalMonth": 6,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23173126,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [
+          {
+            "qualifierId": 6162,
+            "description": "Canada Only",
+            "sequence": 0,
+            "type": "Vehicle Attribute"
+          }
+        ],
+        "position": {
+          "name": "Front",
+          "pcdbPositionId": 22,
+          "positionId": 18,
+          "type": "MOTOR_Position"
+        },
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 18,
+          "groupName": "Driveline",
+          "literalName": "Differential Fluid Level Inspect",
+          "subGroupID": 37,
+          "subGroupName": "Axle",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11741
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [
+          {
+            "id": 4222,
+            "type": "EN"
+          }
+        ],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 864,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 8000,
+            "intervalMile": 5000,
+            "intervalMonth": 6,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23173178,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [
+          {
+            "qualifierId": 6162,
+            "description": "Canada Only",
+            "sequence": 0,
+            "type": "Vehicle Attribute"
+          }
+        ],
+        "position": {
+          "name": "Rear",
+          "pcdbPositionId": 30,
+          "positionId": 24,
+          "type": "MOTOR_Position"
+        },
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 18,
+          "groupName": "Driveline",
+          "literalName": "Differential Fluid Level Inspect",
+          "subGroupID": 37,
+          "subGroupName": "Axle",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11741
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [
+          {
+            "id": 4222,
+            "type": "EN"
+          }
+        ],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 864,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 8000,
+            "intervalMile": 5000,
+            "intervalMonth": 6,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23337973,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [
+          {
+            "qualifierId": 6162,
+            "description": "Canada Only",
+            "sequence": 0,
+            "type": "Vehicle Attribute"
+          }
+        ],
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 24,
+          "groupName": "Hydraulic System",
+          "literalName": "Brake Hydraulic System Fluid Level Inspect",
+          "subGroupID": 1,
+          "subGroupName": "@ALL",
+          "systemID": 2,
+          "systemName": "Brakes",
+          "taxonomyID": 11868
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [
+          {
+            "id": 4222,
+            "type": "EN"
+          }
+        ],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 864,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 8000,
+            "intervalMile": 5000,
+            "intervalMonth": 6,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23356721,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [
+          {
+            "qualifierId": 6162,
+            "description": "Canada Only",
+            "sequence": 0,
+            "type": "Vehicle Attribute"
+          }
+        ],
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 42,
+          "groupName": "Manual Trans",
+          "literalName": "Clutch Master Cylinder Fluid Level Inspect",
+          "subGroupID": 65,
+          "subGroupName": "Hydraulic Clutch System",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11891
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [
+          {
+            "id": 4222,
+            "type": "EN"
+          }
+        ],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 864,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 8000,
+            "intervalMile": 5000,
+            "intervalMonth": 6,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23402114,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [
+          {
+            "qualifierId": 6162,
+            "description": "Canada Only",
+            "sequence": 0,
+            "type": "Vehicle Attribute"
+          }
+        ],
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 1,
+          "groupName": "@ALL",
+          "literalName": "Suspension System Inspect",
+          "subGroupID": 1,
+          "subGroupName": "@ALL",
+          "systemID": 6,
+          "systemName": "Suspension",
+          "taxonomyID": 11952
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [
+          {
+            "id": 4222,
+            "type": "EN"
+          }
+        ],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 864,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 8000,
+            "intervalMile": 5000,
+            "intervalMonth": 6,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23502034,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [
+          {
+            "qualifierId": 6162,
+            "description": "Canada Only",
+            "sequence": 0,
+            "type": "Vehicle Attribute"
+          }
+        ],
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 24,
+          "groupName": "Hydraulic System",
+          "literalName": "Power Steering System Inspect",
+          "subGroupID": 192,
+          "subGroupName": "Power Steering System",
+          "systemID": 5,
+          "systemName": "Steering",
+          "taxonomyID": 12011
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [
+          {
+            "id": 4222,
+            "type": "EN"
+          }
+        ],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 908,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 12000,
+            "intervalMile": 7500,
+            "intervalMonth": 8,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 42176,
+                "text": "Do not rotate staggered tires from front to back. If tires are asymmetric(directional), do not rotate side to side. Follow all OEM tire rotation recommendations and pattern."
+              }
+            ],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23208985,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [],
+        "taxonomy": {
+          "action": "Rotate",
+          "commonName": "",
+          "groupID": 9,
+          "groupName": "Tire & Wheel",
+          "literalName": "Tire Rotate",
+          "subGroupID": 141,
+          "subGroupName": "Tire & Wheel Assembly",
+          "systemID": 6,
+          "systemName": "Suspension",
+          "taxonomyID": 11782
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [],
+        "isActive": true
+      },
+      {
+        "maintenanceSchedules": [
+          {
+            "maintenanceScheduleId": 1631,
+            "documents": [],
+            "frequencyCode": "E",
+            "frequencyDescription": "Every",
+            "indicator": "",
+            "intervalKilometer": 2000,
+            "intervalMile": 1250,
+            "intervalMonth": 0,
+            "intervalOperatingHours": 0,
+            "isActive": true,
+            "notes": [
+              {
+                "noteId": 1538,
+                "text": "Add fluid if necessary."
+              }
+            ],
+            "severeServiceDescription": "No"
+          }
+        ],
+        "applicationId": 23246334,
+        "category": {
+          "article": "Scheduled Maintenance Times",
+          "id": 23,
+          "product": "Estimating",
+          "productType": "Estimating"
+        },
+        "qualifiers": [
+          {
+            "qualifierId": 6162,
+            "description": "Canada Only",
+            "sequence": 0,
+            "type": "Vehicle Attribute"
+          }
+        ],
+        "taxonomy": {
+          "action": "Inspect",
+          "commonName": "",
+          "groupID": 20,
+          "groupName": "Engine",
+          "literalName": "Engine Oil Level Inspect",
+          "subGroupID": 21,
+          "subGroupName": "Lubrication System",
+          "systemID": 7,
+          "systemName": "Powertrain",
+          "taxonomyID": 11786
+        },
+        "contentSilos": [
+          {
+            "id": 33,
+            "name": "Preventative Maintenance Schedules Service Time",
+            "sourceSilos": [
+              {
+                "id": 2,
+                "name": "PMSST"
+              }
+            ]
+          }
+        ],
+        "attributeMappings": [
+          {
+            "id": 4222,
+            "type": "EN"
+          }
+        ],
+        "isActive": true
+      }
+    ]
+  }
+}

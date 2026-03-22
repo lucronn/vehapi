@@ -1,0 +1,35 @@
+{
+  "contentSource": "MOTOR",
+  "models": [
+    {
+      "model": "tC Base",
+      "id": "54688",
+      "engines": [
+        {
+          "id": "54688:3019",
+          "name": "2.4L L4 (2AZ-FE) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "xB Base",
+      "id": "54689",
+      "engines": [
+        {
+          "id": "54689:3019",
+          "name": "2.4L L4 (2AZ-FE) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "xD Base",
+      "id": "60670",
+      "engines": [
+        {
+          "id": "60670:7648",
+          "name": "1.8L L4 (U) 2ZR-FE GAS Electronic"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,203 @@
+{
+  "contentSource": "MOTOR",
+  "models": [
+    {
+      "model": "Equator Base",
+      "id": "66966",
+      "engines": [
+        {
+          "id": "66966:2600",
+          "name": "2.5L L4 (QR25DE) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Equator Premium",
+      "id": "66967",
+      "engines": [
+        {
+          "id": "66967:2600",
+          "name": "2.5L L4 (QR25DE) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Equator RMZ-4",
+      "id": "66968",
+      "engines": [
+        {
+          "id": "66968:7298",
+          "name": "4.0L V6 (VQ40DE) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Equator Sport",
+      "id": "66969",
+      "engines": [
+        {
+          "id": "66969:7298",
+          "name": "4.0L V6 (VQ40DE) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Grand Vitara Base",
+      "id": "66970",
+      "engines": [
+        {
+          "id": "66970:3581",
+          "name": "2.4L L4 (0) J24B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Grand Vitara Limited",
+      "id": "66971",
+      "engines": [
+        {
+          "id": "66971:3581",
+          "name": "2.4L L4 (0) J24B GAS Electronic"
+        },
+        {
+          "id": "66971:3580",
+          "name": "3.2L V6 (1) N32A GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Grand Vitara Premium",
+      "id": "66972",
+      "engines": [
+        {
+          "id": "66972:3581",
+          "name": "2.4L L4 (0) J24B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Grand Vitara XSport",
+      "id": "66973",
+      "engines": [
+        {
+          "id": "66973:3581",
+          "name": "2.4L L4 (0) J24B GAS Electronic"
+        },
+        {
+          "id": "66973:3580",
+          "name": "3.2L V6 (1) N32A GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Kizashi GTS",
+      "id": "68440",
+      "engines": [
+        {
+          "id": "68440:4062",
+          "name": "2.4L L4 (9) J24B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Kizashi S",
+      "id": "68441",
+      "engines": [
+        {
+          "id": "68441:4062",
+          "name": "2.4L L4 (9) J24B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Kizashi SE",
+      "id": "68442",
+      "engines": [
+        {
+          "id": "68442:4062",
+          "name": "2.4L L4 (9) J24B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Kizashi SLS",
+      "id": "68443",
+      "engines": [
+        {
+          "id": "68443:4062",
+          "name": "2.4L L4 (9) J24B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "SX4 Base",
+      "id": "76033",
+      "engines": [
+        {
+          "id": "76033:3663",
+          "name": "2.0L L4 (5) J20B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "SX4 Crossover",
+      "id": "75473",
+      "engines": [
+        {
+          "id": "75473:3663",
+          "name": "2.0L L4 (5) J20B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "SX4 LE",
+      "id": "61239",
+      "engines": [
+        {
+          "id": "61239:3663",
+          "name": "2.0L L4 (5) J20B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "SX4 Sport GTS",
+      "id": "75476",
+      "engines": [
+        {
+          "id": "75476:3663",
+          "name": "2.0L L4 (5) J20B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "SX4 Sport S",
+      "id": "75474",
+      "engines": [
+        {
+          "id": "75474:3663",
+          "name": "2.0L L4 (5) J20B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "SX4 Sport SE",
+      "id": "75475",
+      "engines": [
+        {
+          "id": "75475:3663",
+          "name": "2.0L L4 (5) J20B GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "SX4 Sportback",
+      "id": "77317",
+      "engines": [
+        {
+          "id": "77317:3663",
+          "name": "2.0L L4 (5) J20B GAS Electronic"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,333 @@
+{
+  "contentSource": "MOTOR",
+  "models": [
+    {
+      "model": "Beetle Base",
+      "id": "66976",
+      "engines": [
+        {
+          "id": "66976:3008",
+          "name": "2.5L L5 (BPR) GAS Electronic"
+        },
+        {
+          "id": "66976:3009",
+          "name": "2.5L L5 (BPS) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "CC Luxury",
+      "id": "66977",
+      "engines": [
+        {
+          "id": "66977:3497",
+          "name": "2.0L L4 (CBFA) Turbocharged GAS Electronic"
+        },
+        {
+          "id": "66977:8061",
+          "name": "2.0L L4 (CCTA) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "CC Sport",
+      "id": "66978",
+      "engines": [
+        {
+          "id": "66978:3497",
+          "name": "2.0L L4 (CBFA) Turbocharged GAS Electronic"
+        },
+        {
+          "id": "66978:8061",
+          "name": "2.0L L4 (CCTA) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "CC VR6",
+      "id": "66979",
+      "engines": [
+        {
+          "id": "66979:3010",
+          "name": "3.6L V6 (BLV) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "CC VR6 4Motion",
+      "id": "66980",
+      "engines": [
+        {
+          "id": "66980:3010",
+          "name": "3.6L V6 (BLV) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "CC VR6 Sport",
+      "id": "74500",
+      "engines": [
+        {
+          "id": "74500:3010",
+          "name": "3.6L V6 (BLV) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Eos Komfort",
+      "id": "66981",
+      "engines": [
+        {
+          "id": "66981:3497",
+          "name": "2.0L L4 (CBFA) Turbocharged GAS Electronic"
+        },
+        {
+          "id": "66981:8061",
+          "name": "2.0L L4 (CCTA) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Eos Lux",
+      "id": "66982",
+      "engines": [
+        {
+          "id": "66982:3497",
+          "name": "2.0L L4 (CBFA) Turbocharged GAS Electronic"
+        },
+        {
+          "id": "66982:8061",
+          "name": "2.0L L4 (CCTA) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Golf Base",
+      "id": "61293",
+      "engines": [
+        {
+          "id": "61293:7362",
+          "name": "2.5L L5 (CBTA) GAS Electronic"
+        },
+        {
+          "id": "61293:7361",
+          "name": "2.5L L5 (CBUA) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Golf TDI",
+      "id": "61294",
+      "engines": [
+        {
+          "id": "61294:7286",
+          "name": "2.0L L4 (CJAA) Turbocharged DIESEL Mechanical"
+        }
+      ]
+    },
+    {
+      "model": "GTI Base",
+      "id": "61292",
+      "engines": [
+        {
+          "id": "61292:3497",
+          "name": "2.0L L4 (CBFA) Turbocharged GAS Electronic"
+        },
+        {
+          "id": "61292:8061",
+          "name": "2.0L L4 (CCTA) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Jetta S",
+      "id": "66983",
+      "engines": [
+        {
+          "id": "66983:7362",
+          "name": "2.5L L5 (CBTA) GAS Electronic"
+        },
+        {
+          "id": "66983:7361",
+          "name": "2.5L L5 (CBUA) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Jetta SE",
+      "id": "66984",
+      "engines": [
+        {
+          "id": "66984:7362",
+          "name": "2.5L L5 (CBTA) GAS Electronic"
+        },
+        {
+          "id": "66984:7361",
+          "name": "2.5L L5 (CBUA) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Jetta SEL",
+      "id": "66985",
+      "engines": [
+        {
+          "id": "66985:7362",
+          "name": "2.5L L5 (CBTA) GAS Electronic"
+        },
+        {
+          "id": "66985:7361",
+          "name": "2.5L L5 (CBUA) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Jetta TDI",
+      "id": "66986",
+      "engines": [
+        {
+          "id": "66986:7286",
+          "name": "2.0L L4 (CJAA) Turbocharged DIESEL Mechanical"
+        }
+      ]
+    },
+    {
+      "model": "Jetta TDI Cup Edition",
+      "id": "75472",
+      "engines": [
+        {
+          "id": "75472:7286",
+          "name": "2.0L L4 (CJAA) Turbocharged DIESEL Mechanical"
+        }
+      ]
+    },
+    {
+      "model": "Jetta Wolfsburg Edition",
+      "id": "66987",
+      "engines": [
+        {
+          "id": "66987:3497",
+          "name": "2.0L L4 (CBFA) Turbocharged GAS Electronic"
+        },
+        {
+          "id": "66987:8061",
+          "name": "2.0L L4 (CCTA) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Passat Komfort",
+      "id": "66988",
+      "engines": [
+        {
+          "id": "66988:3497",
+          "name": "2.0L L4 (CBFA) Turbocharged GAS Electronic"
+        },
+        {
+          "id": "66988:8061",
+          "name": "2.0L L4 (CCTA) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Routan S",
+      "id": "66989",
+      "engines": [
+        {
+          "id": "66989:3616",
+          "name": "3.8L V6 (1) CGUA GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Routan SE",
+      "id": "66990",
+      "engines": [
+        {
+          "id": "66990:3616",
+          "name": "3.8L V6 (1) CGUA GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Routan SEL",
+      "id": "66991",
+      "engines": [
+        {
+          "id": "66991:3617",
+          "name": "4.0L V6 (X) CGVA GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Routan SEL Premium",
+      "id": "66992",
+      "engines": [
+        {
+          "id": "66992:3617",
+          "name": "4.0L V6 (X) CGVA GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Tiguan S",
+      "id": "66993",
+      "engines": [
+        {
+          "id": "66993:8061",
+          "name": "2.0L L4 (CCTA) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Tiguan SE",
+      "id": "66994",
+      "engines": [
+        {
+          "id": "66994:8061",
+          "name": "2.0L L4 (CCTA) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Tiguan SEL",
+      "id": "66995",
+      "engines": [
+        {
+          "id": "66995:8061",
+          "name": "2.0L L4 (CCTA) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Tiguan Wolfsburg Edition",
+      "id": "75482",
+      "engines": [
+        {
+          "id": "75482:8061",
+          "name": "2.0L L4 (CCTA) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Touareg TDI",
+      "id": "66997",
+      "engines": [
+        {
+          "id": "66997:3670",
+          "name": "3.0L V6 (CATA) Turbocharged DIESEL Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Touareg VR6",
+      "id": "66996",
+      "engines": [
+        {
+          "id": "66996:3126",
+          "name": "3.6L V6 (BHK) GAS Electronic"
+        }
+      ]
+    }
+  ]
+}

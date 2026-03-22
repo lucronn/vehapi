@@ -1,0 +1,285 @@
+{
+  "contentSource": "MOTOR",
+  "models": [
+    {
+      "model": "911 Carrera",
+      "id": "69768",
+      "engines": [
+        {
+          "id": "69768:11690",
+          "name": "3.6L H6 (A102) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "911 Carrera 4",
+      "id": "69769",
+      "engines": [
+        {
+          "id": "69769:11690",
+          "name": "3.6L H6 (A102) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "911 Carrera 4S",
+      "id": "69770",
+      "engines": [
+        {
+          "id": "69770:11693",
+          "name": "3.8L H6 (MA1.01) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "911 Carrera GTS",
+      "id": "69774",
+      "engines": [
+        {
+          "id": "69774:11901",
+          "name": "3.8L H6 (A103) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "911 Carrera S",
+      "id": "69771",
+      "engines": [
+        {
+          "id": "69771:11693",
+          "name": "3.8L H6 (MA1.01) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "911 GT2 RS",
+      "id": "69869",
+      "engines": [
+        {
+          "id": "69869:11699",
+          "name": "3.6L H6 (9770R) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "911 GT3",
+      "id": "69870",
+      "engines": [
+        {
+          "id": "69870:11695",
+          "name": "3.8L H6 (9777) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "911 GT3 RS",
+      "id": "69865",
+      "engines": [
+        {
+          "id": "69865:11694",
+          "name": "3.8L H6 (9777R) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "911 GT3 RS 4.0",
+      "id": "76031",
+      "engines": [
+        {
+          "id": "76031:11697",
+          "name": "4.0L H6 (9774) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "911 Speedster",
+      "id": "69866",
+      "engines": [
+        {
+          "id": "69866:11693",
+          "name": "3.8L H6 (MA1.01) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "911 Targa 4",
+      "id": "69772",
+      "engines": [
+        {
+          "id": "69772:11690",
+          "name": "3.6L H6 (A102) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "911 Targa 4S",
+      "id": "69773",
+      "engines": [
+        {
+          "id": "69773:11693",
+          "name": "3.8L H6 (MA1.01) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "911 Turbo",
+      "id": "69867",
+      "engines": [
+        {
+          "id": "69867:4242",
+          "name": "3.8L H6 Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "911 Turbo S",
+      "id": "69868",
+      "engines": [
+        {
+          "id": "69868:4243",
+          "name": "3.8L H6 Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Boxster Base",
+      "id": "69108",
+      "engines": [
+        {
+          "id": "69108:3606",
+          "name": "2.9L H6 GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Boxster S",
+      "id": "69109",
+      "engines": [
+        {
+          "id": "69109:4204",
+          "name": "3.4L H6 GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Boxster Spyder",
+      "id": "69110",
+      "engines": [
+        {
+          "id": "69110:4204",
+          "name": "3.4L H6 GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Cayenne Base",
+      "id": "69006",
+      "engines": [
+        {
+          "id": "69006:4195",
+          "name": "3.6L V6 (A) 5502 GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Cayenne S",
+      "id": "69007",
+      "engines": [
+        {
+          "id": "69007:4196",
+          "name": "4.8L V8 (B) 4802 GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Cayenne S Hybrid",
+      "id": "69009",
+      "engines": [
+        {
+          "id": "69009:4198",
+          "name": "3.0L V6 (E) 06EC Supercharged FULL HYBRID EV-GAS (FHEV) Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Cayenne Turbo",
+      "id": "69008",
+      "engines": [
+        {
+          "id": "69008:4197",
+          "name": "4.8L V8 (C) 4852 Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Cayman Base",
+      "id": "74579",
+      "engines": [
+        {
+          "id": "74579:3606",
+          "name": "2.9L H6 GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Cayman S",
+      "id": "74580",
+      "engines": [
+        {
+          "id": "74580:3607",
+          "name": "3.4L H6 GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Panamera 4",
+      "id": "69426",
+      "engines": [
+        {
+          "id": "69426:4226",
+          "name": "3.6L V6 (4640) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Panamera 4S",
+      "id": "69421",
+      "engines": [
+        {
+          "id": "69421:3666",
+          "name": "4.8L V8 (4840) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Panamera Base",
+      "id": "69429",
+      "engines": [
+        {
+          "id": "69429:4225",
+          "name": "3.6L V6 (4620) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Panamera S",
+      "id": "69423",
+      "engines": [
+        {
+          "id": "69423:3665",
+          "name": "4.8L V8 (4820) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Panamera Turbo",
+      "id": "69425",
+      "engines": [
+        {
+          "id": "69425:6676",
+          "name": "4.8L V8 (4870) Turbocharged GAS Electronic"
+        }
+      ]
+    }
+  ]
+}

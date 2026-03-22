@@ -1,0 +1,46 @@
+<div class="glass-card overflow-hidden mt-4 border border-white/10">
+  <div class="px-4 py-3 border-b border-white/5 bg-white/[0.03]">
+    <h3 class="text-[10px] font-mono uppercase tracking-[0.2em] text-torque-cyan">Knowledge search (L2)</h3>
+    <p class="text-xs text-torque-muted mt-1">Semantic search over embedded article text for this vehicle. Requires unlocks + L2 data.</p>
+  </div>
+  <div class="p-4 space-y-3">
+    <div class="flex flex-col sm:flex-row gap-2">
+      <input
+        type="search"
+        [(ngModel)]="query"
+        (keydown.enter)="search()"
+        class="flex-1 rounded-lg bg-black/30 border border-white/10 px-3 py-2.5 text-sm text-white placeholder:text-white/35 min-h-[44px]"
+        placeholder="e.g. torque spec, fluid capacity…"
+        [attr.aria-label]="'Semantic search query'" />
+      <button
+        type="button"
+        (click)="search()"
+        [disabled]="loading()"
+        class="btn-glass px-4 py-2.5 rounded-lg text-sm font-medium min-h-[44px] disabled:opacity-50">
+        {{ loading() ? 'Searching…' : 'Search' }}
+      </button>
+    </div>
+    @if (error()) {
+      <p class="text-xs text-red-400">{{ error() }}</p>
+    }
+    @if (hasSearched() && !loading() && results().length === 0 && !error()) {
+      <p class="text-xs text-torque-muted">No chunks matched. Ingest may still be running or embeddings disabled.</p>
+    }
+    <ul class="space-y-3 max-h-72 overflow-y-auto overscroll-contain">
+      @for (c of results(); track c.citation.chunk_id) {
+        <li class="text-xs border-b border-white/5 pb-3 last:border-0">
+          <a
+            [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', c.citation.motor_article_id]"
+            [queryParams]="{ moduleType: moduleTypeForSilo(c.citation.canonical_silo_code) }"
+            class="text-torque-cyan hover:underline font-medium break-all">
+            {{ c.citation.motor_article_id }}
+          </a>
+          @if (c.score != null) {
+            <span class="text-[10px] text-torque-muted ml-2 font-mono">score {{ c.score | number : '1.2-3' }}</span>
+          }
+          <p class="text-white/70 mt-1.5 leading-relaxed line-clamp-4">{{ c.text }}</p>
+        </li>
+      }
+    </ul>
+  </div>
+</div>

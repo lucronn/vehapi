@@ -1,0 +1,67 @@
+<div class="space-y-4 relative min-h-[400px]">
+    @if (isLoading()) {
+    <app-loading-skeleton type="grid" [count]="6"></app-loading-skeleton>
+    }
+    @else if (dtcs().length === 0) {
+    <app-empty-state icon="info" message="No Fault Codes"
+        submessage="No diagnostic trouble codes are available for this vehicle.">
+    </app-empty-state>
+    }
+    @else {
+
+    <!-- Content Area: titles always visible for selective purchase; content locked in article viewer -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 transition-all duration-300">
+
+        @for (dtc of displayedDtcs(); track trackByCode($index, dtc)) {
+        <div (click)="viewDtc(dtc)"
+            class="card p-5 flex flex-col transition-all group animate-fade-in-up cursor-pointer hover:bg-white/5"
+            [style.animation-delay]="$index * 50 + 'ms'">
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-lg font-bold" style="color:var(--status-warning)">{{ dtc.code }}</span>
+                    <lucide-icon [img]="icons.TriangleAlert"
+                        class="w-5 h-5 opacity-40 group-hover:opacity-80 transition-opacity"
+                        style="color:var(--status-warning)"></lucide-icon>
+                </div>
+                <p class="text-sm font-medium leading-snug line-clamp-2" style="color:var(--text-primary)">{{
+                    dtc.description }}</p>
+                <div class="flex items-center gap-2 text-xs" style="color:var(--text-muted)">
+                    <span>View Details</span>
+                    <lucide-icon [img]="icons.ArrowRight"
+                        class="w-3 h-3 group-hover:translate-x-0.5 transition-transform"></lucide-icon>
+                </div>
+            </div>
+        </div>
+        }
+    </div>
+
+    <!-- Load More Button -->
+    @if (creditsService.hasAccess(vehicleId, 'dtcs') && dtcs().length > displayedDtcs().length) {
+    <div class="pt-4 flex justify-center w-full">
+        <button (click)="loadMore()" class="btn-secondary px-6 py-2">
+            Load More Codes ({{ dtcs().length - displayedDtcs().length }} remaining)
+        </button>
+    </div>
+    }
+
+    <!-- Unlock banner when section locked (titles above are clickable; article viewer shows lock) -->
+    @if (!creditsService.hasAccess(vehicleId, 'dtcs')) {
+    <div class="mt-6 p-4 rounded-xl bg-white/[0.04] border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <lucide-icon [img]="icons.Lock" class="w-5 h-5 text-torque-muted"></lucide-icon>
+            <div>
+                <p class="text-sm font-medium">Unlock full section ({{ creditsService.COSTS.DTC }} CR) or individual articles (100 CR each)</p>
+                @if (creditsService.balance() < creditsService.COSTS.DTC) {
+                <p class="text-xs text-red-400 mt-0.5">Insufficient credits ({{ creditsService.balance() }} CR available)</p>
+                }
+            </div>
+        </div>
+        <button (click)="unlockSection()" [disabled]="isUnlocking() || creditsService.balance() < creditsService.COSTS.DTC"
+            class="btn-primary py-2.5 px-5 rounded-xl font-semibold text-sm disabled:opacity-50">
+            @if (isUnlocking()) { Unlocking... } @else { Unlock Section }
+        </button>
+    </div>
+    }
+
+    }
+</div>

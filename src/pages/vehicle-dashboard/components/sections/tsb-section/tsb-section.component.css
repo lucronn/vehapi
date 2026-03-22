@@ -1,0 +1,77 @@
+/* TSB Viewer Modal Content Styling */
+.motor-content {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #1f2937;
+}
+
+.motor-content h1,
+.motor-content h2,
+.motor-content h3,
+.motor-content h4 {
+  color: #0c4a6e;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.motor-content p {
+  margin-bottom: 1rem;
+  line-height: 1.7;
+}
+
+/* Force all images to be responsive and properly sized */
+.motor-content img {
+  max-width: 100% !important;
+  height: auto !important;
+  display: block !important;
+  margin: 1rem auto !important;
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db;
+  box-sizing: border-box !important;
+}
+
+/* Ensure image containers don't overflow */
+.motor-content figure,
+.motor-content div {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.motor-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.motor-content table th,
+.motor-content table td {
+  border: 1px solid #d1d5db;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.motor-content table th {
+  background-color: #f3f4f6;
+  font-weight: 600;
+}
+
+.motor-content ul,
+.motor-content ol {
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.motor-content li {
+  margin-bottom: 0.5rem;
+}
+
+.motor-content strong {
+  font-weight: 600;
+  color: #0c4a6e;
+}
+
+.motor-content a {
+  color: #0284c7;
+  text-decoration: underline;
+}

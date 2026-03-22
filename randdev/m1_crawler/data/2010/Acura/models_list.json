@@ -1,0 +1,95 @@
+{
+  "contentSource": "MOTOR",
+  "models": [
+    {
+      "model": "MDX Base",
+      "id": "66999",
+      "engines": [
+        {
+          "id": "66999:3154",
+          "name": "3.7L V6 (J37A1) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "RDX Base",
+      "id": "60659",
+      "engines": [
+        {
+          "id": "60659:3073",
+          "name": "2.3L L4 (K23A1) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "RDX SH-AWD",
+      "id": "77760",
+      "engines": [
+        {
+          "id": "77760:3073",
+          "name": "2.3L L4 (K23A1) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "RL Base",
+      "id": "60658",
+      "engines": [
+        {
+          "id": "60658:3539",
+          "name": "3.7L V6 (J37A2) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "TL Base",
+      "id": "60913",
+      "engines": [
+        {
+          "id": "60913:3561",
+          "name": "3.5L V6 (J35Z6) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "TL SH-AWD",
+      "id": "60914",
+      "engines": [
+        {
+          "id": "60914:3562",
+          "name": "3.7L V6 (J37A4) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "TSX Base",
+      "id": "54808",
+      "engines": [
+        {
+          "id": "54808:7650",
+          "name": "2.4L L4 (K24Z3) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "TSX V6",
+      "id": "60915",
+      "engines": [
+        {
+          "id": "60915:3561",
+          "name": "3.5L V6 (J35Z6) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "ZDX Base",
+      "id": "67000",
+      "engines": [
+        {
+          "id": "67000:3671",
+          "name": "3.7L V6 (J37A5) GAS Electronic"
+        }
+      ]
+    }
+  ]
+}

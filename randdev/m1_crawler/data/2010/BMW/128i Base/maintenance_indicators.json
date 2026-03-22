@@ -1,0 +1,1999 @@
+{
+  "header": {
+    "messages": [],
+    "date": "Fri, 20 Mar 2026 05:30:08 GMT",
+    "status": "OK",
+    "statusCode": 200
+  },
+  "body": {
+    "indicators": [
+      {
+        "name": "Brake Fluid Service Light",
+        "applications": [
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1544,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Brake Fluid Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 24,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1881,
+                    "text": "Replace every 2 years based on vehicle production date or during the scheduled brake fluid service."
+                  },
+                  {
+                    "noteId": 4470,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 22975684,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 12317,
+                "description": "Brake Fluid Service Light",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "taxonomy": {
+              "action": "R&R",
+              "commonName": "",
+              "groupID": 12,
+              "groupName": "Air Distribution",
+              "literalName": "Cabin Air Filter R&R",
+              "subGroupID": 34,
+              "subGroupName": "Air Filter",
+              "systemID": 4,
+              "systemName": "HVAC",
+              "taxonomyID": 11230
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1544,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Brake Fluid Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 24,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1871,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23326515,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 12317,
+                "description": "Brake Fluid Service Light",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "taxonomy": {
+              "action": "Drain, Refill & Bleed",
+              "commonName": "",
+              "groupID": 24,
+              "groupName": "Hydraulic System",
+              "literalName": "Brake Hydraulic System Drain, Refill & Bleed",
+              "subGroupID": 1,
+              "subGroupName": "@ALL",
+              "systemID": 2,
+              "systemName": "Brakes",
+              "taxonomyID": 11867
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          }
+        ]
+      },
+      {
+        "name": "Engine Oil Service Light",
+        "applications": [
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1668,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Engine Oil Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1631,
+                    "text": "Change engine air filter at every 2nd oil change."
+                  },
+                  {
+                    "noteId": 4470,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 22966332,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 12316,
+                "description": "Engine Oil Service Light",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "taxonomy": {
+              "action": "R&R",
+              "commonName": "",
+              "groupID": 20,
+              "groupName": "Engine",
+              "literalName": "Engine Air Filter Element R&R",
+              "subGroupID": 35,
+              "subGroupName": "Air Intake System",
+              "systemID": 7,
+              "systemName": "Powertrain",
+              "taxonomyID": 11207
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1668,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Engine Oil Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1871,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23194295,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 12316,
+                "description": "Engine Oil Service Light",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "taxonomy": {
+              "action": "R&R",
+              "commonName": "",
+              "groupID": 20,
+              "groupName": "Engine",
+              "literalName": "Engine Oil Filter R&R",
+              "subGroupID": 21,
+              "subGroupName": "Lubrication System",
+              "systemID": 7,
+              "systemName": "Powertrain",
+              "taxonomyID": 11747
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1668,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Engine Oil Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1871,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23245748,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 12316,
+                "description": "Engine Oil Service Light",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "taxonomy": {
+              "action": "Drain & Refill",
+              "commonName": "",
+              "groupID": 20,
+              "groupName": "Engine",
+              "literalName": "Engine Oil Drain & Refill",
+              "subGroupID": 21,
+              "subGroupName": "Lubrication System",
+              "systemID": 7,
+              "systemName": "Powertrain",
+              "taxonomyID": 11785
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1668,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Engine Oil Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1756,
+                    "text": "Check function and pre-burnish."
+                  },
+                  {
+                    "noteId": 4470,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23482037,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 12316,
+                "description": "Engine Oil Service Light",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "taxonomy": {
+              "action": "Inspect",
+              "commonName": "",
+              "groupID": 27,
+              "groupName": "Parking Brake",
+              "literalName": "Parking Brake System Inspect",
+              "subGroupID": 1,
+              "subGroupName": "@ALL",
+              "systemID": 2,
+              "systemName": "Brakes",
+              "taxonomyID": 11999
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 3842,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Engine Oil Service",
+                "intervalKilometer": 96600,
+                "intervalMile": 60000,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1775,
+                    "text": "Change at mileage interval or every 4th engine oil service."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23052385,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 12316,
+                "description": "Engine Oil Service Light",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "taxonomy": {
+              "action": "R&R",
+              "commonName": "",
+              "groupID": 20,
+              "groupName": "Engine",
+              "literalName": "Spark Plugs R&R",
+              "subGroupID": 67,
+              "subGroupName": "Ignition System",
+              "systemID": 7,
+              "systemName": "Powertrain",
+              "taxonomyID": 11324
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          }
+        ]
+      },
+      {
+        "name": "Front Brake Service",
+        "applications": [
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 2135,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Front Brake Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1760,
+                    "text": "Replace brake pads. Clean brake pad contact surfaces."
+                  },
+                  {
+                    "noteId": 4470,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23290556,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 24077,
+                "description": "Front Brake Service",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "position": {
+              "name": "Front",
+              "pcdbPositionId": 22,
+              "positionId": 18,
+              "type": "MOTOR_Position"
+            },
+            "taxonomy": {
+              "action": "Inspect",
+              "commonName": "",
+              "groupID": 5,
+              "groupName": "Friction Items",
+              "literalName": "Brake Linings Inspect",
+              "subGroupID": 144,
+              "subGroupName": "Brake Linings",
+              "systemID": 2,
+              "systemName": "Brakes",
+              "taxonomyID": 11820
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 2135,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Front Brake Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1616,
+                    "text": "Check thickness and condition."
+                  },
+                  {
+                    "noteId": 4470,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23292527,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 24077,
+                "description": "Front Brake Service",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "position": {
+              "name": "Front",
+              "pcdbPositionId": 22,
+              "positionId": 18,
+              "type": "MOTOR_Position"
+            },
+            "taxonomy": {
+              "action": "Inspect",
+              "commonName": "",
+              "groupID": 17,
+              "groupName": "Disc Brakes",
+              "literalName": "Brake Rotor Inspect",
+              "subGroupID": 45,
+              "subGroupName": "Brake Rotor",
+              "systemID": 2,
+              "systemName": "Brakes",
+              "taxonomyID": 11821
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          }
+        ]
+      },
+      {
+        "name": "Rear Brake Service Indicator",
+        "applications": [
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 2509,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Rear Brake Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1760,
+                    "text": "Replace brake pads. Clean brake pad contact surfaces."
+                  },
+                  {
+                    "noteId": 4470,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23290673,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 24079,
+                "description": "Rear Brake Service Indicator",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "position": {
+              "name": "Rear",
+              "pcdbPositionId": 30,
+              "positionId": 24,
+              "type": "MOTOR_Position"
+            },
+            "taxonomy": {
+              "action": "Inspect",
+              "commonName": "",
+              "groupID": 5,
+              "groupName": "Friction Items",
+              "literalName": "Brake Linings Inspect",
+              "subGroupID": 144,
+              "subGroupName": "Brake Linings",
+              "systemID": 2,
+              "systemName": "Brakes",
+              "taxonomyID": 11820
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 2509,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Rear Brake Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1616,
+                    "text": "Check thickness and condition."
+                  },
+                  {
+                    "noteId": 4470,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23292686,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 24079,
+                "description": "Rear Brake Service Indicator",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "position": {
+              "name": "Rear",
+              "pcdbPositionId": 30,
+              "positionId": 24,
+              "type": "MOTOR_Position"
+            },
+            "taxonomy": {
+              "action": "Inspect",
+              "commonName": "",
+              "groupID": 17,
+              "groupName": "Disc Brakes",
+              "literalName": "Brake Rotor Inspect",
+              "subGroupID": 45,
+              "subGroupName": "Brake Rotor",
+              "systemID": 2,
+              "systemName": "Brakes",
+              "taxonomyID": 11821
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 2509,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Rear Brake Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1761,
+                    "text": "Check condition, lining thickness, and function."
+                  },
+                  {
+                    "noteId": 4470,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23482174,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 24079,
+                "description": "Rear Brake Service Indicator",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "position": {
+              "name": "Rear",
+              "pcdbPositionId": 30,
+              "positionId": 24,
+              "type": "MOTOR_Position"
+            },
+            "taxonomy": {
+              "action": "Inspect",
+              "commonName": "",
+              "groupID": 27,
+              "groupName": "Parking Brake",
+              "literalName": "Parking Brake System Inspect",
+              "subGroupID": 1,
+              "subGroupName": "@ALL",
+              "systemID": 2,
+              "systemName": "Brakes",
+              "taxonomyID": 11999
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          }
+        ]
+      },
+      {
+        "name": "Vehicle Check Service Indicator",
+        "applications": [
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1670,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Vehicle Check Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1871,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23060930,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 24080,
+                "description": "Vehicle Check Service Indicator",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "taxonomy": {
+              "action": "Reset",
+              "commonName": "",
+              "groupID": 32,
+              "groupName": "Warning Systems",
+              "literalName": "Tire Pressure Monitoring System Reset",
+              "subGroupID": 86,
+              "subGroupName": "Tire Pressure Monitor",
+              "systemID": 3,
+              "systemName": "Electrical",
+              "taxonomyID": 11351
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1670,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Vehicle Check Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1871,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23144039,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 24080,
+                "description": "Vehicle Check Service Indicator",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "taxonomy": {
+              "action": "Inspect",
+              "commonName": "",
+              "groupID": 20,
+              "groupName": "Engine",
+              "literalName": "Cooling System Fluid Level Inspect",
+              "subGroupID": 56,
+              "subGroupName": "Cooling System",
+              "systemID": 7,
+              "systemName": "Powertrain",
+              "taxonomyID": 11738
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1670,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Vehicle Check Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1765,
+                    "text": "Check tread depth, wear pattern, outer condition, and inflation pressure. Correct pressure if necessary."
+                  },
+                  {
+                    "noteId": 4470,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23251218,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 24080,
+                "description": "Vehicle Check Service Indicator",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "taxonomy": {
+              "action": "Inspect",
+              "commonName": "",
+              "groupID": 9,
+              "groupName": "Tire & Wheel",
+              "literalName": "Tire & Wheel Assembly Inspect",
+              "subGroupID": 141,
+              "subGroupName": "Tire & Wheel Assembly",
+              "systemID": 6,
+              "systemName": "Suspension",
+              "taxonomyID": 11787
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1670,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Vehicle Check Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1767,
+                    "text": "Visually inspect all SRS airbag units for torn covers, obvious damage, or attachment of stickers."
+                  },
+                  {
+                    "noteId": 4470,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23257168,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 24080,
+                "description": "Vehicle Check Service Indicator",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "taxonomy": {
+              "action": "Inspect",
+              "commonName": "",
+              "groupID": 7,
+              "groupName": "Passenger Restraint System",
+              "literalName": "Air Bag System Inspect",
+              "subGroupID": 2,
+              "subGroupName": "Air Bag System",
+              "systemID": 1,
+              "systemName": "Body & Frame",
+              "taxonomyID": 11796
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1670,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Vehicle Check Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1766,
+                    "text": "Check state of charge(magic eye), charge if required."
+                  },
+                  {
+                    "noteId": 4470,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23266664,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 24080,
+                "description": "Vehicle Check Service Indicator",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "taxonomy": {
+              "action": "Inspect",
+              "commonName": "",
+              "groupID": 29,
+              "groupName": "Power Distribution",
+              "literalName": "Battery Inspect",
+              "subGroupID": 3,
+              "subGroupName": "Battery & Cables",
+              "systemID": 3,
+              "systemName": "Electrical",
+              "taxonomyID": 11801
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1670,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Vehicle Check Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1771,
+                    "text": "Check for leaks, damage, and correct positioning."
+                  },
+                  {
+                    "noteId": 4470,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23273970,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 24080,
+                "description": "Vehicle Check Service Indicator",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "taxonomy": {
+              "action": "Inspect",
+              "commonName": "",
+              "groupID": 24,
+              "groupName": "Hydraulic System",
+              "literalName": "Brake Line Inspect",
+              "subGroupID": 135,
+              "subGroupName": "Brake Line",
+              "systemID": 2,
+              "systemName": "Brakes",
+              "taxonomyID": 11805
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1670,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Vehicle Check Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1871,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23279070,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 24080,
+                "description": "Vehicle Check Service Indicator",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "taxonomy": {
+              "action": "Inspect",
+              "commonName": "",
+              "groupID": 7,
+              "groupName": "Passenger Restraint System",
+              "literalName": "Seat Belt System Inspect",
+              "subGroupID": 142,
+              "subGroupName": "Seat Belt System",
+              "systemID": 1,
+              "systemName": "Body & Frame",
+              "taxonomyID": 11810
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1670,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Vehicle Check Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1763,
+                    "text": "Check turn signals, back up lights, and license plate lights. Includes interior lighting, map, reading, glovebox, and luggage area lights."
+                  },
+                  {
+                    "noteId": 4470,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23446669,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 24080,
+                "description": "Vehicle Check Service Indicator",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "taxonomy": {
+              "action": "Inspect",
+              "commonName": "",
+              "groupID": 6,
+              "groupName": "Exterior Lighting",
+              "literalName": "Exterior Lighting Inspect",
+              "subGroupID": 1,
+              "subGroupName": "@ALL",
+              "systemID": 3,
+              "systemName": "Electrical",
+              "taxonomyID": 11966
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1670,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Vehicle Check Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1871,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23503207,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 24080,
+                "description": "Vehicle Check Service Indicator",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "taxonomy": {
+              "action": "Inspect",
+              "commonName": "",
+              "groupID": 24,
+              "groupName": "Hydraulic System",
+              "literalName": "Power Steering Fluid Level Inspect",
+              "subGroupID": 192,
+              "subGroupName": "Power Steering System",
+              "systemID": 5,
+              "systemName": "Steering",
+              "taxonomyID": 12012
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1670,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Vehicle Check Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1773,
+                    "text": "Check for clearance, leaks, damage, and wear."
+                  },
+                  {
+                    "noteId": 4470,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23525714,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 24080,
+                "description": "Vehicle Check Service Indicator",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "taxonomy": {
+              "action": "Inspect",
+              "commonName": "",
+              "groupID": 1,
+              "groupName": "@ALL",
+              "literalName": "Steering System Inspect",
+              "subGroupID": 1,
+              "subGroupName": "@ALL",
+              "systemID": 5,
+              "systemName": "Steering",
+              "taxonomyID": 12026
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1670,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Vehicle Check Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1772,
+                    "text": "Check all visible parts such as the transmission, rear axle, fuel lines, and exhaust system. Check for damage, leaks, and corrosion."
+                  },
+                  {
+                    "noteId": 4470,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23552768,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 24080,
+                "description": "Vehicle Check Service Indicator",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "taxonomy": {
+              "action": "Inspect",
+              "commonName": "",
+              "groupID": 48,
+              "groupName": "Underbody",
+              "literalName": "Underbody Inspect",
+              "subGroupID": 1,
+              "subGroupName": "@ALL",
+              "systemID": 1,
+              "systemName": "Body & Frame",
+              "taxonomyID": 12069
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1670,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Vehicle Check Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1871,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23557735,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 24080,
+                "description": "Vehicle Check Service Indicator",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "taxonomy": {
+              "action": "Inspect",
+              "commonName": "",
+              "groupID": 11,
+              "groupName": "Wiper & Washer System",
+              "literalName": "Windshield Wiper Blade Inspect",
+              "subGroupID": 124,
+              "subGroupName": "Wiper Linkage",
+              "systemID": 3,
+              "systemName": "Electrical",
+              "taxonomyID": 12072
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1670,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Vehicle Check Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1770,
+                    "text": "Also check the intensive cleaning system. Check protection level and fluid level. Top up if necessary."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23560551,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 24080,
+                "description": "Vehicle Check Service Indicator",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "taxonomy": {
+              "action": "Inspect",
+              "commonName": "",
+              "groupID": 11,
+              "groupName": "Wiper & Washer System",
+              "literalName": "Windshield Washer Fluid Level Inspect",
+              "subGroupID": 31,
+              "subGroupName": "Washer Reservoir",
+              "systemID": 3,
+              "systemName": "Electrical",
+              "taxonomyID": 12073
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1670,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Vehicle Check Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1764,
+                    "text": "Check washer jet positions."
+                  },
+                  {
+                    "noteId": 4470,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23571875,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 24080,
+                "description": "Vehicle Check Service Indicator",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "taxonomy": {
+              "action": "Inspect",
+              "commonName": "",
+              "groupID": 11,
+              "groupName": "Wiper & Washer System",
+              "literalName": "Windshield Washer System Inspect",
+              "subGroupID": 157,
+              "subGroupName": "Washer System",
+              "systemID": 3,
+              "systemName": "Electrical",
+              "taxonomyID": 12079
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1670,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Vehicle Check Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1774,
+                    "text": "During road test, do a final check of: brakes, steering, shock absorbers(visual), and the transmission."
+                  },
+                  {
+                    "noteId": 4470,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23586560,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 24080,
+                "description": "Vehicle Check Service Indicator",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "taxonomy": {
+              "action": "Road Test",
+              "commonName": "",
+              "groupID": 1,
+              "groupName": "@ALL",
+              "literalName": "Vehicle Road Test",
+              "subGroupID": 1,
+              "subGroupName": "@ALL",
+              "systemID": 8,
+              "systemName": "Vehicle",
+              "taxonomyID": 12127
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1670,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Vehicle Check Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1762,
+                    "text": "Also check horn, headlight flashers and hazard warning flashers. Check all instrument and control lighting. Check heater/air conditioning blower operation."
+                  },
+                  {
+                    "noteId": 4368,
+                    "text": "Also check rear view mirrors."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 23589080,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 24080,
+                "description": "Vehicle Check Service Indicator",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "taxonomy": {
+              "action": "Inspect",
+              "commonName": "",
+              "groupID": 53,
+              "groupName": "Interior Lighting",
+              "literalName": "Instrument Cluster Warning Indicator Inspect",
+              "subGroupID": 170,
+              "subGroupName": "Instrument Cluster",
+              "systemID": 3,
+              "systemName": "Electrical",
+              "taxonomyID": 12138
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          },
+          {
+            "maintenanceSchedules": [
+              {
+                "maintenanceScheduleId": 1670,
+                "documents": [],
+                "frequencyCode": "I",
+                "frequencyDescription": "Indicator Light Or Interval",
+                "indicator": "Vehicle Check Service",
+                "intervalKilometer": 0,
+                "intervalMile": 0,
+                "intervalMonth": 0,
+                "intervalOperatingHours": 0,
+                "isActive": true,
+                "notes": [
+                  {
+                    "noteId": 1768,
+                    "text": "Open convertible top or retractable hard top. Activate the automatic rollover protection system  via OBD diagnostic link."
+                  },
+                  {
+                    "noteId": 4470,
+                    "text": "Verify Check Control messages. Check indicator and warning lights. Reset CBS display. Inspect tires, adjust tire pressures and reset the Tire Pressure Monitor."
+                  }
+                ],
+                "severeServiceDescription": "No"
+              }
+            ],
+            "applicationId": 80412321,
+            "category": {
+              "article": "Scheduled Maintenance Times",
+              "id": 23,
+              "product": "Estimating",
+              "productType": "Estimating"
+            },
+            "qualifiers": [
+              {
+                "qualifierId": 24080,
+                "description": "Vehicle Check Service Indicator",
+                "sequence": 0,
+                "type": "Service Interval"
+              }
+            ],
+            "taxonomy": {
+              "action": "Inspect",
+              "commonName": "",
+              "groupID": 7,
+              "groupName": "Passenger Restraint System",
+              "literalName": "Rollover Protection System Inspect",
+              "subGroupID": 155,
+              "subGroupName": "Rollover Protection System",
+              "systemID": 1,
+              "systemName": "Body & Frame",
+              "taxonomyID": 12049
+            },
+            "contentSilos": [
+              {
+                "id": 33,
+                "name": "Preventative Maintenance Schedules Service Time",
+                "sourceSilos": [
+                  {
+                    "id": 2,
+                    "name": "PMSST"
+                  }
+                ]
+              }
+            ],
+            "attributeMappings": [],
+            "isActive": true
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,447 @@
+{
+  "contentSource": "MOTOR",
+  "models": [
+    {
+      "model": "C300 4Matic Luxury",
+      "id": "61212",
+      "engines": [
+        {
+          "id": "61212:3509",
+          "name": "3.0L V6 (272.948) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "C300 4Matic Sport",
+      "id": "61213",
+      "engines": [
+        {
+          "id": "61213:3509",
+          "name": "3.0L V6 (272.948) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "C300 Luxury",
+      "id": "61214",
+      "engines": [
+        {
+          "id": "61214:3443",
+          "name": "3.0L V6 (272.947) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "C300 Sport",
+      "id": "61215",
+      "engines": [
+        {
+          "id": "61215:6659",
+          "name": "3.0L V6 (272.947) FLEX Electronic"
+        },
+        {
+          "id": "61215:3443",
+          "name": "3.0L V6 (272.947) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "C350 Sport",
+      "id": "61216",
+      "engines": [
+        {
+          "id": "61216:3442",
+          "name": "3.5L V6 (272.961) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "C63 AMG Base",
+      "id": "61217",
+      "engines": [
+        {
+          "id": "61217:3527",
+          "name": "6.3L V8 (156.985) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "CL550 4Matic",
+      "id": "61218",
+      "engines": [
+        {
+          "id": "61218:3444",
+          "name": "5.5L V8 (273.968) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "CL600 Base",
+      "id": "61219",
+      "engines": [
+        {
+          "id": "61219:3047",
+          "name": "5.5L V12 (275.953) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "CL63 AMG Base",
+      "id": "61220",
+      "engines": [
+        {
+          "id": "61220:3418",
+          "name": "6.3L V8 (156.984) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "CL65 AMG Base",
+      "id": "61221",
+      "engines": [
+        {
+          "id": "61221:3064",
+          "name": "6.0L V12 (275.982) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "CLS550 Base",
+      "id": "67023",
+      "engines": [
+        {
+          "id": "67023:3161",
+          "name": "5.5L V8 (273.960) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "CLS63 AMG Base",
+      "id": "67024",
+      "engines": [
+        {
+          "id": "67024:3062",
+          "name": "6.3L V8 (156.983) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "E350 4Matic",
+      "id": "54690",
+      "engines": [
+        {
+          "id": "54690:3627",
+          "name": "3.5L V6 (272.977) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "E350 Base",
+      "id": "54691",
+      "engines": [
+        {
+          "id": "54691:3628",
+          "name": "3.5L V6 (272.980) GAS Electronic"
+        },
+        {
+          "id": "54691:3672",
+          "name": "3.5L V6 (272.988) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "E550 4Matic",
+      "id": "67025",
+      "engines": [
+        {
+          "id": "67025:3675",
+          "name": "5.5L V8 (273.970) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "E550 Base",
+      "id": "54692",
+      "engines": [
+        {
+          "id": "54692:3630",
+          "name": "5.5L V8 (273.966) GAS Electronic"
+        },
+        {
+          "id": "54692:3631",
+          "name": "5.5L V8 (273.971) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "E63 AMG Base",
+      "id": "54693",
+      "engines": [
+        {
+          "id": "54693:3527",
+          "name": "6.3L V8 (156.985) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "G55 AMG Base",
+      "id": "67027",
+      "engines": [
+        {
+          "id": "67027:3071",
+          "name": "5.5L V8 (113.993) Supercharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "G550 Base",
+      "id": "67026",
+      "engines": [
+        {
+          "id": "67026:3492",
+          "name": "5.5L V8 (273.963) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "GL350 Bluetec 4Matic",
+      "id": "61222",
+      "engines": [
+        {
+          "id": "61222:3609",
+          "name": "3.0L V6 (642.820) Turbocharged DIESEL Electronic"
+        }
+      ]
+    },
+    {
+      "model": "GL450 Base",
+      "id": "61223",
+      "engines": [
+        {
+          "id": "61223:3083",
+          "name": "4.7L V8 (273.923) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "GL550 Base",
+      "id": "61224",
+      "engines": [
+        {
+          "id": "61224:3492",
+          "name": "5.5L V8 (273.963) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "GLK350 4Matic",
+      "id": "54537",
+      "engines": [
+        {
+          "id": "54537:6517",
+          "name": "3.5L V6 (272.971) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "GLK350 Base",
+      "id": "54536",
+      "engines": [
+        {
+          "id": "54536:3674",
+          "name": "3.5L V6 (272.991) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "ML350 4Matic",
+      "id": "83460",
+      "engines": [
+        {
+          "id": "83460:3162",
+          "name": "3.5L V6 (272.967) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "ML350 Base",
+      "id": "61226",
+      "engines": [
+        {
+          "id": "61226:3162",
+          "name": "3.5L V6 (272.967) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "ML350 Bluetec 4Matic",
+      "id": "61225",
+      "engines": [
+        {
+          "id": "61225:3609",
+          "name": "3.0L V6 (642.820) Turbocharged DIESEL Electronic"
+        }
+      ]
+    },
+    {
+      "model": "ML450 Hybrid 4Matic",
+      "id": "66951",
+      "engines": [
+        {
+          "id": "66951:3668",
+          "name": "3.5L V6 (272.973) FULL HYBRID EV-GAS (FHEV) Electronic"
+        }
+      ]
+    },
+    {
+      "model": "ML550 Base",
+      "id": "61227",
+      "engines": [
+        {
+          "id": "61227:3492",
+          "name": "5.5L V8 (273.963) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "ML63 AMG Base",
+      "id": "61228",
+      "engines": [
+        {
+          "id": "61228:3063",
+          "name": "6.3L V8 (156.980) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "R350 4Matic",
+      "id": "61229",
+      "engines": [
+        {
+          "id": "61229:3162",
+          "name": "3.5L V6 (272.967) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "R350 Bluetec 4Matic",
+      "id": "61233",
+      "engines": [
+        {
+          "id": "61233:3624",
+          "name": "3.0L V6 (642.870) Turbocharged DIESEL Electronic"
+        }
+      ]
+    },
+    {
+      "model": "S400 Hybrid",
+      "id": "54699",
+      "engines": [
+        {
+          "id": "54699:3629",
+          "name": "3.5L V6 (272.974) FULL HYBRID EV-GAS (FHEV) Electronic"
+        }
+      ]
+    },
+    {
+      "model": "S550 4Matic",
+      "id": "54694",
+      "engines": [
+        {
+          "id": "54694:3444",
+          "name": "5.5L V8 (273.968) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "S550 Base",
+      "id": "54695",
+      "engines": [
+        {
+          "id": "54695:3046",
+          "name": "5.5L V8 (273.961) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "S600 Base",
+      "id": "54696",
+      "engines": [
+        {
+          "id": "54696:3047",
+          "name": "5.5L V12 (275.953) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "S63 AMG Base",
+      "id": "54697",
+      "engines": [
+        {
+          "id": "54697:3418",
+          "name": "6.3L V8 (156.984) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "S65 AMG Base",
+      "id": "54698",
+      "engines": [
+        {
+          "id": "54698:3064",
+          "name": "6.0L V12 (275.982) Turbocharged GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "SLK300 Base",
+      "id": "61230",
+      "engines": [
+        {
+          "id": "61230:2886",
+          "name": "3.0L V6 (272.942) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "SLK350 Base",
+      "id": "61231",
+      "engines": [
+        {
+          "id": "61231:3529",
+          "name": "3.5L V6 (272.969) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "SLK55 AMG Base",
+      "id": "61232",
+      "engines": [
+        {
+          "id": "61232:2891",
+          "name": "5.5L V8 (113.989) GAS Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Sprinter 2500 Base",
+      "id": "68525",
+      "engines": [
+        {
+          "id": "68525:4070",
+          "name": "3.0L V6 (642.898) Turbocharged DIESEL Electronic"
+        }
+      ]
+    },
+    {
+      "model": "Sprinter 3500 Base",
+      "id": "68526",
+      "engines": [
+        {
+          "id": "68526:4070",
+          "name": "3.0L V6 (642.898) Turbocharged DIESEL Electronic"
+        }
+      ]
+    }
+  ]
+}

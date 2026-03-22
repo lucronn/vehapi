@@ -1,0 +1,61 @@
+{
+  "contentSource": "Nissan",
+  "models": [
+    {
+      "model": "GT-R",
+      "id": "0E-1R35"
+    },
+    {
+      "model": "370Z",
+      "id": "0E-1Z34"
+    },
+    {
+      "model": "MURANO",
+      "id": "0E-1Z51"
+    },
+    {
+      "model": "Maxima",
+      "id": "AM-0A35-U0-0844-10"
+    },
+    {
+      "model": "Titan",
+      "id": "AM-0A60-U0-822P-10"
+    },
+    {
+      "model": "Sentra",
+      "id": "AM-0B16-U0-0806-10"
+    },
+    {
+      "model": "Frontier",
+      "id": "AM-0D40-U0-825B-10"
+    },
+    {
+      "model": "Altima",
+      "id": "AM-0L32-U0-819A-10"
+    },
+    {
+      "model": "Xterra",
+      "id": "AM-0N50-U0-825A-10"
+    },
+    {
+      "model": "Altima_HEV",
+      "id": "AM-HL32-U0-819A-10"
+    },
+    {
+      "model": "Pathfinder",
+      "id": "AM-R51-U0-825A-10"
+    },
+    {
+      "model": "Armada",
+      "id": "AM-TA60-U0-822W-10"
+    },
+    {
+      "model": "Rogue",
+      "id": "LM-0S35-U0-829A-10"
+    },
+    {
+      "model": "Cube",
+      "id": "LM-0Z12-U0-0843-10"
+    }
+  ]
+}

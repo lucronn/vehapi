@@ -1,12 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
+
 <head>
   <meta charset="utf-8" />
-  <title>Torque</title>
-  <base href="./" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TORQUE.AI — Vehicle Intelligence</title>
+  <base href="/" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+
+  <script>
+    window.process = {
+      env: {
+        DEBUG: undefined,
+        NODE_ENV: 'production'
+      },
+      version: ''
+    };
+  </script>
   <script type="importmap">
 {
   "imports": {
@@ -26,21 +41,32 @@
     "@angular/common/http": "https://next.esm.sh/@angular/common@^21.0.1/http?conditions=es2015",
     "@angular/router": "https://next.esm.sh/@angular/router@^21.0.1?external=rxjs",
     "@angular/forms": "https://next.esm.sh/@angular/forms@^21.0.1?external=rxjs",
-    "@google/genai": "https://aistudiocdn.com/@google/genai?conditions=es2015",
-    "@angular/common/": "https://esm.sh/@angular/common@^21.1.5/",
-    "@angular/core/": "https://esm.sh/@angular/core@^21.1.5/"
+    "@google/genai": "https://aistudiocdn.com/@google/genai?conditions=es2015"
   }
 }
 </script>
-  <style>
-    body {
-      background-color: #0a0a0a;
-      color: #e5e7eb;
-    }
-  </style>
-<link rel="stylesheet" href="/index.css">
+  <script>
+    // Theme init — prevent FOUC
+    (function () {
+      var t = localStorage.getItem('torque-theme');
+      if (!t) t = 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+      if (t === 'dark') {
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+      } else {
+        document.documentElement.classList.add('light');
+        document.documentElement.classList.remove('dark');
+      }
+    })();
+  </script>
 </head>
-<body class="antialiased">
+
+<body class="antialiased bg-[#0a0a0f] text-white min-h-screen" style="background-color: #0a0a0f;">
+  <!-- Eruda: Mobile DevTools Console (loads only on touch devices) -->
+  <script src="https://cdn.jsdelivr.net/npm/eruda@3.0.1/eruda.min.js"></script>
+  <script>eruda.init();</script>
   <app-root></app-root>
 </body>
+
 </html>

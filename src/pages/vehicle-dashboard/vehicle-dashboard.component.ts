@@ -1,188 +1,451 @@
-// FIX: import `signal` from `@angular/core` to create a new signal.
-import { ChangeDetectionStrategy, Component, computed, inject, signal, Signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { map, switchMap, of, debounceTime, distinctUntilChanged, forkJoin, Subject, tap } from 'rxjs';
+import { map, switchMap, debounceTime, distinctUntilChanged, catchError } from 'rxjs/operators';
+import { Subject, of } from 'rxjs';
 
+// Models
+import { Article } from '../../models/motor.models';
+import { bucketToModuleType } from '../../utils/module-access.util';
+
+// Services
+import { VehicleDataService } from '../../services/vehicle-data.service';
 import { MotorApiService } from '../../services/motor-api.service';
+import { SearchResultsState } from '../../services/search-results.state';
+import { DataSyncService } from '../../services/data-sync.service';
 import { VehiclePersistenceService } from '../../services/vehicle-persistence.service';
-import { Article, ArticlesData, FilterTab } from '../../models/motor.models';
+import { effect } from '@angular/core';
 
-interface VehicleData {
-  contentSource: string;
-  vehicleId: string;
-  vehicleName: string;
-  articlesData: ArticlesData | null;
-}
+// Components
+import { DashboardSidebarComponent } from './components/layout/dashboard-sidebar/dashboard-sidebar.component';
+import { DashboardSearchComponent } from './components/layout/dashboard-search/dashboard-search.component';
+import { SpecsFluidsSectionComponent } from './components/sections/specs-fluids-section/specs-fluids-section.component';
+import { DtcSectionComponent } from './components/sections/dtc-section/dtc-section.component';
+import { TsbSectionComponent } from './components/sections/tsb-section/tsb-section.component';
+import { ProceduresSectionComponent } from './components/sections/procedures-section/procedures-section.component';
+import { DiagramsSectionComponent } from './components/sections/diagrams-section/diagrams-section.component';
+import { ComponentLocationsSectionComponent } from './components/sections/component-locations-section/component-locations-section.component';
+import { MaintenanceSectionComponent } from './components/sections/maintenance-section/maintenance-section.component';
+import { PartsSectionComponent } from './components/sections/parts-section/parts-section.component';
+import { CommonIssuesSectionComponent } from './components/sections/common-issues-section/common-issues-section.component';
+import { SyncProgressOverlayComponent } from './components/layout/sync-progress-overlay/sync-progress-overlay.component';
+import { CategoryTreeComponent } from '../../components/category-tree/category-tree.component';
+import { L2SearchPanelComponent } from './components/layout/l2-search-panel/l2-search-panel.component';
+import { environment } from '../../environments/environment';
 
+// Icons
+import { LucideAngularModule, Menu, X, House, TriangleAlert, FileText, Wrench, Package, Lightbulb, CreditCard } from 'lucide-angular';
+
+// Local Components
+import { LogoComponent } from '../../components/logo/logo.component';
+import { OrientationSelectorModalComponent, OrientationOption } from '../../components/orientation-selector-modal/orientation-selector-modal.component';
+import { ThemeToggleComponent } from '../../components/theme-toggle/theme-toggle.component';
+import { ArticleViewerComponent } from '../article-viewer/article-viewer.component';
+import { WindowManagerService } from '../../services/window-manager.service';
+import { AuthModalComponent } from '../../components/auth-modal/auth-modal.component';
+
+export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'component-locations' | 'procedures' | 'parts' | 'specs' | 'maintenance' | 'browse-all' | 'common-issues';
+
+/**
+ * Main vehicle dashboard orchestrator component
+ * Delegates data display to modular section components
+ */
 @Component({
   selector: 'app-vehicle-dashboard',
-  template: `
-<div class="min-h-screen bg-gray-900 text-gray-200 p-4 sm:p-6 lg:p-8">
-  <div class="max-w-7xl mx-auto">
-    
-    <header class="mb-8">
-       <a routerLink="/" class="text-cyan-400 hover:text-cyan-300 mb-4 inline-block">&larr; Back to Search</a>
-       @if (!isLoading()) {
-        <h1 class="text-3xl md:text-4xl font-bold tracking-tight text-white">{{ vehicleName() }}</h1>
-       } @else {
-        <div class="h-10 bg-gray-700 rounded-md animate-pulse w-3/4"></div>
-       }
-    </header>
-    
-    <div class="sticky top-0 z-20 bg-gray-900/80 backdrop-blur-md py-4 mb-6">
-      <input 
-        type="text" 
-        placeholder="Search articles (e.g., 'brake caliper', 'P0300')" 
-        (input)="onSearch($event)"
-        class="w-full p-4 bg-gray-800 border-2 border-gray-700 rounded-lg text-lg focus:ring-cyan-500 focus:border-cyan-500 transition-colors"
-      />
-    </div>
-
-    <!-- Content -->
-    @if (!isLoading()) {
-      <div class="mb-6">
-        <div class="flex flex-wrap gap-2">
-          @for (tab of filterTabs(); track tab.name) {
-            <button (click)="setFilter(tab.name)" [class]="{'bg-cyan-500 text-black': activeFilter() === tab.name, 'bg-gray-700 hover:bg-gray-600': activeFilter() !== tab.name}" class="px-4 py-2 text-sm font-semibold rounded-full transition-colors">
-              {{ tab.name }} ({{ tab.count }})
-            </button>
-          }
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        @for (article of filteredArticles(); track article.id) {
-          <a [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', article.id]" class="bg-gray-800 border border-gray-700 rounded-xl hover:border-cyan-500 hover:scale-105 transform transition-all duration-300 group flex flex-col">
-            
-            @if(article.thumbnailHref) {
-              <div class="w-full h-40 bg-gray-700 overflow-hidden rounded-t-xl">
-                <img [src]="getGraphicUrl(article.thumbnailHref)" alt="Diagram thumbnail" class="w-full h-full object-cover group-hover:opacity-80 transition-all duration-300 group-hover:scale-110"/>
-              </div>
-            }
-
-            <div class="p-4 flex flex-col flex-grow">
-              <span class="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-2">{{ article.bucket }}</span>
-              <h3 class="font-bold text-lg text-white mb-2 flex-grow">{{ article.title || article.code }}</h3>
-              @if(article.description) { <p class="text-sm text-gray-400">{{ article.description }}</p> }
-              @if(article.subtitle) { <p class="text-sm text-gray-400 mt-1 italic">{{ article.subtitle }}</p> }
-              @if(article.bulletinNumber) { <p class="text-sm text-gray-500 mt-2">TSB: {{ article.bulletinNumber }}</p> }
-            </div>
-          </a>
-        }
-      </div>
-       @if (filteredArticles().length === 0) {
-        <div class="text-center py-16 text-gray-500"><p class="text-2xl">No results found.</p><p>Try adjusting your search or filter.</p></div>
-      }
-    } @else {
-      <!-- Loading Skeleton -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-pulse">
-        @for (_ of [1,2,3,4,5,6,7,8]; track _) { <div class="bg-gray-800 rounded-xl h-64"></div> }
-      </div>
-    }
-  </div>
-</div>
-  `,
+  templateUrl: './vehicle-dashboard.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterModule],
+  imports: [
+    CommonModule,
+    RouterModule,
+    LucideAngularModule,
+    DashboardSidebarComponent,
+    DashboardSearchComponent,
+    SpecsFluidsSectionComponent,
+    DtcSectionComponent,
+    TsbSectionComponent,
+    ProceduresSectionComponent,
+    DiagramsSectionComponent,
+    ComponentLocationsSectionComponent,
+    MaintenanceSectionComponent,
+    PartsSectionComponent,
+    LogoComponent,
+    OrientationSelectorModalComponent,
+    ThemeToggleComponent,
+    AuthModalComponent,
+    SyncProgressOverlayComponent,
+    CommonIssuesSectionComponent,
+    CategoryTreeComponent,
+    L2SearchPanelComponent
+  ],
 })
 export class VehicleDashboardComponent {
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private motorApi = inject(MotorApiService);
+  private vehicleData = inject(VehicleDataService);
+  public searchResultsState = inject(SearchResultsState);
+  public dataSync = inject(DataSyncService);
   private persistence = inject(VehiclePersistenceService);
 
-  private searchTerm$: Subject<string>;
-  readonly searchTerm: Signal<string>;
-  private vehicleData: Signal<VehicleData | null>;
-  
-  // --- Derived Signals ---
-  readonly contentSource: Signal<string>;
-  readonly vehicleId: Signal<string>;
-  readonly vehicleName: Signal<string>;
-  readonly allArticles: Signal<Article[]>;
-  readonly filterTabs: Signal<FilterTab[]>;
-  readonly isLoading: Signal<boolean>;
+  readonly icons = { Menu, X, House, TriangleAlert, FileText, Wrench, Package, Lightbulb, CreditCard };
 
-  // --- UI State Signals ---
-  readonly activeFilter = signal('All');
-  readonly filteredArticles: Signal<Article[]>;
+  /** L2 semantic search panel (feature-flagged). */
+  readonly l2SearchEnabled = environment.features?.l2Search === true;
 
-  constructor() {
-    this.searchTerm$ = new Subject<string>();
-    this.searchTerm = toSignal(this.searchTerm$.pipe(debounceTime(300), distinctUntilChanged()), { initialValue: '' });
+  // Route parameters
+  params = toSignal(this.route.paramMap);
+  contentSource = computed(() => this.params()?.get('contentSource') ?? '');
+  vehicleId = computed(() => this.params()?.get('vehicleId') ?? '');
+  motorVehicleId = computed(() => {
+    const vid = this.vehicleId();
+    const cs = this.contentSource()?.toUpperCase();
 
-    this.vehicleData = toSignal(
-      this.route.paramMap.pipe(
-        switchMap(params => {
-          const contentSource = params.get('contentSource');
-          const vehicleId = params.get('vehicleId');
-          if (contentSource && vehicleId) {
-            return forkJoin({
-              name: this.motorApi.getVehicleName(contentSource, vehicleId),
-              articles: this.motorApi.searchArticles(contentSource, vehicleId),
-            }).pipe(
-              map(({ name, articles }) => ({
-                contentSource,
-                vehicleId,
-                vehicleName: name.body,
-                articlesData: articles.body,
-              } as VehicleData)),
-              tap(data => {
-                if (data) {
-                  this.persistence.saveVehicle({ 
-                    name: data.vehicleName, 
-                    contentSource: data.contentSource, 
-                    vehicleId: data.vehicleId 
-                  });
-                }
-              })
-            );
-          }
-          return of(null);
-        })
-      ), { initialValue: null }
-    );
-  
-    this.contentSource = computed(() => this.vehicleData()?.contentSource ?? '');
-    this.vehicleId = computed(() => this.vehicleData()?.vehicleId ?? '');
-    this.vehicleName = computed(() => this.vehicleData()?.vehicleName ?? '');
-    this.allArticles = computed(() => this.vehicleData()?.articlesData?.articleDetails ?? []);
-    this.filterTabs = computed(() => this.vehicleData()?.articlesData?.filterTabs ?? []);
-    this.isLoading = computed(() => this.vehicleData() === null);
+    // If content source is MOTOR, the vehicleId IS exactly what we need
+    // No splitting required as MOTOR often uses composite IDs like "61009:2913"
+    if (cs === 'MOTOR') {
+      return vid;
+    }
 
-    this.filteredArticles = computed(() => {
-      const articles = this.allArticles();
-      const filter = this.activeFilter();
-      const search = this.searchTerm().toLowerCase();
+    // Improved parsing for composite IDs from other sources (e.g., "Source:ID")
+    if (vid && vid.includes(':')) {
+      const parts = vid.split(':');
+      // Return everything after the first segment (handles multi-colon cases)
+      return parts.slice(1).join(':');
+    }
 
-      let categoryFiltered = articles;
-      if (filter !== 'All') {
-        categoryFiltered = articles.filter(a =>
-          a.parentBucket === filter || a.bucket.includes(filter) ||
-          (filter === 'Diagrams' && (a.bucket.includes('Wiring') || a.bucket.includes('Component Location'))) ||
-          (filter === 'Service Bulletins' && a.id.startsWith('TSB')) ||
-          (filter === 'Diagnostic Codes' && a.id.startsWith('DTC')) ||
-          (filter === 'Specs' && a.bucket.includes('Specification'))
+    return undefined;
+  });
+
+  // Vehicle info
+  private vehicleInfo$ = this.route.paramMap.pipe(
+    switchMap(params => {
+      const contentSource = params.get('contentSource');
+      const vehicleId = params.get('vehicleId');
+      if (contentSource && vehicleId) {
+        return this.motorApi.getVehicleName(contentSource, vehicleId).pipe(
+          map(res => res.body || '')
         );
       }
+      return of('');
+    })
+  );
 
-      if (!search) return categoryFiltered;
-      return categoryFiltered.filter(article =>
-        (article.title && article.title.toLowerCase().includes(search)) ||
-        (article.description && article.description.toLowerCase().includes(search)) ||
-        (article.code && article.code.toLowerCase().includes(search)) ||
-        (article.bucket && article.bucket.toLowerCase().includes(search))
-      );
+
+
+  vehicleName = toSignal(this.vehicleInfo$, { initialValue: '' });
+
+  // Section Availability
+  private sections$ = this.route.paramMap.pipe(
+    switchMap(params => {
+      const cs = params.get('contentSource');
+      const vid = params.get('vehicleId');
+
+      // Use the same consistent logic as the motorVehicleId computed signal
+      const mvid = cs?.toUpperCase() === 'MOTOR' ? vid : (vid && vid.includes(':') ? vid.split(':').slice(1).join(':') : undefined);
+
+      if (cs && vid) {
+        return this.vehicleData.getAvailableSections(cs, vid, mvid);
+      }
+      return of(null);
+    })
+  );
+  availableSections = toSignal(this.sections$, { initialValue: null });
+
+  // State for vehicle resolution (non-MOTOR -> MOTOR)
+  isResolvingVehicle = signal(false);
+
+  // Trigger Initial Data Load and Fallback Logic
+  constructor() {
+    // Data loading effect
+    effect(() => {
+      const cs = this.contentSource();
+      const vid = this.vehicleId();
+      const mvid = this.motorVehicleId();
+
+      if (cs && vid) {
+        // 1. Check Normalization Status (One-time slow load)
+        this.checkAndTriggerNormalization(cs, vid);
+
+        // 2. If it's a non-MOTOR source, try to resolve it to a MOTOR ID first
+        if (cs.toUpperCase() !== 'MOTOR') {
+          this.resolveVehicleMapping(cs, vid);
+        } else {
+          this.searchResultsState.search(cs, vid, '', mvid);
+        }
+      }
+    });
+
+    // Persist vehicle for "welcome back" on home page
+    effect(() => {
+      const name = this.vehicleName();
+      const cs = this.contentSource();
+      const vid = this.vehicleId();
+      if (name && cs && vid && name !== 'Unknown Vehicle') {
+        this.persistence.saveVehicle({ name, contentSource: cs, vehicleId: vid });
+      }
+    });
+
+    // Section availability fallback effect
+    effect(() => {
+      const avail = this.availableSections();
+      if (!avail) return;
+
+      const current = this.activeSection();
+      if (current === 'overview' || current === 'browse-all') return;
+
+      // Check if current section is still available
+      const mapping: Record<string, boolean> = {
+        'dtcs': avail.hasDtcs,
+        'tsbs': avail.hasTsbs,
+        'diagrams': avail.hasDiagrams,
+        'procedures': avail.hasProcedures,
+        'specs': avail.hasSpecs,
+        'parts': avail.hasParts,
+        'maintenance': avail.hasMaintenance,
+        'component-locations': avail.hasComponentLocations
+      };
+
+      if (mapping[current] === false) {
+        console.warn(`[Dashboard] Section "${current}" is unavailable. Reverting to overview.`);
+        this.activeSection.set('overview');
+      }
     });
   }
 
-  setFilter(filter: string): void { this.activeFilter.set(filter); }
-  
-  onSearch(event: Event): void { 
-    this.searchTerm$.next((event.target as HTMLInputElement).value); 
-  }
-  
-  getGraphicUrl(path: string | undefined): string { return path ? this.motorApi.getGraphicUrl(path) : 'https://picsum.photos/240/220'; }
+  // UI State
+  activeSection = signal<DashboardSection>('overview');
+  isMobileMenuOpen = signal(false);
+  showAuthModal = signal(false);
 
+  // Orientation Selection State
+  showOrientationModal = signal(false);
+  orientationOptions = signal<OrientationOption[]>([]);
+  pendingArticleId = signal<string | null>(null);
+  selectedBrowseFilter = signal<string | null>(null); // For browse-all filter pills
+
+  // Search state
+  searchTerm = signal('');
+  private searchTerm$ = new Subject<string>();
+
+  // Filtered articles for search
+  allArticles = signal<Article[]>([]);
+
+  private searchResults$ = this.searchTerm$.pipe(
+    debounceTime(300),
+    distinctUntilChanged(),
+    switchMap(term => {
+      if (!term || term.length < 2) {
+        // Reset to empty search to show full buckets
+        const cs = this.contentSource();
+        const vid = this.vehicleId();
+        // Only search if we are on MOTOR source (or if we decided to support others directly)
+        // But for now, we rely on the redirection logic for Ford
+        if (cs && vid && cs.toUpperCase() === 'MOTOR') {
+          this.searchResultsState.search(cs, vid, '', this.motorVehicleId());
+        }
+        return of([]);
+      }
+      const cs = this.contentSource();
+      const vid = this.vehicleId();
+      if (!cs || !vid) return of([]);
+
+      // Direct search without AI optimization
+      this.searchResultsState.search(cs, vid, term, this.motorVehicleId());
+      // Return observable purely for filteredArticles consumption if needed, 
+      // but we should arguably rely on searchResultsState.articleDetails()
+      return of([]);
+    })
+  );
+
+  searchResults = toSignal(this.searchResults$, { initialValue: [] });
+
+  filteredArticles = computed(() => {
+    const search = this.searchTerm().toLowerCase();
+    // Use State articles
+    const results = this.searchResultsState.articleDetails();
+
+    if (!search || search.length < 2) return [];
+    return results;
+  });
+
+  // Filtered tabs for browse-all section
+  filteredBrowseTabs = computed(() => {
+    const selectedFilter = this.selectedBrowseFilter();
+    const allTabs = this.searchResultsState.filterTabsAndTheirFullBuckets();
+
+    if (!selectedFilter) return allTabs;
+    return allTabs.filter(tab => tab.filterTab === selectedFilter);
+  });
+
+  // Section navigation
+  setSection(section: DashboardSection): void {
+    this.activeSection.set(section);
+    this.isMobileMenuOpen.set(false);
+  }
+
+  toggleMobileMenu(): void {
+    this.isMobileMenuOpen.update(v => !v);
+  }
+
+  // Search handling
+  onSearch(term: string): void {
+    this.searchTerm.set(term);
+    this.searchTerm$.next(term);
+  }
+
+  // Filter pills for browse-all
+  setBrowseFilter(filterTab: string | null): void {
+    this.selectedBrowseFilter.set(filterTab);
+  }
+
+  // Vehicle Mapping Resolution
+  private resolveVehicleMapping(contentSource: string, vehicleId: string) {
+    this.motorApi.getMotorVehicles(contentSource, vehicleId).pipe(
+      map(res => res.body || [])
+    ).subscribe({
+      next: (mappings: any[]) => {
+        if (!mappings || mappings.length === 0) {
+          console.warn('[Dashboard] No MOTOR mapping found for vehicle, falling back to original source');
+          this.searchResultsState.search(contentSource, vehicleId, '', this.motorVehicleId());
+          return;
+        }
+
+        // Flatten mappings to get all engine options
+        // Each mapping has { model: string, engines: { id: string, name: string }[] }
+        const options: OrientationOption[] = mappings.flatMap(mapping =>
+          (mapping.engines && Array.isArray(mapping.engines))
+            ? mapping.engines.map((engine: any) => ({
+              id: engine.id,
+              displayName: `${mapping.model} - ${engine.name}`,
+              qualifier: 'Select this configuration'
+            }))
+            : []
+        );
+
+        if (options.length > 0) {
+          // If only one option, could auto-select, but explicit is safer for now
+          // unless it is extremely obvious. 
+          // For Ford Crown Vic, we have different models (LX, Interceptor), so selection is good.
+          this.orientationOptions.set(options);
+          this.isResolvingVehicle.set(true);
+          this.showOrientationModal.set(true);
+        } else {
+          // No options parsed, fall back
+          console.warn('[Dashboard] No valid engine options found in mapping, falling back');
+          this.searchResultsState.search(contentSource, vehicleId, '', this.motorVehicleId());
+        }
+      },
+      error: (err) => {
+        if (err?.name === 'AbortError' || err?.error?.name === 'AbortError') {
+          // Silently ignore HTTP cancellations during rapid navigation
+          return;
+        }
+        console.error('[Dashboard] Failed to resolve vehicle mapping, falling back', err);
+        this.searchResultsState.search(contentSource, vehicleId, '', this.motorVehicleId());
+      }
+    });
+  }
+
+  // Services
+  private windowManager = inject(WindowManagerService);
+
+  private async checkAndTriggerNormalization(cs: string, vid: string) {
+    const name = this.vehicleName() || 'Vehicle';
+    await this.dataSync.ensureVehicleRecord(cs, vid, name);
+    void this.dataSync.eagerSyncVehicleReferenceData(cs, vid).catch((err: unknown) =>
+      console.warn('[VehicleDashboard] Eager reference sync failed (non-fatal):', err)
+    );
+  }
+
+  // Orientation Selection
+  onArticleClick(event: Event | null, article: Article | any): void {
+    if (event) event.preventDefault();
+
+    const articleId = article.id || article;
+
+    if (articleId === '-999' || (typeof articleId === 'string' && articleId.includes('SelectOrientation'))) {
+      this.loadOrientationOptions(articleId);
+      return;
+    }
+
+    const contentSource = this.contentSource();
+    const vehicleId = this.vehicleId();
+    const title = article.title || 'Article Viewer';
+    const moduleType = article.moduleType ?? bucketToModuleType(article.bucket, article.parentBucket);
+
+    if (contentSource && vehicleId && articleId) {
+      const queryParams: Record<string, string> = { title };
+      if (moduleType) queryParams['moduleType'] = moduleType;
+
+      if (this.windowManager.isDesktop()) {
+        this.windowManager.openWindow(
+          title,
+          ArticleViewerComponent,
+          {
+            articleId: articleId,
+            contentSource: contentSource,
+            vehicleId: vehicleId,
+            articleTitleInput: title,
+            moduleType: moduleType ?? undefined
+          }
+        );
+      } else {
+        this.router.navigate(['/vehicle', contentSource, vehicleId, 'article', articleId], {
+          queryParams
+        });
+      }
+    }
+  }
+
+  private loadOrientationOptions(articleId: string): void {
+    const cs = this.contentSource();
+    const vid = this.vehicleId();
+
+    if (!cs || !vid) {
+      console.error('Missing contentSource or vehicleId');
+      return;
+    }
+
+    this.motorApi.getArticleOrientations(cs, vid, articleId).subscribe({
+      next: (res) => {
+        if (res.body && res.body.orientations) {
+          this.orientationOptions.set(res.body.orientations);
+          this.pendingArticleId.set(articleId);
+          this.showOrientationModal.set(true);
+        } else {
+          console.warn('No orientations found for article', articleId);
+        }
+      },
+      error: (err) => {
+        console.error('Failed to load orientations', err);
+      }
+    });
+  }
+
+  onOrientationSelected(option: OrientationOption): void {
+    this.showOrientationModal.set(false);
+
+    // If we are resolving a vehicle mapping, redirect to the MOTOR vehicle
+    if (this.isResolvingVehicle()) {
+      this.isResolvingVehicle.set(false);
+      this.orientationOptions.set([]); // Clear options
+
+      // Navigate to the MOTOR source with the selected Engine ID
+      this.router.navigate(['/vehicle', 'MOTOR', option.id]);
+      return;
+    }
+
+    // Normal article orientation selection
+    const cs = this.contentSource();
+    const vid = this.vehicleId();
+    this.router.navigate(['/vehicle', cs, vid, 'article', option.id]);
+  }
+
+  closeOrientationModal(): void {
+    this.showOrientationModal.set(false);
+    this.orientationOptions.set([]);
+    this.pendingArticleId.set(null);
+    this.isResolvingVehicle.set(false); // Reset this state on close
+  }
 }

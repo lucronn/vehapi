@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "node .cursor/hooks/session-start-log.mjs"
+      }
+    ],
+    "stop": [
+      {
+        "command": "node .cursor/hooks/auto-continue.mjs",
+        "loop_limit": null
+      }
+    ],
+    "subagentStop": [
+      {
+        "command": "node .cursor/hooks/auto-continue.mjs",
+        "loop_limit": null
+      }
+    ]
+  }
+}
