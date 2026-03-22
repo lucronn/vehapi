@@ -1,5 +1,7 @@
 # Production readiness (paid v1 + L2 complete) implementation plan
 
+**Subagent prompts (implementer / spec / quality):** copy-paste templates live in [`subagent-prompts/README.md`](./subagent-prompts/README.md).
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Ship a production-ready Torque: Track A (rate limits, observability, RLS review, deploy verification) and Track B (L2 RAG **query** API + Angular consumption + `media_asset` wiring per existing migrations), with mobile and desktop golden-path validation.
