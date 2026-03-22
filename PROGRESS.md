@@ -65,12 +65,12 @@
 
 - **Fixed 2026-03-18**: Motor/Article API 401 Unauthorized while logged in — interceptor previously forwarded Supabase `Authorization: Bearer ...` to Motor-proxy endpoints (years/catalog/parts/name), causing Motor to reject requests; now only attaches Bearer for `/api/credits/*` and `/api/source/*/vehicle/*/article/*` paths.
 - **Fixed 2026-03-19**: Stripe redirect credit authorization sometimes failed due to Supabase session hydration race; `AuthService.getIdToken()` now always hydrates `_session/_user` signals, and `CreditsService.verifySession()` waits for `authService.user()` before calling `/api/credits/verify-session`.
-- **Fixed (pending deploy)**: Motor.com session/auth breaks after buying/unlocking a single article — proxy forwarded Supabase `Authorization` header to Motor.com for article requests; backend now strips `Authorization` header in `vehapiproxi/src/function.js` `onProxyReq` before forwarding upstream.
+- **Fixed 2026-03-19**: Motor.com session/auth breaks after buying/unlocking a single article — proxy forwarded Supabase `Authorization` header to Motor.com for article requests; backend strips `Authorization` in `vehapiproxi/src/function.js` `onProxyReq` before forwarding upstream (`c57339c` on `main`). **Production:** record deployment id in **Deploy verification baseline** below when confirmed in Vercel.
 - **Fixed 2026-03-19**: Unauthenticated requests (cookies cleared) could still retrieve cached article content — `articleAccessMiddleware` was matching the wrong path shape because it expected `/api/source/...` even though it runs under `app.use('/api', ...)` (now correctly enforces `/source/...`).
 - **Fixed 2026-03-19**: Hardened `articleContentCacheMiddleware` to only cache/serve the exact article-content route (not `/article/:id/title` or other sub-routes), preventing cached HTML leakage on unauthenticated calls.
 - **Fixed 2026-03-19**: Reordered backend unlock checks so individually purchased articles (`article:${articleId}`) and `full` unlocks are honored even if article bucket metadata is missing/unmappable.
-- **Hardened (pending deploy)**: Ensure no Motor.com auth artifacts leak past the proxy — proxy response header stripping includes `Authorization`/`WWW-Authenticate` and removes `access-control-allow-credentials`.
-- **Fixed (pending deploy)**: Backend `vehapiproxi` was not deploying independently after Mar 13; added `deploy-backend.yml` to deploy backend when `vehapiproxi/**` changes.
+- **Hardened 2026-03-19**: Ensure no Motor.com auth artifacts leak past the proxy — `onProxyRes` strips `Authorization`/`WWW-Authenticate` and related upstream headers (`2d91e05` on `main`). **Production:** record deployment id in **Deploy verification baseline** below when confirmed in Vercel.
+- **Fixed 2026-03-21**: Backend `vehapiproxi` was not deploying independently after Mar 13; `.github/workflows/deploy-backend.yml` deploys the backend project when `vehapiproxi/**`, `api/**`, or `vercel.json` change (`03d400c` + follow-ups on `main`). **Production:** record backend-project deployment id in **Deploy verification baseline** below when confirmed in Vercel.
 - **Fixed 2026-03-19**: Vercel serverless cold-start crash from duplicated route module bodies (`vehapiproxi/src/routes/ai-endpoints.js`, `auth.js`, `credits-endpoints.js`) causing duplicate declaration parse errors; deduped modules and moved common-issues generation to lazy `getAiFunctions()` loading.
 - **Fixed 2026-03-20**: GitHub Actions/Vercel deploys failing at build (`Cannot find module scripts/inject-eruda.cjs`) after repo cleanup moved scripts; root `package.json` build now calls `randdev/scripts/inject-eruda.cjs`.
 - **Hardened 2026-03-20**: GitHub Actions workflows (`deploy.yml`, `deploy-backend.yml`) now set `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` to preempt Node 20 action-runtime deprecation rollout.
@@ -138,7 +138,7 @@ Specs / parts / maintenance sections → mostly cached after eager sync; lazy pa
 
 ## Deploy verification baseline (production readiness)
 
-**Recorded:** 2026-03-21 — **`main`** @ **`81f68a5`**. Items below were listed under **Bugs & Known Issues** as **Fixed (pending deploy)** or **Hardened (pending deploy)**.
+**Recorded:** 2026-03-22 — **`main`** @ **`870002b`**. Tracks the three items above that previously said “pending deploy”; fixes are **verified on `main`** (git); **Vercel deployment id/time** is still filled manually after each prod release.
 
 | Issue | Fix (first commit on `main`) | Fix on `main` (git) | First prod deploy contains fix |
 |-------|------------------------------|---------------------|--------------------------------|
