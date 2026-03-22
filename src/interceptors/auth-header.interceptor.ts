@@ -2,7 +2,6 @@ import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { from, switchMap } from 'rxjs';
 import { AuthService } from '../services/auth.service';
-import { MOTOR_API_BASE_URL } from '../utils/motor-api.constants';
 
 /**
  * Attaches the Supabase Bearer token to outgoing API requests when the user is logged in.

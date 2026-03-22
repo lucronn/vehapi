@@ -1,6 +1,7 @@
 export const environment = {
     production: true,
-    apiUrl: 'https://vehapi-gx7nz7bkv-curtt.vercel.app/api',
+    /** Same-origin `/api` — Vercel rewrites to serverless; avoids cross-origin CORS to a separate proxy host. */
+    apiUrl: '/api',
     features: {
         l2Search: false
     },

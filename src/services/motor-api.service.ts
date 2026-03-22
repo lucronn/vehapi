@@ -44,7 +44,7 @@ import {
   AuthStatusResponse
 } from '../models/motor.models';
 import { parsePrice } from '../utils/price-parser';
-import { MOTOR_API_BASE_URL } from '../utils/motor-api.constants';
+import { getMotorProxyBaseUrl } from '../utils/motor-api.constants';
 import { MotorHtmlProcessorService } from './motor-html-processor.service';
 import { environment } from '../environments/environment';
 
@@ -75,7 +75,7 @@ export class MotorApiService {
   private http = inject(HttpClient);
   private motorHtml = inject(MotorHtmlProcessorService);
   // public readonly baseUrl = 'https://motorapiauthproxy-yonqvhjh7a-uc.a.run.app';
-  public readonly baseUrl = MOTOR_API_BASE_URL;
+  public readonly baseUrl = getMotorProxyBaseUrl();
 
   // Cache for article searches to prevent redundant API calls
   private articleCache = new Map<string, ApiResponse<ArticlesData>>();

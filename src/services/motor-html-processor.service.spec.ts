@@ -1,6 +1,6 @@
 import { expect, test, describe, beforeEach, mock } from 'bun:test';
 import { MotorHtmlProcessorService } from './motor-html-processor.service';
-import { MOTOR_API_BASE_URL } from '../utils/motor-api.constants';
+import { getMotorProxyBaseUrl } from '../utils/motor-api.constants';
 
 // Mock @angular/core
 mock.module('@angular/core', () => ({
@@ -9,7 +9,7 @@ mock.module('@angular/core', () => ({
 
 describe('MotorHtmlProcessorService', () => {
   let service: MotorHtmlProcessorService;
-  const baseUrl = MOTOR_API_BASE_URL;
+  const baseUrl = getMotorProxyBaseUrl();
 
   beforeEach(() => {
     service = new MotorHtmlProcessorService();

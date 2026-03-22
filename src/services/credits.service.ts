@@ -79,9 +79,8 @@ export class CreditsService {
     }
 
     private get apiUrl() {
-        return environment.production
-            ? 'https://vehapiproxi.vercel.app/api/credits'
-            : '/api/credits';
+        const base = environment.apiUrl.replace(/\/$/, '');
+        return `${base}/credits`;
     }
 
     constructor() {

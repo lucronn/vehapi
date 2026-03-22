@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import { MOTOR_API_BASE_URL } from '../utils/motor-api.constants';
+import { getMotorProxyBaseUrl } from '../utils/motor-api.constants';
 
 @Injectable({ providedIn: 'root' })
 export class MotorHtmlProcessorService {
-  private readonly baseUrl = MOTOR_API_BASE_URL;
+  private readonly baseUrl = getMotorProxyBaseUrl();
 
   getGraphicUrl(graphicPath: string): string {
     if (!graphicPath) return '';

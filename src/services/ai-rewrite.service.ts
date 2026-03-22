@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, map, of, timeout } from 'rxjs';
 import { TutorialStep, CommonIssue } from '../models/motor.models';
-import { MOTOR_API_BASE_URL } from '../utils/motor-api.constants';
+import { getMotorProxyBaseUrl } from '../utils/motor-api.constants';
 
 /**
  * Service for AI-powered content rewriting and tutorial generation.
@@ -11,7 +11,7 @@ import { MOTOR_API_BASE_URL } from '../utils/motor-api.constants';
 @Injectable({ providedIn: 'root' })
 export class AiRewriteService {
     private http = inject(HttpClient);
-    private readonly baseUrl = MOTOR_API_BASE_URL;
+    private readonly baseUrl = getMotorProxyBaseUrl();
 
     /**
      * Rewrites article HTML text content using AI while preserving structure and media.
