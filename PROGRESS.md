@@ -138,13 +138,15 @@ Specs / parts / maintenance sections → mostly cached after eager sync; lazy pa
 
 ## Deploy verification baseline (production readiness)
 
-**Recorded:** 2026-03-21 — branch **`feat/production-readiness`** @ **`8a41e8c`** (aligned with `main` when the program started). Vercel **deployment id / time** for production must be confirmed in the Vercel dashboard (not available from git alone).
+**Recorded:** 2026-03-21 — **`main`** @ **`81f68a5`**. Items below were listed under **Bugs & Known Issues** as **Fixed (pending deploy)** or **Hardened (pending deploy)**.
 
-| Issue (was “pending deploy” in Bugs) | Fix location (see `git log`) | In repo @ `8a41e8c` | Prod deploy checked |
-|--------------------------------------|------------------------------|---------------------|---------------------|
-| Supabase `Authorization` forwarded to Motor broke Motor session after unlock | `vehapiproxi/src/function.js` `onProxyReq` — strip `authorization` | Yes (`c57339c` and follow-ups) | [ ] |
-| Motor auth artifacts in responses to browser | `onProxyRes` strip `authorization` / `www-authenticate` / creds | Yes (`2d91e05` and follow-ups) | [ ] |
-| Backend not deploying when only `vehapiproxi/**` changes | `.github/workflows/deploy-backend.yml` | Yes (`5f63d04`, `6d4d6db`, …) | [ ] |
+| Issue | Fix (first commit on `main`) | Fix on `main` (git) | First prod deploy contains fix |
+|-------|------------------------------|---------------------|--------------------------------|
+| Motor.com session breaks after unlock — Supabase `Authorization` must not reach upstream | `c57339c` — strip `authorization` in `onProxyReq` (`vehapiproxi/src/function.js`) | Yes (`git merge-base --is-ancestor c57339c main`) | Fill **deployment id / time** from [Vercel](https://vercel.com) dashboard (not in repo) |
+| Hardened: no Motor auth artifacts leak to browser | `2d91e05` — strip upstream auth headers on `onProxyRes` (`function.js`) | Yes | Same — confirm post-`2d91e05` production deploy |
+| Backend deploy when only `vehapiproxi/**` changes | `03d400c` — `deploy-backend.yml` independent workflow; follow-ups `d69a524`, `5f63d04`, `6d4d6db` | Yes | Same — confirm backend project deploy after those commits |
 
-**Local smoke (2026-03-21):** `npm install` at repo root → `npm run build` succeeds; `node --check vehapiproxi/src/index.js` succeeds.
-**Rate limit test:** run this branch’s proxy on a free `PROXY_PORT` (no other listener), set `ARTICLE_RATE_LIMIT_MAX=5` then `npm run test:article-rate-limit` in `vehapiproxi/` — expect **429** after the limit (requests may be **401** before that without auth).
+**Prod deploy column:** Git cannot list Vercel deployment IDs. After each production deploy, note the dashboard deployment id or timestamp next to the row above.
+
+**Local smoke (2026-03-21, this run):** `npm run build` at repo root — **OK**; `node --check vehapiproxi/src/index.js` — **OK**. (`/health` exists on local proxy when `node vehapiproxi/src/index.js` runs; not exercised here to avoid Motor auth startup.)
+**Rate limit test:** run proxy on a free `PROXY_PORT`, set `ARTICLE_RATE_LIMIT_MAX=5` then `npm run test:article-rate-limit` in `vehapiproxi/` — expect **429** after the limit (requests may be **401** before that without auth).
