@@ -1,9 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, ElementRef, HostListener, ViewChild, OnInit, DestroyRef, ChangeDetectorRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal, ElementRef, HostListener, ViewChild, OnInit, DestroyRef, ChangeDetectorRef } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject, debounceTime, distinctUntilChanged, firstValueFrom, catchError, of } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, debounceTime, distinctUntilChanged, firstValueFrom } from 'rxjs';
 
 import { MotorApiService } from '../../services/motor-api.service';
 import { VehiclePersistenceService } from '../../services/vehicle-persistence.service';
@@ -34,14 +34,7 @@ export class HomeComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   private cdr = inject(ChangeDetectorRef);
 
-  constructor() {
-    effect(() => {
-      const res = this.years();
-      if (res?.body && Array.isArray(res.body) && res.header?.statusCode === 200) {
-        void this.dataSync.cacheVehicleMetadata('/years', res);
-      }
-    });
-  }
+  constructor() { }
 
   @ViewChild('searchInputRef') searchInputRef!: ElementRef<HTMLInputElement>;
   @ViewChild('desktopSuggestionsContainer') desktopSuggestionsContainerRef!: ElementRef<HTMLDivElement>;
@@ -59,19 +52,7 @@ export class HomeComponent implements OnInit {
   selectedVehicle = signal<{ vehicleId: string; displayName: string } | null>(null);
 
   // Data
-  private years = toSignal(
-    this.motorApi.getYears().pipe(
-      catchError((error) => {
-        console.error('Failed to load years:', error);
-        const errorMsg = error?.message || error?.toString() || 'Unknown error';
-        console.error('Error details:', { error, message: errorMsg, status: error?.status });
-        // Don't show error message immediately - let user try to use the app
-        // The suggestions will just be empty if years is null
-        return of(null as any);
-      })
-    ),
-    { initialValue: null }
-  );
+  private years = signal<any | null>(null);
   private makes = signal<Make[]>([]);
   private models = signal<Model[]>([]);
   private engines = signal<Engine[]>([]); // Available engines for selected model
@@ -88,6 +69,7 @@ export class HomeComponent implements OnInit {
   selectedSuggestionIndex = signal<number>(-1); // For keyboard navigation
 
   ngOnInit(): void {
+    void this.loadYears();
     this.persistedVehicle.set(this.persistence.getVehicle());
 
     this.searchSubject.pipe(
@@ -136,9 +118,55 @@ export class HomeComponent implements OnInit {
         });
       }
     }
-
   }
 
+  private async loadYears(): Promise<void> {
+    try {
+      const res = await firstValueFrom(this.motorApi.getYears());
+      this.years.set(res);
+      if (res?.body && Array.isArray(res.body) && res.header?.statusCode === 200) {
+        await this.dataSync.cacheVehicleMetadata('/years', res);
+      }
+    } catch (error: any) {
+      console.error('Failed to load years:', error);
+      console.error('Error details:', {
+        error,
+        message: error?.message || error?.toString() || 'Unknown error',
+        status: error?.status
+      });
+
+      const isAuthRefresh = (error?.status === 401 || error?.status === 403) &&
+        (error?.error?.authStatus === 'authenticating' || error?.error?.authStatusUrl);
+
+      if (isAuthRefresh) {
+        const recovered = await this.waitForAuthRecovery();
+        if (recovered) {
+          await this.loadYears();
+          return;
+        }
+      }
+
+      this.years.set(null);
+    }
+  }
+
+  private async waitForAuthRecovery(): Promise<boolean> {
+    for (let attempt = 0; attempt < 12; attempt++) {
+      try {
+        const status = await firstValueFrom(this.motorApi.getAuthStatus());
+        const sessionValid = (status as any)?.sessionValid === true;
+        if (status?.status === 'success' || sessionValid) {
+          return true;
+        }
+      } catch {
+        // Keep polling with backoff while re-authentication settles.
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 800 + attempt * 200));
+    }
+
+    return false;
+  }
   isMobile = signal(false);
 
   private updateViewportHeight(): void {

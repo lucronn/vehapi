@@ -40,10 +40,15 @@ Runs `npm run build` plus `node --check` on critical `vehapiproxi` entrypoints (
 
 ```bash
 cd vehapiproxi
+npm run verify:release-target
 npm run verify:evidence-links -- --local
+npm run verify:golden-vehicles -- --local
 ```
 
-Requires local proxy + `.env` per `PROGRESS.md` (or use `--token` against deployed API).
+Requires local proxy + `.env` per `PROGRESS.md` (or use `--token` / remote `--proxy` against deployed API).
+
+- [ ] `cd vehapiproxi && npm run verify:release-target` passes against the target DB
+- [ ] `cd vehapiproxi && npm run verify:golden-vehicles -- --local` (or remote equivalent) produces a passing report under `documentation/release-artifacts/`
 
 ## Deploy
 

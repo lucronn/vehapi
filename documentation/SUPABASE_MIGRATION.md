@@ -170,6 +170,43 @@ env VEHICLE_ID=2854 npm run verify:evidence-links
 VEHICLE_ID=2854 node scripts/verify-evidence-links-one-article.js
 ```
 
+## Release-target verification
+
+Use this after applying migrations in staging or production to confirm the DB is in the release-ready state expected by the app.
+
+```bash
+cd vehapiproxi
+npm run verify:release-target
+```
+
+The verifier checks:
+
+- required normalization/L2 tables exist
+- the `vector` extension is installed
+- `public.match_content_chunks(...)` exists
+- `service_role` can execute the RPC
+- broad `Allow all ...` policies are absent from server-only tables (`evidence_*`, `content_chunk`, `media_asset`, AI logs/cache)
+
+## Golden-vehicle verification
+
+Use this to record a representative normalization pass instead of relying on a single ad hoc vehicle.
+
+```bash
+cd vehapiproxi
+npm run verify:golden-vehicles -- --local
+```
+
+Override the matrix with `GOLDEN_VEHICLES_JSON`:
+
+```bash
+GOLDEN_VEHICLES_JSON='[
+  {"vehicle":"2854","source":"GeneralMotors","label":"GM representative"},
+  {"vehicle":"<another-id>","source":"MOTOR","label":"Motor representative"}
+]' npm run verify:golden-vehicles -- --local
+```
+
+The script writes a markdown report under `documentation/release-artifacts/`.
+
 ## Vercel deployment (proxy)
 
 When deploying the proxy to Vercel (from repo root, with rewrites to `/api/index.js`):
