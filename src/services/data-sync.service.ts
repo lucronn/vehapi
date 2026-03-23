@@ -553,8 +553,13 @@ export class DataSyncService {
             let rawHtml = prefetchedHtml || '';
             if (!rawHtml && !existing) {
                 if (isDevMode()) console.log(`[DataSync] Fetching ${item.id} from Motor API (no prefetched HTML)...`);
-                const contentRes = await lastValueFrom(this.motorApi.getArticleContent(cs, vid, item.id));
-                rawHtml = (contentRes?.body as any)?.html || '';
+                if (String(item.id || '').startsWith('L:')) {
+                    const laborRes = await lastValueFrom(this.motorApi.getLaborDetails(cs, vid, item.id));
+                    rawHtml = (laborRes?.body as any)?.content || (laborRes?.body as any)?.html || '';
+                } else {
+                    const contentRes = await lastValueFrom(this.motorApi.getArticleContent(cs, vid, item.id));
+                    rawHtml = (contentRes?.body as any)?.html || '';
+                }
             }
 
             const articleData: Record<string, any> = {

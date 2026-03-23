@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-03-21 — **Release-hardening pass:** production frontend now uses same-origin **`/api`** again in `environment.prod.ts`; GitHub Actions deploy workflows now run on **Node 22** and execute **`npm run verify:prod-readiness`** before deploy; release/deploy docs now reflect **`dist/`** output and same-origin routing; canonical schema + L2 migration docs no longer recreate permissive RLS on server-only normalization tables. **Normalization status:** text-first normalization is release-ready for catalog/content items, specs, maintenance, procedures, PDF traceability, and L2 text retrieval. Remaining non-GA normalization domains stay explicitly out of scope (diagrams/component-locations, labor).
+**Last updated**: 2026-03-22 — **Normalization wrap-up (remaining silos):** added additive schema/runtime support for **`diagram_document`**, **`component_location_document`**, and **`labor_operation`**; the worker now normalizes diagram/component-location article HTML and labor detail payloads into those tables, direct `/graphic/*` binary responses now persist **`media_asset`** metadata, article cache reads include the new normalized tables, and the article viewer now uses the **labor endpoint** for `L:` article ids. Remaining release work is now mostly **migration application + golden-vehicle verification**, not missing runtime coverage.
 
 ## Summary
 
@@ -13,13 +13,13 @@
 | UI/UX Copy Cleanup | Complete |
 | Lock Overlay UX | Complete |
 | Repo Structure Cleanup (`randdev/` + `oldfiles/`) | Complete |
-| Data Normalization Pipeline | **Text-first release-ready** — catalog/content items, specs, maintenance, procedures, PDF traceability, and L2 text retrieval shipped; diagrams/component-locations and labor remain follow-up scope |
+| Data Normalization Pipeline | **Release-ready in repo** — catalog/content items, specs, maintenance, procedures, diagrams, component locations, labor, PDF/graphic media traceability, and L2 text retrieval now have schema/runtime coverage; target DB migration + golden-vehicle verification still required |
 
 ### Active worker direction (normalization)
 
 - **Shipped:** Phase 1 — `evidence_ingest`, `content_item` upsert + post-parse enrichment (`updateContentItemEnrichment`), catalog path in `vehapiproxi/src/background_worker.js` + `content_item_mapper.js`; `evidence_link` after parse for **procedures** (parent row) **/ dtcs / tsbs** + L1 **`procedure_step`** / **`procedure_tool`** / **`procedure_part`** + **`spec_fact`** when schema present (legacy **`specifications`** → `spec_fact` only); native PDF text (`pdf_native_text.js`) and optional sparse-PDF Nemotron vision (`nemotron_multimodal.js`, `ENABLE_NEMOTRON_PDF_VISION_FALLBACK=true`); `npm run verify:evidence-links`; optional Cursor worker-loop (`hooks.json` → `auto-continue.mjs`, default ON — see `.cursor/WORKER_LOOP.md`).
 - **Workspace (git):** `.cursor/WORKER_LOOP.md`, `.cursor/hooks.json`, `.cursor/hooks/*.mjs`, and `.cursor/agents/` may be **untracked** until committed — hooks only run in clones that have them. Loop toggle files (`.cursor/worker-loop.enabled` / `.disabled` / `.after-response`) are **gitignored** when present; default auto-continue is ON once hooks are registered (see `WORKER_LOOP.md`). **Desktop continue (Windows):** root **`npm run cursor:auto-once`** invokes **`scripts/continue-once.ps1`** (paste + Enter); see `scripts/automation/README.md`.
-- **Next (code):** L2 **query path** (RAG retrieval API + UI) and **`media_asset`** wiring; parallel domains (wiring diagrams, labor, TSB+DTC depth). L1 **`spec_fact`**, **`maintenance_task`**, **`procedure_step`**, **`procedure_tool`**, **`procedure_part`** + L2 **DDL** + **chunk ingest** (flagged) shipped in repo.
+- **Next (code):** Finish rollout verification on real target data: apply additive migrations, run golden vehicles, and confirm normalized diagram/component-location/labor reads behave on staging/prod. L1 **`spec_fact`**, **`maintenance_task`**, **`procedure_step`**, **`procedure_tool`**, **`procedure_part`**, **`diagram_document`**, **`component_location_document`**, **`labor_operation`** + L2 **DDL/query/ingest** are now in repo.
 - **Regression:** after `background_worker.js` or evidence mapping changes, run `verify:evidence-links` with local `.env` (`SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`); no automated CI run without injected secrets — not a product bug.
 - **Worker assumption:** L1 tables + RLS follow `supabase_schema.sql`; thread writes from existing parse outputs before expanding ingest sources.
 
@@ -84,9 +84,10 @@
 
 | Priority | Task |
 |----------|------|
-| **High** | **Apply DB migrations on staging/prod** when not yet applied: `migrate:rls-tightening`, `migrate:match-content-chunks-rpc`, and any pending L2/content-chunk migration required by the target environment. **Prod:** enable `environment.features.l2Search` when QA passes. **Local verify:** `npm run verify:prod-readiness`. **Done in repo:** plan completion table in `docs/plans/2026-03-21-production-readiness-paid-plus-l2.md`. |
+| **High** | **Apply DB migrations on staging/prod** when not yet applied: `migrate:normalized-diagrams-labor`, `migrate:rls-tightening`, `migrate:match-content-chunks-rpc`, and any pending L2/content-chunk migration required by the target environment. **Prod:** enable `environment.features.l2Search` when QA passes. **Local verify:** `npm run verify:prod-readiness`. **Done in repo:** plan completion table in `docs/plans/2026-03-21-production-readiness-paid-plus-l2.md`. |
 | Medium | Phase-1 worker regression: `cd vehapiproxi && npm run verify:evidence-links -- --local --vehicle=<id>` with **local** `ng serve` + `node src/index.js`, `SKIP_ARTICLE_ACCESS_AUTH=true` + `NODE_ENV=development` in `vehapiproxi/.env` (no user JWT). Or Vercel: `--token=<user access_token>`. Needs `SUPABASE_*` in `.env`. |
-| Medium | Run and record a golden-vehicle normalization verification pass across representative content shapes, then link the results here or in `documentation/RELEASE_CHECKLIST.md`. |
+| Medium | Verify target DB release state with `cd vehapiproxi && npm run verify:release-target` after staging/prod migrations. |
+| Medium | Run and record a golden-vehicle normalization verification pass with `cd vehapiproxi && npm run verify:golden-vehicles -- --local` (or remote equivalent), then link the generated report here or in `documentation/RELEASE_CHECKLIST.md`. |
 | Low | Commit `.cursor/hooks.json`, `.cursor/hooks/*.mjs`, `.cursor/WORKER_LOOP.md` (and `.cursor/agents/*`) when the team should share Cursor auto-continue / orchestrator docs |
 | Low | (cleared 2026-03-24) AGENTS.md ↔ WORKER_LOOP: hook toggles + `npm run cursor:auto-once` / `continue-once.ps1` documented |
 | Low | Full-vehicle unlock option from lock overlay |
@@ -115,6 +116,8 @@
 - [x] **L1 maintenance_task (2026-03-21)** — SQL: `documentation/migrations/20260321_l1_maintenance_task.sql`; `npm run migrate:l1-maintenance-task`; `supabase.js` `UPSERT_CONFLICT_COLUMNS.maintenance_task`; `data-sync.service.ts` `dualWriteMaintenanceTaskL1` after schedule upserts; `NormalizedMaintenanceTask` in `normalized_schema.ts`.
 - [x] **L1 procedure_step (2026-03-22)** — SQL: `documentation/migrations/20260322_l1_procedure_step.sql`; `npm run migrate:l1-procedure-step`; `deleteProcedureStepsForArticle` + worker `buildProcedureStepRows`; `evidence_link` (`procedure_step`, `l1-v1`); `NormalizedProcedureStep` in `normalized_schema.ts`.
 - [x] **L1 procedure_tool + procedure_part (2026-03-23)** — SQL: `documentation/migrations/20260323_l1_procedure_tool_and_part.sql`; `npm run migrate:l1-procedure-tool-part`; deletes + `buildProcedureToolRows` / `buildProcedurePartRows`; `evidence_link`; `NormalizedProcedureTool` / `NormalizedProcedurePart` in `normalized_schema.ts`.
+- [x] **Diagram/component-location/labor documents (2026-03-22)** — SQL: `documentation/migrations/20260322_normalized_diagrams_component_locations_labor.sql`; `npm run migrate:normalized-diagrams-labor`; new tables **`diagram_document`**, **`component_location_document`**, **`labor_operation`** in `supabase_schema.sql`; worker routes article HTML / labor detail payloads into normalized document rows; article cache reads those rows; article viewer loads `L:` ids via labor API.
+- [x] **Graphic `media_asset` capture (2026-03-22)** — `function.js` persists `/api/source/:contentSource/graphic/:id` binary responses into `media_asset` via `upsertMediaAssetGraphicBinary`, complementing the existing PDF article-body path.
 
 ### Data flow (eager reference + lazy article body)
 

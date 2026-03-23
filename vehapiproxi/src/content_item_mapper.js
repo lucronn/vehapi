@@ -34,7 +34,10 @@ export function buildMinimalContentItemFromParse({ vehicleExternalId, motorArtic
         procedures: { kind: 'procedure', canonical_silo_code: 'procedures' },
         dtcs: { kind: 'dtc', canonical_silo_code: 'dtcs' },
         tsbs: { kind: 'tsb', canonical_silo_code: 'tsbs' },
-        specifications: { kind: 'spec_article', canonical_silo_code: 'specs' }
+        specifications: { kind: 'spec_article', canonical_silo_code: 'specs' },
+        diagram_document: { kind: 'diagram', canonical_silo_code: 'diagrams' },
+        component_location_document: { kind: 'component_location', canonical_silo_code: 'component-locations' },
+        labor_operation: { kind: 'labor', canonical_silo_code: 'labor' }
     };
     const m = map[targetSchema] || { kind: 'other', canonical_silo_code: 'other' };
     const now = new Date().toISOString();

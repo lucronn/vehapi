@@ -18,6 +18,7 @@ import {
     checkParsedArticle,
     checkArticleContent,
     getArticleMetadata,
+    upsertMediaAssetGraphicBinary,
     insertMetadata, 
     getMetadata,
     getVehicleArticles,
@@ -90,6 +91,30 @@ function enqueueBackgroundParse(req, responseBuffer) {
         .catch(() => {
             /* worker unavailable */
         });
+}
+
+function persistGraphicAsset(req, responseBuffer, contentType) {
+    const sourceGraphicMatch = req.path.match(/\/api\/source\/([^/]+)\/graphic\/([^/?]+)/i);
+    if (!sourceGraphicMatch || !responseBuffer || responseBuffer.length === 0) {
+        return;
+    }
+
+    const [, contentSource, motorGraphicId] = sourceGraphicMatch;
+    Promise.resolve(
+        upsertMediaAssetGraphicBinary({
+            vehicleExternalId: null,
+            contentSource,
+            motorGraphicId,
+            binaryBuffer: responseBuffer,
+            mimeType: String(contentType || ''),
+            sourceLabel: 'graphic_api',
+            metadataJson: {
+                path: req.path
+            }
+        })
+    ).catch((err) => {
+        logger.warn('Failed to persist graphic media_asset:', err?.message || err);
+    });
 }
 
 const require = createRequire(import.meta.url);
@@ -693,6 +718,9 @@ app.use('/', authMiddleware, createProxyMiddleware({
 
         // For binary content, pass through as-is without conversion
         if (isBinary) {
+            if (req.path.includes('/graphic/')) {
+                persistGraphicAsset(req, responseBuffer, contentType);
+            }
             logger.info(`← ${proxyRes.statusCode} ${req.path} (binary: ${contentType}, ${responseBuffer.length} bytes)`);
             return responseBuffer;
         }

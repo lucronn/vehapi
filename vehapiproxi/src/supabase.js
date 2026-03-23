@@ -21,6 +21,9 @@ const UPSERT_CONFLICT_COLUMNS = {
     specifications: 'vehicle_id,category,name',
     spec_fact: 'vehicle_id,category,name',
     maintenance_task: 'vehicle_id,interval_value,action,item',
+    diagram_document: 'vehicle_id,source_article_id',
+    component_location_document: 'vehicle_id,source_article_id',
+    labor_operation: 'vehicle_id,source_article_id',
     categories: 'name,type',
     vehicle_metadata: 'path',
     articles: 'vehicle_id,original_id',
@@ -209,6 +212,37 @@ export async function getArticleMetadata(vehicleId, articleId) {
             return { bucket: data[0].bucket, parent_bucket: data[0].parent_bucket };
         }
         return null;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Get the normalized catalog/article row used to seed follow-on normalization documents.
+ * @param {string} vehicleId
+ * @param {string} articleId
+ */
+export async function getArticleCatalogEntry(vehicleId, articleId) {
+    const cfg = getSupabaseConfig();
+    if (!cfg) return null;
+
+    try {
+        const url =
+            `${cfg.url}/rest/v1/articles` +
+            `?vehicle_id=eq.${encodeURIComponent(vehicleId)}` +
+            `&original_id=eq.${encodeURIComponent(articleId)}` +
+            '&select=title,subtitle,description,thumbnail_href,bucket,parent_bucket,content_source&limit=1';
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                apikey: cfg.key,
+                Authorization: `Bearer ${cfg.key}`
+            }
+        });
+
+        if (!response.ok) return null;
+        const data = await response.json();
+        return Array.isArray(data) && data.length > 0 ? data[0] : null;
     } catch {
         return null;
     }
@@ -640,6 +674,79 @@ export async function upsertMediaAssetPdfFromArticleBody({
 }
 
 /**
+ * Record binary graphic bytes from `/api/source/:contentSource/graphic/:id`.
+ * Idempotent per (vehicle_external_id, motor_graphic_id) when vehicle is known, otherwise per graphic id + source.
+ *
+ * @param {{
+ *   vehicleExternalId?: string | null,
+ *   contentSource: string,
+ *   motorGraphicId: string,
+ *   binaryBuffer: Buffer,
+ *   mimeType?: string | null,
+ *   sourceLabel?: string | null,
+ *   metadataJson?: Record<string, unknown> | null
+ * }} args
+ */
+export async function upsertMediaAssetGraphicBinary({
+    vehicleExternalId = null,
+    contentSource,
+    motorGraphicId,
+    binaryBuffer,
+    mimeType = null,
+    sourceLabel = 'graphic_api',
+    metadataJson = null
+}) {
+    const cfg = getSupabaseConfig();
+    if (!cfg || !motorGraphicId || !binaryBuffer || binaryBuffer.length === 0) {
+        return { success: false, error: 'Missing config, graphic id, or binary bytes' };
+    }
+
+    const sha256 = crypto.createHash('sha256').update(binaryBuffer).digest('hex');
+    const conditions = [
+        `motor_graphic_id=eq.${encodeURIComponent(motorGraphicId)}`,
+        `content_source=eq.${encodeURIComponent(contentSource || 'MOTOR')}`,
+        'select=id',
+        'limit=1'
+    ];
+    if (vehicleExternalId) {
+        conditions.unshift(`vehicle_external_id=eq.${encodeURIComponent(vehicleExternalId)}`);
+    }
+
+    try {
+        const check = await fetch(`${cfg.url}/rest/v1/media_asset?${conditions.join('&')}`, {
+            headers: {
+                apikey: cfg.key,
+                Authorization: `Bearer ${cfg.key}`,
+                Accept: 'application/json'
+            }
+        });
+        if (check.ok) {
+            const rows = await check.json();
+            if (Array.isArray(rows) && rows.length > 0) {
+                return { success: true, skipped: true, id: rows[0].id };
+            }
+        }
+
+        return insertParsedData('media_asset', [
+            {
+                vehicle_external_id: vehicleExternalId,
+                content_source: contentSource || 'MOTOR',
+                motor_graphic_id: motorGraphicId,
+                mime_type: mimeType || null,
+                sha256,
+                source_label: sourceLabel,
+                metadata_json: {
+                    byte_length: binaryBuffer.length,
+                    ...(metadataJson && typeof metadataJson === 'object' ? metadataJson : {})
+                }
+            }
+        ]);
+    } catch (err) {
+        return { success: false, error: err.message || String(err) };
+    }
+}
+
+/**
  * @param {string} table
  * @param {Object|Array} data
  * @param {{ returnRepresentation?: boolean }} [options] If true and upsert, returns merged rows (ids for evidence_link).
@@ -834,7 +941,10 @@ export async function checkParsedArticle(articleId) {
         { table: 'procedures', filter: `external_id=eq.${idEq}` },
         { table: 'tsbs', filter: `external_id=eq.${idEq}` },
         { table: 'dtcs', filter: `external_id=eq.${idEq}` },
-        { table: 'spec_fact', filter: `source_article_id=eq.${idEq}` }
+        { table: 'spec_fact', filter: `source_article_id=eq.${idEq}` },
+        { table: 'diagram_document', filter: `source_article_id=eq.${idEq}` },
+        { table: 'component_location_document', filter: `source_article_id=eq.${idEq}` },
+        { table: 'labor_operation', filter: `source_article_id=eq.${idEq}` }
     ];
 
     for (const { table, filter } of lookups) {

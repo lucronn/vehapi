@@ -327,6 +327,19 @@ export interface NormalizedLabor {
   category_id?: string;
 }
 
+export interface NormalizedLaborOperationDocument {
+  id?: string;
+  vehicle_id: string;
+  source_article_id: string;
+  title?: string | null;
+  description?: string | null;
+  content_html?: string | null;
+  metadata_json?: Record<string, unknown>;
+  extractor_version?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
 /**
  * Vehicle Part
  * DB columns: vehicle_id, part_number, description, manufacturer, list_price, dealer_price.
@@ -362,6 +375,36 @@ export interface NormalizedDiagram {
     label: string;
     target_id?: string; // ID of part or component
   }[];
+}
+
+export interface NormalizedDiagramDocument {
+  id?: string;
+  vehicle_id: string;
+  source_article_id: string;
+  title?: string | null;
+  description?: string | null;
+  content_html?: string | null;
+  thumbnail_graphic_id?: string | null;
+  thumbnail_media_asset_id?: string | null;
+  metadata_json?: Record<string, unknown>;
+  extractor_version?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface NormalizedComponentLocationDocument {
+  id?: string;
+  vehicle_id: string;
+  source_article_id: string;
+  title?: string | null;
+  description?: string | null;
+  content_html?: string | null;
+  thumbnail_graphic_id?: string | null;
+  thumbnail_media_asset_id?: string | null;
+  metadata_json?: Record<string, unknown>;
+  extractor_version?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 /**

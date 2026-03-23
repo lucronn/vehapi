@@ -3,7 +3,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { map, switchMap, of, catchError, Subject, takeUntil } from 'rxjs';
+import { map, switchMap, of, catchError, Subject, takeUntil, Observable } from 'rxjs';
 
 import { MotorApiService } from '../../services/motor-api.service';
 import { MotorHtmlProcessorService } from '../../services/motor-html-processor.service';
@@ -223,16 +223,29 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
     }
 
     // Fetch Content
-    this.motorApi.getArticleContent(this.contentSource, this.vehicleId, aid).subscribe({
+    const contentRequest$: Observable<any> = String(aid).startsWith('L:')
+      ? this.motorApi.getLaborDetails(this.contentSource, this.vehicleId, aid)
+      : this.motorApi.getArticleContent(this.contentSource, this.vehicleId, aid);
+
+    contentRequest$.subscribe({
       next: (content) => {
-        if (!content || !content.body || !(content.body as any).html) {
+        const rawBody = (content?.body as any) || {};
+        const rawHtml = rawBody.html || rawBody.content || '';
+        if (!content || !content.body || !rawHtml) {
           console.error('[ArticleViewer] API returned empty content body or html');
         }
 
         this.isCached.set(content.header?.isCached || false);
 
-        const rawHtml = (content.body as any)?.html || '';
-        const pdfUri = (content.body as any)?.pdfDataUri || null;
+        if (!this.articleTitleInput && rawBody?.title) {
+          const cleaned = this.cleanTitle(String(rawBody.title));
+          this.articleTitle.set(cleaned);
+          if (this.windowId) {
+            this.windowManager.updateTitle(this.windowId, cleaned);
+          }
+        }
+
+        const pdfUri = rawBody?.pdfDataUri || null;
 
         if (pdfUri) {
           // PDF content — set safe URI for inline viewer, clear HTML
@@ -256,9 +269,9 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
           // Save content to Supabase (passes pre-fetched HTML to avoid double-fetch)
           this.dataSync.syncSingleArticle(this.contentSource!, this.vehicleId!, {
             id: aid,
-            title: this.articleTitle(),
-            bucket: (content.body as any)?.bucket || '',
-            parentBucket: (content.body as any)?.parentBucket || ''
+            title: rawBody?.title || this.articleTitle(),
+            bucket: rawBody?.bucket || '',
+            parentBucket: rawBody?.parentBucket || ''
           }, rawHtml);
           // Background AI rewrite
           this.triggerAiRewrite(htmlString);

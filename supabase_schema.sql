@@ -504,6 +504,58 @@ CREATE TABLE public.media_asset (
 
 CREATE INDEX idx_media_asset_vehicle ON public.media_asset(vehicle_external_id);
 
+CREATE TABLE public.diagram_document (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vehicle_id TEXT NOT NULL REFERENCES public.vehicles(external_id) ON DELETE CASCADE,
+    source_article_id TEXT NOT NULL,
+    title TEXT,
+    description TEXT,
+    content_html TEXT,
+    thumbnail_graphic_id TEXT,
+    thumbnail_media_asset_id UUID REFERENCES public.media_asset(id) ON DELETE SET NULL,
+    extractor_version TEXT,
+    metadata_json JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(vehicle_id, source_article_id)
+);
+
+CREATE INDEX idx_diagram_document_vehicle ON public.diagram_document(vehicle_id);
+
+CREATE TABLE public.component_location_document (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vehicle_id TEXT NOT NULL REFERENCES public.vehicles(external_id) ON DELETE CASCADE,
+    source_article_id TEXT NOT NULL,
+    title TEXT,
+    description TEXT,
+    content_html TEXT,
+    thumbnail_graphic_id TEXT,
+    thumbnail_media_asset_id UUID REFERENCES public.media_asset(id) ON DELETE SET NULL,
+    extractor_version TEXT,
+    metadata_json JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(vehicle_id, source_article_id)
+);
+
+CREATE INDEX idx_component_location_document_vehicle ON public.component_location_document(vehicle_id);
+
+CREATE TABLE public.labor_operation (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vehicle_id TEXT NOT NULL REFERENCES public.vehicles(external_id) ON DELETE CASCADE,
+    source_article_id TEXT NOT NULL,
+    title TEXT,
+    description TEXT,
+    content_html TEXT,
+    metadata_json JSONB DEFAULT '{}'::jsonb,
+    extractor_version TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(vehicle_id, source_article_id)
+);
+
+CREATE INDEX idx_labor_operation_vehicle ON public.labor_operation(vehicle_id);
+
 CREATE TABLE public.content_chunk (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     content_item_id UUID REFERENCES public.content_item(id) ON DELETE CASCADE,
@@ -558,6 +610,9 @@ ALTER TABLE public.evidence_ingest ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.evidence_link ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.content_item ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.media_asset ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.diagram_document ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.component_location_document ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.labor_operation ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.content_chunk ENABLE ROW LEVEL SECURITY;
 
 -- Client-readable tables keep permissive policies for the MVP browser app.

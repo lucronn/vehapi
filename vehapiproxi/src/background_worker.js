@@ -13,16 +13,19 @@ import {
     fetchContentItemId,
     findEntityIdsByExternalId,
     insertEvidenceLinks,
+    getArticleMetadata,
     deleteProcedureStepsForArticle,
     deleteProcedureToolsForArticle,
     deleteProcedurePartsForArticle,
-    upsertMediaAssetPdfFromArticleBody
+    upsertMediaAssetPdfFromArticleBody,
+    getArticleCatalogEntry
 } from './supabase.js';
 import { normalizeCategoryParams } from './categorize.js';
 import { buildContentItemFromCatalogArticle, buildMinimalContentItemFromParse } from './content_item_mapper.js';
 import { extractTextFromPdfBase64 } from './pdf_native_text.js';
 import { extractTextFromPdfPageViaNemotron } from './nemotron_multimodal.js';
 import { ingestL2ContentChunksIfEnabled } from './l2_rag_ingest.js';
+import { bucketToModuleType } from './article-access.js';
 
 const ENABLE_NEMOTRON_PDF_VISION_FALLBACK =
     String(process.env.ENABLE_NEMOTRON_PDF_VISION_FALLBACK || '').toLowerCase() === 'true';
@@ -237,11 +240,54 @@ function determineSchemaType(urlPath) {
     if (urlPath.includes('/dtcs') || urlPath.includes('/dtc/')) return 'dtcs';
     if (urlPath.includes('/tsbs') || urlPath.includes('/tsb/')) return 'tsbs';
     if (urlPath.includes('/specifications') || urlPath.includes('/specs')) return 'specifications';
+    if (urlPath.includes('/labor/')) return 'labor_operation';
     // Match /article/:id or /article/:id/html (single-article content → procedures table; AI parses structure)
     if (/\/article\/[^/?]+(\/html)?$/.test(urlPath) || urlPath.includes('/repair')) return 'procedures';
     if (urlPath.includes('/years') || urlPath.includes('/makes') || urlPath.includes('/models') || urlPath.includes('/engines')) return 'metadata';
     if (urlPath.includes('/articles/v2')) return 'articles';
     return null;
+}
+
+function articleModuleTypeToSchema(moduleType) {
+    if (moduleType === 'dtcs') return 'dtcs';
+    if (moduleType === 'tsbs') return 'tsbs';
+    if (moduleType === 'specs') return 'specifications';
+    if (moduleType === 'procedures') return 'procedures';
+    if (moduleType === 'diagrams') return 'diagram_document';
+    return null;
+}
+
+async function resolveArticleSchema(urlPath, fallbackSchema) {
+    const articleMatch = urlPath.match(/\/article\/([^?/]+)/);
+    if (!articleMatch || fallbackSchema !== 'procedures') {
+        return fallbackSchema;
+    }
+
+    const vehicleId = extractVehicleId(urlPath);
+    const articleId = articleMatch[1];
+    if (!vehicleId || !articleId) {
+        return fallbackSchema;
+    }
+
+    if (String(articleId).startsWith('L:')) {
+        return 'labor_operation';
+    }
+
+    const metadata = await getArticleMetadata(vehicleId, articleId);
+    if (!metadata) {
+        return fallbackSchema;
+    }
+
+    const combinedBucket = `${metadata.bucket || ''} ${metadata.parent_bucket || ''}`.toLowerCase();
+    if (combinedBucket.includes('component location')) {
+        return 'component_location_document';
+    }
+    if (combinedBucket.includes('diagram') || combinedBucket.includes('wiring')) {
+        return 'diagram_document';
+    }
+
+    const moduleType = bucketToModuleType(metadata.bucket, metadata.parent_bucket);
+    return articleModuleTypeToSchema(moduleType) || fallbackSchema;
 }
 
 /**
@@ -384,6 +430,8 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
     let totalTokensUsed = 0;
 
     try {
+        targetSchema = await resolveArticleSchema(urlPath, targetSchema);
+
         if (targetSchema === 'metadata') {
             const parsedJson = JSON.parse(rawData);
             const result = await insertMetadata(urlPath, parsedJson);
@@ -468,6 +516,101 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
         }
 
         await ensureVehicleExists(vehicleIdStr, extractContentSource(urlPath));
+
+        if (
+            targetSchema === 'diagram_document' ||
+            targetSchema === 'component_location_document' ||
+            targetSchema === 'labor_operation'
+        ) {
+            const articleMatch = urlPath.match(/\/(?:article|labor)\/([^?/]+)/);
+            const sourceArticleId = articleMatch?.[1] || extractExternalId(urlPath, targetSchema);
+            const articleMeta = sourceArticleId
+                ? await getArticleCatalogEntry(vehicleIdStr, sourceArticleId)
+                : null;
+
+            let contentHtml = null;
+            let metadataJson = {
+                source_path: urlPath,
+                content_source: extractContentSource(urlPath)
+            };
+
+            if (targetSchema === 'labor_operation') {
+                try {
+                    const parsed = JSON.parse(rawData);
+                    const body = parsed?.body || parsed || {};
+                    contentHtml =
+                        typeof body.content === 'string' ? body.content :
+                        typeof body.html === 'string' ? body.html : null;
+                    metadataJson = {
+                        ...metadataJson,
+                        labor_response_id: body.id || sourceArticleId || null,
+                        raw_metadata: body.metadata && typeof body.metadata === 'object' ? body.metadata : null
+                    };
+                } catch {
+                    contentHtml = typeof rawData === 'string' ? rawData : null;
+                }
+            } else {
+                contentHtml = typeof rawData === 'string' ? rawData : null;
+                metadataJson = {
+                    ...metadataJson,
+                    bucket: articleMeta?.bucket || null,
+                    parent_bucket: articleMeta?.parent_bucket || null,
+                    thumbnail_href: articleMeta?.thumbnail_href || null
+                };
+            }
+
+            const now = new Date().toISOString();
+            const row = {
+                vehicle_id: vehicleIdStr,
+                source_article_id: sourceArticleId,
+                title: articleMeta?.title || sourceArticleId || null,
+                description: articleMeta?.description || null,
+                content_html: contentHtml,
+                extractor_version: 'l1-v1',
+                metadata_json: metadataJson,
+                updated_at: now,
+                ...(targetSchema !== 'labor_operation'
+                    ? {
+                          thumbnail_graphic_id: articleMeta?.thumbnail_href || null,
+                          thumbnail_media_asset_id: null
+                      }
+                    : {})
+            };
+
+            const docResult = await insertParsedData(targetSchema, row);
+            if (!docResult.success) {
+                status = 'FAILED';
+                errorMessage = docResult.error?.message || docResult.error || `${targetSchema} insert failed`;
+                return;
+            }
+
+            if (sourceArticleId) {
+                const contentItem = buildMinimalContentItemFromParse({
+                    vehicleExternalId: vehicleIdStr,
+                    motorArticleId: sourceArticleId,
+                    contentSource: extractContentSource(urlPath),
+                    targetSchema
+                });
+                contentItem.display_title = row.title;
+                contentItem.display_description = row.description;
+                contentItem.search_text = `${row.title || ''} ${row.description || ''} ${String(contentHtml || '').replace(/<[^>]+>/g, ' ')}`.slice(0, 8000);
+                const ciResult = await insertParsedData('content_item', contentItem);
+                if (!ciResult.success) {
+                    logger.warn(`[${taskId}] content_item upsert skipped for ${targetSchema}: ${ciResult.error}`);
+                }
+
+                await ingestL2ContentChunksIfEnabled({
+                    taskId,
+                    vehicleExternalId: vehicleIdStr,
+                    motorArticleId: sourceArticleId,
+                    contentSource: extractContentSource(urlPath),
+                    targetSchema,
+                    htmlContent: contentHtml,
+                    parsedData: row
+                });
+            }
+            return;
+        }
 
         // L0 traceability for single-article / parse-target payloads.
         // Keep metadata compact here; full payload retention can move to Storage later.
