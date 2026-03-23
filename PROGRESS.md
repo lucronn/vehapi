@@ -84,10 +84,10 @@
 
 | Priority | Task |
 |----------|------|
-| **High** | **Apply DB migrations on staging/prod** when not yet applied: `migrate:normalized-diagrams-labor`, `migrate:rls-tightening`, `migrate:match-content-chunks-rpc`, and any pending L2/content-chunk migration required by the target environment. **Prod:** enable `environment.features.l2Search` when QA passes. **Local verify:** `npm run verify:prod-readiness`. **Done in repo:** plan completion table in `docs/plans/2026-03-21-production-readiness-paid-plus-l2.md`. |
-| Medium | Phase-1 worker regression: `cd vehapiproxi && npm run verify:evidence-links -- --local --vehicle=<id>` with **local** `ng serve` + `node src/index.js`, `SKIP_ARTICLE_ACCESS_AUTH=true` + `NODE_ENV=development` in `vehapiproxi/.env` (no user JWT). Or Vercel: `--token=<user access_token>`. Needs `SUPABASE_*` in `.env`. |
-| Medium | Verify target DB release state with `cd vehapiproxi && npm run verify:release-target` after staging/prod migrations. |
-| Medium | Run and record a golden-vehicle normalization verification pass against staging/prod if needed. Local Node 22 verification is now green: `documentation/release-artifacts/golden-vehicle-verification-20260323-051007.md`. |
+| **High** | **DB migrations (DDL + RPC) verified on target**: required normalized tables exist, and RPC `public.match_content_chunks(...)` is callable (Supabase REST service-role check). RLS sanity: server-only tables contain rows under service-role but return empty to anon-only (evidence_link/evidence_ingest/ai_processing_logs). **Prod:** enable `environment.features.l2Search` when QA passes. **Local verify:** `npm run verify:prod-readiness`. **Done in repo:** plan completion table in `docs/plans/2026-03-21-production-readiness-paid-plus-l2.md`. |
+| Medium | Phase-1 worker regression completed locally: `cd vehapiproxi && npm run verify:evidence-links -- --local --vehicle=2854 --source=GeneralMotors --article=7042430` (PASS). |
+| Medium | `cd vehapiproxi && npm run verify:release-target` (pg-based) is failing on this machine with `ECONNRESET`, but the same “release target” requirements were validated via Supabase REST checks (tables + RPC + RLS sanity) as described above. |
+| Medium | Golden-vehicle normalization verification (local Node 22) green: `documentation/release-artifacts/golden-vehicle-verification-20260323-051007.md`. |
 | Low | Commit `.cursor/hooks.json`, `.cursor/hooks/*.mjs`, `.cursor/WORKER_LOOP.md` (and `.cursor/agents/*`) when the team should share Cursor auto-continue / orchestrator docs |
 | Low | (cleared 2026-03-24) AGENTS.md ↔ WORKER_LOOP: hook toggles + `npm run cursor:auto-once` / `continue-once.ps1` documented |
 | Low | Full-vehicle unlock option from lock overlay |
