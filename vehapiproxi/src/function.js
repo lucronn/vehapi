@@ -71,8 +71,10 @@ async function getEnqueue() {
     try {
         const mod = await import('./background_worker.js');
         _enqueueParsingTask = mod.enqueueParsingTask;
+        logger.info('Background worker loaded for async parsing.');
     } catch (e) {
         // Background worker unavailable (e.g. missing API keys). Proxy still works.
+        logger.warn(`Background worker unavailable: ${e?.message || e}`);
     }
     return _enqueueParsingTask;
 }
@@ -83,7 +85,10 @@ function enqueueBackgroundParse(req, responseBuffer) {
         .then((enqueue) => {
             if (enqueue) {
                 try {
-                    enqueue(req.path, responseBuffer);
+                    logger.info(
+                        `Queueing background parse for ${req.path}${isVerifyBypass(req) ? ' [verify force-reparse]' : ''}`
+                    );
+                    enqueue(req.path, responseBuffer, { forceReparse: isVerifyBypass(req) });
                 } catch (qErr) {
                     logger.error('Failed to enqueue background parsing task:', qErr);
                 }

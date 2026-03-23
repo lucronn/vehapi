@@ -317,7 +317,8 @@ async function runChecks(articleId) {
     // Do not filter content_source: worker preserves Motor path casing; legacy rows may be uppercase.
     const contentItems = await sbGet(
         `content_item?vehicle_external_id=eq.${vehicleEq}&motor_article_id=eq.${articleEq}` +
-            '&select=id,content_source,display_description,search_text,enrichment_source,enrichment_version,enriched_at'
+            '&select=id,content_source,display_description,search_text,enrichment_source,enrichment_version,enriched_at,updated_at' +
+            '&limit=10'
     );
 
     const evidenceRows = await sbGet(
@@ -332,7 +333,12 @@ async function runChecks(articleId) {
           )
         : [];
 
-    const ci = contentItems[0] || null;
+    const ci =
+        contentItems.find((row) => Boolean(row && (row.display_description || row.search_text))) ||
+        contentItems
+            .slice()
+            .sort((a, b) => String(b?.updated_at || '').localeCompare(String(a?.updated_at || '')))[0] ||
+        null;
     const hasCiEnrichment = Boolean(ci && (ci.display_description || ci.search_text));
     const hasEvidence = evidenceRows.length > 0;
     const hasLinks = links.length > 0;

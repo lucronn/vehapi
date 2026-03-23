@@ -457,29 +457,42 @@ export async function updateContentItemEnrichment(vehicleExternalId, motorArticl
         return { success: false, error: 'Missing content_item key fields' };
     }
     try {
-        const url =
+        const queryBase =
             `${cfg.url}/rest/v1/content_item` +
             `?vehicle_external_id=eq.${encodeURIComponent(vehicleExternalId)}` +
-            `&motor_article_id=eq.${encodeURIComponent(motorArticleId)}` +
-            `&content_source=eq.${encodeURIComponent(contentSource)}`;
-
-        const response = await fetch(url, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                apikey: cfg.key,
-                Authorization: `Bearer ${cfg.key}`,
-                Prefer: 'return=minimal'
-            },
-            body: JSON.stringify({
-                ...patch,
-                updated_at: new Date().toISOString()
-            })
+            `&motor_article_id=eq.${encodeURIComponent(motorArticleId)}`;
+        const requestBody = JSON.stringify({
+            ...patch,
+            updated_at: new Date().toISOString()
         });
+        const tryPatch = async (sourceFilter) => {
+            const response = await fetch(`${queryBase}&${sourceFilter}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    apikey: cfg.key,
+                    Authorization: `Bearer ${cfg.key}`,
+                    Prefer: 'return=representation'
+                },
+                body: requestBody
+            });
+            const rows = response.ok ? await response.json().catch(() => []) : null;
+            return { response, rows };
+        };
+
+        let { response, rows } = await tryPatch(`content_source=eq.${encodeURIComponent(contentSource)}`);
         if (!response.ok) {
             const errorText = await response.text();
             logger.error(`content_item enrichment update failed [${response.status}]: ${errorText}`);
             return { success: false, error: errorText };
+        }
+        if (!Array.isArray(rows) || rows.length === 0) {
+            ({ response, rows } = await tryPatch(`content_source=ilike.${encodeURIComponent(contentSource)}`));
+            if (!response.ok) {
+                const errorText = await response.text();
+                logger.error(`content_item enrichment fallback update failed [${response.status}]: ${errorText}`);
+                return { success: false, error: errorText };
+            }
         }
         return { success: true };
     } catch (err) {
@@ -497,26 +510,31 @@ export async function fetchContentItemId(vehicleExternalId, motorArticleId, cont
         return null;
     }
     try {
-        const url =
+        const queryBase =
             `${cfg.url}/rest/v1/content_item` +
             `?select=id` +
             `&vehicle_external_id=eq.${encodeURIComponent(vehicleExternalId)}` +
             `&motor_article_id=eq.${encodeURIComponent(motorArticleId)}` +
-            `&content_source=eq.${encodeURIComponent(contentSource)}` +
             `&limit=1`;
-        const response = await fetch(url, {
-            headers: {
-                apikey: cfg.key,
-                Authorization: `Bearer ${cfg.key}`,
-                Accept: 'application/json'
+        const tryFetch = async (sourceFilter) => {
+            const response = await fetch(`${queryBase}&${sourceFilter}`, {
+                headers: {
+                    apikey: cfg.key,
+                    Authorization: `Bearer ${cfg.key}`,
+                    Accept: 'application/json'
+                }
+            });
+            if (!response.ok) {
+                return null;
             }
-        });
-        if (!response.ok) {
-            return null;
-        }
-        const rows = await response.json();
-        const id = rows?.[0]?.id;
-        return typeof id === 'string' ? id : null;
+            const rows = await response.json();
+            const id = rows?.[0]?.id;
+            return typeof id === 'string' ? id : null;
+        };
+        return (
+            (await tryFetch(`content_source=eq.${encodeURIComponent(contentSource)}`)) ||
+            (await tryFetch(`content_source=ilike.${encodeURIComponent(contentSource)}`))
+        );
     } catch {
         return null;
     }

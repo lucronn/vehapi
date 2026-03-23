@@ -397,16 +397,24 @@ function extractExternalId(urlPath, targetSchema) {
  * Fires an un-awaited background processing task.
  * Checks for prior successful parse first to avoid wasting AI quota.
  */
-export function enqueueParsingTask(urlPath, rawData) {
+export function enqueueParsingTask(urlPath, rawData, options = {}) {
     const targetSchema = determineSchemaType(urlPath);
     if (!targetSchema) return;
 
     const taskId = Math.random().toString(36).substring(2, 9);
+    const forceReparse = options && options.forceReparse === true;
 
     wasAlreadyParsed(urlPath).then(alreadyDone => {
+        if (forceReparse) {
+            logger.info(`Force reprocessing AI parse [${taskId}] for verify request: ${urlPath}`);
+        }
         if (alreadyDone) {
+            if (forceReparse) {
+                logger.info(`Bypassing already-parsed short-circuit [${taskId}] for verify request: ${urlPath}`);
+            } else {
             logger.info(`Skipping AI parse [${taskId}] — already cached: ${urlPath}`);
             return;
+            }
         }
 
         logger.info(`Started asynchronous AI parsing task: [${taskId}] schema=${targetSchema}, path=${urlPath}`);
@@ -659,11 +667,35 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
             logger.warn(`[${taskId}] evidence_ingest failed: ${evErr.message}`);
         }
 
+        const externalIdStr = extractExternalId(urlPath, targetSchema);
+        const articleContentSource = extractContentSource(urlPath);
+
+        if (externalIdStr) {
+            let contentItemId = await fetchContentItemId(vehicleIdStr, externalIdStr, articleContentSource);
+            if (!contentItemId) {
+                const minimal = buildMinimalContentItemFromParse({
+                    vehicleExternalId: vehicleIdStr,
+                    motorArticleId: externalIdStr,
+                    contentSource: articleContentSource,
+                    targetSchema
+                });
+                const ciIns = await insertParsedData('content_item', [minimal], { returnRepresentation: true });
+                if (!ciIns.success) {
+                    logger.warn(`[${taskId}] content_item pre-parse upsert skipped: ${ciIns.error}`);
+                }
+                contentItemId = await fetchContentItemId(vehicleIdStr, externalIdStr, articleContentSource);
+            }
+            if (evidenceId && contentItemId) {
+                const links = await insertEvidenceLinks(evidenceId, 'content_item', [contentItemId], 'phase1-v1');
+                if (!links.success) {
+                    logger.warn(`[${taskId}] content_item evidence_link skipped: ${links.error}`);
+                }
+            }
+        }
+
         const { parsed: parsedData, usage: parseUsage } = await parseWithAI(rawData, targetSchema, {
             urlPath
         });
-
-        const externalIdStr = extractExternalId(urlPath, targetSchema);
 
         const attachMeta = (item) => {
             item.vehicle_id = vehicleIdStr;
@@ -762,7 +794,7 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
             // Lazy catalog enrichment: when parsing article bodies, improve content_item discoverability.
             const isArticleId = Boolean(urlPath.match(/\/article\/([^?/]+)/));
             if (isArticleId && externalIdStr) {
-                const cs = extractContentSource(urlPath);
+                const cs = articleContentSource;
                 if (!(await fetchContentItemId(vehicleIdStr, externalIdStr, cs))) {
                     const minimal = buildMinimalContentItemFromParse({
                         vehicleExternalId: vehicleIdStr,
@@ -779,15 +811,6 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                 const ci = await updateContentItemEnrichment(vehicleIdStr, externalIdStr, cs, patch);
                 if (!ci.success) {
                     logger.warn(`[${taskId}] content_item enrichment skipped: ${ci.error}`);
-                }
-                if (evidenceId) {
-                    const contentItemId = await fetchContentItemId(vehicleIdStr, externalIdStr, cs);
-                    if (contentItemId) {
-                        const links = await insertEvidenceLinks(evidenceId, 'content_item', [contentItemId], 'phase1-v1');
-                        if (!links.success) {
-                            logger.warn(`[${taskId}] content_item evidence_link skipped: ${links.error}`);
-                        }
-                    }
                 }
                 await ingestL2ContentChunksIfEnabled({
                     taskId,
