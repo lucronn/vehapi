@@ -1,0 +1,379 @@
+ M .cursor/WORKER_LOOP.md
+ M .cursor/agents/worker-progress-orchestrator.md
+ M .cursor/hooks.json
+ M .cursor/hooks/auto-continue.mjs
+ M .cursor/hooks/session-start-log.mjs
+ M .cursor/skills/angular-ui-ux-improvement-agent/SKILL.md
+ M .cursor/skills/vehicle-data-normalization-migration/SKILL.md
+ M docs/plans/2026-03-18-normalization-schema-design.md
+ M docs/plans/2026-03-21-production-readiness-paid-plus-l2-design.md
+ M docs/plans/2026-03-21-production-readiness-paid-plus-l2.md
+ M docs/plans/subagent-prompts/README.md
+ M docs/plans/subagent-prompts/code-quality-reviewer-prompt.md
+ M docs/plans/subagent-prompts/implementer-prompt.md
+ M docs/plans/subagent-prompts/spec-reviewer-prompt.md
+ M documentation/RLS_STAGING_NOTES.md
+ M documentation/migrations/20260319_phase1_normalization.sql
+ M documentation/migrations/20260320_l1_spec_fact.sql
+ M documentation/migrations/20260321_l1_maintenance_task.sql
+ M documentation/migrations/20260321_match_content_chunks_rpc.sql
+ M documentation/migrations/20260321_rls_staging_tightening.sql
+ M documentation/migrations/20260322_l1_procedure_step.sql
+ M documentation/migrations/20260323_l1_procedure_tool_and_part.sql
+ M documentation/migrations/20260325_failed_extractions_and_ai_log_tokens.sql
+ M randdev/.firebaserc
+ M randdev/FIREBASE_SETUP.md
+ M randdev/LOGGING.md
+ M randdev/deploy.bat
+ M randdev/firestore.rules
+ M randdev/m1_crawler/auth.py
+ M randdev/m1_crawler/browser_mapper.py
+ M randdev/m1_crawler/check_motor_source_fallback.py
+ M "randdev/m1_crawler/data/2010/Buick/Enclave - AWD/articles_v2.json"
+ M "randdev/m1_crawler/data/2010/Buick/Enclave - AWD/component_locations.json"
+ M "randdev/m1_crawler/data/2010/Buick/Enclave - AWD/procedures.json"
+ M "randdev/m1_crawler/data/2010/Buick/Enclave - AWD/wiring_diagrams.json"
+ M randdev/m1_crawler/data/2010/Cadillac/CTS/articles_v2.json
+ M randdev/m1_crawler/data/2010/Cadillac/CTS/component_locations.json
+ M randdev/m1_crawler/data/2010/Cadillac/CTS/procedures.json
+ M randdev/m1_crawler/data/2010/Cadillac/CTS/wiring_diagrams.json
+ M "randdev/m1_crawler/data/2010/Chevrolet/Avalanche - 2WD/articles_v2.json"
+ M "randdev/m1_crawler/data/2010/Chevrolet/Avalanche - 2WD/component_locations.json"
+ M "randdev/m1_crawler/data/2010/Chevrolet/Avalanche - 2WD/procedures.json"
+ M "randdev/m1_crawler/data/2010/Chevrolet/Avalanche - 2WD/wiring_diagrams.json"
+ M "randdev/m1_crawler/data/2010/GMC/Acadia - 2WD/articles_v2.json"
+ M "randdev/m1_crawler/data/2010/GMC/Acadia - 2WD/component_locations.json"
+ M "randdev/m1_crawler/data/2010/GMC/Acadia - 2WD/procedures.json"
+ M "randdev/m1_crawler/data/2010/GMC/Acadia - 2WD/wiring_diagrams.json"
+ M randdev/m1_crawler/data/2010/Hummer/H3/articles_v2.json
+ M randdev/m1_crawler/data/2010/Hummer/H3/component_locations.json
+ M randdev/m1_crawler/data/2010/Hummer/H3/procedures.json
+ M randdev/m1_crawler/data/2010/Hummer/H3/wiring_diagrams.json
+ M randdev/m1_crawler/data/2010/INFINITI/FX35/FX50/articles_v2.json
+ M randdev/m1_crawler/data/2010/INFINITI/FX35/FX50/component_locations.json
+ M randdev/m1_crawler/data/2010/INFINITI/FX35/FX50/procedures.json
+ M randdev/m1_crawler/data/2010/INFINITI/FX35/FX50/wiring_diagrams.json
+ M randdev/m1_crawler/data/2010/Pontiac/G3/articles_v2.json
+ M randdev/m1_crawler/data/2010/Pontiac/G3/component_locations.json
+ M randdev/m1_crawler/data/2010/Pontiac/G3/procedures.json
+ M randdev/m1_crawler/data/2010/Pontiac/G3/wiring_diagrams.json
+ M "randdev/m1_crawler/data/2010/Saturn/OUTLOOK - AWD/articles_v2.json"
+ M "randdev/m1_crawler/data/2010/Saturn/OUTLOOK - AWD/component_locations.json"
+ M "randdev/m1_crawler/data/2010/Saturn/OUTLOOK - AWD/procedures.json"
+ M "randdev/m1_crawler/data/2010/Saturn/OUTLOOK - AWD/wiring_diagrams.json"
+ M "randdev/m1_crawler/data/2011/BMW/1 Series M Base/articles_v2.json"
+ M "randdev/m1_crawler/data/2011/BMW/1 Series M Base/component_locations.json"
+ M "randdev/m1_crawler/data/2011/BMW/1 Series M Base/labor.json"
+ M "randdev/m1_crawler/data/2011/BMW/1 Series M Base/maintenance_frequency.json"
+ M "randdev/m1_crawler/data/2011/BMW/1 Series M Base/maintenance_intervals.json"
+ M "randdev/m1_crawler/data/2011/BMW/1 Series M Base/parts.json"
+ M "randdev/m1_crawler/data/2011/BMW/1 Series M Base/procedures.json"
+ M "randdev/m1_crawler/data/2011/BMW/1 Series M Base/wiring_diagrams.json"
+ M randdev/m1_crawler/data/2011/BMW/models_list.json
+ M "randdev/m1_crawler/data/2011/Buick/Enclave - AWD/articles_v2.json"
+ M "randdev/m1_crawler/data/2011/Buick/Enclave - AWD/component_locations.json"
+ M "randdev/m1_crawler/data/2011/Buick/Enclave - AWD/procedures.json"
+ M "randdev/m1_crawler/data/2011/Buick/Enclave - AWD/wiring_diagrams.json"
+ M randdev/m1_crawler/data/2011/Buick/models_list.json
+ M randdev/m1_crawler/data/2011/Cadillac/CTS/articles_v2.json
+ M randdev/m1_crawler/data/2011/Cadillac/CTS/component_locations.json
+ M randdev/m1_crawler/data/2011/Cadillac/CTS/procedures.json
+ M randdev/m1_crawler/data/2011/Cadillac/CTS/wiring_diagrams.json
+ M "randdev/m1_crawler/data/2011/Chrysler/SEBRING (JS)/articles_v2.json"
+ M "randdev/m1_crawler/data/2011/Chrysler/SEBRING (JS)/component_locations.json"
+ M "randdev/m1_crawler/data/2011/Chrysler/SEBRING (JS)/procedures.json"
+ M "randdev/m1_crawler/data/2011/Chrysler/SEBRING (JS)/wiring_diagrams.json"
+ M randdev/m1_crawler/data/2011/Chrysler/models_list.json
+ M "randdev/m1_crawler/data/2011/Dodge/JOURNEY (JC)/articles_v2.json"
+ M "randdev/m1_crawler/data/2011/Dodge/JOURNEY (JC)/component_locations.json"
+ M "randdev/m1_crawler/data/2011/Dodge/JOURNEY (JC)/procedures.json"
+ M "randdev/m1_crawler/data/2011/Dodge/JOURNEY (JC)/wiring_diagrams.json"
+ M randdev/m1_crawler/data/2011/Dodge/models_list.json
+ M "randdev/m1_crawler/data/2011/Hyundai/Accent GL/articles_v2.json"
+ M "randdev/m1_crawler/data/2011/Hyundai/Accent GL/component_locations.json"
+ M "randdev/m1_crawler/data/2011/Hyundai/Accent GL/labor.json"
+ M "randdev/m1_crawler/data/2011/Hyundai/Accent GL/maintenance_frequency.json"
+ M "randdev/m1_crawler/data/2011/Hyundai/Accent GL/maintenance_intervals.json"
+ M "randdev/m1_crawler/data/2011/Hyundai/Accent GL/parts.json"
+ M "randdev/m1_crawler/data/2011/Hyundai/Accent GL/procedures.json"
+ M "randdev/m1_crawler/data/2011/Hyundai/Accent GL/wiring_diagrams.json"
+ M randdev/m1_crawler/data/2011/Hyundai/models_list.json
+ M "randdev/m1_crawler/data/2011/Jaguar/XF Base/articles_v2.json"
+ M "randdev/m1_crawler/data/2011/Jaguar/XF Base/component_locations.json"
+ M "randdev/m1_crawler/data/2011/Jaguar/XF Base/labor.json"
+ M "randdev/m1_crawler/data/2011/Jaguar/XF Base/maintenance_frequency.json"
+ M "randdev/m1_crawler/data/2011/Jaguar/XF Base/maintenance_intervals.json"
+ M "randdev/m1_crawler/data/2011/Jaguar/XF Base/parts.json"
+ M "randdev/m1_crawler/data/2011/Jaguar/XF Base/procedures.json"
+ M "randdev/m1_crawler/data/2011/Jaguar/XF Base/wiring_diagrams.json"
+ M randdev/m1_crawler/data/2011/Jaguar/models_list.json
+ M "randdev/m1_crawler/data/2011/Jeep/WRANGLER (JK)/articles_v2.json"
+ M "randdev/m1_crawler/data/2011/Jeep/WRANGLER (JK)/component_locations.json"
+ M "randdev/m1_crawler/data/2011/Jeep/WRANGLER (JK)/procedures.json"
+ M "randdev/m1_crawler/data/2011/Jeep/WRANGLER (JK)/wiring_diagrams.json"
+ M randdev/m1_crawler/data/2011/Jeep/models_list.json
+ M "randdev/m1_crawler/data/2011/Kia/Forte EX/articles_v2.json"
+ M "randdev/m1_crawler/data/2011/Kia/Forte EX/component_locations.json"
+ M "randdev/m1_crawler/data/2011/Kia/Forte EX/labor.json"
+ M "randdev/m1_crawler/data/2011/Kia/Forte EX/maintenance_frequency.json"
+ M "randdev/m1_crawler/data/2011/Kia/Forte EX/maintenance_intervals.json"
+ M "randdev/m1_crawler/data/2011/Kia/Forte EX/parts.json"
+ M "randdev/m1_crawler/data/2011/Kia/Forte EX/procedures.json"
+ M "randdev/m1_crawler/data/2011/Kia/Forte EX/wiring_diagrams.json"
+ M randdev/m1_crawler/data/2011/Kia/models_list.json
+ M "randdev/m1_crawler/data/2011/Land Rover/LR2 Base/articles_v2.json"
+ M "randdev/m1_crawler/data/2011/Land Rover/LR2 Base/component_locations.json"
+ M "randdev/m1_crawler/data/2011/Land Rover/LR2 Base/labor.json"
+ M "randdev/m1_crawler/data/2011/Land Rover/LR2 Base/maintenance_frequency.json"
+ M "randdev/m1_crawler/data/2011/Land Rover/LR2 Base/maintenance_intervals.json"
+ M "randdev/m1_crawler/data/2011/Land Rover/LR2 Base/parts.json"
+ M "randdev/m1_crawler/data/2011/Land Rover/LR2 Base/procedures.json"
+ M "randdev/m1_crawler/data/2011/Land Rover/LR2 Base/wiring_diagrams.json"
+ M "randdev/m1_crawler/data/2011/Land Rover/models_list.json"
+ M "randdev/m1_crawler/data/2011/Mini/Cooper Base/articles_v2.json"
+ M "randdev/m1_crawler/data/2011/Mini/Cooper Base/component_locations.json"
+ M "randdev/m1_crawler/data/2011/Mini/Cooper Base/labor.json"
+ M "randdev/m1_crawler/data/2011/Mini/Cooper Base/maintenance_frequency.json"
+ M "randdev/m1_crawler/data/2011/Mini/Cooper Base/maintenance_intervals.json"
+ M "randdev/m1_crawler/data/2011/Mini/Cooper Base/parts.json"
+ M "randdev/m1_crawler/data/2011/Mini/Cooper Base/procedures.json"
+ M "randdev/m1_crawler/data/2011/Mini/Cooper Base/wiring_diagrams.json"
+ M randdev/m1_crawler/data/2011/Mini/models_list.json
+ M "randdev/m1_crawler/data/2011/Porsche/911 Carrera/articles_v2.json"
+ M "randdev/m1_crawler/data/2011/Porsche/911 Carrera/component_locations.json"
+ M "randdev/m1_crawler/data/2011/Porsche/911 Carrera/labor.json"
+ M "randdev/m1_crawler/data/2011/Porsche/911 Carrera/maintenance_frequency.json"
+ M "randdev/m1_crawler/data/2011/Porsche/911 Carrera/maintenance_intervals.json"
+ M "randdev/m1_crawler/data/2011/Porsche/911 Carrera/parts.json"
+ M "randdev/m1_crawler/data/2011/Porsche/911 Carrera/procedures.json"
+ M "randdev/m1_crawler/data/2011/Porsche/911 Carrera/wiring_diagrams.json"
+ M randdev/m1_crawler/data/2011/Porsche/models_list.json
+ M "randdev/m1_crawler/data/2011/Subaru/Forester X/articles_v2.json"
+ M "randdev/m1_crawler/data/2011/Subaru/Forester X/component_locations.json"
+ M "randdev/m1_crawler/data/2011/Subaru/Forester X/labor.json"
+ M "randdev/m1_crawler/data/2011/Subaru/Forester X/maintenance_frequency.json"
+ M "randdev/m1_crawler/data/2011/Subaru/Forester X/maintenance_intervals.json"
+ M "randdev/m1_crawler/data/2011/Subaru/Forester X/parts.json"
+ M "randdev/m1_crawler/data/2011/Subaru/Forester X/procedures.json"
+ M "randdev/m1_crawler/data/2011/Subaru/Forester X/wiring_diagrams.json"
+ M randdev/m1_crawler/data/2011/Subaru/models_list.json
+ M "randdev/m1_crawler/data/2011/Suzuki/Equator Base/articles_v2.json"
+ M "randdev/m1_crawler/data/2011/Suzuki/Equator Base/component_locations.json"
+ M "randdev/m1_crawler/data/2011/Suzuki/Equator Base/labor.json"
+ M "randdev/m1_crawler/data/2011/Suzuki/Equator Base/maintenance_frequency.json"
+ M "randdev/m1_crawler/data/2011/Suzuki/Equator Base/maintenance_intervals.json"
+ M "randdev/m1_crawler/data/2011/Suzuki/Equator Base/parts.json"
+ M "randdev/m1_crawler/data/2011/Suzuki/Equator Base/procedures.json"
+ M "randdev/m1_crawler/data/2011/Suzuki/Equator Base/wiring_diagrams.json"
+ M randdev/m1_crawler/data/2011/Suzuki/models_list.json
+ M "randdev/m1_crawler/data/2011/Volvo/C30 T5/articles_v2.json"
+ M "randdev/m1_crawler/data/2011/Volvo/C30 T5/component_locations.json"
+ M "randdev/m1_crawler/data/2011/Volvo/C30 T5/labor.json"
+ M "randdev/m1_crawler/data/2011/Volvo/C30 T5/maintenance_frequency.json"
+ M "randdev/m1_crawler/data/2011/Volvo/C30 T5/maintenance_intervals.json"
+ M "randdev/m1_crawler/data/2011/Volvo/C30 T5/parts.json"
+ M "randdev/m1_crawler/data/2011/Volvo/C30 T5/procedures.json"
+ M "randdev/m1_crawler/data/2011/Volvo/C30 T5/wiring_diagrams.json"
+ M randdev/m1_crawler/data/2011/Volvo/models_list.json
+ M randdev/m1_crawler/data/browser_mapped/capture_20260310_165334.jsonl
+ M randdev/m1_crawler/data/browser_mapped/capture_20260310_165857.jsonl
+ M randdev/m1_crawler/data/browser_mapped/capture_20260310_192114.jsonl
+ M randdev/m1_crawler/data/browser_mapped/capture_20260310_202241.jsonl
+ M randdev/m1_crawler/data/browser_mapped/capture_20260310_202505.jsonl
+ M randdev/m1_crawler/data/browser_mapped/capture_20260310_202913.jsonl
+ M randdev/m1_crawler/data/browser_mapped/capture_20260310_203040.jsonl
+ M randdev/m1_crawler/data/browser_mapped/capture_20260310_203137.jsonl
+ M randdev/m1_crawler/data/browser_mapped/capture_20260310_203221.jsonl
+ M randdev/m1_crawler/data/browser_mapped/capture_20260311_001906.jsonl
+ M randdev/m1_crawler/data/browser_mapped/capture_20260311_013359.jsonl
+ M randdev/m1_crawler/data/browser_mapped/capture_20260311_015103.jsonl
+ M randdev/m1_crawler/data/browser_mapped/content_sources_20260311_015103.md
+ M randdev/m1_crawler/data/browser_mapped/endpoints_20260310_165334.json
+ M randdev/m1_crawler/data/browser_mapped/endpoints_20260310_165857.json
+ M randdev/m1_crawler/data/browser_mapped/endpoints_20260310_192114.json
+ M randdev/m1_crawler/data/browser_mapped/endpoints_20260310_202241.json
+ M randdev/m1_crawler/data/browser_mapped/endpoints_20260310_202505.json
+ M randdev/m1_crawler/data/browser_mapped/endpoints_20260310_202913.json
+ M randdev/m1_crawler/data/browser_mapped/endpoints_20260310_203040.json
+ M randdev/m1_crawler/data/browser_mapped/endpoints_20260310_203137.json
+ M randdev/m1_crawler/data/browser_mapped/endpoints_20260310_203221.json
+ M randdev/m1_crawler/data/browser_mapped/endpoints_20260311_001906.json
+ M randdev/m1_crawler/data/browser_mapped/endpoints_20260311_013359.json
+ M randdev/m1_crawler/data/browser_mapped/endpoints_20260311_015103.json
+ M randdev/m1_crawler/error_log.py
+ M randdev/m1_crawler/extract_endpoints.py
+ M randdev/m1_crawler/ford.txt
+ M randdev/m1_crawler/m1_endpoints.json
+ M randdev/m1_crawler/run.bat
+ M randdev/m1_crawler/test_labor.py
+ M randdev/netlify.toml
+ M randdev/oldfiles/oldfiles/_extracted_theme/.gitignore
+ M randdev/oldfiles/oldfiles/_extracted_theme/README.md
+ M randdev/oldfiles/oldfiles/_extracted_theme/components.json
+ M randdev/oldfiles/oldfiles/_extracted_theme/eslint.config.js
+ M randdev/oldfiles/oldfiles/_extracted_theme/index.html
+ M randdev/oldfiles/oldfiles/_extracted_theme/package-lock.json
+ M randdev/oldfiles/oldfiles/_extracted_theme/package.json
+ M randdev/oldfiles/oldfiles/_extracted_theme/pnpm-lock.yaml
+ M randdev/oldfiles/oldfiles/_extracted_theme/postcss.config.js
+ M randdev/oldfiles/oldfiles/_extracted_theme/public/placeholder.svg
+ M randdev/oldfiles/oldfiles/_extracted_theme/public/robots.txt
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/App.css
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/App.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/AppLayout.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/theme-provider.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/torque/ArticleViewer.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/torque/Dashboard.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/torque/GlobalSearch.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/torque/HomePage.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/torque/Icons.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/torque/LoadingStates.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/torque/Sidebar.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/torque/sections/AllData.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/torque/sections/Bulletins.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/torque/sections/ComponentLocations.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/torque/sections/Diagrams.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/torque/sections/FaultCodes.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/torque/sections/Maintenance.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/torque/sections/Overview.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/torque/sections/Parts.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/torque/sections/Procedures.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/torque/sections/Specifications.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/accordion.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/alert-dialog.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/alert.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/aspect-ratio.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/avatar.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/badge.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/breadcrumb.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/button.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/calendar.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/card.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/carousel.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/chart.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/checkbox.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/collapsible.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/command.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/context-menu.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/dialog.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/drawer.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/dropdown-menu.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/form.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/hover-card.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/input-otp.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/input.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/label.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/menubar.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/navigation-menu.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/pagination.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/popover.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/progress.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/radio-group.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/resizable.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/scroll-area.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/select.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/separator.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/sheet.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/sidebar.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/skeleton.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/slider.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/sonner.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/switch.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/table.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/tabs.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/textarea.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/toast.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/toaster.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/toggle-group.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/toggle.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/tooltip.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/components/ui/use-toast.ts
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/contexts/AppContext.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/hooks/use-mobile.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/hooks/use-toast.ts
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/index.css
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/lib/utils.ts
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/main.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/pages/Index.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/pages/NotFound.tsx
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/services/api.ts
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/services/persistence.test.ts
+ M randdev/oldfiles/oldfiles/_extracted_theme/src/services/persistence.ts
+ M randdev/oldfiles/oldfiles/_extracted_theme/tailwind.config.ts
+ M randdev/oldfiles/oldfiles/_extracted_theme/tsconfig.app.json
+ M randdev/oldfiles/oldfiles/_extracted_theme/tsconfig.json
+ M randdev/oldfiles/oldfiles/_extracted_theme/tsconfig.node.json
+ M randdev/oldfiles/oldfiles/_extracted_theme/vite.config.ts
+ M randdev/oldfiles/oldfiles/documentation/vehapiproxi/CONFIGURATION_SUMMARY.md
+ M randdev/oldfiles/oldfiles/documentation/vehapiproxi/DEPLOYMENT_FIX.md
+ M randdev/oldfiles/oldfiles/documentation/vehapiproxi/FIREBASE_ENV_SETUP.md
+ M randdev/oldfiles/oldfiles/documentation/vehapiproxi/README.md
+ M randdev/oldfiles/oldfiles/documentation/vehapiproxi/SETUP_ENV.md
+ M randdev/oldfiles/oldfiles/documentation/vehapiproxi/downloaded-logs-20251226-204020.json
+ M randdev/oldfiles/oldfiles/documentation/vehapiproxi/power.har
+ M randdev/oldfiles/oldfiles/documentation/vehapiproxi/swagger.yaml
+ M randdev/parity-test.cjs
+ M randdev/scripts/extract_vehicle_data_2020.py
+ M randdev/scripts/inject-eruda.cjs
+ M randdev/scripts/validate_2009_models.cjs
+ M scripts/automation/README.md
+ M scripts/automation/cursor-continue-hotkey.ahk
+ M scripts/continue-once.ps1
+ M scripts/cursor-auto-continue-loop.ps1
+ M scripts/cursor-auto-continue-once.ps1
+ M scripts/cursor-worker-continue.cjs
+ M scripts/subagent-prompt.mjs
+ M scripts/verify-production-readiness.mjs
+ M src/components/category-tree/category-tree.component.html
+ M src/components/category-tree/category-tree.component.ts
+ M src/components/credits-modal/credits-modal.component.ts
+ M src/interceptors/auth-header.interceptor.ts
+ M src/pages/credits-dashboard/credits-dashboard.component.ts
+ M src/pages/home/home.component.html
+ M src/pages/home/home.component.ts
+ M src/pages/vehicle-dashboard/components/layout/dashboard-sidebar/dashboard-sidebar.component.html
+ M src/pages/vehicle-dashboard/components/layout/l2-search-panel/l2-search-panel.component.html
+ M src/pages/vehicle-dashboard/components/layout/l2-search-panel/l2-search-panel.component.ts
+ M src/services/auth.service.ts
+ M src/services/credits.service.ts
+ M src/utils/module-access.util.ts
+ M vehapiproxi/.env.example
+ M vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md
+ M vehapiproxi/fluidscfg.json
+ M vehapiproxi/scripts/check-nemotron.mjs
+ M vehapiproxi/scripts/run-migrate-additive-phase1.js
+ M vehapiproxi/scripts/run-migrate-ai-hardening.js
+ M vehapiproxi/scripts/run-migrate-l1-maintenance-task.js
+ M vehapiproxi/scripts/run-migrate-l1-procedure-step.js
+ M vehapiproxi/scripts/run-migrate-l1-procedure-tool-part.js
+ M vehapiproxi/scripts/run-migrate-l1-spec-fact.js
+ M vehapiproxi/scripts/run-migrate-l2-content-chunk.js
+ M vehapiproxi/scripts/run-migrate-match-content-chunks-rpc.js
+ M vehapiproxi/scripts/run-migrate-rls-tightening.js
+ M vehapiproxi/scripts/run-migrate-schema.js
+ M vehapiproxi/scripts/test-article-rate-limit.js
+ M vehapiproxi/scripts/test-normalization-one-per-category.js
+ M vehapiproxi/scripts/verify-evidence-links-one-article.js
+ M vehapiproxi/src/ai_parser_schemas.js
+ M vehapiproxi/src/content_item_mapper.js
+ M vehapiproxi/src/embedding_client.js
+ M vehapiproxi/src/function.js
+ M vehapiproxi/src/html_preprocess.js
+ M vehapiproxi/src/l2_rag_ingest.js
+ M vehapiproxi/src/l2_retrieval.js
+ M vehapiproxi/src/nemotron_client.js
+ M vehapiproxi/src/nemotron_multimodal.js
+ M vehapiproxi/src/pdf_native_text.js
+ M vehapiproxi/src/rate_limit.js
+ M vehapiproxi/src/routes/ai-endpoints.js
+ M vehapiproxi/src/routes/article-metadata.js
+ M vehapiproxi/src/routes/auth.js
+ M vehapiproxi/src/routes/credits-endpoints.js
+ M vehapiproxi/src/routes/debug.js
+ M vehapiproxi/src/routes/health.js
+ M vehapiproxi/src/routes/make-id-resolution.js
+ M vehapiproxi/src/routes/orientations.js
+ M vehapiproxi/src/stripe.js
+ M vehapiproxi/src/text_chunk.js
+?? backups/
+?? test-results/
