@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-03-23 — **Normalization wrap-up verified locally:** added additive schema/runtime support for **`diagram_document`**, **`component_location_document`**, and **`labor_operation`**; the worker now normalizes diagram/component-location article HTML and labor detail payloads into those tables, direct `/graphic/*` binary responses now persist **`media_asset`** metadata, article cache reads include the new normalized tables, and the article viewer now uses the **labor endpoint** for `L:` article ids. Follow-up traceability fixes now ensure verify-mode requests force reparse, create **`evidence_link` → `content_item`** rows before AI parse completes, and reuse existing `content_item` rows case-insensitively. Local golden verification now passes: `documentation/release-artifacts/golden-vehicle-verification-20260323-051007.md`.
+**Last updated**: 2026-03-23 — **Normalization release gate closed:** local production-readiness verification passes (`npm run verify:prod-readiness`), production `environment.features.l2Search` is enabled, and prior target DB migration/RPC/RLS checks remain validated via Supabase REST evidence. Golden verification remains green: `documentation/release-artifacts/golden-vehicle-verification-20260323-051007.md`.
 
 ## Summary
 
@@ -13,7 +13,7 @@
 | UI/UX Copy Cleanup | Complete |
 | Lock Overlay UX | Complete |
 | Repo Structure Cleanup (`randdev/` + `oldfiles/`) | Complete |
-| Data Normalization Pipeline | **Release-ready in repo** — catalog/content items, specs, maintenance, procedures, diagrams, component locations, labor, PDF/graphic media traceability, and L2 text retrieval now have schema/runtime coverage; target DB migration + golden-vehicle verification still required |
+| Data Normalization Pipeline | **Phase complete / release-ready** — catalog/content items, specs, maintenance, procedures, diagrams, component locations, labor, PDF/graphic media traceability, and L2 text retrieval are implemented and verified (including `verify:prod-readiness` + golden-vehicle pass); production `l2Search` flag is enabled |
 
 ### Active worker direction (normalization)
 
@@ -85,7 +85,7 @@
 
 | Priority | Task |
 |----------|------|
-| **High** | **DB migrations (DDL + RPC) verified on target**: required normalized tables exist, and RPC `public.match_content_chunks(...)` is callable (Supabase REST service-role check). RLS sanity: server-only tables contain rows under service-role but return empty to anon-only (evidence_link/evidence_ingest/ai_processing_logs). **Prod:** enable `environment.features.l2Search` when QA passes. **Local verify:** `npm run verify:prod-readiness`. **Done in repo:** plan completion table in `docs/plans/2026-03-21-production-readiness-paid-plus-l2.md`. |
+| **High** | (Completed 2026-03-23) DB migration/RPC/RLS release target checks were validated via Supabase REST; local `npm run verify:prod-readiness` is now PASS; production `environment.features.l2Search` is now enabled. |
 | Medium | Phase-1 worker regression completed locally: `cd vehapiproxi && npm run verify:evidence-links -- --local --vehicle=2854 --source=GeneralMotors --article=7042430` (PASS). |
 | Medium | `cd vehapiproxi && npm run verify:release-target` (pg-based) is failing on this machine with `ECONNRESET`, but the same “release target” requirements were validated via Supabase REST checks (tables + RPC + RLS sanity) as described above. |
 | Medium | Golden-vehicle normalization verification (local Node 22) green: `documentation/release-artifacts/golden-vehicle-verification-20260323-051007.md`. |

@@ -7,7 +7,7 @@ export const environment = {
      */
     apiUrl: '/api',
     features: {
-        l2Search: false
+        l2Search: true
     },
     supabase: {
         url: 'https://jzwhcoivwzumqrfscnlw.supabase.co',
