@@ -23,7 +23,6 @@ import {
 import { normalizeCategoryParams } from './categorize.js';
 import { buildContentItemFromCatalogArticle, buildMinimalContentItemFromParse } from './content_item_mapper.js';
 import { extractTextFromPdfBase64 } from './pdf_native_text.js';
-import { extractTextFromPdfPageViaNemotron } from './nemotron_multimodal.js';
 import { ingestL2ContentChunksIfEnabled } from './l2_rag_ingest.js';
 import { bucketToModuleType } from './article-access.js';
 
@@ -42,6 +41,25 @@ const PDF_VISION_FALLBACK_PAGE = Number.parseInt(
 const ENABLE_MEDIA_ASSET_PDF = String(process.env.ENABLE_MEDIA_ASSET_PDF || 'true').toLowerCase() !== 'false';
 
 let _warnedMissingProcedureToolTables = false;
+
+/**
+ * Vision fallback should never prevent the worker from loading.
+ * In WSL/Windows-mixed installs, native `canvas` can fail to load (invalid ELF header),
+ * so we lazy-import multimodal and treat any import/runtime failure as "vision unavailable".
+ */
+async function extractTextFromPdfPageViaNemotronSafe(pdfBuf, pageIndex, options) {
+    if (!ENABLE_NEMOTRON_PDF_VISION_FALLBACK) return '';
+    try {
+        const mod = await import('./nemotron_multimodal.js');
+        if (typeof mod.extractTextFromPdfPageViaNemotron !== 'function') {
+            throw new Error('extractTextFromPdfPageViaNemotron missing');
+        }
+        return await mod.extractTextFromPdfPageViaNemotron(pdfBuf, pageIndex, options);
+    } catch (err) {
+        logger.warn('Nemotron multimodal unavailable; skipping vision fallback:', err?.message || String(err));
+        return '';
+    }
+}
 
 function isMissingProcedureToolTableError(errText) {
     const s = String(errText || '');
@@ -752,7 +770,7 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                         ENABLE_NEMOTRON_PDF_VISION_FALLBACK
                     ) {
                         try {
-                            const visionText = await extractTextFromPdfPageViaNemotron(pdfBuf, PDF_VISION_FALLBACK_PAGE, {
+                            const visionText = await extractTextFromPdfPageViaNemotronSafe(pdfBuf, PDF_VISION_FALLBACK_PAGE, {
                                 instruction:
                                     'Transcribe all readable text from this automotive service PDF page. ' +
                                     'Preserve line breaks. Return only text.'
