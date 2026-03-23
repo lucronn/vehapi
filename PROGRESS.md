@@ -79,6 +79,7 @@
 - **Fixed 2026-03-22**: **`FUNCTION_INVOCATION_FAILED` / 500** on `vehapiproxi.vercel.app` — Vercel installs **root** `package.json` only; `express-rate-limit` lived under `vehapiproxi/node_modules`, so serverless import of `rate_limit.js` crashed. **Fix:** add `express-rate-limit` to root `package.json` (CORS “missing header” was a side effect of 500 responses).
 - **Fixed 2026-03-21**: Home page could get stuck with empty year data after initial load if `/api/years` landed during proxy re-authentication; `home.component.ts` now polls `/auth/status` and retries the initial years request automatically instead of requiring a manual page refresh.
 - **Improved 2026-03-21**: Browser console auth polling noise is reduced; aborted/non-fatal `/auth/status` probe failures are no longer logged as hard errors in normal dev startup.
+- **Fixed 2026-03-23**: Local WSL/Windows `canvas` native-module mismatch could eagerly break `vehapiproxi` `background_worker` import, causing `Background worker unavailable` and disabling enqueue/enrichment. **Fix:** `background_worker.js` now lazy-loads `nemotron_multimodal.js` for vision fallback so the worker stays available even when vision/canvas fails.
 
 ## What's Left to Do
 
