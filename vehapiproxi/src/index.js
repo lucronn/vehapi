@@ -1,3 +1,4 @@
+import './runtime_polyfills.js';
 import { app } from './function.js';
 import { config } from './config.js';
 import { authManager } from './auth.js';

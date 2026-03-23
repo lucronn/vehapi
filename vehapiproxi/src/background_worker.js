@@ -780,6 +780,15 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                 if (!ci.success) {
                     logger.warn(`[${taskId}] content_item enrichment skipped: ${ci.error}`);
                 }
+                if (evidenceId) {
+                    const contentItemId = await fetchContentItemId(vehicleIdStr, externalIdStr, cs);
+                    if (contentItemId) {
+                        const links = await insertEvidenceLinks(evidenceId, 'content_item', [contentItemId], 'phase1-v1');
+                        if (!links.success) {
+                            logger.warn(`[${taskId}] content_item evidence_link skipped: ${links.error}`);
+                        }
+                    }
+                }
                 await ingestL2ContentChunksIfEnabled({
                     taskId,
                     vehicleExternalId: vehicleIdStr,

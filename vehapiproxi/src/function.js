@@ -1,3 +1,4 @@
+import './runtime_polyfills.js';
 import express from 'express';
 import cors from 'cors';
 import { createProxyMiddleware, responseInterceptor } from 'http-proxy-middleware';
