@@ -1,6 +1,7 @@
 /**
  * Nemotron (NVIDIA) — text parsing, rewrite, tutorials, common-issues.
- * Multimodal (PDF page → PNG, image OCR via vision model): `./nemotron_multimodal.js` (re-exported below).
+ * Multimodal (PDF page → PNG, image OCR): import `./nemotron_multimodal.js` directly (or dynamic `import()`).
+ * Do not re-export that module here — it pulls native `canvas` and would load when anything imports `parseWithAI`.
  * @see docs/plans/2026-03-18-normalization-schema-design.md Appendix A
  */
 import pLimit from 'p-limit';
@@ -575,10 +576,3 @@ Create 4-8 high-quality common issues tailored to this specific vehicle.`;
         return [];
     }
 }
-
-export {
-    callNemotronMultimodal,
-    rasterizePdfPageToPngDataUri,
-    extractTextFromImageDataUri,
-    extractTextFromPdfPageViaNemotron
-} from './nemotron_multimodal.js';
