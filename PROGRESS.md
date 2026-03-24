@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-03-24 — **Normalization release gate closed:** local production-readiness verification passes (`npm run verify:prod-readiness`), production `environment.features.l2Search` is enabled, and prior target DB migration/RPC/RLS checks remain validated via Supabase REST evidence. Golden verification remains green: `documentation/release-artifacts/golden-vehicle-verification-20260323-051007.md`. **Follow-up:** `vehicle_metadata` legacy `/api/...` keys handled in `getMetadata` + optional SQL cleanup; article lock overlay adds **full vehicle** unlock; `documentation/RELEASE_CHECKLIST.md` includes a short **Production smoke** section.
+**Last updated**: 2026-03-24 — **Normalization release gate closed:** local production-readiness verification passes (`npm run verify:prod-readiness`), production `environment.features.l2Search` is enabled, and prior target DB migration/RPC/RLS checks remain validated via Supabase REST evidence. Golden verification remains green: `documentation/release-artifacts/golden-vehicle-verification-20260323-051007.md`. **Follow-up:** `vehicle_metadata` legacy `/api/...` keys handled in `getMetadata` + optional SQL cleanup; article lock overlay adds **full vehicle** unlock; `documentation/RELEASE_CHECKLIST.md` includes a short **Production smoke** section. **Post-normalization:** Motor `/fluids` → `specifications` (`Fluids` category) sync is active (eager + specs section).
 
 ## Summary
 
@@ -19,7 +19,7 @@
 
 - **Shipped:** Phase 1 — `evidence_ingest`, `content_item` upsert + post-parse enrichment (`updateContentItemEnrichment`), catalog path in `vehapiproxi/src/background_worker.js` + `content_item_mapper.js`; `evidence_link` after parse for **`content_item`**, **procedures** (parent row), **dtcs**, **tsbs**, and L1 **`procedure_step`** / **`procedure_tool`** / **`procedure_part`** + **`spec_fact`** when schema present (legacy **`specifications`** → `spec_fact` only); native PDF text (`pdf_native_text.js`) and optional sparse-PDF Nemotron vision (`nemotron_multimodal.js`, `ENABLE_NEMOTRON_PDF_VISION_FALLBACK=true`); `npm run verify:evidence-links`; optional Cursor worker-loop (`hooks.json` → `auto-continue.mjs`, default ON — see `.cursor/WORKER_LOOP.md`).
 - **Workspace (git):** `.cursor/WORKER_LOOP.md`, `.cursor/hooks.json`, `.cursor/hooks/*.mjs`, and `.cursor/agents/` may be **untracked** until committed — hooks only run in clones that have them. Loop toggle files (`.cursor/worker-loop.enabled` / `.disabled` / `.after-response`) are **gitignored** when present; default auto-continue is ON once hooks are registered (see `WORKER_LOOP.md`). **Desktop continue (Windows):** root **`npm run cursor:auto-once`** invokes **`scripts/continue-once.ps1`** (paste + Enter); see `scripts/automation/README.md`.
-- **Next (phase):** Normalization release gate is complete (prod-readiness + golden verification + `l2Search` enabled). Remaining work moves to post-normalization scope (optional fluids sync, extended API field mapping, and any broader next-phase feature work).
+- **Next (phase):** Normalization release gate is complete (prod-readiness + golden verification + `l2Search` enabled). Remaining work moves to post-normalization scope (extended API field mapping, optional UX polish, broader feature work).
 - **Regression:** after `background_worker.js` or evidence mapping changes, run `verify:evidence-links` with local `.env` (`SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`); no automated CI run without injected secrets — not a product bug.
 - **Worker assumption:** L1 tables + RLS follow `supabase_schema.sql`; thread writes from existing parse outputs before expanding ingest sources.
 
@@ -84,6 +84,7 @@
 - **Fixed 2026-03-21**: Article viewer `unlockFullVehicle` passed article title as `vehicleName` to `unlockModule`; now passes `vid` like `unlockSection` / `unlockThisArticle` for consistent server-side transaction records.
 - **Fixed 2026-03-21**: Removed accidentally tracked `backups/` and `test-results/` (bundles/archives); added both to root `.gitignore`.
 - **Fixed 2026-03-24**: Removed intermediate FAIL golden-vehicle reports under `documentation/release-artifacts/`; retained the passing artifact `golden-vehicle-verification-20260323-051007.md` referenced here.
+- **Shipped 2026-03-24**: Motor `/fluids` → Supabase `specifications` (`category: 'Fluids'`) — `data-sync.service.ts` `syncFluids` / `syncFluidsIfMissing`, called from `eagerSyncVehicleReferenceData` and `lazySyncFluids` before `SpecsFluidsSectionComponent` loads (normalized vehicles).
 
 ## What's Left to Do
 
@@ -147,7 +148,7 @@ Specs / parts / maintenance sections → mostly cached after eager sync; lazy pa
 
 ### What remains (optional)
 
-- **Fluids** – Re-enable `getFluids` → `specifications` when ready (`lazySyncFluids` / `syncFluids`).
+- **Fluids** – **Done in app (2026-03-24):** `lazySyncFluids` + `syncFluids` populate `specifications` from Motor `/fluids` (eager + specs section); verify against live Motor responses if field names differ by content source.
 - **Future API fields** – Parts: quantity, fitment_notes. Maintenance: is_severe_service, labor_time_hours.
 - **vehicle_metadata** – Legacy rows keyed as `/api/years` are served via `getMetadata` fallback + optional SQL `documentation/migrations/20260323_vehicle_metadata_legacy_path_cleanup.sql`.
 

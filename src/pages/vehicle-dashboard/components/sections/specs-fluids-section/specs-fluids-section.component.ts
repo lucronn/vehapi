@@ -11,6 +11,7 @@ import { RouterModule, Router } from '@angular/router';
 import { ArticleViewerComponent } from '../../../../article-viewer/article-viewer.component';
 import { WindowManagerService } from '../../../../../services/window-manager.service';
 import { CreditsService } from '../../../../../services/credits.service';
+import { DataSyncService } from '../../../../../services/data-sync.service';
 
 /**
  * Displays vehicle specifications and fluids
@@ -31,6 +32,7 @@ export class SpecsFluidsSectionComponent implements OnInit {
     @Input() motorVehicleId?: string;
 
     private vehicleData = inject(VehicleDataService);
+    private dataSync = inject(DataSyncService);
     private windowManager = inject(WindowManagerService);
     private router = inject(Router);
     protected creditsService = inject(CreditsService); // Protected for template access
@@ -69,18 +71,23 @@ export class SpecsFluidsSectionComponent implements OnInit {
             }
         }, 10000);
 
-        this.vehicleData.loadSpecs(this.contentSource, this.vehicleId, this.motorVehicleId).subscribe({
-            next: (results) => {
-                this.fluids.set(results.fluids || []);
-                this.specs.set(results.specs || []);
-                this.updateDisplayedItems();
-                this.isLoading.set(false);
-            },
-            error: (err) => {
-                console.error('Failed to load specs/fluids', err);
-                this.isLoading.set(false);
-            }
-        });
+        void this.dataSync
+            .lazySyncFluids(this.contentSource, this.vehicleId)
+            .catch((e) => console.warn('[SpecsFluids] lazySyncFluids (non-fatal):', e))
+            .finally(() => {
+                this.vehicleData.loadSpecs(this.contentSource, this.vehicleId, this.motorVehicleId).subscribe({
+                    next: (results) => {
+                        this.fluids.set(results.fluids || []);
+                        this.specs.set(results.specs || []);
+                        this.updateDisplayedItems();
+                        this.isLoading.set(false);
+                    },
+                    error: (err) => {
+                        console.error('Failed to load specs/fluids', err);
+                        this.isLoading.set(false);
+                    }
+                });
+            });
     }
 
     private updateDisplayedItems() {

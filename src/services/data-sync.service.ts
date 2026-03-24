@@ -20,6 +20,8 @@ export class DataSyncService {
     private inProgressArticleSyncs = new Set<string>();
     /** One eager reference-data run per vehicle at a time (dashboard remounts). */
     private eagerReferenceSyncInFlight = new Set<string>();
+    /** Dedupe concurrent Motor `/fluids` → `specifications` upserts (eager + specs section). */
+    private fluidSyncPromises = new Map<string, Promise<void>>();
 
     /** Mile intervals to prefetch into `maintenance_schedules` (each skipped if already present). */
     private readonly eagerMaintenanceIntervalsMiles = [7500, 15000, 30000, 45000, 60000, 100000];
@@ -91,8 +93,7 @@ export class DataSyncService {
      * Lightweight vehicle registration — called on dashboard load.
      * Only creates/updates the vehicle row (no API). Heavy reference data is
      * filled by {@link eagerSyncVehicleReferenceData} (catalog metadata, specifications
-     * from catalog articles, parts, maintenance). Full article HTML stays lazy per article.
-     * Fluids → Motor `/fluids` sync is intentionally disabled for now.
+     * from catalog articles, fluids via `/fluids`, parts, maintenance). Full article HTML stays lazy per article.
      */
     async ensureVehicleRecord(contentSource: string, vehicleId: string, vehicleName: string): Promise<void> {
         const parts = vehicleName.split(' ');
@@ -154,7 +155,8 @@ export class DataSyncService {
             setStep(30, 'Specifications…');
             await this.syncSpecificationsIfMissing(contentSource, vehicleId);
 
-            // FLUIDS: disabled — `/fluids` pipeline deferred (see lazySyncFluids).
+            setStep(42, 'Fluids…');
+            await this.syncFluidsIfMissing(contentSource, vehicleId);
 
             setStep(55, 'Parts catalog…');
             await this.syncPartsIfMissing(contentSource, vehicleId);
@@ -412,11 +414,44 @@ export class DataSyncService {
     }
 
     /**
-     * Lazily sync fluids — **disabled**: Motor `/fluids` + specifications hydration deferred.
-     * Specs section still loads non-fluid specifications via catalog-derived rows + article list.
+     * Lazily sync fluids — Motor `/fluids` → `specifications` rows (`category: 'Fluids'`), skipped when already present.
+     * Specs section awaits this before `loadSpecs` so normalized vehicles see cached fluids.
      */
-    async lazySyncFluids(_contentSource: string, _vehicleId: string): Promise<void> {
-        return;
+    lazySyncFluids(contentSource: string, vehicleId: string): Promise<void> {
+        return this.syncFluidsIfMissing(contentSource, vehicleId);
+    }
+
+    /**
+     * When no `Fluids` rows exist for the vehicle, fetch Motor `/fluids` and upsert into `specifications`.
+     */
+    private syncFluidsIfMissing(contentSource: string, vehicleId: string): Promise<void> {
+        const key = `${contentSource}:${vehicleId}`;
+        const existing = this.fluidSyncPromises.get(key);
+        if (existing) return existing;
+
+        const p = (async () => {
+            try {
+                const { count, error: countErr } = await this.supabase.client
+                    .from('specifications')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('vehicle_id', vehicleId)
+                    .eq('category', 'Fluids');
+
+                if (countErr) {
+                    console.warn('[DataSync] syncFluidsIfMissing count error:', countErr);
+                }
+                if ((count ?? 0) > 0) return;
+
+                await this.syncFluids(contentSource, vehicleId);
+            } catch (e) {
+                console.warn('[DataSync] syncFluidsIfMissing failed (non-fatal):', e);
+            } finally {
+                this.fluidSyncPromises.delete(key);
+            }
+        })();
+
+        this.fluidSyncPromises.set(key, p);
+        return p;
     }
 
     /** Lazily sync parts — called by parts section. */
@@ -616,9 +651,70 @@ export class DataSyncService {
     }
 
 
-    /** Motor `/fluids` → `specifications` — disabled until fluids pipeline is finalized. */
-    private async syncFluids(_cs: string, _vid: string): Promise<void> {
-        return;
+    /** Motor `/fluids` → `specifications` (`category: 'Fluids'`). */
+    private async syncFluids(cs: string, vid: string): Promise<void> {
+        try {
+            const res = await lastValueFrom(this.motorApi.getFluids(cs, vid));
+            const body = res.body as unknown;
+            const bodyObj = body && typeof body === 'object' ? (body as { data?: unknown }) : null;
+            const raw = (
+                bodyObj && Array.isArray(bodyObj.data)
+                    ? bodyObj.data
+                    : Array.isArray(body)
+                      ? body
+                      : []
+            ) as Record<string, unknown>[];
+
+            const now = new Date().toISOString();
+            const rows: Record<string, unknown>[] = [];
+            for (const item of raw) {
+                const row = this.mapFluidApiItemToSpecificationRow(vid, item, now);
+                if (row) rows.push(row);
+            }
+            if (rows.length === 0) return;
+
+            const chunkSize = 100;
+            for (let i = 0; i < rows.length; i += chunkSize) {
+                const chunk = rows.slice(i, i + chunkSize);
+                const { error: upErr } = await this.supabase.client
+                    .from('specifications')
+                    .upsert(chunk, { onConflict: 'vehicle_id,category,name' });
+                if (upErr) {
+                    console.warn('[DataSync] fluids specifications upsert chunk failed:', upErr);
+                }
+            }
+        } catch (e) {
+            console.warn('[DataSync] syncFluids failed (non-fatal):', e);
+        }
+    }
+
+    private mapFluidApiItemToSpecificationRow(
+        vehicleId: string,
+        item: Record<string, unknown>,
+        now: string
+    ): Record<string, unknown> | null {
+        const title = String(
+            item.title ?? item.name ?? item.fluidName ?? item.description ?? item.fluidType ?? ''
+        ).trim();
+        if (!title) return null;
+        const capacity = String(item.capacity ?? item.volume ?? item.amount ?? '').trim();
+        const specification = String(
+            item.specification ?? item.spec ?? item.viscosity ?? item.notes ?? ''
+        ).trim();
+        const bucket = String(item.bucket ?? 'Fluids').trim() || 'Fluids';
+        return {
+            vehicle_id: vehicleId,
+            category: 'Fluids',
+            name: title,
+            value: capacity || null,
+            unit: null,
+            display_text: specification || null,
+            metadata: {
+                originalFluidId: item.id ?? item.fluidId ?? null,
+                bucket
+            },
+            updated_at: now
+        };
     }
 
     /** Parts: payload matches DB columns (vehicle_id, part_number, description, manufacturer, list_price, dealer_price). NormalizedPart also has quantity, fitment_notes for when API/DB support them. */
