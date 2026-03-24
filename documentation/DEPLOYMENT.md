@@ -116,6 +116,21 @@ All platforms above support custom domains:
 - **Log drains / APM:** In the Vercel project → **Settings → Log Drains**, connect Datadog, Axiom, or another provider to ship JSON logs. Alternatively, poll the Vercel Observability UI for 5xx spikes after deploys.
 - **Alerts:** Configure alerts on the log drain or Vercel monitoring for elevated 5xx rates and failed Stripe webhook fulfillment (logged as `Stripe webhook fulfillment failed`).
 
+## GitHub Actions and Vercel deploy verification
+
+Torque uses **two** workflows that deploy to Vercel. After pushing to `main`, confirm the right job(s) succeeded so **vehapiproxi** is not left stale.
+
+| Workflow | File | When it runs | What it deploys |
+|----------|------|----------------|-----------------|
+| **Deploy to Vercel** | `.github/workflows/deploy.yml` | Every push to `main` | Vercel project from **`VERCEL_PROJECT_ID`** (GitHub secret). Ships the SPA `dist/` and, via `vercel.json`, the serverless entry at `api/index.js` (bundles `vehapiproxi/src/**`). |
+| **Deploy Backend (vehapiproxi)** | `.github/workflows/deploy-backend.yml` | Push to `main` **only** when `vehapiproxi/**`, `api/**`, or `vercel.json` changes | Dedicated **backend** Vercel project (`vercel-project-id` is set in that workflow file). Same build gate (`npm run verify:prod-readiness`), then deploy. |
+
+**Required GitHub secrets (both workflows):** `VERCEL_TOKEN`, `VERCEL_ORG_ID`. The main workflow also needs **`VERCEL_PROJECT_ID`** for the primary project.
+
+**After a vehapiproxi-only change:** Open **GitHub → Actions** and confirm **both** runs if your process pushes frontend-only changes in the same commit; otherwise confirm **Deploy Backend (vehapiproxi)** completed green. In **Vercel**, confirm the **backend** project received a new production deployment and that **project environment variables** match what you need (e.g. `MOTOR_INFORMATION_*`, `SUPABASE_*`, Stripe, Nemotron).
+
+**Quick check:** `GET /health` on the deployed API host (or same-origin `/health` from the SPA origin, with `vercel.json` rewriting `/health` → `api/index.js`).
+
 ## Release Runtime Parity
 
 - CI should run on **Node 22** to match the root and `vehapiproxi` package engine requirements.

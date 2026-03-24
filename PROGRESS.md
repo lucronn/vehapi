@@ -87,6 +87,7 @@
 - **Shipped 2026-03-24**: Motor `/fluids` → Supabase `specifications` (`category: 'Fluids'`) — `data-sync.service.ts` `syncFluids` / `syncFluidsIfMissing`, called from `eagerSyncVehicleReferenceData` and `lazySyncFluids` before `SpecsFluidsSectionComponent` loads (normalized vehicles).
 - **Shipped 2026-03-24**: **Motor Information API** (`api.motor.com`) — separate DaaS keys (`MOTOR_INFORMATION_PUBLIC_KEY` / `MOTOR_INFORMATION_PRIVATE_KEY`); `GET /api/source/.../fluids` uses RecommendedFluids when query params `baseVehicleId` + `engineId` are present; `GET /api/motor-information/ymme/base-vehicle` and `/ymme/engines` (Bearer JWT) for YMME resolution. Docs: `vehapiproxi/MOTOR_INFORMATION_API.md`; path templates: `vehapiproxi/fluidscfg.example.json`. **Removed** committed `vehapiproxi/fluidscfg.json` (contained keys — rotate in Motor portal if exposed).
 - **Shipped 2026-03-24**: **App wiring** — `PersistedVehicle` stores YMME + `motorEngineId`; `home.component` saves on navigate; `vehicle-dashboard` merges persistence and resolves `motorBaseVehicleId` when user is signed in; auth interceptor attaches Bearer to `/api/motor-information/*`; fluids load/sync pass Motor Information query params when `motorBaseVehicleId` + `motorEngineId` are present.
+- **Docs 2026-03-24**: `documentation/DEPLOYMENT.md` — **GitHub Actions and Vercel deploy verification** (two workflows, secrets, post-push checklist); **Deploy verification baseline** below links to it.
 
 ## What's Left to Do
 
@@ -166,6 +167,8 @@ Specs / parts / maintenance sections → mostly cached after eager sync; lazy pa
 | Backend deploy when only `vehapiproxi/**` changes | `03d400c` — `deploy-backend.yml` independent workflow; follow-ups `d69a524`, `5f63d04`, `6d4d6db` | Yes | Same — confirm backend project deploy after those commits |
 
 **Prod deploy column:** Git cannot list Vercel deployment IDs. After each production deploy, note the dashboard deployment id or timestamp next to the row above.
+
+**CI / Vercel:** After pushing to `main`, verify GitHub Actions workflows (especially **Deploy Backend (vehapiproxi)** when `vehapiproxi/**` changes) and Vercel env on the API project — see **`documentation/DEPLOYMENT.md`** section **GitHub Actions and Vercel deploy verification**.
 
 **Local smoke (2026-03-21, this run):** `npm run build` at repo root — **OK**; `node --check vehapiproxi/src/index.js` — **OK**. (`/health` exists on local proxy when `node vehapiproxi/src/index.js` runs; not exercised here to avoid Motor auth startup.)
 **Rate limit test:** run proxy on a free `PROXY_PORT`, set `ARTICLE_RATE_LIMIT_MAX=5` then `npm run test:article-rate-limit` in `vehapiproxi/` — expect **429** after the limit (with `SKIP_ARTICLE_ACCESS_AUTH` + dev, responses may be **404** upstream until limit; without skip, **401** before auth). With a valid Bearer token, the bucket is per user (`sub`), not shared IP.
