@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DataSyncService } from '../../../../../services/data-sync.service';
-import { LucideAngularModule, Loader2, Database, ShieldCheck } from 'lucide-angular';
+import { LucideAngularModule, Database, ShieldCheck } from 'lucide-angular';
 import { animate, style, transition, trigger } from '@angular/animations';
 
 @Component({
@@ -23,10 +23,11 @@ import { animate, style, transition, trigger } from '@angular/animations';
                 class="absolute inset-0 rounded-full border-4 border-blue-500 dark:border-blue-400 border-t-transparent animate-spin"
                 [style.animation-duration]="'1.5s'"
             ></div>
-            <i-lucide [name]="dataSync.syncProgress().current === 100 ? 'shield-check' : 'database'" 
+            <lucide-icon
+                [img]="dataSync.syncProgress().current === 100 ? icons.ShieldCheck : icons.Database"
                 class="w-10 h-10 text-blue-500 dark:text-blue-400"
                 [class.animate-pulse]="dataSync.syncProgress().current < 100"
-            ></i-lucide>
+            ></lucide-icon>
         </div>
 
         <div class="space-y-2">
@@ -70,4 +71,5 @@ import { animate, style, transition, trigger } from '@angular/animations';
 })
 export class SyncProgressOverlayComponent {
     public dataSync = inject(DataSyncService);
+    readonly icons = { Database, ShieldCheck };
 }
