@@ -248,6 +248,19 @@
       </div>
       } @else {
       <!-- Content -->
+      @if (aiUnavailableNotice()) {
+      <div
+        class="w-full rounded-xl px-4 py-3 text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6"
+        style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);color:var(--text-secondary)"
+        role="status">
+        <span>{{ aiUnavailableNotice() }}</span>
+        <button type="button" (click)="dismissAiNotice()"
+          class="text-xs font-semibold uppercase tracking-wide shrink-0 self-start sm:self-center px-2 py-1 rounded-lg"
+          style="color:var(--primary);background:transparent;border:1px solid var(--border)">
+          Dismiss
+        </button>
+      </div>
+      }
       <div class="flex flex-col lg:flex-row gap-8 lg:gap-12 relative animate-fade-in">
 
         <!-- Sidebar TOC -->

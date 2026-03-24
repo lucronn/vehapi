@@ -639,7 +639,7 @@ export class DataSyncService {
             .maybeSingle();
 
         if (!cached) {
-            const issues = await lastValueFrom(this.aiRewrite.generateCommonIssues(name));
+            const { issues } = await lastValueFrom(this.aiRewrite.generateCommonIssues(name));
             if (issues && issues.length > 0) {
                 // Upsert newly generated common issues
                 await this.supabase.client.from('common_issues_cache').upsert({

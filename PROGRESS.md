@@ -90,6 +90,7 @@
 - **Docs 2026-03-24**: `documentation/DEPLOYMENT.md` — **GitHub Actions and Vercel deploy verification** (two workflows, secrets, post-push checklist); **Deploy verification baseline** below links to it.
 - **Fixed 2026-03-26**: `sync-progress-overlay` used `i-lucide` with string names (`database` / `shield-check`) without Lucide icon providers — replaced with `lucide-icon` + `[img]` (`Database`, `ShieldCheck`) to match the rest of the app.
 - **Ops 2026-03-26**: Production HAR showed `articles` REST **400** (`code` / `description` columns missing in live DB vs `supabase_schema.sql`) — apply migration `documentation/migrations/20260326_articles_code_description.sql` in Supabase SQL Editor. Vercel **503** on `/api/rewrite` and `/api/common-issues/generate` with missing `NVIDIA_API_KEY`/`LLM_API_KEY` is env-only (set in Vercel project settings).
+- **Improved 2026-03-26**: **AI 503 UX** — `AiRewriteService` returns structured results for rewrite + common issues; article viewer shows dismissible banner when rewrite returns 503; common-issues section shows `app-empty-state` when AI is unavailable. **Common issues unlock** — removed `alert`/`confirm`; matches DTC-style one-tap unlock. **Docs:** `documentation/RELEASE_CHECKLIST.md` **Manual full pass (browser)** when Cursor Browser is unavailable.
 
 ## What's Left to Do
 

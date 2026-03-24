@@ -74,6 +74,19 @@
         }
     </div>
 
+    @if (!isLoading() && commonIssues().length === 0 && creditsService.hasAccess(vehicleId, 'common_issues')) {
+    @if (aiUnavailable()) {
+    <app-empty-state icon="alert"
+        message="Common issues could not be generated"
+        submessage="The AI service is not configured or is temporarily unavailable (e.g. set NVIDIA_API_KEY or LLM_API_KEY on the API host).">
+    </app-empty-state>
+    } @else {
+    <app-empty-state icon="info" message="No common issues were returned for this vehicle."
+        submessage="Try again later or open another section for repair data.">
+    </app-empty-state>
+    }
+    }
+
     <!-- Load More Button -->
     @if (creditsService.hasAccess(vehicleId, 'common_issues') && commonIssues().length > displayedCommonIssues().length)
     {

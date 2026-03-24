@@ -92,6 +92,8 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   tutorialSteps = signal<TutorialStep[]>([]);
   isGeneratingTutorial = signal(false);
   showTutorial = signal(false);
+  /** Shown when /api/rewrite returns 503 (e.g. missing LLM keys on the server). */
+  aiUnavailableNotice = signal<string | null>(null);
 
   /** Raw processed HTML kept for tutorial generation */
   protected rawHtmlForTutorial = '';
@@ -205,6 +207,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
 
     this.isLoading.set(true);
     this.error.set(null);
+    this.aiUnavailableNotice.set(null);
     this.isCached.set(false);
 
     // Fetch Title if not provided
@@ -358,7 +361,12 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
     if (!htmlString) return;
     this.isRewriting.set(true);
     this.aiRewrite.rewriteArticleHtml(htmlString, this.articleTitle()).subscribe({
-      next: (rewritten) => {
+      next: ({ html: rewritten, aiUnavailable }) => {
+        if (aiUnavailable) {
+          this.aiUnavailableNotice.set(
+            'AI rewriting is not available on the server (configure NVIDIA_API_KEY or LLM_API_KEY). Showing original content.'
+          );
+        }
         if (rewritten && rewritten !== htmlString) {
           const safe = this.sanitizer.sanitize(SecurityContext.HTML, rewritten) || '';
           if (safe) {
@@ -391,6 +399,10 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
 
   closeTutorial() {
     this.showTutorial.set(false);
+  }
+
+  dismissAiNotice(): void {
+    this.aiUnavailableNotice.set(null);
   }
 
   private cleanTitle(rawTitle: string): string {

@@ -18,7 +18,7 @@ import { CreditsService } from '../../../../../services/credits.service';
     selector: 'app-common-issues-section',
     templateUrl: './common-issues-section.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, LoadingSkeletonComponent, LucideAngularModule],
+    imports: [CommonModule, LoadingSkeletonComponent, EmptyStateComponent, LucideAngularModule],
     standalone: true
 })
 export class CommonIssuesSectionComponent implements OnInit {
@@ -33,6 +33,8 @@ export class CommonIssuesSectionComponent implements OnInit {
     protected creditsService = inject(CreditsService);
 
     commonIssues = signal<CommonIssue[]>([]);
+    /** Set when /api/common-issues/generate returns 503 (missing LLM env, etc.). */
+    aiUnavailable = signal(false);
     isLoading = signal(false);
     isSolutionLoading = signal<Set<string>>(new Set());
     solutions = signal<Map<string, SafeHtml>>(new Map());
@@ -59,8 +61,9 @@ export class CommonIssuesSectionComponent implements OnInit {
 
         // Fetch common issues via AI rewriting service
         this.aiRewrite.generateCommonIssues(this.vehicleName).subscribe({
-            next: (issues) => {
+            next: ({ issues, aiUnavailable }) => {
                 this.commonIssues.set(issues);
+                this.aiUnavailable.set(!!aiUnavailable);
                 this.updateDisplayedCommonIssues();
                 this.isLoading.set(false);
             },
@@ -87,21 +90,15 @@ export class CommonIssuesSectionComponent implements OnInit {
 
         const cost = this.creditsService.COSTS.COMMON_ISSUES;
         if (this.creditsService.balance() < cost) {
-            alert('Insufficient credits. Please purchase more.');
             return;
         }
 
-        if (confirm(`Unlock Common Issues & AI Solutions for ${cost} credits?`)) {
-            this.isUnlocking.set(true);
-            const success = await this.creditsService.unlockModule(this.vehicleId, this.vehicleName, 'common_issues', cost);
-            this.isUnlocking.set(false);
+        this.isUnlocking.set(true);
+        const success = await this.creditsService.unlockModule(this.vehicleId, this.vehicleName, 'common_issues', cost);
+        this.isUnlocking.set(false);
 
-            if (!success) {
-                alert('Unlock failed. Please try again.');
-            } else {
-                // Update display since we are now unlocked
-                this.updateDisplayedCommonIssues();
-            }
+        if (success) {
+            this.updateDisplayedCommonIssues();
         }
     }
 

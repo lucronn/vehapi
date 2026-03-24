@@ -29,6 +29,17 @@ After deploy to production:
 - [ ] L2: run one semantic search on the vehicle dashboard (empty results OK; no 5xx in network tab)
 - [ ] Credits: balance visible; no console errors on `/credits` or checkout open
 
+## Manual full pass (browser)
+
+Use Chrome DevTools or Cursor Browser when available. Stripe **test mode** is fine (`4242…` card). Approx. 15–20 minutes.
+
+1. **Home** — year → make → model → engine; land on vehicle dashboard (hash route).
+2. **Dashboard sections** — open each: overview, DTCs, TSBs, procedures, diagrams, component locations, parts, specs/fluids, maintenance, browse-all, common issues. Note any blank panels, stuck spinners, or console errors.
+3. **Articles** — open at least one article from a list; confirm HTML or PDF viewer. If AI keys are missing on the API host, you should see an **inline notice** (not a silent failure) on article rewrite; common issues should show an **empty state** explaining AI unavailability.
+4. **Credits / Stripe** — open Credits; purchase a pack in test mode; confirm balance updates after return/webhook path.
+5. **Unlocks** — unlock one **section** and open a previously locked article; try **common issues** unlock (no browser `alert`/`confirm`; insufficient credits is shown under the button).
+6. **Network sanity** — `articles` REST should not 400 after `documentation/migrations/20260326_articles_code_description.sql` on Supabase; `/api/rewrite` and `/api/common-issues/generate` should not return **503** once `NVIDIA_API_KEY` or `LLM_API_KEY` is set on Vercel.
+
 ## L2 search (when enabled)
 
 - [ ] Dev: `environment.features.l2Search === true` — run a semantic query on the vehicle dashboard; results or empty state without 5xx
