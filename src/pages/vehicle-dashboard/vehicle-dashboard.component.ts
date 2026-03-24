@@ -6,7 +6,7 @@ import { map, switchMap, debounceTime, distinctUntilChanged, catchError } from '
 import { Subject, of } from 'rxjs';
 
 // Models
-import { Article } from '../../models/motor.models';
+import { Article, PersistedVehicle } from '../../models/motor.models';
 import { bucketToModuleType } from '../../utils/module-access.util';
 
 // Services
@@ -15,6 +15,7 @@ import { MotorApiService } from '../../services/motor-api.service';
 import { SearchResultsState } from '../../services/search-results.state';
 import { DataSyncService } from '../../services/data-sync.service';
 import { VehiclePersistenceService } from '../../services/vehicle-persistence.service';
+import { AuthService } from '../../services/auth.service';
 import { effect } from '@angular/core';
 
 // Components
@@ -87,6 +88,9 @@ export class VehicleDashboardComponent {
   public searchResultsState = inject(SearchResultsState);
   public dataSync = inject(DataSyncService);
   private persistence = inject(VehiclePersistenceService);
+  private auth = inject(AuthService);
+  /** Avoid duplicate Motor Information base-vehicle requests per vehicle+YMME. */
+  private motorBaseVehicleResolveInFlight = new Set<string>();
 
   readonly icons = { Menu, X, House, TriangleAlert, FileText, Wrench, Package, Lightbulb, CreditCard };
 
@@ -182,8 +186,49 @@ export class VehicleDashboardComponent {
       const cs = this.contentSource();
       const vid = this.vehicleId();
       if (name && cs && vid && name !== 'Unknown Vehicle') {
-        this.persistence.saveVehicle({ name, contentSource: cs, vehicleId: vid });
+        const prev = this.persistence.getVehicle();
+        const merged: PersistedVehicle = {
+          vehicleId: vid,
+          contentSource: cs,
+          name,
+          ...(prev?.vehicleId === vid
+            ? {
+                year: prev.year,
+                makeName: prev.makeName,
+                modelName: prev.modelName,
+                motorEngineId: prev.motorEngineId,
+                motorBaseVehicleId: prev.motorBaseVehicleId
+              }
+            : {})
+        };
+        this.persistence.saveVehicle(merged);
       }
+    });
+
+    // Cache Motor Information BaseVehicleID when user is signed in and YMME came from home wizard
+    effect(() => {
+      const vid = this.vehicleId();
+      const u = this.auth.user();
+      if (!vid || !u) return;
+      const pv = this.persistence.getVehicle();
+      if (!pv || pv.vehicleId !== vid) return;
+      if (pv.motorBaseVehicleId) return;
+      if (pv.year == null || !pv.makeName || !pv.modelName) return;
+      const key = `${vid}|${pv.year}|${pv.makeName}|${pv.modelName}`;
+      if (this.motorBaseVehicleResolveInFlight.has(key)) return;
+      this.motorBaseVehicleResolveInFlight.add(key);
+      this.motorApi.getMotorInformationBaseVehicle(pv.year, pv.makeName, pv.modelName).subscribe({
+        next: (res) => {
+          this.motorBaseVehicleResolveInFlight.delete(key);
+          const cur = this.persistence.getVehicle();
+          if (cur?.vehicleId === vid) {
+            this.persistence.saveVehicle({ ...cur, motorBaseVehicleId: String(res.baseVehicleId) });
+          }
+        },
+        error: () => {
+          this.motorBaseVehicleResolveInFlight.delete(key);
+        }
+      });
     });
 
     // Section availability fallback effect

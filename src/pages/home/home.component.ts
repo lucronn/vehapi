@@ -707,11 +707,31 @@ export class HomeComponent implements OnInit {
     }
 
     if (vehicle) {
+      const persisted = this.buildPersistedVehicle(vehicle);
+      this.persistence.saveVehicle(persisted);
+      this.persistedVehicle.set(persisted);
       this.isLoading.set(true);
       this.router.navigate(['/vehicle', this.currentContentSource(), vehicle.vehicleId]);
     } else {
       this.errorMessage.set('Please select a complete vehicle.');
     }
+  }
+
+  /** YMME + engine id for Motor Information API (`/fluids`) — see `vehapiproxi/MOTOR_INFORMATION_API.md`. */
+  private buildPersistedVehicle(vehicle: { vehicleId: string; displayName: string }): PersistedVehicle {
+    const year = this.selectedYear() ?? undefined;
+    const make = this.selectedMake();
+    const model = this.selectedModel();
+    const motorEngineId = this.engines().find((e) => e.id === vehicle.vehicleId)?.id;
+    return {
+      vehicleId: vehicle.vehicleId,
+      contentSource: this.currentContentSource(),
+      name: vehicle.displayName,
+      year,
+      makeName: make?.makeName,
+      modelName: model?.model,
+      motorEngineId: motorEngineId ?? undefined
+    };
   }
 
   // --- Persistence Methods ---

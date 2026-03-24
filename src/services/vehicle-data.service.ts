@@ -4,6 +4,7 @@ import { map, switchMap, tap, catchError, timeout } from 'rxjs/operators';
 import { MotorApiService } from './motor-api.service';
 import { SupabaseService } from './supabase.service';
 import { DataSyncService } from './data-sync.service';
+import { VehiclePersistenceService } from './vehicle-persistence.service';
 import { ApiResponse, Dtc, Tsb, Procedure, WiringDiagram, ComponentLocation, Spec, Fluid, MaintenanceSchedule, FilterTab, ArticlesData } from '../models/motor.models';
 
 export type DashboardSection = 'overview' | 'specs' | 'fluids' | 'maintenance' | 'parts' | 'labor' | 'tsbs' | 'dtcs' | 'diagrams' | 'bookmarks' | 'search' | 'common-issues';
@@ -47,6 +48,21 @@ export class VehicleDataService {
     private motorApi = inject(MotorApiService);
     private supabase = inject(SupabaseService);
     private dataSync = inject(DataSyncService);
+    private vehiclePersistence = inject(VehiclePersistenceService);
+
+    /** When home wizard + dashboard cached Motor Information YMME, use `api.motor.com` fluids. */
+    private motorInformationForFluids(
+        contentSource: string,
+        vehicleId: string
+    ): { baseVehicleId: string; engineId: string } | undefined {
+        const pv = this.vehiclePersistence.getVehicle();
+        if (!pv || pv.vehicleId !== vehicleId) return undefined;
+        if (pv.contentSource?.toUpperCase() !== contentSource.toUpperCase()) return undefined;
+        if (pv.motorBaseVehicleId && pv.motorEngineId) {
+            return { baseVehicleId: pv.motorBaseVehicleId, engineId: pv.motorEngineId };
+        }
+        return undefined;
+    }
 
     private readonly sectionStrategies: Record<string, SectionStrategy> = {
         dtcs: {
@@ -241,7 +257,8 @@ export class VehicleDataService {
             // Legacy Parity: Fluids often align with "Specs/Parts" which tend to be Motor-sourced.
             // Using Motor ID if available to ensure data consistency.
             const params = this.resolveSourceParams(contentSource, vehicleId, motorVehicleId, true);
-            return this.motorApi.getFluids(params.contentSource, params.vehicleId).pipe(
+            const mi = this.motorInformationForFluids(params.contentSource, params.vehicleId);
+            return this.motorApi.getFluids(params.contentSource, params.vehicleId, mi).pipe(
                 map(res => (res.body as any)?.data || []),
                 catchError(err => {
                     console.error('[VehicleDataService] Fluids fetch failed:', err);

@@ -134,6 +134,14 @@ export interface PersistedVehicle {
   vehicleId: string;
   contentSource: string;
   name: string;
+  /** Home wizard — used with Motor Information API (`api.motor.com`) for fluids */
+  year?: number;
+  makeName?: string;
+  modelName?: string;
+  /** M1 `Engine.id` when user picked an engine; maps to Information API `EN` */
+  motorEngineId?: string;
+  /** Cached after `GET /api/motor-information/ymme/base-vehicle` */
+  motorBaseVehicleId?: string;
 }
 
 export interface AISearchSummary {

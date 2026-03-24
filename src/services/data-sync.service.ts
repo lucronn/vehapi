@@ -1,6 +1,7 @@
 import { Injectable, inject, signal, isDevMode } from '@angular/core';
 import { lastValueFrom } from 'rxjs';
 import { MotorApiService } from './motor-api.service';
+import { VehiclePersistenceService } from './vehicle-persistence.service';
 import { AiRewriteService } from './ai-rewrite.service';
 import { SupabaseService } from './supabase.service';
 import { normalizeCategoryParams } from '../utils/categorize.util';
@@ -13,6 +14,7 @@ export class DataSyncService {
     private motorApi = inject(MotorApiService);
     private aiRewrite = inject(AiRewriteService);
     private supabase = inject(SupabaseService);
+    private vehiclePersistence = inject(VehiclePersistenceService);
 
     // Sync State
     isSyncing = signal(false);
@@ -654,7 +656,18 @@ export class DataSyncService {
     /** Motor `/fluids` → `specifications` (`category: 'Fluids'`). */
     private async syncFluids(cs: string, vid: string): Promise<void> {
         try {
-            const res = await lastValueFrom(this.motorApi.getFluids(cs, vid));
+            const pv = this.vehiclePersistence.getVehicle();
+            const motorInfo =
+                pv &&
+                pv.vehicleId === vid &&
+                pv.motorBaseVehicleId &&
+                pv.motorEngineId
+                    ? {
+                          baseVehicleId: pv.motorBaseVehicleId,
+                          engineId: pv.motorEngineId
+                      }
+                    : undefined;
+            const res = await lastValueFrom(this.motorApi.getFluids(cs, vid, motorInfo));
             const body = res.body as unknown;
             const bodyObj = body && typeof body === 'object' ? (body as { data?: unknown }) : null;
             const raw = (

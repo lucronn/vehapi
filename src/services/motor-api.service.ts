@@ -304,6 +304,48 @@ export class MotorApiService {
     );
   }
 
+  /**
+   * Motor Information YMME — `api.motor.com` BaseVehicleID (Bearer JWT via auth interceptor).
+   */
+  getMotorInformationBaseVehicle(
+    year: number,
+    make: string,
+    model: string
+  ): Observable<{ baseVehicleId: number; year: number; make: string; model: string }> {
+    const url = `${this.baseUrl}/api/motor-information/ymme/base-vehicle`;
+    return this.getWithLogging<{ baseVehicleId: number; year: number; make: string; model: string }>(url, {
+      year: String(year),
+      make,
+      model
+    });
+  }
+
+  /**
+   * Motor Information YMME — engine list for `EN` on RecommendedFluids.
+   */
+  getMotorInformationEngines(
+    year: number,
+    make: string,
+    model: string
+  ): Observable<{
+    engines: { id: string | number; name: string; raw?: unknown }[];
+    year: number;
+    make: string;
+    model: string;
+  }> {
+    const url = `${this.baseUrl}/api/motor-information/ymme/engines`;
+    return this.getWithLogging<{
+      engines: { id: string | number; name: string; raw?: unknown }[];
+      year: number;
+      make: string;
+      model: string;
+    }>(url, {
+      year: String(year),
+      make,
+      model
+    });
+  }
+
   // Backward compatible method - kept for existing code
   getParts(contentSource: string, vehicleId: string, searchTerm: string = ''): Observable<ApiResponse<PartsResponse>> {
     const params = searchTerm ? { searchTerm } : {};

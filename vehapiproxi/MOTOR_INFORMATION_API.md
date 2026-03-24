@@ -53,4 +53,12 @@ See `vehapiproxi/fluidscfg.example.json` for URI templates (RecommendedFluids, B
 - **Proxy** (`sites.motor.com/m1`): article catalog, M1-shaped silos, HTML — **library session** cookies.  
 - **Information API** (`api.motor.com/v1/Information/...`): **recommended fluids**, YMME **base vehicle**, **engines**, and other documented resources — **DaaS keys** only.
 
-Future work: optionally surface **engine / base vehicle** metadata in the vehicle dashboard when YMME is resolved.
+## App wiring (Torque)
+
+- **Home wizard** saves `PersistedVehicle` with `year`, `makeName`, `modelName`, and `motorEngineId` (M1 `Engine.id` when an engine was selected).
+- **Vehicle dashboard** (signed-in user) calls `GET /api/motor-information/ymme/base-vehicle` once per vehicle+YMME and stores `motorBaseVehicleId` in `localStorage` persistence.
+- **`VehicleDataService` / `DataSyncService`** pass `baseVehicleId` + `engineId` on `/fluids` when both `motorBaseVehicleId` and `motorEngineId` are present for the current vehicle.
+
+**Gaps:** VIN-only entry or deep links without the home wizard do not have YMME — fluids keep using the M1 proxy until the user re-selects via YMME or a future flow fills persistence.
+
+Future work: surface **engine / base vehicle** metadata in the UI; optional manual engine pick when `motorEngineId` is missing.
