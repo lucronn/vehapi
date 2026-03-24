@@ -22,7 +22,9 @@ const files = [
     'vehapiproxi/src/supabase.js',
     'vehapiproxi/src/l2_retrieval.js',
     'vehapiproxi/src/rate_limit.js',
-    'vehapiproxi/src/stripe.js'
+    'vehapiproxi/src/stripe.js',
+    'vehapiproxi/src/motor_information_api.js',
+    'vehapiproxi/src/routes/motor-information.js'
 ];
 
 for (const f of files) {

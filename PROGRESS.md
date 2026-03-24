@@ -85,6 +85,7 @@
 - **Fixed 2026-03-21**: Removed accidentally tracked `backups/` and `test-results/` (bundles/archives); added both to root `.gitignore`.
 - **Fixed 2026-03-24**: Removed intermediate FAIL golden-vehicle reports under `documentation/release-artifacts/`; retained the passing artifact `golden-vehicle-verification-20260323-051007.md` referenced here.
 - **Shipped 2026-03-24**: Motor `/fluids` → Supabase `specifications` (`category: 'Fluids'`) — `data-sync.service.ts` `syncFluids` / `syncFluidsIfMissing`, called from `eagerSyncVehicleReferenceData` and `lazySyncFluids` before `SpecsFluidsSectionComponent` loads (normalized vehicles).
+- **Shipped 2026-03-24**: **Motor Information API** (`api.motor.com`) — separate DaaS keys (`MOTOR_INFORMATION_PUBLIC_KEY` / `MOTOR_INFORMATION_PRIVATE_KEY`); `GET /api/source/.../fluids` uses RecommendedFluids when query params `baseVehicleId` + `engineId` are present; `GET /api/motor-information/ymme/base-vehicle` and `/ymme/engines` (Bearer JWT) for YMME resolution. Docs: `vehapiproxi/MOTOR_INFORMATION_API.md`; path templates: `vehapiproxi/fluidscfg.example.json`. **Removed** committed `vehapiproxi/fluidscfg.json` (contained keys — rotate in Motor portal if exposed).
 
 ## What's Left to Do
 
@@ -94,6 +95,7 @@
 | Medium | Phase-1 worker regression completed locally: `cd vehapiproxi && npm run verify:evidence-links -- --local --vehicle=2854 --source=GeneralMotors --article=7042430` (PASS). |
 | Medium | `cd vehapiproxi && npm run verify:release-target` (pg-based) is failing on this machine with `ECONNRESET`, but the same “release target” requirements were validated via Supabase REST checks (tables + RPC + RLS sanity) as described above. |
 | Medium | Golden-vehicle normalization verification (local Node 22) green: `documentation/release-artifacts/golden-vehicle-verification-20260323-051007.md`. |
+| Medium | Wire vehicle dashboard / persistence to pass Motor Information `baseVehicleId` + `engineId` on `/fluids` (after YMME resolution) so fluids sync uses `api.motor.com` path end-to-end. |
 | Low | Commit `.cursor/hooks.json`, `.cursor/hooks/*.mjs`, `.cursor/WORKER_LOOP.md` (and `.cursor/agents/*`) when the team should share Cursor auto-continue / orchestrator docs |
 | Low | (cleared 2026-03-24) AGENTS.md ↔ WORKER_LOOP: hook toggles + `npm run cursor:auto-once` / `continue-once.ps1` documented |
 | Low | (Done 2026-03-23) Full-vehicle unlock on article lock overlay (`unlockModule` → `full`, `COSTS.FULL_ACCESS`) |

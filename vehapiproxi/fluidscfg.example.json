@@ -1,0 +1,14 @@
+{
+  "$comment": "Reference only — Motor Information API path templates. Credentials go in MOTOR_INFORMATION_PUBLIC_KEY / MOTOR_INFORMATION_PRIVATE_KEY (see MOTOR_INFORMATION_API.md).",
+  "motorInformation": {
+    "baseUrl": "https://api.motor.com",
+    "paths": {
+      "years": "/v1/Information/YMME/Years?WithRel=RecommendedFluids&AttributeStandard=MOTOR",
+      "makes": "/v1/Information/YMME/Years/{year}/Makes?WithRel=RecommendedFluids&AttributeStandard=MOTOR",
+      "models": "/v1/Information/YMME/Years/{year}/Makes/{make}/Models?WithRel=RecommendedFluids&AttributeStandard=MOTOR",
+      "engines": "/v1/Information/YMME/Years/{year}/Makes/{make}/Models/{model}/Engines?WithRel=RecommendedFluids&AttributeStandard=MOTOR",
+      "baseVehicle": "/v1/Information/YMME/Years/{year}/Makes/{make}/Models/{model}/BaseVehicle?AttributeStandard=MOTOR",
+      "recommendedFluids": "/v1/Information/Vehicles/Attributes/BaseVehicleID/{baseVehicleId}/Content/Summaries/Of/RecommendedFluids?EN={engineId}&AttributeStandard=MOTOR"
+    }
+  }
+}

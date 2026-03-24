@@ -1,8 +1,10 @@
 # vehapiproxi — API consumption (Torque proxy)
 
-**Last updated**: 2026-03-20  
+**Last updated**: 2026-03-24  
 
 This document describes how **clients consume the Express proxy** in `vehapiproxi/`: first-party routes, authentication, CORS, and how requests reach the upstream Motor API.
+
+**Motor Information API** (`api.motor.com`, PublicKey/PrivateKey) is **not** the same as the **`sites.motor.com/m1`** proxy session. Recommended fluids and YMME resolution use env-based credentials and routes documented in **`vehapiproxi/MOTOR_INFORMATION_API.md`**.
 
 For **M1/upstream** behavior (query params, `searchTerm`, labor IDs, maintenance frequency codes, etc.), use **`vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md`** (backend-side reference; Torque never calls Motor directly). For **OpenAPI paths and schemas**, use **`vehapiproxi/src/swagger.json`** and optional **`GET /docs`** (Swagger UI) on a running server.
 

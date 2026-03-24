@@ -34,6 +34,10 @@ import { registerDebugEndpoints } from './routes/debug.js';
 import { registerMakeIdResolutionEndpoints } from './routes/make-id-resolution.js';
 import { registerOrientationEndpoints } from './routes/orientations.js';
 import { registerArticleMetadataEndpoint } from './routes/article-metadata.js';
+import {
+    registerMotorInformationFluidsIntercept,
+    registerMotorInformationYmmeRoutes
+} from './routes/motor-information.js';
 import { createArticleContentRateLimiter, articleContentRateLimitGate } from './rate_limit.js';
 import { bucketToModuleType, checkArticleAccess } from './article-access.js';
 import { normalizeMotorResponse, buildMenuFromNormalizedArticles } from './menu-normalizer.js';
@@ -588,6 +592,8 @@ const articleContentCacheMiddleware = async (req, res, next) => {
 
 app.use('/api', articleContentCacheMiddleware);
 
+// Fluids: optional direct `api.motor.com` RecommendedFluids when MOTOR_INFORMATION_* env + baseVehicleId + engineId query params
+registerMotorInformationFluidsIntercept(app, logger);
 
 // Mount at root '/' to handle ALL requests (api, graphic, assets, v1, etc.)
 app.use('/', authMiddleware, createProxyMiddleware({

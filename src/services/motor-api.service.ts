@@ -285,9 +285,23 @@ export class MotorApiService {
     return this.getWithLogging<ApiResponse<{ orientations: OrientationOption[], total: number }>>(url);
   }
 
-  getFluids(contentSource: string, vehicleId: string): Observable<ApiResponse<FluidsResponse>> {
+  /**
+   * Fluids: M1 proxy by default. When backend has Motor Information API keys, pass `baseVehicleId` + `engineId`
+   * (from `/api/motor-information/ymme/*`) to use `api.motor.com` RecommendedFluids — see `vehapiproxi/MOTOR_INFORMATION_API.md`.
+   */
+  getFluids(
+    contentSource: string,
+    vehicleId: string,
+    motorInformation?: { baseVehicleId?: string; engineId?: string }
+  ): Observable<ApiResponse<FluidsResponse>> {
     const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/fluids`;
-    return this.getWithLogging<ApiResponse<FluidsResponse>>(url);
+    const q: Record<string, string> = {};
+    if (motorInformation?.baseVehicleId) q['baseVehicleId'] = motorInformation.baseVehicleId;
+    if (motorInformation?.engineId) q['engineId'] = motorInformation.engineId;
+    return this.getWithLogging<ApiResponse<FluidsResponse>>(
+      url,
+      Object.keys(q).length ? q : undefined
+    );
   }
 
   // Backward compatible method - kept for existing code
