@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-03-23 — **Normalization release gate closed:** local production-readiness verification passes (`npm run verify:prod-readiness`), production `environment.features.l2Search` is enabled, and prior target DB migration/RPC/RLS checks remain validated via Supabase REST evidence. Golden verification remains green: `documentation/release-artifacts/golden-vehicle-verification-20260323-051007.md`.
+**Last updated**: 2026-03-23 — **Normalization release gate closed:** local production-readiness verification passes (`npm run verify:prod-readiness`), production `environment.features.l2Search` is enabled, and prior target DB migration/RPC/RLS checks remain validated via Supabase REST evidence. Golden verification remains green: `documentation/release-artifacts/golden-vehicle-verification-20260323-051007.md`. **Follow-up:** `vehicle_metadata` legacy `/api/...` keys handled in `getMetadata` + optional SQL cleanup; article lock overlay adds **full vehicle** unlock; `documentation/RELEASE_CHECKLIST.md` includes a short **Production smoke** section.
 
 ## Summary
 
@@ -91,7 +91,7 @@
 | Medium | Golden-vehicle normalization verification (local Node 22) green: `documentation/release-artifacts/golden-vehicle-verification-20260323-051007.md`. |
 | Low | Commit `.cursor/hooks.json`, `.cursor/hooks/*.mjs`, `.cursor/WORKER_LOOP.md` (and `.cursor/agents/*`) when the team should share Cursor auto-continue / orchestrator docs |
 | Low | (cleared 2026-03-24) AGENTS.md ↔ WORKER_LOOP: hook toggles + `npm run cursor:auto-once` / `continue-once.ps1` documented |
-| Low | Full-vehicle unlock option from lock overlay |
+| Low | (Done 2026-03-23) Full-vehicle unlock on article lock overlay (`unlockModule` → `full`, `COSTS.FULL_ACCESS`) |
 
 ## Vehicle data normalization / migration
 
@@ -145,7 +145,7 @@ Specs / parts / maintenance sections → mostly cached after eager sync; lazy pa
 
 - **Fluids** – Re-enable `getFluids` → `specifications` when ready (`lazySyncFluids` / `syncFluids`).
 - **Future API fields** – Parts: quantity, fitment_notes. Maintenance: is_severe_service, labor_time_hours.
-- **vehicle_metadata** – Existing rows keyed as `/api/years` may need one-time SQL path fix to `/years` for cache hits.
+- **vehicle_metadata** – Legacy rows keyed as `/api/years` are served via `getMetadata` fallback + optional SQL `documentation/migrations/20260323_vehicle_metadata_legacy_path_cleanup.sql`.
 
 ## Deploy verification baseline (production readiness)
 

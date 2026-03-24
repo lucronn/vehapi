@@ -443,6 +443,12 @@ export class CreditsService {
         return false;
     }
 
+    /** All-modules unlock for a vehicle (same as `moduleType` `full` on the server). */
+    hasFullVehicleUnlock(vehicleId: string): boolean {
+        const vehicleUnlocks = this.unlocks()[vehicleId] || [];
+        return vehicleUnlocks.includes('full');
+    }
+
     /** Extract user-friendly error message from HttpErrorResponse, AbortError, or unknown error. */
     private extractErrorMessage(err: unknown, fallback: string): string {
         if (err && typeof err === 'object') {

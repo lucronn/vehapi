@@ -1085,42 +1085,54 @@ export async function insertMetadata(path, data) {
 
 /**
  * Retrieves vehicle metadata from the vehicle_metadata table.
- * @param {string} path The request path (e.g., /api/years)
+ * Tries canonical path first (`/years`, `/year/...`), then legacy `/api/years` rows if present.
+ * @param {string} path The request path (e.g., /years or /api/years before normalize)
  * @returns {Object|null} The cached metadata or null if not found
  */
 export async function getMetadata(path) {
     const cfg = getSupabaseConfig();
     if (!cfg) return null;
 
-    path = normalizeVehicleMetadataPath(path);
-
-    try {
-        const url = `${cfg.url}/rest/v1/vehicle_metadata?path=eq.${encodeURIComponent(path)}&select=data`;
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': cfg.key,
-                'Authorization': `Bearer ${cfg.key}`,
-            },
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            logger.error(`Supabase REST error getting metadata for ${path} [${response.status}]: ${errorText}`);
-            return null;
-        }
-
-        const data = await response.json();
-        if (data && data.length > 0) {
-            logger.info(`✓ Found cached metadata for: ${path}`);
-            return data[0].data;
-        }
-        return null;
-    } catch (err) {
-        logger.error(`Error retrieving metadata for ${path}:`, err);
-        return null;
+    const canonical = normalizeVehicleMetadataPath(path);
+    const pathsToTry = [canonical];
+    if (!canonical.startsWith('/api/')) {
+        pathsToTry.push(`/api${canonical}`);
     }
+
+    for (const tryPath of pathsToTry) {
+        try {
+            const url = `${cfg.url}/rest/v1/vehicle_metadata?path=eq.${encodeURIComponent(tryPath)}&select=data`;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': cfg.key,
+                    'Authorization': `Bearer ${cfg.key}`,
+                },
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                logger.error(`Supabase REST error getting metadata for ${tryPath} [${response.status}]: ${errorText}`);
+                continue;
+            }
+
+            const rows = await response.json();
+            if (rows && rows.length > 0) {
+                const payload = rows[0].data;
+                if (tryPath !== canonical) {
+                    logger.info(`Serving metadata from legacy key ${tryPath} (canonical ${canonical})`);
+                    void insertMetadata(canonical, payload).catch(() => {});
+                } else {
+                    logger.info(`✓ Found cached metadata for: ${canonical}`);
+                }
+                return payload;
+            }
+        } catch (err) {
+            logger.error(`Error retrieving metadata for ${tryPath}:`, err);
+        }
+    }
+    return null;
 }
 /**
  * Retrieves all cached articles for a specific vehicle from the articles table.

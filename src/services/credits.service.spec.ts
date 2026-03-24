@@ -119,6 +119,12 @@ describe('CreditsService', () => {
             expect(service.hasAccess('vehicle-123', 'specs')).toBe(true);
         });
 
+        test('hasFullVehicleUnlock reflects full in unlock list', () => {
+            service.unlocks.set({ 'vehicle-123': ['full'] });
+            expect(service.hasFullVehicleUnlock('vehicle-123')).toBe(true);
+            expect(service.hasFullVehicleUnlock('other')).toBe(false);
+        });
+
         test('should return false if vehicle has no unlocks', () => {
             service.unlocks.set({});
             expect(service.hasAccess('vehicle-123', 'specs')).toBe(false);

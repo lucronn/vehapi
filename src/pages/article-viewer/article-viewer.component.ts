@@ -545,6 +545,20 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
     if (ok) this.loadData();
   }
 
+  /** Unlock all modules for this vehicle (backend stores `full` in unlocks). */
+  async unlockFullVehicle() {
+    const vid = this.vehicleIdSig();
+    if (!vid || this.creditsService.hasFullVehicleUnlock(vid)) return;
+    const name = this.articleTitle() || 'Vehicle';
+    const ok = await this.creditsService.unlockModule(
+      vid,
+      name,
+      'full',
+      this.creditsService.COSTS.FULL_ACCESS
+    );
+    if (ok) this.loadData();
+  }
+
   scrollToSection(id: string) {
     const element = document.getElementById(id);
     if (element) {

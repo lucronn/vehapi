@@ -213,6 +213,14 @@
             Unlock section ({{ creditsService.getCostForModule(mod) }} credits)
           </button>
           }
+          @if (!creditsService.hasFullVehicleUnlock(vehicleIdSig())) {
+          <button (click)="unlockFullVehicle()"
+            [disabled]="creditsService.balance() < creditsService.COSTS.FULL_ACCESS || creditsService.isLoading()"
+            class="px-6 py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            style="background:var(--bg-muted);color:var(--text-primary);border:1px solid var(--border)">
+            Unlock full vehicle ({{ creditsService.COSTS.FULL_ACCESS }} credits)
+          </button>
+          }
           <button (click)="navigateToCredits()"
             class="px-6 py-2.5 rounded-xl font-semibold text-sm transition-all"
             style="background:var(--primary);color:white;opacity:0.9">

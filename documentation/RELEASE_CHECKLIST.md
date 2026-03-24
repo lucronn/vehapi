@@ -18,6 +18,16 @@ Use before tagging production or after major proxy/DB changes. Repeat critical f
 - [ ] Select year / make / model / engine; land on vehicle dashboard
 - [ ] Unlock at least one module (or single article) with credits
 - [ ] Open an article from a section; content loads (not SPA shell / wrong shard)
+- [ ] **Article lock overlay:** unlock single article, unlock section, **unlock full vehicle** (25 CR), Get Credits — each path completes without stuck state
+
+## Production smoke (about 5 minutes)
+
+After deploy to production:
+
+- [ ] Home loads; year/make/model cascade works (validates metadata cache + `/api/years` → `/years` behavior)
+- [ ] Signed-in: vehicle dashboard opens; open one locked article → overlay shows unlock options; after purchase/unlock, article body loads
+- [ ] L2: run one semantic search on the vehicle dashboard (empty results OK; no 5xx in network tab)
+- [ ] Credits: balance visible; no console errors on `/credits` or checkout open
 
 ## L2 search (when enabled)
 
