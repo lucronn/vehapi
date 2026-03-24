@@ -227,7 +227,7 @@ Checklist items mirror `documentation/IMPLEMENTATION_GUIDE.md` Section 23.
 | `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md` | M1/upstream API behavior reference (Torque calls vehapiproxi only) |
 | `documentation/VEHAPIPROXI_API_CONSUMPTION.md` | Torque proxy: routes, auth, CORS vs Motor (companion to `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md`) |
 | `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md` | Long-form Motor API / proxy consumption notes |
-| `documentation/DEPLOYMENT.md` | Multi-platform deployment guides |
+| `documentation/DEPLOYMENT.md` | Multi-platform deployment guides; **GitHub Actions and Vercel deploy verification** (two workflows, secrets, post-push checklist) |
 | `randdev/LOGGING.md` | Logging standards (reference) |
 
 ## Agent rules (`.agents/rules/`)
