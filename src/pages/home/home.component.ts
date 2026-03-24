@@ -120,7 +120,10 @@ export class HomeComponent implements OnInit {
     }
   }
 
-  private async loadYears(): Promise<void> {
+  /** Max attempts (first load + retries after auth recovery) before giving up on `/api/years`. */
+  private static readonly MAX_LOAD_YEARS_AUTH_RETRIES = 3;
+
+  private async loadYears(attempt = 0): Promise<void> {
     try {
       const res = await firstValueFrom(this.motorApi.getYears());
       this.years.set(res);
@@ -140,8 +143,11 @@ export class HomeComponent implements OnInit {
 
       if (isAuthRefresh) {
         const recovered = await this.waitForAuthRecovery();
-        if (recovered) {
-          await this.loadYears();
+        if (
+          recovered &&
+          attempt < HomeComponent.MAX_LOAD_YEARS_AUTH_RETRIES - 1
+        ) {
+          await this.loadYears(attempt + 1);
           return;
         }
       }

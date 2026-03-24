@@ -549,10 +549,10 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   async unlockFullVehicle() {
     const vid = this.vehicleIdSig();
     if (!vid || this.creditsService.hasFullVehicleUnlock(vid)) return;
-    const name = this.articleTitle() || 'Vehicle';
+    // Match `unlockSection` / `unlockArticle`: pass vehicle id for `vehicleName` so transaction logs stay consistent per vehicle.
     const ok = await this.creditsService.unlockModule(
       vid,
-      name,
+      vid,
       'full',
       this.creditsService.COSTS.FULL_ACCESS
     );

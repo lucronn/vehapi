@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-03-23 — **Normalization release gate closed:** local production-readiness verification passes (`npm run verify:prod-readiness`), production `environment.features.l2Search` is enabled, and prior target DB migration/RPC/RLS checks remain validated via Supabase REST evidence. Golden verification remains green: `documentation/release-artifacts/golden-vehicle-verification-20260323-051007.md`. **Follow-up:** `vehicle_metadata` legacy `/api/...` keys handled in `getMetadata` + optional SQL cleanup; article lock overlay adds **full vehicle** unlock; `documentation/RELEASE_CHECKLIST.md` includes a short **Production smoke** section.
+**Last updated**: 2026-03-21 — **Normalization release gate closed:** local production-readiness verification passes (`npm run verify:prod-readiness`), production `environment.features.l2Search` is enabled, and prior target DB migration/RPC/RLS checks remain validated via Supabase REST evidence. Golden verification remains green: `documentation/release-artifacts/golden-vehicle-verification-20260323-051007.md`. **Follow-up:** `vehicle_metadata` legacy `/api/...` keys handled in `getMetadata` + optional SQL cleanup; article lock overlay adds **full vehicle** unlock; `documentation/RELEASE_CHECKLIST.md` includes a short **Production smoke** section.
 
 ## Summary
 
@@ -80,6 +80,9 @@
 - **Fixed 2026-03-21**: Home page could get stuck with empty year data after initial load if `/api/years` landed during proxy re-authentication; `home.component.ts` now polls `/auth/status` and retries the initial years request automatically instead of requiring a manual page refresh.
 - **Improved 2026-03-21**: Browser console auth polling noise is reduced; aborted/non-fatal `/auth/status` probe failures are no longer logged as hard errors in normal dev startup.
 - **Fixed 2026-03-23**: Local WSL/Windows `canvas` native-module mismatch could eagerly break `vehapiproxi` `background_worker` import, causing `Background worker unavailable` and disabling enqueue/enrichment. **Fix:** `background_worker.js` now lazy-loads `nemotron_multimodal.js` for vision fallback so the worker stays available even when vision/canvas fails.
+- **Fixed 2026-03-21**: `home.component.ts` `loadYears` could recurse without bound after auth recovery if `/api/years` kept returning 401/403. **Fix:** cap attempts (`MAX_LOAD_YEARS_AUTH_RETRIES`) then set `years` to `null`.
+- **Fixed 2026-03-21**: Article viewer `unlockFullVehicle` passed article title as `vehicleName` to `unlockModule`; now passes `vid` like `unlockSection` / `unlockThisArticle` for consistent server-side transaction records.
+- **Fixed 2026-03-21**: Removed accidentally tracked `backups/` and `test-results/` (bundles/archives); added both to root `.gitignore`.
 
 ## What's Left to Do
 
