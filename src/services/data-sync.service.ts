@@ -228,7 +228,9 @@ export class DataSyncService {
         vehicleId: string,
         motorVehicleId?: string
     ): Promise<void> {
-        const res = await lastValueFrom(this.motorApi.searchArticles(contentSource, vehicleId, '', motorVehicleId));
+        const res = await lastValueFrom(
+            this.motorApi.searchArticles(contentSource, vehicleId, '', motorVehicleId, { catalogSync: true })
+        );
         if (res.header.statusCode !== 200) {
             console.warn('[DataSync] searchArticles for catalog failed', res.header);
             return;

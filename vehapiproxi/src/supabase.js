@@ -1136,6 +1136,8 @@ export async function getMetadata(path) {
 }
 /**
  * Retrieves all cached articles for a specific vehicle from the articles table.
+ * PostgREST defaults to a max row per request (often 1000); paginate so large catalogs
+ * (e.g. 4000+ rows) are fully returned.
  * @param {string} vehicleId The vehicle ID
  * @returns {Array|null} Array of articles or null if error
  */
@@ -1143,29 +1145,69 @@ export async function getVehicleArticles(vehicleId) {
     const cfg = getSupabaseConfig();
     if (!cfg) return null;
 
+    const pageSize = 1000;
+    let offset = 0;
+    const all = [];
+    const maxRows = 100000;
+
     try {
-        const url = `${cfg.url}/rest/v1/articles?vehicle_id=eq.${encodeURIComponent(vehicleId)}&select=*`;
+        while (offset < maxRows) {
+            const url = `${cfg.url}/rest/v1/articles?vehicle_id=eq.${encodeURIComponent(vehicleId)}&select=*&limit=${pageSize}&offset=${offset}`;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': cfg.key,
+                    'Authorization': `Bearer ${cfg.key}`,
+                },
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                logger.error(`Supabase REST error getting articles for ${vehicleId} [${response.status}]: ${errorText}`);
+                return null;
+            }
+
+            const rows = await response.json();
+            if (!rows || rows.length === 0) break;
+            all.push(...rows);
+            if (rows.length < pageSize) break;
+            offset += pageSize;
+        }
+
+        if (offset >= maxRows) {
+            logger.warn(`getVehicleArticles: hit maxRows=${maxRows} for ${vehicleId}`);
+        }
+        return all;
+    } catch (err) {
+        logger.error(`Error retrieving articles for ${vehicleId}:`, err);
+        return null;
+    }
+}
+
+/**
+ * Whether the vehicle row is marked normalized (catalog ingest complete).
+ * @param {string} vehicleId `vehicles.external_id`
+ * @returns {Promise<boolean|null>} true/false, or null if unknown / no row
+ */
+export async function getVehicleIsNormalized(vehicleId) {
+    const cfg = getSupabaseConfig();
+    if (!cfg) return null;
+
+    try {
+        const url = `${cfg.url}/rest/v1/vehicles?external_id=eq.${encodeURIComponent(vehicleId)}&select=is_normalized&limit=1`;
         const response = await fetch(url, {
             method: 'GET',
             headers: {
-                'Content-Type': 'application/json',
                 'apikey': cfg.key,
                 'Authorization': `Bearer ${cfg.key}`,
             },
         });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            logger.error(`Supabase REST error getting articles for ${vehicleId} [${response.status}]: ${errorText}`);
-            return null;
-        }
-
-        const articles = await response.json();
-        // Recalculate original IDs to match Motor API titles/subtitles if needed
-        // but the table should already have these mapped.
-        return articles;
-    } catch (err) {
-        logger.error(`Error retrieving articles for ${vehicleId}:`, err);
+        if (!response.ok) return null;
+        const rows = await response.json();
+        if (!rows || rows.length === 0) return null;
+        return !!rows[0].is_normalized;
+    } catch {
         return null;
     }
 }

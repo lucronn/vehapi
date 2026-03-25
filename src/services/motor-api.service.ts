@@ -255,18 +255,24 @@ export class MotorApiService {
     );
   }
 
+  /**
+   * @param options.catalogSync — bypass proxy Supabase article cache; use when ingesting full catalog into DB
+   *   (`torqueCatalogSync=1`). Required so partial rows in `articles` do not block the full Motor payload.
+   */
   searchArticles(
     contentSource: string,
     vehicleId: string,
     searchTerm: string = '',
-    motorVehicleId?: string
+    motorVehicleId?: string,
+    options?: { catalogSync?: boolean }
   ): Observable<ApiResponse<ArticlesData>> {
+    const catalogSync = options?.catalogSync === true;
     const route = this.motorVehicleRoute(contentSource, vehicleId, motorVehicleId);
     // Generate a unique cache key (must include shard + id used for the request)
-    const cacheKey = `${route.source}:${route.id}:${searchTerm.trim() || 'ALL'}`;
+    const cacheKey = `${route.source}:${route.id}:${searchTerm.trim() || 'ALL'}${catalogSync ? ':SYNC' : ''}`;
 
-    // Return cached data if available
-    if (this.articleCache.has(cacheKey)) {
+    // Return cached data if available (never use stale client cache for catalog ingest)
+    if (!catalogSync && this.articleCache.has(cacheKey)) {
       if (!environment.production) {
         console.log(`[API CACHE HIT] searchArticles: ${cacheKey}`);
       }
@@ -274,8 +280,9 @@ export class MotorApiService {
     }
 
     const url = `${this.baseUrl}/api/source/${route.source}/vehicle/${route.id}/articles/v2`;
-    const params: any = {};
+    const params: Record<string, string> = {};
     if (searchTerm) params.searchTerm = searchTerm;
+    if (catalogSync) params.torqueCatalogSync = '1';
 
     const startTime = performance.now();
     this.logRequest('GET', url, params);
@@ -283,7 +290,7 @@ export class MotorApiService {
     return this.getWithLogging<ApiResponse<ArticlesData>>(url, params).pipe(
       map(data => {
         // Cache the successful response
-        if (data.header.statusCode === 200) {
+        if (data.header.statusCode === 200 && !catalogSync) {
           this.articleCache.set(cacheKey, data);
           if (!environment.production) {
             console.log(`[API CACHE SET] searchArticles: ${cacheKey}`);

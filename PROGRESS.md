@@ -164,6 +164,8 @@ Article opened (lazy body) → if HTML not in Supabase: proxy may fetch upstream
 Ongoing work → align every read path with documentation/DATA_SOURCE_AND_NORMALIZATION.md
 
 **2026-03-25 (code):** `VehicleDataService` — normalized vehicles no longer use Motor API for **section article lists**, **maintenance**, or **parts** when Supabase is empty; shows empty state + background lazy ingest (`lazySyncMaintenanceInterval`, `lazySyncParts`). See doc **Implementation status**.
+
+**2026-03-25 (code):** `articles/v2` proxy cache — **was** serving any Supabase `articles` count > 0 (e.g. 8 rows), so UI + `DataSyncService` never saw the full Motor catalog (4169). **Now:** serve from Supabase only when `vehicles.is_normalized` **and** `count >= ARTICLE_CATALOG_MIN_ROWS` (default **10**); `?torqueCatalogSync=1` bypasses cache for **`syncArticleCatalogMetadataOnly`**; `getVehicleArticles` paginates (1000/page) so large catalogs return fully from DB.
 ```
 
 ### What remains (optional)

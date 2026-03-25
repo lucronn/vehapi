@@ -23,7 +23,8 @@ import {
     insertMetadata, 
     getMetadata,
     getVehicleArticles,
-    getVehicleArticlesCount
+    getVehicleArticlesCount,
+    getVehicleIsNormalized
 } from './supabase.js';
 import jwt from 'jsonwebtoken';
 import { registerHealthEndpoint } from './routes/health.js';
@@ -412,6 +413,14 @@ const articlesCacheMiddleware = async (req, res, next) => {
     const isArticlesCatalog = path.includes('/articles/v2');
     
     if (isArticlesCatalog && req.method === 'GET') {
+        const skipSbCache =
+            req.query.torqueCatalogSync === '1' ||
+            req.query.torqueCatalogSync === 'true' ||
+            String(req.headers['x-torque-catalog-sync'] || '').trim() === '1';
+        if (skipSbCache) {
+            return next();
+        }
+
         try {
             // Extract vehicleId from path
             const pathParts = path.split('/');
@@ -419,13 +428,28 @@ const articlesCacheMiddleware = async (req, res, next) => {
             if (vehicleIdx !== -1 && pathParts.length > vehicleIdx + 1) {
                 const vehicleId = decodeURIComponent(pathParts[vehicleIdx + 1]);
                 
-                // Get count first (fast)
                 const count = await getVehicleArticlesCount(vehicleId);
-                if (count > 0) {
-                    logger.info(`✓ Found ${count} cached articles for ${vehicleId}. Serving from Supabase.`);
-                    const articles = await getVehicleArticles(vehicleId);
+                if (count === 0) {
+                    return next();
+                }
+
+                const isNormalized = await getVehicleIsNormalized(vehicleId);
+                const minRows = parseInt(process.env.ARTICLE_CATALOG_MIN_ROWS ?? '10', 10);
+                const serveFromSupabase =
+                    isNormalized === true &&
+                    count >= minRows;
+
+                if (!serveFromSupabase) {
+                    logger.info(
+                        `Articles cache bypass for ${vehicleId}: count=${count}, is_normalized=${isNormalized} (need both normalized flag and count>=${minRows})`
+                    );
+                    return next();
+                }
+
+                logger.info(`✓ Serving ${count} cached articles for ${vehicleId} from Supabase (normalized catalog).`);
+                const articles = await getVehicleArticles(vehicleId);
                     
-                    if (articles && articles.length > 0) {
+                if (articles && articles.length > 0) {
                         // We need to transform these Supabase rows back into the shape Motor API returns
                         // or at least what our normalizeMotorResponse expects.
                         const articleDetails = articles.map(a => ({
@@ -454,7 +478,6 @@ const articlesCacheMiddleware = async (req, res, next) => {
                         res.setHeader('x-data-source', 'supabase');
                         res.setHeader('x-cache-hit', 'true');
                         return res.json(motorShape);
-                    }
                 }
             }
         } catch (err) {
