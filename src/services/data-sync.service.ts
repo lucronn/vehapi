@@ -81,6 +81,18 @@ export class DataSyncService {
         }
     }
 
+    /**
+     * Motor `articleDetails` can list the same `id` more than once. Supabase upsert rejects duplicate
+     * `(vehicle_id, original_id)` in one batch (Postgres 21000).
+     */
+    private dedupeArticleCatalogRows<T extends { original_id: string }>(rows: T[]): T[] {
+        const map = new Map<string, T>();
+        for (const row of rows) {
+            map.set(row.original_id, row);
+        }
+        return [...map.values()];
+    }
+
     async checkNormalizationStatus(vehicleId: string): Promise<boolean> {
         const { data } = await this.supabase.client
             .from('vehicles')
@@ -290,9 +302,16 @@ export class DataSyncService {
             };
         });
 
+        const dedupedRows = this.dedupeArticleCatalogRows(rows);
+        if (dedupedRows.length < rows.length) {
+            console.warn(
+                `[DataSync] Deduped ${rows.length - dedupedRows.length} duplicate original_id(s) for vehicle ${vehicleId}`
+            );
+        }
+
         const chunkSize = 200;
-        for (let i = 0; i < rows.length; i += chunkSize) {
-            const chunk = rows.slice(i, i + chunkSize);
+        for (let i = 0; i < dedupedRows.length; i += chunkSize) {
+            const chunk = dedupedRows.slice(i, i + chunkSize);
             const { error } = await this.supabase.client
                 .from('articles')
                 .upsert(chunk, { onConflict: 'vehicle_id,original_id' });

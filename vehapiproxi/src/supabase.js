@@ -77,6 +77,41 @@ function articlesRowsForRest(rows) {
 }
 
 /**
+ * Motor articles/v2 can repeat the same article id (e.g. multiple buckets). A single upsert batch
+ * must not contain duplicate conflict keys — Postgres 21000: "ON CONFLICT DO UPDATE command cannot
+ * affect row a second time". Last row wins.
+ */
+function dedupeArticlesByConflictKey(rows) {
+    const map = new Map();
+    for (const r of rows) {
+        const k = `${r.vehicle_id}|${r.original_id}`;
+        map.set(k, r);
+    }
+    const out = [...map.values()];
+    if (out.length < rows.length) {
+        logger.info(
+            `Deduped articles upsert: ${rows.length} -> ${out.length} (duplicate original_id in Motor catalog)`
+        );
+    }
+    return out;
+}
+
+function dedupeContentItemsByConflictKey(rows) {
+    const map = new Map();
+    for (const r of rows) {
+        const k = `${r.vehicle_external_id}|${r.motor_article_id}|${r.content_source}`;
+        map.set(k, r);
+    }
+    const out = [...map.values()];
+    if (out.length < rows.length) {
+        logger.info(
+            `Deduped content_item upsert: ${rows.length} -> ${out.length} (duplicate motor_article_id in catalog)`
+        );
+    }
+    return out;
+}
+
+/**
  * Ensures a vehicle record exists in the vehicles table.
  * Must be called before inserting into any table that references vehicles(external_id).
  * @param {string} vehicleId The Motor API vehicle ID (external_id)
@@ -783,6 +818,10 @@ export async function insertParsedData(table, data, options = {}) {
 
     if (table === 'articles') {
         rows = articlesRowsForRest(rows);
+        rows = dedupeArticlesByConflictKey(rows);
+    }
+    if (table === 'content_item') {
+        rows = dedupeContentItemsByConflictKey(rows);
     }
 
     const onConflict = UPSERT_CONFLICT_COLUMNS[table];

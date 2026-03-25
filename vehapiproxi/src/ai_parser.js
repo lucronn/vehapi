@@ -359,8 +359,9 @@ async function callStructuredCompletion(userPrompt, schema) {
 
 /**
  * Free-form text (rewrite) — streaming optional; thinking disabled to save tokens.
+ * @param {{ temperature?: number, top_p?: number, max_tokens?: number }} [options] Used when schema is null (chat completion).
  */
-async function callAI(prompt, schema = null) {
+async function callAI(prompt, schema = null, options = {}) {
     if (schema) {
         const r = await callStructuredCompletion(prompt.replace(/\s*$/, ''), schema);
         return r.text;
@@ -371,14 +372,21 @@ async function callAI(prompt, schema = null) {
         throw new Error('Nemotron unavailable — set NVIDIA_API_KEY, NVAPI_KEY, or LLM_API_KEY');
     }
 
+    const temperature = typeof options.temperature === 'number' ? options.temperature : 0.7;
+    const top_p = typeof options.top_p === 'number' ? options.top_p : 0.95;
+    const max_tokens =
+        typeof options.max_tokens === 'number'
+            ? options.max_tokens
+            : Math.min(parseMaxTokens(), 8192);
+
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         try {
             const completion = await openai.chat.completions.create({
                 model: getNemotronTextModel(),
                 messages: [{ role: 'user', content: prompt }],
-                temperature: 0.7,
-                top_p: 0.95,
-                max_tokens: Math.min(parseMaxTokens(), 8192),
+                temperature,
+                top_p,
+                max_tokens,
                 stream: true,
                 chat_template_kwargs: { enable_thinking: false }
             });
@@ -402,26 +410,39 @@ async function callAI(prompt, schema = null) {
     }
 }
 
-export async function rewriteArticleHtml(html) {
+export async function rewriteArticleHtml(html, title = '') {
     if (!html || !html.trim()) return html;
 
     const trimmed = html.slice(0, 12000);
+    const titleLine = (title && String(title).trim()) || '(none)';
 
-    const prompt = `You are an automotive technical writer. Rephrase the text content in the following HTML article in your own words while maintaining technical accuracy, the original meaning, step sequences, safety warnings, and HTML structure.
+    const prompt = `You are an automotive technical editor. Produce a PUBLICATION-READY rewrite of the HTML below. The source is reference material only — your output must be substantively different prose so it is not close paraphrase or recognizably the same wording as the source (avoid plagiarism: new vocabulary, new sentence structures, and varied phrasing throughout).
 
-Rules:
-- Keep ALL HTML tags, attributes, and structure exactly as-is.
-- Rephrase ONLY the visible text content inside tags (paragraphs, headings, list items, table cells, etc.) using different wording while preserving meaning.
-- Do NOT change, remove, or add any <img>, <mtr-image>, <iframe>, or <object> tags.
-- Do NOT change href or src attribute values.
-- Preserve all part numbers, codes, measurements, and technical specifications exactly.
-- Use active voice and clear, concise language.
-- Output ONLY the rewritten HTML with no additional commentary.
+Rewrite requirements:
+- Express every instruction, caution, specification, and step in clearly original language. Do not preserve distinctive phrases, parallel sentence patterns, or the source's rhythm.
+- You may reorder sentences within a paragraph when it improves clarity, but keep procedure order and step sequence logically correct and complete.
+- Preserve all technical facts exactly: part numbers, codes, torques, measurements, fluid types, tool names where given, DTC codes, and safety implications. Do not omit, add, or soften warnings.
+- Use a confident, direct service-manual tone; avoid copying stock phrases from the source.
 
-Original HTML:
-${trimmed}`;
+HTML mechanics (strict):
+- Keep ALL tags, attributes, and nesting exactly as in the input.
+- Change ONLY human-visible text node content (paragraphs, headings, list items, table cells, figcaptions, etc.).
+- Do NOT add, remove, or rename tags. Do NOT alter <img>, <mtr-image>, <iframe>, or <object> elements.
+- Do NOT change href, src, id, or data-* attribute values.
+- Leave bare numbers/codes that are the factual value unchanged when they appear as the primary content of a cell or line.
 
-    const rewritten = await callAI(prompt, null);
+Context — article title (do not paste into output unless it already appears as HTML in the source): ${titleLine}
+
+Source HTML:
+${trimmed}
+
+Output ONLY the complete rewritten HTML. No markdown fences, no commentary.`;
+
+    const rewritten = await callAI(prompt, null, {
+        temperature: 0.88,
+        top_p: 0.9,
+        max_tokens: Math.min(parseMaxTokens(), 8192)
+    });
     return rewritten.trim();
 }
 
