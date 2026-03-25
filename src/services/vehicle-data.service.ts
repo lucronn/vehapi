@@ -39,7 +39,11 @@ interface SectionStrategy {
 
 /**
  * Centralized service for vehicle data fetching
- * Implements "Build-As-Used" caching pattern
+ * Implements "Build-As-Used" caching pattern.
+ *
+ * **Normalized vehicles (`vehicles.is_normalized`):** read from Supabase only for sections below;
+ * do not fall back to Motor for display — ingest runs via {@link DataSyncService} (see
+ * `documentation/DATA_SOURCE_AND_NORMALIZATION.md`).
  */
 @Injectable({
     providedIn: 'root'
@@ -237,7 +241,7 @@ export class VehicleDataService {
                     );
                 }
 
-                // Fallback to Motor API logic if not normalized
+                // Pre-normalization: legacy Motor proxy reads only until ingest completes
                 return this.loadSpecsFromApi(contentSource, vehicleId, motorVehicleId);
             })
         );
@@ -396,7 +400,7 @@ export class VehicleDataService {
                     );
                 }
 
-                // Fallback to Motor API logic if not normalized
+                // Pre-normalization: legacy Motor proxy reads only until ingest completes
                 return this.getAvailableSectionsFromMotor(contentSource, vehicleId, motorVehicleId);
             })
         );
@@ -530,8 +534,8 @@ export class VehicleDataService {
 
     /**
      * Load data for a specific dashboard section.
-     * Uses articles table as the canonical list source, with API fallback.
-     * Normalized tables (procedures/dtcs/tsbs) are only used for content detail.
+     * Uses `articles` as the list source. If the vehicle is **normalized**, Supabase only — no Motor
+     * display fallback (empty UI until ingest fills rows). If not normalized, Motor API + lazy sync.
      */
     loadSectionData(
         section: 'dtcs' | 'tsbs' | 'procedures' | 'diagrams' | 'component-locations',
@@ -547,24 +551,46 @@ export class VehicleDataService {
 
         loadingSignal.set(true);
 
-        from(this.supabase.client.from('articles').select('*').eq('vehicle_id', vehicleId)).pipe(
-            map(({ data }) => {
-                if (!data || data.length === 0) return null;
-                const bucketNames = strategy.alwaysIncludeBuckets.map(b => b.toLowerCase());
-                const filtered = data.filter((a: any) => this.matchesSectionBuckets(a, bucketNames));
-                if (filtered.length === 0) return null;
-                return filtered.map(strategy.mapper);
-            }),
-            catchError(() => of(null))
+        from(this.supabase.client
+            .from('vehicles')
+            .select('is_normalized')
+            .eq('external_id', vehicleId)
+            .maybeSingle()
+        ).pipe(
+            catchError(() => of({ data: null as { is_normalized?: boolean } | null })),
+            switchMap(({ data: veh }) => {
+                const isNormalized = !!veh?.is_normalized;
+                return from(this.supabase.client.from('articles').select('*').eq('vehicle_id', vehicleId)).pipe(
+                    map(({ data }) => {
+                        if (!data || data.length === 0) {
+                            return { isNormalized, mapped: null as any[] | null };
+                        }
+                        const bucketNames = strategy.alwaysIncludeBuckets.map(b => b.toLowerCase());
+                        const filtered = data.filter((a: any) => this.matchesSectionBuckets(a, bucketNames));
+                        if (filtered.length === 0) {
+                            return { isNormalized, mapped: null };
+                        }
+                        return { isNormalized, mapped: filtered.map(strategy.mapper) };
+                    }),
+                    catchError(() => of({ isNormalized, mapped: null as any[] | null }))
+                );
+            })
         ).subscribe({
-            next: (supabaseData) => {
-                if (supabaseData && supabaseData.length > 0) {
-                    if (isDevMode()) console.log(`[VehicleData] Loaded ${section} from Supabase articles (${supabaseData.length} items)`);
-                    updateState(supabaseData);
+            next: ({ isNormalized, mapped }) => {
+                if (mapped && mapped.length > 0) {
+                    if (isDevMode()) {
+                        console.log(`[VehicleData] Loaded ${section} from Supabase articles (${mapped.length} items)`);
+                    }
+                    updateState(mapped);
                     loadingSignal.set(false);
-                } else {
-                    this.loadSectionDataFromApi(section, contentSource, vehicleId, motorVehicleId, loadingSignal, updateState, errorCallback);
+                    return;
                 }
+                if (isNormalized) {
+                    updateState([]);
+                    loadingSignal.set(false);
+                    return;
+                }
+                this.loadSectionDataFromApi(section, contentSource, vehicleId, motorVehicleId, loadingSignal, updateState, errorCallback);
             },
             error: (err) => {
                 console.error('[VehicleData] Supabase read failed', err);
@@ -658,8 +684,8 @@ export class VehicleDataService {
     }
 
     /**
-     * Load Maintenance Schedules (Legacy Parity: Forces Motor Source)
-     * Maintenance data is standardized in Motor format.
+     * Load maintenance schedules. Normalized vehicles: Supabase only; empty rows trigger background
+     * lazy sync (no Motor display). Pre-normalization: Motor API + lazy cache to Supabase.
      */
     loadMaintenanceSchedules(
         contentSource: string,
@@ -689,7 +715,12 @@ export class VehicleDataService {
                         .eq('interval_value', interval)
                     ).pipe(
                         map(({ data: mbData }) => {
-                            if (!mbData || mbData.length === 0) return null;
+                            if (!mbData || mbData.length === 0) {
+                                void this.dataSync
+                                    .lazySyncMaintenanceInterval(contentSource, vehicleId, interval, motorVehicleId)
+                                    .catch(() => {});
+                                return [];
+                            }
                             return mbData.map((s: any) => ({
                                 id: s.id,
                                 description: s.item,
@@ -704,7 +735,7 @@ export class VehicleDataService {
             })
         ).subscribe({
             next: (supabaseData) => {
-                if (supabaseData) {
+                if (supabaseData !== null) {
                     updateState(supabaseData);
                     loadingSignal.set(false);
                 } else {
@@ -748,7 +779,7 @@ export class VehicleDataService {
     }
 
     /**
-     * Load Parts (Prefers Supabase if normalized)
+     * Load parts. Normalized vehicles: Supabase only; empty full-catalog triggers lazy parts ingest.
      */
     loadParts(
         contentSource: string,
@@ -780,7 +811,12 @@ export class VehicleDataService {
 
                     return from(query).pipe(
                         map(({ data: partsData }) => {
-                            if (!partsData || partsData.length === 0) return null;
+                            if (!partsData || partsData.length === 0) {
+                                if (!searchTerm) {
+                                    void this.dataSync.lazySyncParts(contentSource, vehicleId, motorVehicleId).catch(() => {});
+                                }
+                                return [];
+                            }
                             return partsData.map(p => ({
                                 partNumber: p.part_number,
                                 description: p.description,
@@ -796,7 +832,7 @@ export class VehicleDataService {
             })
         ).subscribe({
             next: (supabaseData) => {
-                if (supabaseData) {
+                if (supabaseData !== null) {
                     updateState(supabaseData);
                     loadingSignal.set(false);
                 } else {

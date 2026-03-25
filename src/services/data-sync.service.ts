@@ -153,9 +153,11 @@ export class DataSyncService {
             ]);
 
             const catalogLikelyComplete = !!vehicleRow?.is_normalized && (articleCount ?? 0) >= 10;
+            /** DB drift: normalized flag without rows — must re-ingest catalog (no Motor fallback in UI). */
+            const needsCatalogRepair = !!vehicleRow?.is_normalized && (articleCount ?? 0) === 0;
 
             setStep(5, 'Article catalog…');
-            if (!catalogLikelyComplete) {
+            if (!catalogLikelyComplete || needsCatalogRepair) {
                 await this.syncArticleCatalogMetadataOnly(contentSource, vehicleId, motorVehicleId);
             }
 
@@ -177,6 +179,35 @@ export class DataSyncService {
                     this.lazySyncMaintenanceByFrequency(contentSource, vehicleId, code, motorVehicleId)
                 )
             ]);
+
+            const { count: finalArticleCount } = await this.supabase.client
+                .from('articles')
+                .select('*', { count: 'exact', head: true })
+                .eq('vehicle_id', vehicleId);
+
+            const nowIso = new Date().toISOString();
+            if ((finalArticleCount ?? 0) > 0) {
+                const { error: normErr } = await this.supabase.client
+                    .from('vehicles')
+                    .update({ is_normalized: true, updated_at: nowIso })
+                    .eq('external_id', vehicleId);
+                if (normErr) {
+                    console.warn('[DataSync] is_normalized update failed:', normErr);
+                }
+            } else if (vehicleRow?.is_normalized) {
+                const { error: clearErr } = await this.supabase.client
+                    .from('vehicles')
+                    .update({ is_normalized: false, updated_at: nowIso })
+                    .eq('external_id', vehicleId);
+                if (clearErr) {
+                    console.warn('[DataSync] is_normalized clear failed:', clearErr);
+                } else {
+                    console.warn(
+                        '[DataSync] No article rows after reference sync; cleared is_normalized drift for',
+                        vehicleId
+                    );
+                }
+            }
 
             setStep(100, 'Done');
         } catch (e) {
@@ -268,15 +299,7 @@ export class DataSyncService {
             }
         }
 
-        if (details.length > 0) {
-            const { error: normErr } = await this.supabase.client
-                .from('vehicles')
-                .update({ is_normalized: true, updated_at: now })
-                .eq('external_id', vehicleId);
-            if (normErr) {
-                console.warn('[DataSync] is_normalized update failed:', normErr);
-            }
-        }
+        /** `is_normalized` is set only in {@link eagerSyncVehicleReferenceData} after verifying rows exist. */
     }
 
     /**

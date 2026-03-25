@@ -154,6 +154,19 @@ RLS is enabled on all tables. Current policies are permissive for MVP — tighte
 
 Full DDL is in `supabase_schema.sql`.
 
+## Data source and normalization (product goal)
+
+**Canonical document:** `documentation/DATA_SOURCE_AND_NORMALIZATION.md` — read it before changing ingest or vehicle read paths.
+
+| Principle | What it means |
+|---|---|
+| **Supabase is runtime truth** | User-facing reads use Supabase when rows exist for that vehicle. |
+| **Motor is ingest / index** | Upstream Motor (via **`vehapiproxi` only**) discovers what exists when Supabase is empty; responses are **normalized and persisted**, not used as an endless parallel “live” source once Supabase is populated for that scope. |
+| **First access — catalog** | No catalog/menu in Supabase → ingest Motor **index** data (lists, buckets/silos, metadata) **once**, store normalized rows, then the UI reads **Supabase** for that vehicle’s catalog going forward (except deliberate repair). |
+| **Lazy by usage — bodies** | Catalog may list an article without full body. **First open** of that item may fetch from Motor, **normalize, persist**; **later opens** are **Supabase-only**, phasing Motor out of the hot path as the app is used. |
+
+**Agent rules:** `.agents/rules/data-source-supabase-first.md` — short pointer. **Cursor:** `.cursor/rules/data-source-supabase-first.mdc`.
+
 ## Coding conventions
 
 ### Angular / TypeScript
@@ -228,6 +241,7 @@ Checklist items mirror `documentation/IMPLEMENTATION_GUIDE.md` Section 23.
 | `documentation/VEHAPIPROXI_API_CONSUMPTION.md` | Torque proxy: routes, auth, CORS vs Motor (companion to `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md`) |
 | `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md` | Long-form Motor API / proxy consumption notes |
 | `documentation/DEPLOYMENT.md` | Multi-platform deployment guides; **GitHub Actions and Vercel deploy verification** (two workflows, secrets, post-push checklist) |
+| `documentation/DATA_SOURCE_AND_NORMALIZATION.md` | **Supabase vs Motor:** runtime truth, first-touch catalog ingest, lazy per-article normalization, no Motor-fallback display |
 | `randdev/LOGGING.md` | Logging standards (reference) |
 
 ## Agent rules (`.agents/rules/`)
@@ -242,5 +256,5 @@ These are non-negotiable features of the application:
 1. **Mobile-first design** — maximize screen space, bottom navigation, 44px touch targets, safe-area insets.
 2. **AI content rewriting** — all text content from the Motor API must be AI-rewritten; PDFs and images remain untouched.
 3. **Stepper tutorials** — AI-generated interactive step-by-step tutorials from article content, mobile-optimized with swipe navigation.
-4. **API proxy** — the SPA uses **`vehapiproxi` only** (`environment.apiUrl` / dev proxy). **Never** call `motor.com`, `api.motor.com`, or `sites.motor.com` from `src/`; upstream Motor is server-side inside the proxy.
+4. **API proxy** — the SPA uses **`vehapiproxi` only** (`environment.apiUrl` / dev proxy). **Never** call `motor.com`, `api.motor.com`, or `sites.motor.com` from `src/`; upstream Motor is server-side inside the proxy. **Data contract:** Supabase is the **runtime source of truth** once normalized; Motor is **ingest/index** only (see `documentation/DATA_SOURCE_AND_NORMALIZATION.md` — no Motor fallback for display when Supabase should already hold the data).
 5. **Credit system** — Stripe-powered credit purchase and module-unlock flow.

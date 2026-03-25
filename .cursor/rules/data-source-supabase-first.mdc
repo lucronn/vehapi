@@ -1,0 +1,18 @@
+---
+description: Supabase is runtime truth; Motor is ingest/index only; lazy normalization by usage
+alwaysApply: true
+---
+
+# Data source and normalization
+
+Read the full contract in **`documentation/DATA_SOURCE_AND_NORMALIZATION.md`**. Summary:
+
+1. **Supabase first:** If data exists in Supabase for the vehicle, **read Supabase only** in user-facing paths. Do **not** add Motor “fallback” reads for display when normalized data should already be there—fix ingest or flags instead.
+
+2. **Motor as index/ingest:** Use Motor (via **`vehapiproxi` only**, never `motor.com` from `src/`) to **discover** what exists when Supabase is missing catalog or content, then **normalize and persist**. Motor is not a permanent parallel runtime source once Supabase holds that scope.
+
+3. **First vehicle access:** Empty catalog/menu in Supabase → ingest Motor **index** data (articles list, buckets/silos, metadata), **normalize into Supabase immediately**, then UI reads persisted data. **One-time durable** catalog ingest per vehicle (except explicit repair).
+
+4. **Lazy by usage:** Opening an article when only catalog metadata exists → **ingest body/detail**, normalize, persist → thereafter **Supabase only** for that content. This **phases out Motor** as the app is used.
+
+When changing `VehicleDataService`, `DataSyncService`, or proxy ingest, **verify alignment** with that document and update **`PROGRESS.md`** if behavior or gaps change.

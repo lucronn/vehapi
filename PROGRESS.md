@@ -1,11 +1,12 @@
 # PROGRESS
 
-**Last updated**: 2026-03-25 — **Ops:** `GET /health` on production returns `llmKeyConfigured` + `llmKeyEnv` (variable name only) so you can confirm which Vercel project’s serverless runtime sees `NVIDIA_API_KEY` / `LLM_API_KEY` — same-origin `/api` uses the **main** deploy project (`VERCEL_PROJECT_ID`), not necessarily the separate backend project. **Normalization release gate closed:** local production-readiness verification passes (`npm run verify:prod-readiness`), production `environment.features.l2Search` is enabled, and prior target DB migration/RPC/RLS checks remain validated via Supabase REST evidence. Golden verification remains green: `documentation/release-artifacts/golden-vehicle-verification-20260323-051007.md`. **Follow-up:** `vehicle_metadata` legacy `/api/...` keys handled in `getMetadata` + optional SQL cleanup; article lock overlay adds **full vehicle** unlock; `documentation/RELEASE_CHECKLIST.md` includes a short **Production smoke** section. **Post-normalization:** Motor `/fluids` → `specifications` (`Fluids` category) sync is active (eager + specs section). **2026-03-26 QA fixes:** Supabase `articles.code` / `articles.description` migration applied to project `vehapidb` (jzwhcoivwzumqrfscnlw); Motor parts/maintenance/catalog calls now pass resolved `motorVehicleId` (MOTOR + composite id) from `eagerSyncVehicleReferenceData` / lazy sync; article viewer `isLocked` re-subscribes to `creditsService.unlocks()` and unlock handlers `queueMicrotask(loadData)`; proxy `onError` returns JSON with `correlationId` + path.
+**Last updated**: 2026-03-25 — **Architecture contract (authoritative):** `documentation/DATA_SOURCE_AND_NORMALIZATION.md` — **Supabase = runtime source of truth**; Motor (via `vehapiproxi` only) = **index + ingest** when Supabase is missing data; **first vehicle access** → normalize catalog (buckets/silos/list) into Supabase **once**, then **Supabase-only** reads for that scope; **per-article bodies** → **lazy** normalize on first open, then permanent Supabase reads (phases Motor out of the hot path as the app is used). **Highest priority:** **phase out motor.com** — align code with that document; Motor remains **ingest-only** for user-visible parity until each surface is Supabase-backed. **Open bug:** common-issues suggested actions sometimes default to “consult the service manual” — should use **Supabase**-backed vehicle data (same Motor-off direction). **Ops:** `GET /health` on production returns `llmKeyConfigured` + `llmKeyEnv` (variable name only) so you can confirm which Vercel project’s serverless runtime sees `NVIDIA_API_KEY` / `LLM_API_KEY` — same-origin `/api` uses the **main** deploy project (`VERCEL_PROJECT_ID`), not necessarily the separate backend project. **Normalization release gate closed:** local production-readiness verification passes (`npm run verify:prod-readiness`), production `environment.features.l2Search` is enabled, and prior target DB migration/RPC/RLS checks remain validated via Supabase REST evidence. Golden verification remains green: `documentation/release-artifacts/golden-vehicle-verification-20260323-051007.md`. **Follow-up:** `vehicle_metadata` legacy `/api/...` keys handled in `getMetadata` + optional SQL cleanup; article lock overlay adds **full vehicle** unlock; `documentation/RELEASE_CHECKLIST.md` includes a short **Production smoke** section. **Post-normalization:** Motor `/fluids` → `specifications` (`Fluids` category) sync is active (eager + specs section). **2026-03-26 QA fixes:** Supabase `articles.code` / `articles.description` migration applied to project `vehapidb` (jzwhcoivwzumqrfscnlw); Motor parts/maintenance/catalog calls now pass resolved `motorVehicleId` (MOTOR + composite id) from `eagerSyncVehicleReferenceData` / lazy sync; article viewer `isLocked` re-subscribes to `creditsService.unlocks()` and unlock handlers `queueMicrotask(loadData)`; proxy `onError` returns JSON with `correlationId` + path.
 
 ## Summary
 
 | Area | Status |
 |------|--------|
+| **Phase out motor.com** | **Highest priority** — end state: no runtime dependency on live Motor for normal flows; data served from Supabase (ingest continues until parity). Contract: **`documentation/DATA_SOURCE_AND_NORMALIZATION.md`**. See **What's Left to Do**. |
 | Stripe Integration (Checkout, Portal, Webhooks) | Complete |
 | Credits Service (Balance, Unlocks, Transactions) | Complete |
 | Section-Level Content Locking | Complete |
@@ -19,7 +20,7 @@
 
 - **Shipped:** Phase 1 — `evidence_ingest`, `content_item` upsert + post-parse enrichment (`updateContentItemEnrichment`), catalog path in `vehapiproxi/src/background_worker.js` + `content_item_mapper.js`; `evidence_link` after parse for **`content_item`**, **procedures** (parent row), **dtcs**, **tsbs**, and L1 **`procedure_step`** / **`procedure_tool`** / **`procedure_part`** + **`spec_fact`** when schema present (legacy **`specifications`** → `spec_fact` only); native PDF text (`pdf_native_text.js`) and optional sparse-PDF Nemotron vision (`nemotron_multimodal.js`, `ENABLE_NEMOTRON_PDF_VISION_FALLBACK=true`); `npm run verify:evidence-links`; optional Cursor worker-loop (`hooks.json` → `auto-continue.mjs`, default ON — see `.cursor/WORKER_LOOP.md`).
 - **Workspace (git):** `.cursor/WORKER_LOOP.md`, `.cursor/hooks.json`, `.cursor/hooks/*.mjs`, and `.cursor/agents/` may be **untracked** until committed — hooks only run in clones that have them. Loop toggle files (`.cursor/worker-loop.enabled` / `.disabled` / `.after-response`) are **gitignored** when present; default auto-continue is ON once hooks are registered (see `WORKER_LOOP.md`). **Desktop continue (Windows):** root **`npm run cursor:auto-once`** invokes **`scripts/continue-once.ps1`** (paste + Enter); see `scripts/automation/README.md`.
-- **Next (phase):** Normalization release gate is complete (prod-readiness + golden verification + `l2Search` enabled). Remaining work moves to post-normalization scope (extended API field mapping, optional UX polish, broader feature work).
+- **Next (phase):** **Top priority — phase out motor.com:** shrink and eliminate live Motor calls in the proxy and app; prefer Supabase-backed reads everywhere parity exists. Normalization release gate is already complete; remaining work is **Motor-off** completion (catalog, article bodies, YMME, parts, etc.) before optional polish.
 - **Regression:** after `background_worker.js` or evidence mapping changes, run `verify:evidence-links` with local `.env` (`SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`); no automated CI run without injected secrets — not a product bug.
 - **Worker assumption:** L1 tables + RLS follow `supabase_schema.sql`; thread writes from existing parse outputs before expanding ingest sources.
 
@@ -63,6 +64,8 @@
 
 ## Bugs & Known Issues
 
+- **Fixed 2026-03-25**: **`is_normalized` drift** — catalog upserts could fail while **`syncArticleCatalogMetadataOnly`** still set `is_normalized: true` when the Motor search returned rows (no per-chunk success check). **`eagerSyncVehicleReferenceData`** now sets **`is_normalized` only after** a post-pipeline **`articles` count** for that `vehicle_id` (true if count > 0; clears flag only when it was true and count is still 0). Re-runs catalog when the flag is true but **`articles` is empty**. **No Motor.com fallback** for normalized vehicles in **`VehicleDataService`** — Supabase is the runtime source; ingest fixes empty data.
+- **Open (High)** — **Common issues — suggested action:** Generated items sometimes recommend a generic action such as “please consult the service manual,” which defeats the purpose of Torque. **Expected direction:** suggested actions should be derived from **data already in Supabase** for the vehicle (normalized procedures, DTCs, TSBs, specs, maintenance, evidence / L2 text, etc.), not from live Motor API calls — supports the **highest-priority** goal of **phasing out motor.com** (Motor ingest-only). Touchpoints: `/api/common-issues/generate`, `ai_parser` common-issues prompts, `common-issues-section` UI; may require passing structured Supabase context into generation or post-processing to forbid generic manual-only cop-outs when DB evidence exists.
 - **Fixed 2026-03-25**: Production `POST /api/rewrite` returned `AI_MODULE_LOAD_FAILED` while `GET /health` showed `llmKeyConfigured: true` — `cheerio` / `turndown` were only in `vehapiproxi/package.json`; Vercel installs root dependencies for `api/index.js`. Added **`cheerio`** and **`turndown`** to root `package.json`.
 - **Fixed 2026-03-18**: Motor/Article API 401 Unauthorized while logged in — interceptor previously forwarded Supabase `Authorization: Bearer ...` to Motor-proxy endpoints (years/catalog/parts/name), causing Motor to reject requests; now only attaches Bearer for `/api/credits/*` and `/api/source/*/vehicle/*/article/*` paths.
 - **Fixed 2026-03-19**: Stripe redirect credit authorization sometimes failed due to Supabase session hydration race; `AuthService.getIdToken()` now always hydrates `_session/_user` signals, and `CreditsService.verifySession()` waits for `authService.user()` before calling `/api/credits/verify-session`.
@@ -101,6 +104,8 @@
 
 | Priority | Task |
 |----------|------|
+| **Highest** | **Phase out motor.com:** drive the app and proxy toward **Supabase-only reads** for user-visible data; keep Motor **only** for ingestion/sync until each surface has parity, then remove upstream calls. **Contract:** `documentation/DATA_SOURCE_AND_NORMALIZATION.md` (eager catalog once per vehicle, lazy per-article bodies, no Motor fallback display when data should be normalized). (Strategic north star — supersedes feature-level priorities.) |
+| **High** | **Common issues:** Stop generic “consult the service manual” (or equivalent) as the primary suggested action when Supabase holds vehicle-specific data — ground actions in normalized Supabase rows + evidence (supports Motor-off). See **Bugs & Known Issues** (open bullet). |
 | **High** | (Completed 2026-03-23) DB migration/RPC/RLS release target checks were validated via Supabase REST; local `npm run verify:prod-readiness` is now PASS; production `environment.features.l2Search` is now enabled. |
 | Medium | Phase-1 worker regression completed locally: `cd vehapiproxi && npm run verify:evidence-links -- --local --vehicle=2854 --source=GeneralMotors --article=7042430` (PASS). |
 | Medium | `cd vehapiproxi && npm run verify:release-target` (pg-based) is failing on this machine with `ECONNRESET`, but the same “release target” requirements were validated via Supabase REST checks (tables + RPC + RLS sanity) as described above. |
@@ -139,23 +144,26 @@
 - [x] **Traceability closure for arbitrary article verification (2026-03-22)** — article parse paths in `background_worker.js` now create `evidence_link` rows for the matching `content_item`, so release verification no longer depends on landing on a procedure/DTC/TSB-specific normalized row.
 - [x] **Golden-vehicle verification pass (2026-03-23)** — local Node 22 run passes with report at `documentation/release-artifacts/golden-vehicle-verification-20260323-051007.md`. Follow-up fixes included verify-mode forced reparse, early `content_item` evidence linking, case-insensitive `content_item` reuse, and verifier selection of the best enriched row when historical duplicate source-casing rows exist.
 
-### Data flow (eager reference + lazy article body)
+### Data flow (contract: Supabase first; Motor for ingest gaps only)
 
 ```
-Dashboard load → ensureVehicleRecord (0 Motor calls)
-                → eagerSyncVehicleReferenceData (background): articles/v2 catalog metadata,
-                  specifications (from articles), parts if empty, mileage + F/N/R maintenance
-                → Home wizard → vehicle_metadata (years / makes / models+engines)
-                → searchArticles still runs for UI; proxy may also enqueue background_worker catalog
+Dashboard load → ensureVehicleRecord (no upstream Motor from browser)
+                → eagerSyncVehicleReferenceData (background): if catalog empty in Supabase,
+                  Motor index → normalize → articles/catalog rows; then specs, fluids, parts,
+                  maintenance as implemented
+                → vehicle_metadata cache (years / makes / models+engines) via home wizard
 
-Section opened → Supabase articles / specs / parts / maintenance when present
-               OR → Motor API fallback → display + lazy* sync
+After catalog exists in Supabase → section lists / menus read Supabase (no Motor “display fallback”
+  for normalized scope — fix ingest if empty)
 
-Article opened → proxy article content (cached or Motor API)
-               → syncSingleArticle with pre-fetched HTML (no double-fetch for list HTML)
-               → background_worker AI parse into procedures/dtcs/tsbs tables
+Section opened → read Supabase when rows exist; ingest from Motor only to fill missing normalized data
 
-Specs / parts / maintenance sections → mostly cached after eager sync; lazy paths remain for gaps
+Article opened (lazy body) → if HTML not in Supabase: proxy may fetch upstream once → syncSingleArticle /
+  cache → persist; thereafter Supabase-served. Worker may parse into procedures/dtcs/tsbs tables.
+
+Ongoing work → align every read path with documentation/DATA_SOURCE_AND_NORMALIZATION.md
+
+**2026-03-25 (code):** `VehicleDataService` — normalized vehicles no longer use Motor API for **section article lists**, **maintenance**, or **parts** when Supabase is empty; shows empty state + background lazy ingest (`lazySyncMaintenanceInterval`, `lazySyncParts`). See doc **Implementation status**.
 ```
 
 ### What remains (optional)
