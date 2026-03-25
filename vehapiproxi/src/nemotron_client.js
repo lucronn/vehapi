@@ -31,6 +31,17 @@ export function getNemotronApiKey() {
     return (process.env.NVIDIA_API_KEY || process.env.NVAPI_KEY || process.env.LLM_API_KEY || '').trim();
 }
 
+/**
+ * Which env var name is providing the key (for diagnostics only; never the secret value).
+ * @returns {'NVIDIA_API_KEY'|'NVAPI_KEY'|'LLM_API_KEY'|null}
+ */
+export function getLlmKeyEnvSource() {
+    if ((process.env.NVIDIA_API_KEY || '').trim()) return 'NVIDIA_API_KEY';
+    if ((process.env.NVAPI_KEY || '').trim()) return 'NVAPI_KEY';
+    if ((process.env.LLM_API_KEY || '').trim()) return 'LLM_API_KEY';
+    return null;
+}
+
 /** Text/chat model (rewrite, parse, tutorials, thinking stream). */
 export function getNemotronTextModel() {
     return (process.env.NEMOTRON_MODEL || process.env.LLM_MODEL || 'nvidia/nemotron-3-super-120b-a12b').trim();

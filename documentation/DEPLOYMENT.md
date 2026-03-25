@@ -98,6 +98,19 @@ export const environment = {
 
 2. Only use an absolute URL when you are intentionally deploying the SPA and proxy on different origins and have updated CORS allowlists accordingly.
 
+### Vercel: AI rewrite / Nemotron (`NVIDIA_API_KEY` / `LLM_API_KEY`)
+
+The production app calls same-origin `/api/*` (see root `vercel.json` → `api/index.js`). **Committing or uploading a `.env` file does not configure Vercel** unless you also define variables in the Vercel project (or use `vercel env push` from the CLI).
+
+1. **Vercel** → your project → **Settings** → **Environment Variables**
+2. Add **`NVIDIA_API_KEY`** or **`LLM_API_KEY`** (exact names; optional alias **`NVAPI_KEY`**). Enable for **Production** (and **Preview** if you test preview URLs).
+3. **Redeploy** after any env change (Deployments → ⋮ → **Redeploy**). Serverless functions only see new variables on a new deployment.
+4. If you use **two** Vercel projects (SPA + backend from `deploy-backend.yml`), set the same LLM keys on the project that actually serves `/api` for the hostname you use in the browser.
+
+**Sanity check:** `POST /api/rewrite` with `{ "html": "<p>test</p>" }` — with a valid key you should get `200` and rewritten HTML; `503` with `code: "MISSING_LLM_KEY"` means the key is not in the function environment; `code: "AI_MODULE_LOAD_FAILED"` means `vehapiproxi` failed to load `ai_parser` (check Vercel function logs).
+
+**Which Vercel project actually runs `/api`?** The browser uses same-origin `/api` (`environment.prod.ts` → `apiUrl: '/api'`). That hits the **Vercel project** deployed by **`.github/workflows/deploy.yml`** (`VERCEL_PROJECT_ID` GitHub secret), not necessarily the separate backend project in **`deploy-backend.yml`** (hardcoded `vercel-project-id`). If you set `NVIDIA_API_KEY` only on the “vehapiproxi” project but production traffic goes to the “vehapi” project (or vice versa), `/api` will not see those variables. **Quick check:** open `GET /health` on your production origin (e.g. `https://<your-app>.vercel.app/health`). The JSON includes **`llmKeyConfigured`** and **`llmKeyEnv`** (name of the variable found, never the value). If `llmKeyConfigured` is `false`, add the key to **that** deployment’s project and redeploy.
+
 ---
 
 ## 🌐 Custom Domain

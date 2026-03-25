@@ -1,5 +1,6 @@
 import express from 'express';
 import logger from '../logger.js';
+import { getNemotronApiKey } from '../nemotron_client.js';
 
 export function registerAiEndpoints(app, getAiFunctions) {
     // POST /api/rewrite — rewrites article HTML text content via Nemotron (NVIDIA)
@@ -13,7 +14,21 @@ export function registerAiEndpoints(app, getAiFunctions) {
 
         const { rewriteArticleHtml } = await getAiFunctions();
         if (!rewriteArticleHtml) {
-            return res.status(503).json({ error: 'AI rewriting unavailable — set NVIDIA_API_KEY or LLM_API_KEY' });
+            return res.status(503).json({
+                error:
+                    'AI rewriting unavailable — the AI module failed to load (see server logs). ' +
+                    'If you set NVIDIA_API_KEY on Vercel, redeploy after adding env vars; ensure deps are installed (e.g. zod).',
+                code: 'AI_MODULE_LOAD_FAILED'
+            });
+        }
+        if (!getNemotronApiKey()) {
+            return res.status(503).json({
+                error:
+                    'AI rewriting unavailable — no NVIDIA / LLM API key in process.env. ' +
+                    'In Vercel: Project → Settings → Environment Variables → add NVIDIA_API_KEY or LLM_API_KEY for Production, then Redeploy. ' +
+                    'Uploading a local .env file to the repo does not set Vercel runtime env.',
+                code: 'MISSING_LLM_KEY'
+            });
         }
 
         try {
@@ -36,7 +51,17 @@ export function registerAiEndpoints(app, getAiFunctions) {
 
         const { generateTutorialSteps } = await getAiFunctions();
         if (!generateTutorialSteps) {
-            return res.status(503).json({ error: 'AI tutorial generation unavailable — set NVIDIA_API_KEY or LLM_API_KEY' });
+            return res.status(503).json({
+                error: 'AI tutorial generation unavailable — AI module failed to load (see server logs).',
+                code: 'AI_MODULE_LOAD_FAILED'
+            });
+        }
+        if (!getNemotronApiKey()) {
+            return res.status(503).json({
+                error:
+                    'AI tutorial generation unavailable — set NVIDIA_API_KEY or LLM_API_KEY on the server (Vercel env + Redeploy).',
+                code: 'MISSING_LLM_KEY'
+            });
         }
 
         try {
@@ -61,7 +86,17 @@ export function registerAiEndpoints(app, getAiFunctions) {
         try {
             const { generateCommonIssues } = await getAiFunctions();
             if (!generateCommonIssues) {
-                return res.status(503).json({ error: 'AI common issues unavailable — set NVIDIA_API_KEY or LLM_API_KEY' });
+                return res.status(503).json({
+                    error: 'AI common issues unavailable — AI module failed to load (see server logs).',
+                    code: 'AI_MODULE_LOAD_FAILED'
+                });
+            }
+            if (!getNemotronApiKey()) {
+                return res.status(503).json({
+                    error:
+                        'AI common issues unavailable — set NVIDIA_API_KEY or LLM_API_KEY on the server (Vercel env + Redeploy).',
+                    code: 'MISSING_LLM_KEY'
+                });
             }
             const issues = await generateCommonIssues(vehicleName);
             res.json({ issues }); // Return { issues: [...] } as expected by frontend

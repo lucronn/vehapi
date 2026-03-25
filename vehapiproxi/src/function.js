@@ -59,7 +59,7 @@ async function getAiFunctions() {
         _generateTutorialSteps = mod.generateTutorialSteps;
         _generateCommonIssues = mod.generateCommonIssues;
     } catch (e) {
-        logger.warn('AI parser unavailable:', e.message);
+        logger.error('AI parser unavailable (dynamic import failed):', { message: e?.message, stack: e?.stack });
     }
     return {
         rewriteArticleHtml: _rewriteArticleHtml,
