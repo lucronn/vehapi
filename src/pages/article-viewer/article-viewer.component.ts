@@ -100,12 +100,18 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
 
   /** Whether content is locked behind a credit paywall */
   isLocked = computed(() => {
+    // Ensure this computed re-runs when unlock state changes (nested hasAccess reads unlocks()).
+    this.creditsService.unlocks();
     const mod = this.resolvedModuleType();
     const vid = this.vehicleIdSig();
     const aid = this.internalArticleId();
     if (!vid) return false;
-    // When moduleType is missing (e.g. direct URL), treat as locked to prevent bypass
-    if (!mod) return true;
+    // When moduleType is missing (e.g. direct URL + metadata 404), we still allow access
+    // if the user explicitly unlocked this single article.
+    if (!mod) {
+      // `hasAccess(..., moduleType='', articleId)` will still grant access when unlocks include `article:${articleId}`.
+      return aid ? !this.creditsService.hasAccess(vid, '', aid) : true;
+    }
     return !this.creditsService.hasAccess(vid, mod, aid ?? undefined);
   });
 
@@ -538,7 +544,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
 
   async refreshAndRetry() {
     await this.creditsService.refreshBalance();
-    this.loadData();
+    queueMicrotask(() => this.loadData());
   }
 
   async unlockThisArticle() {
@@ -546,7 +552,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
     const aid = this.internalArticleId();
     if (!vid || !aid) return;
     const ok = await this.creditsService.unlockArticle(vid, vid, aid);
-    if (ok) this.loadData();
+    if (ok) queueMicrotask(() => this.loadData());
   }
 
   async unlockSection(moduleType: string) {
@@ -554,7 +560,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
     if (!vid) return;
     const cost = this.creditsService.getCostForModule(moduleType);
     const ok = await this.creditsService.unlockModule(vid, vid, moduleType, cost);
-    if (ok) this.loadData();
+    if (ok) queueMicrotask(() => this.loadData());
   }
 
   /** Unlock all modules for this vehicle (backend stores `full` in unlocks). */
@@ -568,7 +574,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
       'full',
       this.creditsService.COSTS.FULL_ACCESS
     );
-    if (ok) this.loadData();
+    if (ok) queueMicrotask(() => this.loadData());
   }
 
   scrollToSection(id: string) {

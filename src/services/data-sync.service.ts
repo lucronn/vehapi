@@ -120,9 +120,14 @@ export class DataSyncService {
      * (metadata + silo buckets only), fluids, parts, and common maintenance
      * intervals. Skips work when data already exists to limit repeat API traffic.
      * Does **not** fetch per-article HTML (that remains {@link syncSingleArticle}).
+     * @param motorVehicleId Composite Motor vehicle id when the route uses an OEM shard (e.g. GeneralMotors) — aligns parts/maintenance/catalog with `/articles/v2` routing.
      */
-    async eagerSyncVehicleReferenceData(contentSource: string, vehicleId: string): Promise<void> {
-        const key = `${contentSource}:${vehicleId}`;
+    async eagerSyncVehicleReferenceData(
+        contentSource: string,
+        vehicleId: string,
+        motorVehicleId?: string
+    ): Promise<void> {
+        const key = `${contentSource}:${vehicleId}:${motorVehicleId ?? ''}`;
         if (this.eagerReferenceSyncInFlight.has(key)) {
             return;
         }
@@ -151,7 +156,7 @@ export class DataSyncService {
 
             setStep(5, 'Article catalog…');
             if (!catalogLikelyComplete) {
-                await this.syncArticleCatalogMetadataOnly(contentSource, vehicleId);
+                await this.syncArticleCatalogMetadataOnly(contentSource, vehicleId, motorVehicleId);
             }
 
             setStep(30, 'Specifications…');
@@ -161,15 +166,15 @@ export class DataSyncService {
             await this.syncFluidsIfMissing(contentSource, vehicleId);
 
             setStep(55, 'Parts catalog…');
-            await this.syncPartsIfMissing(contentSource, vehicleId);
+            await this.syncPartsIfMissing(contentSource, vehicleId, motorVehicleId);
 
             setStep(70, 'Maintenance schedules…');
             await Promise.all([
                 ...this.eagerMaintenanceIntervalsMiles.map((interval) =>
-                    this.lazySyncMaintenanceInterval(contentSource, vehicleId, interval)
+                    this.lazySyncMaintenanceInterval(contentSource, vehicleId, interval, motorVehicleId)
                 ),
                 ...this.eagerMaintenanceFrequencyCodes.map((code) =>
-                    this.lazySyncMaintenanceByFrequency(contentSource, vehicleId, code)
+                    this.lazySyncMaintenanceByFrequency(contentSource, vehicleId, code, motorVehicleId)
                 )
             ]);
 
@@ -187,8 +192,12 @@ export class DataSyncService {
      * One `articles/v2` call (empty search) → upsert catalog rows without clobbering
      * stored `original_content` / `enhanced_content` when already present.
      */
-    private async syncArticleCatalogMetadataOnly(contentSource: string, vehicleId: string): Promise<void> {
-        const res = await lastValueFrom(this.motorApi.searchArticles(contentSource, vehicleId, ''));
+    private async syncArticleCatalogMetadataOnly(
+        contentSource: string,
+        vehicleId: string,
+        motorVehicleId?: string
+    ): Promise<void> {
+        const res = await lastValueFrom(this.motorApi.searchArticles(contentSource, vehicleId, '', motorVehicleId));
         if (res.header.statusCode !== 200) {
             console.warn('[DataSync] searchArticles for catalog failed', res.header);
             return;
@@ -392,7 +401,11 @@ export class DataSyncService {
         );
     }
 
-    private async syncPartsIfMissing(contentSource: string, vehicleId: string): Promise<void> {
+    private async syncPartsIfMissing(
+        contentSource: string,
+        vehicleId: string,
+        motorVehicleId?: string
+    ): Promise<void> {
         const { count, error } = await this.supabase.client
             .from('parts')
             .select('*', { count: 'exact', head: true })
@@ -404,7 +417,7 @@ export class DataSyncService {
         if ((count ?? 0) > 0) {
             return;
         }
-        await this.syncParts(contentSource, vehicleId);
+        await this.syncParts(contentSource, vehicleId, motorVehicleId);
     }
 
     /**
@@ -457,15 +470,20 @@ export class DataSyncService {
     }
 
     /** Lazily sync parts — called by parts section. */
-    async lazySyncParts(contentSource: string, vehicleId: string): Promise<void> {
-        await this.syncParts(contentSource, vehicleId);
+    async lazySyncParts(contentSource: string, vehicleId: string, motorVehicleId?: string): Promise<void> {
+        await this.syncParts(contentSource, vehicleId, motorVehicleId);
     }
 
     /**
      * Lazily sync maintenance for a single interval — called by maintenance section
      * when the user selects an interval. Avoids fetching all 6 intervals at once.
      */
-    async lazySyncMaintenanceInterval(contentSource: string, vehicleId: string, interval: number): Promise<void> {
+    async lazySyncMaintenanceInterval(
+        contentSource: string,
+        vehicleId: string,
+        interval: number,
+        motorVehicleId?: string
+    ): Promise<void> {
         try {
             const { data: existing } = await this.supabase.client
                 .from('maintenance_schedules')
@@ -476,7 +494,17 @@ export class DataSyncService {
 
             if (existing && existing.length > 0) return;
 
-            const res = await lastValueFrom(this.motorApi.getMaintenanceByIntervals(contentSource, vehicleId, 'miles', interval));
+            const res = await lastValueFrom(
+                this.motorApi.getMaintenanceByIntervals(
+                    contentSource,
+                    vehicleId,
+                    'miles',
+                    interval,
+                    undefined,
+                    undefined,
+                    motorVehicleId
+                )
+            );
             const schedules = (res.body as any)?.schedules || (res.body as any)?.items || (res.body as any)?.data || [];
 
             if (schedules.length > 0) {
@@ -508,7 +536,8 @@ export class DataSyncService {
     async lazySyncMaintenanceByFrequency(
         contentSource: string,
         vehicleId: string,
-        code: 'F' | 'N' | 'R'
+        code: 'F' | 'N' | 'R',
+        motorVehicleId?: string
     ): Promise<void> {
         const frequencyIntervalValue = code === 'F' ? 1 : code === 'N' ? 2 : 3;
         try {
@@ -527,7 +556,14 @@ export class DataSyncService {
             }
 
             const res = await lastValueFrom(
-                this.motorApi.getMaintenanceByFrequency(contentSource, vehicleId, code, 'All')
+                this.motorApi.getMaintenanceByFrequency(
+                    contentSource,
+                    vehicleId,
+                    code,
+                    'All',
+                    undefined,
+                    motorVehicleId
+                )
             );
             const schedules =
                 (res.body as any)?.schedules || (res.body as any)?.items || (res.body as any)?.data || [];
@@ -731,9 +767,9 @@ export class DataSyncService {
     }
 
     /** Parts: payload matches DB columns (vehicle_id, part_number, description, manufacturer, list_price, dealer_price). NormalizedPart also has quantity, fitment_notes for when API/DB support them. */
-    private async syncParts(cs: string, vid: string) {
+    private async syncParts(cs: string, vid: string, motorVehicleId?: string) {
         try {
-            const res = await lastValueFrom(this.motorApi.getParts(cs, vid));
+            const res = await lastValueFrom(this.motorApi.getParts(cs, vid, '', motorVehicleId));
             const parts = res.body?.data || [];
             if (parts.length > 0) {
                 const partData = parts.map((p: any) => ({

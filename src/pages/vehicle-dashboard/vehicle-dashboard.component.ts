@@ -397,8 +397,9 @@ export class VehicleDashboardComponent {
 
   private async checkAndTriggerNormalization(cs: string, vid: string) {
     const name = this.vehicleName() || 'Vehicle';
+    const mvid = this.motorVehicleId();
     await this.dataSync.ensureVehicleRecord(cs, vid, name);
-    void this.dataSync.eagerSyncVehicleReferenceData(cs, vid).catch((err: unknown) =>
+    void this.dataSync.eagerSyncVehicleReferenceData(cs, vid, mvid).catch((err: unknown) =>
       console.warn('[VehicleDashboard] Eager reference sync failed (non-fatal):', err)
     );
   }

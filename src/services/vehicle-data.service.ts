@@ -734,7 +734,9 @@ export class VehicleDataService {
                     const schedules = (res.body as any)?.schedules || (res.body as any)?.items || (res.body as any)?.data || [];
                     updateState(schedules);
                     // Lazily cache this interval for next visit (fire-and-forget)
-                    this.dataSync.lazySyncMaintenanceInterval(contentSource, vehicleId, interval).catch(() => {});
+                    this.dataSync
+                        .lazySyncMaintenanceInterval(contentSource, vehicleId, interval, motorVehicleId)
+                        .catch(() => {});
                 },
                 error: (err) => {
                     console.error('[VehicleDataService] Maintenance fetch failed:', err);
@@ -798,12 +800,12 @@ export class VehicleDataService {
                     updateState(supabaseData);
                     loadingSignal.set(false);
                 } else {
-                    this.motorApi.getParts(contentSource, vehicleId, searchTerm).subscribe({
+                    this.motorApi.getParts(contentSource, vehicleId, searchTerm, motorVehicleId).subscribe({
                         next: (res) => {
                             updateState(res.body?.data || []);
                             loadingSignal.set(false);
                             if (!searchTerm) {
-                                this.dataSync.lazySyncParts(contentSource, vehicleId).catch(() => {});
+                                this.dataSync.lazySyncParts(contentSource, vehicleId, motorVehicleId).catch(() => {});
                             }
                         },
                         error: (err) => {

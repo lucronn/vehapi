@@ -865,7 +865,13 @@ app.use('/', authMiddleware, createProxyMiddleware({
         const cid = req.correlationId || req.requestId || 'unknown';
         logger.error('Proxy error:', { message: err?.message, stack: err?.stack, correlationId: cid, path: req.path });
         if (!res.headersSent) {
-            res.status(500).send('Proxy Error');
+            res.status(500).setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({
+                error: 'Upstream proxy error',
+                message: err?.code || err?.message || 'Unknown',
+                correlationId: cid,
+                path: req.path
+            }));
         }
     }
 }));

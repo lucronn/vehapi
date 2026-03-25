@@ -81,6 +81,21 @@ export class MotorApiService {
   private articleCache = new Map<string, ApiResponse<ArticlesData>>();
 
   /**
+   * When `motorVehicleId` is present, route like `/articles/v2` (MOTOR shard + composite id).
+   * Avoids upstream 5xx on parts / maintenance when OEM base id is used without the composite Motor id.
+   */
+  private motorVehicleRoute(
+    contentSource: string,
+    vehicleId: string,
+    motorVehicleId?: string
+  ): { source: string; id: string } {
+    if (motorVehicleId) {
+      return { source: 'MOTOR', id: motorVehicleId };
+    }
+    return { source: contentSource, id: vehicleId };
+  }
+
+  /**
    * Verbose logging helper for API requests
    */
   private logRequest(method: string, url: string, params?: any, body?: any): void {
@@ -240,9 +255,15 @@ export class MotorApiService {
     );
   }
 
-  searchArticles(contentSource: string, vehicleId: string, searchTerm: string = ''): Observable<ApiResponse<ArticlesData>> {
-    // Generate a unique cache key
-    const cacheKey = `${contentSource}:${vehicleId}:${searchTerm.trim() || 'ALL'}`;
+  searchArticles(
+    contentSource: string,
+    vehicleId: string,
+    searchTerm: string = '',
+    motorVehicleId?: string
+  ): Observable<ApiResponse<ArticlesData>> {
+    const route = this.motorVehicleRoute(contentSource, vehicleId, motorVehicleId);
+    // Generate a unique cache key (must include shard + id used for the request)
+    const cacheKey = `${route.source}:${route.id}:${searchTerm.trim() || 'ALL'}`;
 
     // Return cached data if available
     if (this.articleCache.has(cacheKey)) {
@@ -252,7 +273,7 @@ export class MotorApiService {
       return of(this.articleCache.get(cacheKey)!);
     }
 
-    const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/articles/v2`;
+    const url = `${this.baseUrl}/api/source/${route.source}/vehicle/${route.id}/articles/v2`;
     const params: any = {};
     if (searchTerm) params.searchTerm = searchTerm;
 
@@ -347,10 +368,14 @@ export class MotorApiService {
   }
 
   // Backward compatible method - kept for existing code
-  getParts(contentSource: string, vehicleId: string, searchTerm: string = ''): Observable<ApiResponse<PartsResponse>> {
-    const params = searchTerm ? { searchTerm } : {};
+  getParts(
+    contentSource: string,
+    vehicleId: string,
+    searchTerm: string = '',
+    motorVehicleId?: string
+  ): Observable<ApiResponse<PartsResponse>> {
     // Use the new method and map response
-    return this.getPartsForVehicle(contentSource, vehicleId, undefined, searchTerm).pipe(
+    return this.getPartsForVehicle(contentSource, vehicleId, motorVehicleId, searchTerm).pipe(
       map(response => {
         // Fix: API returns body as array directly, not { items: [] }
         // Also map partDescription -> description and price -> listPrice
@@ -393,7 +418,8 @@ export class MotorApiService {
     vehicleId: string,
     frequencyTypeCode?: string,
     severity?: MaintenanceScheduleSeverity,
-    searchTerm?: string
+    searchTerm?: string,
+    motorVehicleId?: string
   ): Observable<ApiResponse<MaintenanceSchedulesByFrequencyResponse>>;
   // Implementation
   getMaintenanceByFrequency(
@@ -401,14 +427,16 @@ export class MotorApiService {
     vehicleId: string,
     frequencyTypeCode?: string,
     severity?: MaintenanceScheduleSeverity,
-    searchTerm?: string
+    searchTerm?: string,
+    motorVehicleId?: string
   ): Observable<ApiResponse<MaintenanceSchedulesByFrequencyResponse | any>> {
+    const route = this.motorVehicleRoute(contentSource, vehicleId, motorVehicleId);
     let params: any = {};
     if (frequencyTypeCode) params.frequencyTypeCode = frequencyTypeCode;
     if (severity) params.severity = severity;
-    if (searchTerm) params.searchTerm = searchTerm;
+    params.searchTerm = searchTerm ?? '';
 
-    const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/maintenanceSchedules/frequency`;
+    const url = `${this.baseUrl}/api/source/${route.source}/vehicle/${route.id}/maintenanceSchedules/frequency`;
     return this.getWithLogging<ApiResponse<MaintenanceSchedulesByFrequencyResponse>>(url, params);
   }
 
@@ -419,7 +447,8 @@ export class MotorApiService {
     intervalType: 'Miles' | 'Kilometers' | 'Months' | 'miles' | 'months',
     interval?: number,
     severity?: MaintenanceScheduleSeverity,
-    searchTerm?: string
+    searchTerm?: string,
+    motorVehicleId?: string
   ): Observable<ApiResponse<any>>;
   // Full OpenAPI method
   getMaintenanceByIntervals(
@@ -428,7 +457,8 @@ export class MotorApiService {
     intervalType?: IntervalType,
     interval?: number,
     severity?: MaintenanceScheduleSeverity,
-    searchTerm?: string
+    searchTerm?: string,
+    motorVehicleId?: string
   ): Observable<ApiResponse<MaintenanceSchedulesByIntervalResponse>>;
   // Implementation
   getMaintenanceByIntervals(
@@ -437,8 +467,10 @@ export class MotorApiService {
     intervalType?: IntervalType | 'miles' | 'months',
     interval?: number,
     severity?: MaintenanceScheduleSeverity,
-    searchTerm?: string
+    searchTerm?: string,
+    motorVehicleId?: string
   ): Observable<ApiResponse<MaintenanceSchedulesByIntervalResponse | any>> {
+    const route = this.motorVehicleRoute(contentSource, vehicleId, motorVehicleId);
     let params: any = {};
     // Normalize intervalType to match OpenAPI enum
     const normalizedIntervalType = intervalType === 'miles' ? 'Miles' :
@@ -447,9 +479,9 @@ export class MotorApiService {
     if (normalizedIntervalType) params.intervalType = normalizedIntervalType;
     if (interval !== undefined) params.interval = interval.toString();
     if (severity) params.severity = severity;
-    if (searchTerm) params.searchTerm = searchTerm;
+    params.searchTerm = searchTerm ?? '';
 
-    const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/maintenanceSchedules/intervals`;
+    const url = `${this.baseUrl}/api/source/${route.source}/vehicle/${route.id}/maintenanceSchedules/intervals`;
     return this.getWithLogging<ApiResponse<MaintenanceSchedulesByIntervalResponse>>(url, params);
   }
 
@@ -457,13 +489,15 @@ export class MotorApiService {
     contentSource: string,
     vehicleId: string,
     severity?: MaintenanceScheduleSeverity,
-    searchTerm?: string
+    searchTerm?: string,
+    motorVehicleId?: string
   ): Observable<ApiResponse<IndicatorsWithMaintenanceSchedulesResponse>> {
+    const route = this.motorVehicleRoute(contentSource, vehicleId, motorVehicleId);
     let params: any = {};
     if (severity) params.severity = severity;
-    if (searchTerm) params.searchTerm = searchTerm;
+    params.searchTerm = searchTerm ?? '';
 
-    const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/maintenanceSchedules/indicators`;
+    const url = `${this.baseUrl}/api/source/${route.source}/vehicle/${route.id}/maintenanceSchedules/indicators`;
     return this.getWithLogging<ApiResponse<IndicatorsWithMaintenanceSchedulesResponse>>(url, params);
   }
 
@@ -742,11 +776,8 @@ export class MotorApiService {
     let params = new HttpParams();
     if (searchTerm) params = params.set('searchTerm', searchTerm);
 
-    // If we have a motorVehicleId, we should ideally use it with MOTOR source for broader compatibility
-    const effectiveSource = motorVehicleId ? 'MOTOR' : contentSource;
-    const effectiveId = motorVehicleId || vehicleId;
-
-    const url = `${this.baseUrl}/api/source/${effectiveSource}/vehicle/${effectiveId}/articles/v2`;
+    const route = this.motorVehicleRoute(contentSource, vehicleId, motorVehicleId);
+    const url = `${this.baseUrl}/api/source/${route.source}/vehicle/${route.id}/articles/v2`;
     return this.getWithLogging<ApiResponse<SearchResultsResponse>>(url, params);
   }
 
@@ -768,12 +799,15 @@ export class MotorApiService {
     motorVehicleId?: string,
     searchTerm?: string
   ): Observable<ApiResponse<PartLineItemListResponse>> {
-    let params = new HttpParams();
-    if (motorVehicleId) params = params.set('motorVehicleId', motorVehicleId);
-    if (searchTerm) params = params.set('searchTerm', searchTerm);
+    const route = this.motorVehicleRoute(contentSource, vehicleId, motorVehicleId);
+    let params = new HttpParams().set('searchTerm', searchTerm ?? '');
+    // OEM base id + motorVehicleId query (when not already using MOTOR path above)
+    if (motorVehicleId && route.source !== 'MOTOR') {
+      params = params.set('motorVehicleId', motorVehicleId);
+    }
 
     return this.http.get<ApiResponse<PartLineItemListResponse>>(
-      `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/parts`,
+      `${this.baseUrl}/api/source/${route.source}/vehicle/${route.id}/parts`,
       { params, withCredentials: true }
     );
   }
