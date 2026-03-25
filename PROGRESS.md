@@ -63,6 +63,7 @@
 
 ## Bugs & Known Issues
 
+- **Fixed 2026-03-25**: Production `POST /api/rewrite` returned `AI_MODULE_LOAD_FAILED` while `GET /health` showed `llmKeyConfigured: true` — `cheerio` / `turndown` were only in `vehapiproxi/package.json`; Vercel installs root dependencies for `api/index.js`. Added **`cheerio`** and **`turndown`** to root `package.json`.
 - **Fixed 2026-03-18**: Motor/Article API 401 Unauthorized while logged in — interceptor previously forwarded Supabase `Authorization: Bearer ...` to Motor-proxy endpoints (years/catalog/parts/name), causing Motor to reject requests; now only attaches Bearer for `/api/credits/*` and `/api/source/*/vehicle/*/article/*` paths.
 - **Fixed 2026-03-19**: Stripe redirect credit authorization sometimes failed due to Supabase session hydration race; `AuthService.getIdToken()` now always hydrates `_session/_user` signals, and `CreditsService.verifySession()` waits for `authService.user()` before calling `/api/credits/verify-session`.
 - **Fixed 2026-03-19**: Motor.com session/auth breaks after buying/unlocking a single article — proxy forwarded Supabase `Authorization` header to Motor.com for article requests; backend strips `Authorization` in `vehapiproxi/src/function.js` `onProxyReq` before forwarding upstream (`c57339c` on `main`). **Production:** record deployment id in **Deploy verification baseline** below when confirmed in Vercel.
