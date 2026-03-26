@@ -758,11 +758,17 @@ export class DataSyncService {
         const long = ci?.display_long_description?.trim();
         const short = ci?.display_description?.trim();
         const enriched = Boolean(ci?.enriched_at || ci?.enrichment_source);
+        const enrichmentSource = (ci?.enrichment_source || '').toLowerCase();
+        // Catalog-intel "display_description" is a teaser summary, not the full article body.
+        // Never use it as canonical content in the viewer.
+        const isCatalogSummaryOnly =
+            enrichmentSource.includes('catalog_intel') || enrichmentSource.includes('catalog-intel');
+        const allowShortSummaryFallback = !isCatalogSummaryOnly;
 
         let rawBody = '';
         if (long) {
             rawBody = long.includes('<') ? long : this.wrapStructuredPlainText(long);
-        } else if (enriched && short && short.length >= 40) {
+        } else if (allowShortSummaryFallback && enriched && short && short.length >= 40) {
             rawBody = short.includes('<') ? short : this.wrapStructuredPlainText(short);
         }
 
