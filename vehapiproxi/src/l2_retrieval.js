@@ -60,7 +60,7 @@ export function mapChunksToL2ApiResponse(rows) {
  * @returns {Promise<{ success: boolean, chunks?: L2ChunkRow[], error?: string }>}
  */
 export async function runL2VehicleChunkSearch({ vehicleExternalId, query, matchCount }) {
-    const { success, vectors, dims, error } = await embedTextsBatch([query]);
+    const { success, vectors, dims, error } = await embedTextsBatch([query], { inputType: 'query' });
     if (!success || !vectors?.[0]) {
         return { success: false, error: error || 'Embedding failed' };
     }

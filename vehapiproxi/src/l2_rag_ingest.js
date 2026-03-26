@@ -64,7 +64,7 @@ export async function ingestL2ContentChunksIfEnabled(ctx) {
     const allVectors = [];
     for (let i = 0; i < chunks.length; i += BATCH) {
         const batch = chunks.slice(i, i + BATCH);
-        const { success, vectors, dims, error } = await embedTextsBatch(batch);
+        const { success, vectors, dims, error } = await embedTextsBatch(batch, { inputType: 'passage' });
         if (!success || !vectors) {
             logger.warn(`[${taskId}] L2 embedding failed: ${error || 'unknown'}`);
             return;
