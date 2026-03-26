@@ -1,8 +1,10 @@
 # Production readiness: paid product v1 + data platform (L2) complete
 
-**Status:** Approved  
+**Status:** Completed  
 **Date:** 2026-03-21  
 **Related:** `docs/plans/2026-03-18-normalization-schema-design.md`, `PROGRESS.md`
+
+**Status note:** The design was approved on 2026-03-21. **Why ops are not fully mirrored here:** feature flags, Vercel environment variables, and one-off Supabase SQL in the hosted project are **outside git**—this file stays the **scope/decision record**, while **execution outcomes** (what was toggled, verified, or migrated on which date) live in **`PROGRESS.md`** so there is a single operational changelog. **New gaps** discovered after GA (normalization bugs, embedding client tweaks, RLS follow-ups, etc.) are tracked there under **Bugs & Known Issues** and **What's Left to Do**, not by continuously rewriting this milestone doc.
 
 ## Decision
 

@@ -233,7 +233,9 @@ Use superpowers:verification-before-completion: `npm run build`, backend start s
 | Tasks 4–6 (RLS migration files, L2 RPC + `/api/l2/search`, Angular L2 panel + feature flag) | Shipped on `main` |
 | Task 7 (`media_asset` PDF ingest) | Shipped on `main` |
 | Task 8 (`documentation/RELEASE_CHECKLIST.md`) | Shipped on `main` |
-| **Ops (not in git)** | Apply SQL migrations on Supabase (`migrate:rls-tightening`, `migrate:match-content-chunks-rpc`); enable `environment.features.l2Search` in prod when ready |
+| **Ops (not in git)** | **Completed** — after 2026-03-21: production Angular **`features.l2Search`** enabled (`src/environments/environment.prod.ts`), with required Supabase RPC/migrations and deploy verification noted in **`PROGRESS.md`** (2026-03-25 onward). |
+
+**Why this doc may look stale:** it freezes **task-level implementation** at ship time; **runtime config** (Vercel env, feature flags) and **new regressions** are intentionally maintained in **`PROGRESS.md`** only, so readers should treat this file as historical scope + task checklist, not the live bug/priority list.
 
 **Automated verification:** `npm run verify:prod-readiness` (root). **Worker/API integration:** `cd vehapiproxi && npm run verify:evidence-links -- --local` when secrets available.
 

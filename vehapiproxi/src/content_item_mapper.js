@@ -3,22 +3,10 @@
  * @see docs/plans/2026-03-18-normalization-schema-design.md
  */
 import { normalizeCategoryParams } from './categorize.js';
+import { inferKindAndSilo } from './content_item_taxonomy.js';
+import { applyCatalogIntelligenceToRow } from './catalog_intelligence.js';
 
-/** @param {string} rootName From normalizeCategoryParams().rootName */
-export function inferKindAndSilo(rootName) {
-    const map = {
-        'Diagnostic Codes (DTC)': { kind: 'dtc', canonical_silo_code: 'dtcs' },
-        'Service Bulletins (TSB)': { kind: 'tsb', canonical_silo_code: 'tsbs' },
-        'Service Procedures': { kind: 'procedure', canonical_silo_code: 'procedures' },
-        'Wiring Diagrams': { kind: 'diagram', canonical_silo_code: 'diagrams' },
-        'Component Locations': { kind: 'component_location', canonical_silo_code: 'component-locations' },
-        'Specifications': { kind: 'spec_article', canonical_silo_code: 'specs' },
-        'Fluids & Capacities': { kind: 'spec_article', canonical_silo_code: 'specs' },
-        'Parts Catalog': { kind: 'parts_listing', canonical_silo_code: 'parts' },
-        'Labor & Estimating': { kind: 'labor', canonical_silo_code: 'labor' }
-    };
-    return map[rootName] || { kind: 'other', canonical_silo_code: 'other' };
-}
+export { inferKindAndSilo } from './content_item_taxonomy.js';
 
 /**
  * @param {Record<string, unknown>} a Motor articleDetails item
@@ -65,7 +53,7 @@ export function buildContentItemFromCatalogArticle(a, vehicleIdStr, contentSourc
         (x) => x != null && String(x).trim() !== ''
     );
 
-    return {
+    const base = {
         kind,
         motor_article_id: String(a.id),
         vehicle_external_id: vehicleIdStr,
@@ -93,5 +81,35 @@ export function buildContentItemFromCatalogArticle(a, vehicleIdStr, contentSourc
             normalized_bucket: subName
         },
         updated_at: new Date().toISOString()
+    };
+
+    const intel = applyCatalogIntelligenceToRow(base);
+    const extraBits = [intel.display_title, intel.display_subtitle, intel.display_description].filter(Boolean);
+    intel.search_text = [...searchBits, ...extraBits].join(' ').slice(0, 8000);
+    intel.enriched_at = new Date().toISOString();
+    return intel;
+}
+
+/**
+ * Same catalog intelligence as `content_item` for `articles` table rows (list UI reads `articles`).
+ */
+export function buildArticlesTableRowFromMotorCatalogArticle(a, vehicleIdStr, contentSource) {
+    const ci = buildContentItemFromCatalogArticle(a, vehicleIdStr, contentSource);
+    const rootName = ci.metadata_json?.normalized_parent_bucket ?? 'Other';
+    const bucketVal = ci.metadata_json?.normalized_bucket ?? 'Uncategorized';
+    return {
+        vehicle_id: vehicleIdStr,
+        original_id: a.id,
+        title: ci.display_title,
+        subtitle: ci.display_subtitle,
+        code: a.code ?? null,
+        description: ci.display_description,
+        bucket: bucketVal,
+        parent_bucket: rootName,
+        thumbnail_href: a.thumbnailHref ?? null,
+        bulletin_number: a.bulletinNumber ?? null,
+        release_date: a.releaseDate ?? null,
+        sort: typeof a.sort === 'number' ? a.sort : null,
+        content_source: a.contentSource || contentSource
     };
 }

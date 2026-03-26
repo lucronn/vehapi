@@ -20,8 +20,11 @@ import {
     upsertMediaAssetPdfFromArticleBody,
     getArticleCatalogEntry
 } from './supabase.js';
-import { normalizeCategoryParams } from './categorize.js';
-import { buildContentItemFromCatalogArticle, buildMinimalContentItemFromParse } from './content_item_mapper.js';
+import {
+    buildArticlesTableRowFromMotorCatalogArticle,
+    buildContentItemFromCatalogArticle,
+    buildMinimalContentItemFromParse
+} from './content_item_mapper.js';
 import { extractTextFromPdfBase64 } from './pdf_native_text.js';
 import { ingestL2ContentChunksIfEnabled } from './l2_rag_ingest.js';
 import { bucketToModuleType } from './article-access.js';
@@ -494,24 +497,9 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                     logger.warn(`evidence_ingest (catalog) skipped: ${ev.error}`);
                 }
 
-                const articles = parsedJson.body.articleDetails.map((a) => {
-                    const { rootName, subName } = normalizeCategoryParams(a.title, a.parentBucket, a.bucket);
-                    return {
-                        vehicle_id: vehicleIdStr,
-                        original_id: a.id,
-                        title: a.title ?? null,
-                        subtitle: a.subtitle ?? null,
-                        code: a.code ?? null,
-                        description: a.description ?? null,
-                        bucket: subName,
-                        parent_bucket: rootName,
-                        thumbnail_href: a.thumbnailHref ?? null,
-                        bulletin_number: a.bulletinNumber ?? null,
-                        release_date: a.releaseDate ?? null,
-                        sort: typeof a.sort === 'number' ? a.sort : null,
-                        content_source: a.contentSource || contentSource
-                    };
-                });
+                const articles = parsedJson.body.articleDetails.map((a) =>
+                    buildArticlesTableRowFromMotorCatalogArticle(a, vehicleIdStr, contentSource)
+                );
                 const result = await insertParsedData('articles', articles);
                 if (!result.success) {
                     status = 'FAILED';

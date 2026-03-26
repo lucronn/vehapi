@@ -1,14 +1,23 @@
 export function normalizeCategoryParams(title, parentBucketRaw, bucketRaw) {
     const rootNameMap = {
-        'Procedures': 'Service Procedures',
+        Procedures: 'Service Procedures',
+        'Repair Procedures': 'Service Procedures',
+        'Scheduled Maintenance': 'Service Procedures',
+        Maintenance: 'Service Procedures',
         'Wiring Diagrams': 'Wiring Diagrams',
         'Component Locations': 'Component Locations',
-        'Labor': 'Labor & Estimating',
-        'Fluids': 'Fluids & Capacities',
-        'Specifications': 'Specifications',
-        'Parts': 'Parts Catalog',
-        'TSBs': 'Service Bulletins (TSB)',
-        'DTCs': 'Diagnostic Codes (DTC)'
+        Labor: 'Labor & Estimating',
+        'Labor & Time': 'Labor & Estimating',
+        Fluids: 'Fluids & Capacities',
+        'Fluids and Capacities': 'Fluids & Capacities',
+        Specifications: 'Specifications',
+        Parts: 'Parts Catalog',
+        TSBs: 'Service Bulletins (TSB)',
+        'Service Bulletins': 'Service Bulletins (TSB)',
+        DTCs: 'Diagnostic Codes (DTC)',
+        Diagnostics: 'Diagnostic Codes (DTC)',
+        'Diagnostic Codes': 'Diagnostic Codes (DTC)',
+        'Trouble Codes': 'Diagnostic Codes (DTC)'
     };
 
     let parentBucket = parentBucketRaw || 'Other';

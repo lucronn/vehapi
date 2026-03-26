@@ -5,6 +5,7 @@ import { VehiclePersistenceService } from './vehicle-persistence.service';
 import { AiRewriteService } from './ai-rewrite.service';
 import { SupabaseService } from './supabase.service';
 import { normalizeCategoryParams } from '../utils/categorize.util';
+import { improveCatalogArticleRow } from '../utils/catalog-intelligence.util';
 import type { Article } from '../models/motor.models';
 import type { ContentItem, NormalizedArticle } from '../models/normalized_schema';
 
@@ -289,13 +290,24 @@ export class DataSyncService {
             const preserveHtml = prev?.original_content && prev.original_content.length > 0;
             const preserveEnhanced = prev?.enhanced_content && prev.enhanced_content.length > 0;
 
+            const improved = improveCatalogArticleRow({
+                title: a.title,
+                subtitle: a.subtitle,
+                description: a.description,
+                code: a.code,
+                parentBucket,
+                bucket,
+                rootName,
+                subName
+            });
+
             return {
                 vehicle_id: vehicleId,
                 original_id: a.id,
-                title: a.title ?? null,
-                subtitle: a.subtitle ?? null,
+                title: improved.title,
+                subtitle: improved.subtitle,
                 code: a.code ?? null,
-                description: a.description ?? null,
+                description: improved.description,
                 bucket: bucketVal,
                 parent_bucket: rootName,
                 thumbnail_href: a.thumbnailHref ?? null,

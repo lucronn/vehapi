@@ -1,12 +1,78 @@
 # Normalization & Supabase schema design (greenfield)
 
-**Status:** Draft for review  
+**Status:** Active (revised contract; Supabase-first + catalog intelligence highest priority)  
 **Date:** 2026-03-18  
 **Goals:** Technician-truth canonical data, cross-make consistency, no silent loss of useful Motor information, future LLM chatbot grounding. Supabase may be **dropped and recreated** from scratch.
 
 **Implementation order (L1 facts):** **1 → 2 → 3** — (1) specs / `spec_fact`, (2) maintenance / `maintenance_task`, (3) procedures / `procedure`. **In parallel or immediately after phase 1:** wiring diagrams, component locations, labor, TSB+DTC normalization **including PDF/image text extraction via Nemotron** when native text is insufficient.
 
+### Current repo alignment (greenfield doc ↔ shipped code)
+
+This document remains the **target architecture**; the bullets below map the main L0/L1/L2 concepts here to **where they live in the repo today** (for reviewers diffing “design” vs “reality”):
+
+| Concept | Repo anchor |
+|--------|---------------|
+| **`content_chunk` + pgvector** | `documentation/migrations/20260324_l2_content_chunk_pgvector.sql`, RPC `documentation/migrations/20260321_match_content_chunks_rpc.sql`; ingest `vehapiproxi/src/l2_rag_ingest.js`; read path `vehapiproxi/src/l2_retrieval.js` (vehicle-scoped search). |
+| **`media_asset`** | DDL in `documentation/migrations/20260324_l2_content_chunk_pgvector.sql` (and related diagram migrations); worker/metadata writes in `vehapiproxi/src/background_worker.js` + helpers in `vehapiproxi/src/supabase.js`. |
+| **Nemotron multimodal / PDF vision fallback** | `vehapiproxi/src/nemotron_multimodal.js` (optional env: `ENABLE_NEMOTRON_PDF_VISION_FALLBACK`); text-first flows remain in `vehapiproxi/src/ai_parser.js` + `pdf_native_text.js`. |
+
+**Ongoing work** (quality, Motor-off, embeddings policy) is tracked in root **`PROGRESS.md`**; §8 below splits **resolved design/implementation** from **still-open product policy**.
+
 ---
+
+## Supabase-first access contract (Motor ingest-only)
+
+This repo has a single runtime source of truth: **Supabase**. Upstream **Motor** is used only to **discover what exists** and to **fill missing data** when Supabase does not yet have normalized content. There should never be a Motor-based “client fallback read” once Supabase has normalized catalog/content for the requested scope; Motor is ingest/index only.
+
+### Scenario 1: User accesses a vehicle (surface/catalog normalization, one-time)
+1. User selects a vehicle and navigates into the app.
+2. Check Supabase for the vehicle’s normalized **catalog/index** presence (surface data used for navigation/search).
+3. If Supabase has no vehicle catalog yet:
+   - Call Motor via `vehapiproxi` to fetch the **catalog/index**.
+   - Normalize and persist the vehicle’s **catalog entries** into Supabase **once** (populate the surface so the UI can render without thousands of per-article API calls).
+   - Store the fetched upstream payload as **L0 evidence** for traceability (`evidence_ingest` / related evidence fields).
+4. After this step, serve surface/catalog data from **Supabase only** for that vehicle scope.
+
+### Scenario 2: User clicks an article (lazy article normalization, one-time per article)
+1. UI shows article tiles/lists using Supabase catalog rows.
+2. When the user opens a specific article (procedure/TSB/DTC/etc.):
+   - Check Supabase for that article’s structured normalization already present (L1 + related L0 evidence).
+3. If structured article data is missing in Supabase:
+   - Call Motor via `vehapiproxi` to fetch the article body/detail **once**.
+   - Persist the fetched upstream payload as **L0 evidence**.
+   - Run normalization to generate the article’s **structured canonical data** (L1 tables / canonical fields).
+4. After structured data is persisted, serve the article from Supabase thereafter (no Motor fallback reads for display).
+
+### Rewrite / presentation contract (immediate display; no plagiarism; technical accuracy)
+On first touch (Scenario 2), generate display-ready rewrite for the frontend:
+
+- Use **structured L1 first** (facts used for grounding and display).
+- Then generate a **frontend-ready rewrite**:
+  - Must preserve technical meaning and required specs.
+  - Must be substantively new phrasing to avoid plagiarism (no close paraphrase).
+  - Must validate against the fetched original and the structured extraction result; if the original is missing or incorrect, ensure the rewrite includes the correct content.
+  - If needed, it is allowed to use external information beyond Motor (from the model and/or web search) to correct missing/incorrect items for technical accuracy.
+- Persist the rewrite output in Supabase so repeat opens stay **Supabase-only**.
+
+### Anti-pattern
+- Do not use Motor for user-visible reads once Supabase has normalized catalog/content for the requested scope; treat Motor as ingest/index only.
+
+### Highest priority: Catalog Intelligence Upgrade (better than Motor taxonomy + copy)
+
+Catalog quality is a top-priority requirement, not optional polish. For normalized vehicles, the app taxonomy and copy must be better than raw Motor labels.
+
+- **Canonical taxonomy first:** Normalize every article into canonical silo/category/subcategory (or explicit exception marker), not raw OEM buckets.
+- **Rule-first mapping with AI assist:** Use deterministic alias/rules for most mappings; use AI only for low-confidence/ambiguous labels with traceable confidence.
+- **Improve every article’s catalog copy:** Populate `display_title`, `display_subtitle`, and `display_description` for each catalog row.
+- **Traceability required:** Preserve Motor originals (`motor_title`, `motor_subtitle`, `motor_description`, `motor_parent_bucket`, `motor_bucket`) and enrichment metadata (`enrichment_source`, `enrichment_version`, confidence).
+- **Supabase-only serving:** Once first-touch normalization runs, serve enriched taxonomy/copy from Supabase only (no Motor display fallback).
+
+#### Acceptance criteria (catalog intelligence)
+
+1. **Coverage:** 100% of catalog rows for normalized vehicles have canonical silo/category mapping or a deliberate auditable exception marker.
+2. **Copy completeness:** 100% of catalog rows have non-empty `display_title`, `display_subtitle`, and `display_description` (or explicit exception marker).
+3. **Quality gate:** Reject/requeue enrichment outputs that are close paraphrases of Motor text, or that miss required technical identifiers/spec terms present in source.
+4. **Deterministic rerun:** Reprocessing is reproducible via stored enrichment source/version and evidence links.
 
 ## 1. Ground truth model (agreed)
 
@@ -158,21 +224,30 @@ Below is a **conceptual** set of tables (names negotiable). Intent is **one row 
 
 ---
 
-## 8. Open decisions (need your input later)
+## 8. Decisions status (resolved vs still open)
 
-- **pgvector** in Supabase vs external vector DB (diagram + text embeddings).  
-- **Blob lifecycle:** when to **delete** PDFs/images (per content type, per confidence score); minimum **hash + extracted artifact** retention.  
-- **Diagram vectorization:** **Nemotron multimodal** vs specialized wiring tools for graph accuracy; single global embedding vs **region / net** embeddings.  
-- **Nemotron model ids:** which SKU for **text** vs **document/vision** (e.g. parse/VL families on integrate API) — confirm in NVIDIA catalog.  
-- **LLM in extraction loop**: order **specs → maintenance → procedures**; TSB/DTC extract and labor early; diagrams once `media_asset` ingest exists.  
-- **Catalog enrichment:** tone/length limits for **`display_description`**; whether to show OEM-only vs enriched copy in UI toggle.  
-- **Severity / “confidence”** visible to end users or internal only.
+### Resolved by current implementation (repo state)
+
+- **Vector store location:** L2 uses **pgvector in Supabase** — `content_chunk` per `documentation/migrations/20260324_l2_content_chunk_pgvector.sql`, `match_content_chunks` in `documentation/migrations/20260321_match_content_chunks_rpc.sql`, query/embed path in `vehapiproxi/src/l2_retrieval.js` + `vehapiproxi/src/embedding_client.js`.  
+- **Media bridge:** `media_asset` table + worker writes (metadata / traceability); binary **retention** still policy-driven (see still-open).  
+- **Nemotron multimodal path:** `vehapiproxi/src/nemotron_multimodal.js` for rasterized PDF pages / vision fallback when native text is insufficient.  
+- **Extraction order baseline:** specs, maintenance, procedures, and related normalized domains are implemented with evidence linkage in `vehapiproxi/src/background_worker.js` and parsers; iterative hardening continues (see `PROGRESS.md`).
+
+### Still open (product/policy decisions)
+
+- **Blob lifecycle policy:** when to delete PDFs/images (per content type/confidence), minimum retained artifacts (hash + extract + evidence).  
+- **Diagram semantics depth:** global chunk embeddings only vs richer region/net-level vectorization + topology extraction.  
+- **Nemotron model policy:** lock approved model IDs for text vs vision/document extraction in production.  
+- **Catalog enrichment UX policy:** whether to expose OEM-vs-enriched copy toggle and where confidence should be user-visible vs internal-only.  
+- **External correction policy:** guardrails for when rewrite may use external sources beyond Motor/model output to fix missing/incorrect technical content.
 
 ---
 
 ## 9. Next step
 
-**In repo (2026-03-19):** Phase-1 DDL — `documentation/migrations/20260319_phase1_normalization.sql` (+ full `supabase_schema.sql`); `npm run migrate:phase1`; worker dual-writes **`content_item`** + L0 **`evidence_ingest`** on articles/v2 catalog; **native PDF text** → `content_html` when HTML absent (`pdf_native_text.js`). **In repo (2026-03-20):** L1 **`spec_fact`** — `documentation/migrations/20260320_l1_spec_fact.sql`; `npm run migrate:l1-spec-fact`; worker dual-writes from parsed specs + **`evidence_link`** (`entity_type=spec_fact`) when L0 insert succeeds. **In repo (2026-03-21):** L1 **`maintenance_task`** — `documentation/migrations/20260321_l1_maintenance_task.sql`; `npm run migrate:l1-maintenance-task`; Angular **`DataSyncService`** dual-writes with **`maintenance_schedules`** (Motor interval + F/N/R frequency). **In repo (2026-03-22):** L1 **`procedure_step`** — `documentation/migrations/20260322_l1_procedure_step.sql`; `npm run migrate:l1-procedure-step`; worker replaces steps per article + **`evidence_link`**. **In repo (2026-03-23):** L1 **`procedure_tool`** + **`procedure_part`** — `documentation/migrations/20260323_l1_procedure_tool_and_part.sql`; `npm run migrate:l1-procedure-tool-part`; worker from `tools_required` / `parts_required` + **`evidence_link`**. **Next:** L2 chunks/embeddings or diagram/labor L1 as scoped.
+**Immediate next step (highest priority):** implement Catalog Intelligence Upgrade acceptance criteria end-to-end for normalized vehicles (canonical taxonomy coverage + per-article display title/subtitle/description completeness + quality gates + deterministic reruns), while keeping the Supabase-first, Motor-ingest-only contract.
+
+**Already shipped baseline (repo history):** Phase-1 DDL + L0 evidence + `content_item`, L1 `spec_fact`, `maintenance_task`, `procedure_step`, `procedure_tool`, `procedure_part`, plus L2 infrastructure (`content_chunk`/pgvector + retrieval surfaces). Remaining work is quality/completeness and policy-hardening, not initial table bring-up.
 
 ---
 
@@ -193,7 +268,8 @@ Below is a **conceptual** set of tables (names negotiable). Intent is **one row 
 
 ### A.2 Implementation (repo)
 
-- Extend **`ai_parser.js`** (or `nemotron_documents.js`) with **`callNemotronMultimodal`**: `content: [{ type: 'text', text }, { type: 'image_url', image_url: { url } }]`, reuse retries and JSON stripping.
+- **Shipped:** multimodal / vision calls live in **`vehapiproxi/src/nemotron_multimodal.js`** (invoked from the worker when the PDF vision fallback is enabled). Further consolidation (e.g. sharing retries with **`ai_parser.js`**) is optional cleanup.
+- **Historical note:** the original sketch was to extend **`ai_parser.js`** with **`callNemotronMultimodal`** (`content: [{ type: 'text', text }, { type: 'image_url', image_url: { url } }]`); the dedicated module above is the current integration point.
 - Large assets: follow NVIDIA **NVCF / asset upload** patterns if base64 exceeds practical limits.
 - **Workers:** queued jobs, backoff, store raw model output in L0 before L1 upsert.
 
@@ -213,4 +289,4 @@ Below is a **conceptual** set of tables (names negotiable). Intent is **one row 
 - **`p-limit`** caps concurrent structured Nemotron calls (**`NEMOTRON_STRUCTURED_CONCURRENCY`**, default **3**) to reduce HTTP 429s.
 - **`ai_processing_logs`** may store **`prompt_tokens`** and **`completion_tokens`** (additive migration `20260325_failed_extractions_and_ai_log_tokens.sql`); `tokens_used` remains the combined total for cost tracking.
 
-*Updated 2026-03-18 — Nemotron-first per project direction; A.5 added 2026-03-20.*
+*Updated 2026-03-18 — Nemotron-first per project direction; A.5 added 2026-03-20; current-repo alignment table + §8 file refs + Appendix A.2 implementation note 2026-03-26.*
