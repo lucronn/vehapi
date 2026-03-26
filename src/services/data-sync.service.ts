@@ -93,11 +93,13 @@ export class DataSyncService {
             updated_at: now
         }));
 
+        if (this.clientWriteDisabled) return;
         const { error } = await this.supabase.client
             .from('maintenance_task')
             .upsert(taskRows, { onConflict: 'vehicle_id,interval_value,action,item' });
 
         if (error) {
+            if (this.isClientWriteDenied(error)) { this.clientWriteDisabled = true; return; }
             this.logger.warn('[DataSync] maintenance_task L1 upsert skipped:', error.message);
         }
     }
@@ -227,27 +229,35 @@ export class DataSyncService {
                 .select('*', { count: 'exact', head: true })
                 .eq('vehicle_id', vehicleId);
 
-            const nowIso = new Date().toISOString();
-            if ((finalArticleCount ?? 0) > 0) {
-                const { error: normErr } = await this.supabase.client
-                    .from('vehicles')
-                    .update({ is_normalized: true, updated_at: nowIso })
-                    .eq('external_id', vehicleId);
-                if (normErr) {
-                    this.logger.warn('[DataSync] is_normalized update failed:', normErr);
-                }
-            } else if (vehicleRow?.is_normalized) {
-                const { error: clearErr } = await this.supabase.client
-                    .from('vehicles')
-                    .update({ is_normalized: false, updated_at: nowIso })
-                    .eq('external_id', vehicleId);
-                if (clearErr) {
-                    this.logger.warn('[DataSync] is_normalized clear failed:', clearErr);
-                } else {
-                    this.logger.warn(
-                        '[DataSync] No article rows after reference sync; cleared is_normalized drift for',
-                        vehicleId
-                    );
+            if (!this.clientWriteDisabled) {
+                const nowIso = new Date().toISOString();
+                if ((finalArticleCount ?? 0) > 0) {
+                    const { error: normErr } = await this.supabase.client
+                        .from('vehicles')
+                        .update({ is_normalized: true, updated_at: nowIso })
+                        .eq('external_id', vehicleId);
+                    if (normErr) {
+                        if (this.isClientWriteDenied(normErr)) {
+                            this.clientWriteDisabled = true;
+                        }
+                        this.logger.warn('[DataSync] is_normalized update failed:', normErr);
+                    }
+                } else if (vehicleRow?.is_normalized) {
+                    const { error: clearErr } = await this.supabase.client
+                        .from('vehicles')
+                        .update({ is_normalized: false, updated_at: nowIso })
+                        .eq('external_id', vehicleId);
+                    if (clearErr) {
+                        if (this.isClientWriteDenied(clearErr)) {
+                            this.clientWriteDisabled = true;
+                        }
+                        this.logger.warn('[DataSync] is_normalized clear failed:', clearErr);
+                    } else {
+                        this.logger.warn(
+                            '[DataSync] No article rows after reference sync; cleared is_normalized drift for',
+                            vehicleId
+                        );
+                    }
                 }
             }
 
@@ -350,6 +360,9 @@ export class DataSyncService {
             );
         }
 
+        if (this.clientWriteDisabled) {
+            return;
+        }
         const chunkSize = 200;
         for (let i = 0; i < dedupedRows.length; i += chunkSize) {
             const chunk = dedupedRows.slice(i, i + chunkSize);
@@ -357,6 +370,11 @@ export class DataSyncService {
                 .from('articles')
                 .upsert(chunk, { onConflict: 'vehicle_id,original_id' });
             if (error) {
+                if (this.isClientWriteDenied(error)) {
+                    this.clientWriteDisabled = true;
+                    this.logger.info('[DataSync] Disabling browser DB writes after articles catalog upsert deny.');
+                    return;
+                }
                 this.logger.warn('[DataSync] Article catalog upsert chunk failed:', error);
             }
         }
@@ -435,6 +453,7 @@ export class DataSyncService {
             return;
         }
 
+        if (this.clientWriteDisabled) return;
         const chunkSize = 150;
         for (let i = 0; i < specRows.length; i += chunkSize) {
             const chunk = specRows.slice(i, i + chunkSize);
@@ -442,6 +461,7 @@ export class DataSyncService {
                 .from('specifications')
                 .upsert(chunk, { onConflict: 'vehicle_id,category,name' });
             if (upErr) {
+                if (this.isClientWriteDenied(upErr)) { this.clientWriteDisabled = true; return; }
                 this.logger.warn('[DataSync] specifications upsert chunk failed:', upErr);
             }
         }
@@ -633,6 +653,7 @@ export class DataSyncService {
                     task_metadata: s.task_metadata ?? null,
                     updated_at: now
                 }));
+                if (this.clientWriteDisabled) return;
                 const scheduleRows = rows.map(
                     ({ task_metadata: _m, ...rest }) => rest
                 ) as Omit<(typeof rows)[0], 'task_metadata'>[];
@@ -701,6 +722,7 @@ export class DataSyncService {
                 task_metadata: s.task_metadata ?? null,
                 updated_at: now
             }));
+            if (this.clientWriteDisabled) return;
             const scheduleRows = rows.map(
                 ({ task_metadata: _m, ...rest }) => rest
             ) as Omit<(typeof rows)[0], 'task_metadata'>[];
@@ -826,7 +848,7 @@ export class DataSyncService {
      */
     async persistArticleEnhancedHtml(vehicleId: string, originalId: string, html: string): Promise<void> {
         const trimmed = html?.trim();
-        if (!trimmed) return;
+        if (!trimmed || this.clientWriteDisabled) return;
         const { error } = await this.supabase.client
             .from('articles')
             .update({ enhanced_content: trimmed, updated_at: new Date().toISOString() })
@@ -996,6 +1018,7 @@ export class DataSyncService {
                 if (row) rows.push(row);
             }
             if (rows.length === 0) return;
+            if (this.clientWriteDisabled) return;
 
             const chunkSize = 100;
             for (let i = 0; i < rows.length; i += chunkSize) {
@@ -1004,6 +1027,7 @@ export class DataSyncService {
                     .from('specifications')
                     .upsert(chunk, { onConflict: 'vehicle_id,category,name' });
                 if (upErr) {
+                    if (this.isClientWriteDenied(upErr)) { this.clientWriteDisabled = true; return; }
                     this.logger.warn('[DataSync] fluids specifications upsert chunk failed:', upErr);
                 }
             }
@@ -1043,6 +1067,7 @@ export class DataSyncService {
 
     /** Parts: payload matches DB columns (vehicle_id, part_number, description, manufacturer, list_price, dealer_price). NormalizedPart also has quantity, fitment_notes for when API/DB support them. */
     private async syncParts(cs: string, vid: string, motorVehicleId?: string) {
+        if (this.clientWriteDisabled) return;
         try {
             const res = await lastValueFrom(this.motorApi.getParts(cs, vid, '', motorVehicleId));
             const parts = res.body?.data || [];

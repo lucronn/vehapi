@@ -5,7 +5,6 @@ import { LucideAngularModule, House, TriangleAlert, FileText, Package, LogOut, M
 
 import { SectionAvailability } from '../../../../../services/vehicle-data.service';
 import { AuthService } from '../../../../../services/auth.service';
-import { CategoryTreeComponent } from '../../../../../components/category-tree/category-tree.component';
 
 export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'component-locations' | 'procedures' | 'parts' | 'specs' | 'maintenance' | 'browse-all' | 'common-issues';
 
@@ -16,26 +15,20 @@ export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'comp
     selector: 'app-dashboard-sidebar',
     templateUrl: './dashboard-sidebar.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, RouterModule, LucideAngularModule, CategoryTreeComponent],
+    imports: [CommonModule, RouterModule, LucideAngularModule],
     standalone: true,
-    host: { class: 'contents' }
+    styles: [`:host { display: none; } @media (min-width: 768px) { :host { display: flex; width: 16rem; flex-direction: column; flex-shrink: 0; } } @media (min-width: 1280px) { :host { width: 18rem; } }`]
 })
 export class DashboardSidebarComponent {
     @Input({ required: true }) vehicleName!: string;
     @Input({ required: true }) activeSection!: DashboardSection;
     @Input() availableSections: SectionAvailability | null = null;
     @Output() sectionChange = new EventEmitter<DashboardSection>();
-    @Output() articleSelected = new EventEmitter<{ id: string; bucket?: string; parentBucket?: string }>();
     @Output() openAuthModal = new EventEmitter<void>();
 
     protected authService = inject(AuthService);
 
     readonly icons = { House, TriangleAlert, FileText, Package, LogOut, MapPin, Calendar, User, LogIn, CreditCard, Lightbulb, Wrench };
-
-    onArticleFromTree(payload: { id: string; bucket?: string; parentBucket?: string }) {
-        this.articleSelected.emit(payload);
-        this.sectionChange.emit('browse-all');
-    }
 
     onSectionClick(section: DashboardSection) {
         this.sectionChange.emit(section);
