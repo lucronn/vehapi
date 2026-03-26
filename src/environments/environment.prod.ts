@@ -6,6 +6,7 @@ export const environment = {
      * all land on the same deployed proxy function without cross-origin CORS drift.
      */
     apiUrl: '/api',
+    debugBypassPaywall: false,
     features: {
         l2Search: true
     },

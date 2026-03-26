@@ -900,6 +900,9 @@ export class DataSyncService {
                 } else {
                     const contentRes = await lastValueFrom(this.motorApi.getArticleContent(cs, vid, item.id));
                     rawHtml = (contentRes?.body as any)?.html || '';
+                    if (!rawHtml && (contentRes?.body as any)?.pdfDataUri) {
+                        rawHtml = (contentRes.body as any).pdfDataUri;
+                    }
                 }
             }
 

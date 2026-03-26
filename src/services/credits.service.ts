@@ -437,6 +437,7 @@ export class CreditsService {
     }
 
     hasAccess(vehicleId: string, moduleType: string, articleId?: string): boolean {
+        if ((environment as any).debugBypassPaywall && !environment.production) return true;
         const vehicleUnlocks = this.unlocks()[vehicleId] || [];
         if (vehicleUnlocks.includes('full') || vehicleUnlocks.includes(moduleType)) return true;
         if (articleId && vehicleUnlocks.includes(`article:${articleId}`)) return true;

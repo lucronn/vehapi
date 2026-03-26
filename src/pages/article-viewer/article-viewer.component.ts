@@ -347,6 +347,13 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   }
 
   private applyOriginalContentFromArticleRow(raw: string): void {
+    if (raw.startsWith('data:application/pdf;base64,')) {
+      this.pdfDataUri.set(this.sanitizer.bypassSecurityTrustResourceUrl(raw));
+      this.articleContent.set('');
+      this.sections.set([]);
+      this.isLoading.set(false);
+      return;
+    }
     const { htmlString, safeHtml, sections } = this.processHtml(raw, this.contentSource!, this.vehicleId!);
     if (!htmlString || htmlString.trim() === '') {
       this.articleContent.set('');

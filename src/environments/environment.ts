@@ -1,6 +1,8 @@
 export const environment = {
     production: false,
     apiUrl: '/api',
+    /** Dev-only: bypass all credit/paywall checks so article content loads without purchase. */
+    debugBypassPaywall: false,
     features: {
         /** L2 semantic search panel on vehicle dashboard (dev on; prod off until QA). */
         l2Search: true
