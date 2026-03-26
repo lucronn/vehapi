@@ -6,6 +6,10 @@ import { SupabaseService } from './supabase.service';
 import { DataSyncService } from './data-sync.service';
 import { VehiclePersistenceService } from './vehicle-persistence.service';
 import { ApiResponse, Dtc, Tsb, Procedure, WiringDiagram, ComponentLocation, Spec, Fluid, MaintenanceSchedule, FilterTab, ArticlesData } from '../models/motor.models';
+import {
+    flatMaintenanceToUiRows,
+    flattenMaintenanceIntervalResponseBody
+} from '../utils/maintenance-response.util';
 
 export type DashboardSection = 'overview' | 'specs' | 'fluids' | 'maintenance' | 'parts' | 'labor' | 'tsbs' | 'dtcs' | 'diagrams' | 'bookmarks' | 'search' | 'common-issues';
 
@@ -762,7 +766,8 @@ export class VehicleDataService {
             .subscribe({
                 next: (res) => {
                     loadingSignal.set(false);
-                    const schedules = (res.body as any)?.schedules || (res.body as any)?.items || (res.body as any)?.data || [];
+                    const flat = flattenMaintenanceIntervalResponseBody(res.body, interval);
+                    const schedules = flatMaintenanceToUiRows(flat, interval) as MaintenanceSchedule[];
                     updateState(schedules);
                     // Lazily cache this interval for next visit (fire-and-forget)
                     this.dataSync

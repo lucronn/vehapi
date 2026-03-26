@@ -122,8 +122,13 @@ export interface MaintenanceSchedulesByFrequencyResponse {
   schedules: any[];
 }
 
+/** Motor often returns `intervals[].applications[]` (IDs); legacy clients used `schedules`. */
 export interface MaintenanceSchedulesByIntervalResponse {
-  schedules: any[];
+  schedules?: any[];
+  intervals?: { interval?: number; applications?: unknown[] }[];
+  applications?: unknown[];
+  items?: unknown[];
+  data?: unknown[];
 }
 
 export interface IndicatorsWithMaintenanceSchedulesResponse {

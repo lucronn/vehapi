@@ -6,6 +6,10 @@ import { AiRewriteService } from './ai-rewrite.service';
 import { SupabaseService } from './supabase.service';
 import { normalizeCategoryParams } from '../utils/categorize.util';
 import { improveCatalogArticleRow } from '../utils/catalog-intelligence.util';
+import {
+    flattenMaintenanceFrequencyResponseBody,
+    flattenMaintenanceIntervalResponseBody
+} from '../utils/maintenance-response.util';
 import type { Article } from '../models/motor.models';
 import type { ContentItem, NormalizedArticle } from '../models/normalized_schema';
 
@@ -53,6 +57,7 @@ export class DataSyncService {
             item: string;
             description: string | null;
             frequency_code: string | null;
+            task_metadata?: Record<string, unknown> | null;
         }[],
         ingestSource: 'motor_interval' | 'motor_frequency'
     ): Promise<void> {
@@ -76,7 +81,8 @@ export class DataSyncService {
             ingest_source: ingestSource,
             severity_bucket:
                 ingestSource === 'motor_frequency' ? severityFromCode(r.frequency_code) : null,
-            metadata_json: {},
+            metadata_json:
+                r.task_metadata && Object.keys(r.task_metadata).length > 0 ? r.task_metadata : {},
             extractor_version: 'l1-client-v1',
             updated_at: now
         }));
@@ -569,22 +575,27 @@ export class DataSyncService {
                     motorVehicleId
                 )
             );
-            const schedules = (res.body as any)?.schedules || (res.body as any)?.items || (res.body as any)?.data || [];
+            const flat = flattenMaintenanceIntervalResponseBody(res.body, interval);
 
-            if (schedules.length > 0) {
-                const rows = schedules.map((s: any) => ({
+            if (flat.length > 0) {
+                const now = new Date().toISOString();
+                const rows = flat.map((s) => ({
                     vehicle_id: vehicleId,
                     interval_value: interval,
                     interval_unit: 'Miles',
-                    action: s.action || 'Inspect/Replace',
-                    item: s.description || s.item || '',
-                    description: s.description ?? null,
-                    frequency_code: s.frequency_code ?? s.frequency ?? null,
-                    updated_at: new Date().toISOString()
+                    action: s.action,
+                    item: s.item,
+                    description: s.description,
+                    frequency_code: s.frequency_code ?? null,
+                    task_metadata: s.task_metadata ?? null,
+                    updated_at: now
                 }));
+                const scheduleRows = rows.map(
+                    ({ task_metadata: _m, ...rest }) => rest
+                ) as Omit<(typeof rows)[0], 'task_metadata'>[];
                 await this.supabase.client
                     .from('maintenance_schedules')
-                    .upsert(rows, { onConflict: 'vehicle_id,interval_value,action,item' });
+                    .upsert(scheduleRows, { onConflict: 'vehicle_id,interval_value,action,item' });
                 await this.dualWriteMaintenanceTaskL1(rows, 'motor_interval');
             }
         } catch (e) {
@@ -629,27 +640,31 @@ export class DataSyncService {
                     motorVehicleId
                 )
             );
-            const schedules =
-                (res.body as any)?.schedules || (res.body as any)?.items || (res.body as any)?.data || [];
+            const flat = flattenMaintenanceFrequencyResponseBody(res.body);
 
-            if (schedules.length === 0) {
+            if (flat.length === 0) {
                 return;
             }
 
-            const rows = schedules.map((s: any) => ({
+            const now = new Date().toISOString();
+            const rows = flat.map((s) => ({
                 vehicle_id: vehicleId,
                 interval_value: frequencyIntervalValue,
                 interval_unit: 'Frequency',
-                action: s.action || 'Inspect/Replace',
-                item: s.description || s.item || '',
-                description: s.description ?? null,
+                action: s.action,
+                item: s.item,
+                description: s.description,
                 frequency_code: code,
-                updated_at: new Date().toISOString()
+                task_metadata: s.task_metadata ?? null,
+                updated_at: now
             }));
+            const scheduleRows = rows.map(
+                ({ task_metadata: _m, ...rest }) => rest
+            ) as Omit<(typeof rows)[0], 'task_metadata'>[];
 
             await this.supabase.client
                 .from('maintenance_schedules')
-                .upsert(rows, { onConflict: 'vehicle_id,interval_value,action,item' });
+                .upsert(scheduleRows, { onConflict: 'vehicle_id,interval_value,action,item' });
             await this.dualWriteMaintenanceTaskL1(rows, 'motor_frequency');
         } catch (e) {
             console.warn(`[DataSync] Maintenance frequency sync failed for ${code}`, e);
