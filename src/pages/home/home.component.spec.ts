@@ -1,5 +1,28 @@
-import { expect, test, mock, beforeEach, afterEach, describe, beforeAll } from "bun:test";
+import '@angular/compiler';
 import { of } from "rxjs";
+
+const { mockInject, signal, computed, toSignal } = vi.hoisted(() => {
+    const signal = (initialValue: any) => {
+        let value = initialValue;
+        const s = () => value;
+        s.set = (v: any) => { value = v; };
+        s.update = (fn: any) => { value = fn(value); };
+        s.asReadonly = () => s;
+        return s;
+    };
+
+    const computed = (fn: any) => {
+        return () => fn();
+    };
+
+    const toSignal = (obs: any, options: any) => {
+        return signal(options?.initialValue);
+    };
+
+    const mockInject = vi.fn();
+
+    return { mockInject, signal, computed, toSignal };
+});
 
 beforeAll(() => {
   if (typeof MouseEvent === 'undefined') {
@@ -11,9 +34,7 @@ beforeAll(() => {
   }
 });
 
-// Mock @angular/core
-const mockInject = mock((token: any) => {
-  // Check token name or toString to identify service
+mockInject.mockImplementation((token: any) => {
   const tokenName = token?.name || token?.toString() || '';
 
   if (tokenName.includes('MotorApiService')) {
@@ -34,48 +55,52 @@ const mockInject = mock((token: any) => {
   }
   if (tokenName.includes('Router')) {
     return {
-      navigate: mock(() => {}),
+      navigate: vi.fn(),
     };
   }
   if (tokenName.includes('DestroyRef')) {
     return {
-      onDestroy: mock(() => {}),
+      onDestroy: vi.fn(),
     };
   }
   if (tokenName.includes('ChangeDetectorRef')) {
     return {
-      detectChanges: mock(() => {}),
+      detectChanges: vi.fn(),
+    };
+  }
+  if (tokenName.includes('PageTitleService')) {
+    return {
+      set: vi.fn(),
+    };
+  }
+  if (tokenName.includes('AuthService')) {
+    return {
+      user: () => null,
+      userId: () => null,
+      isAuthenticated: () => false,
+    };
+  }
+  if (tokenName.includes('CreditsService')) {
+    return {
+      hasAccess: () => false,
+      balance: () => 0,
+    };
+  }
+  if (tokenName.includes('LoggerService')) {
+    return {
+      debug: () => {}, info: () => {}, warn: () => {}, error: () => {},
     };
   }
 
   return {};
 });
 
-// Mock signal
-const signal = (initialValue: any) => {
-  let value = initialValue;
-  const s = () => value;
-  s.set = (v: any) => { value = v; };
-  s.update = (fn: any) => { value = fn(value); };
-  s.asReadonly = () => s;
-  return s;
-};
-
-// Mock computed
-const computed = (fn: any) => {
-  return () => fn();
-};
-
-// Mock toSignal
-const toSignal = (obs: any, options: any) => {
-  return signal(options?.initialValue);
-};
-
-// Mock dependencies
-mock.module('@angular/core', () => ({
+vi.mock('@angular/core', () => ({
+  Injectable: () => (target: any) => target,
   inject: mockInject,
   signal: signal,
   computed: computed,
+  effect: () => {},
   ChangeDetectionStrategy: { OnPush: 0 },
   Component: () => () => {},
   ViewChild: () => () => {},
@@ -88,25 +113,25 @@ mock.module('@angular/core', () => ({
   input: () => ({}),
 }));
 
-mock.module('@angular/core/rxjs-interop', () => ({
+vi.mock('@angular/core/rxjs-interop', () => ({
   toSignal: toSignal,
   takeUntilDestroyed: () => (source: any) => source,
 }));
 
-mock.module('@angular/router', () => ({
+vi.mock('@angular/router', () => ({
   Router: class {},
   RouterModule: class {},
 }));
 
-mock.module('@angular/common', () => ({
+vi.mock('@angular/common', () => ({
   CommonModule: class {},
 }));
 
-mock.module('@angular/forms', () => ({
+vi.mock('@angular/forms', () => ({
   FormsModule: class {},
 }));
 
-mock.module('lucide-angular', () => ({
+vi.mock('lucide-angular', () => ({
   LucideAngularModule: class {},
   Search: {},
   X: {},
@@ -115,23 +140,22 @@ mock.module('lucide-angular', () => ({
   ArrowLeft: {},
 }));
 
-mock.module('../../services/motor-api.service', () => ({
+vi.mock('../../services/motor-api.service', () => ({
   MotorApiService: class {}
 }));
 
-mock.module('../../services/vehicle-persistence.service', () => ({
+vi.mock('../../services/vehicle-persistence.service', () => ({
   VehiclePersistenceService: class {}
 }));
 
-mock.module('../../components/logo/logo.component', () => ({
+vi.mock('../../components/logo/logo.component', () => ({
   LogoComponent: class {}
 }));
 
-mock.module('../../components/theme-toggle/theme-toggle.component', () => ({
+vi.mock('../../components/theme-toggle/theme-toggle.component', () => ({
   ThemeToggleComponent: class {}
 }));
 
-// Import the component AFTER mocking
 const { HomeComponent } = await import('./home.component');
 
 describe('HomeComponent closeMobileWizard', () => {
@@ -159,7 +183,6 @@ describe('HomeComponent closeMobileWizard', () => {
     component.selectedMake.set(null);
     component.selectedModel.set(null);
 
-    // Initial state check
     expect(component.selectedYear()).toBe(2023);
 
     component.closeMobileWizard();
@@ -174,13 +197,12 @@ describe('HomeComponent closeMobileWizard', () => {
     component.selectedMake.set({ makeName: 'Ford', id: 1 });
     component.selectedModel.set(null);
 
-    // Initial state check
     expect(component.selectedMake()).not.toBe(null);
 
     component.closeMobileWizard();
 
     expect(component.selectedMake()).toBe(null);
-    expect(component.selectedYear()).toBe(2023); // Year should remain
+    expect(component.selectedYear()).toBe(2023);
     expect(component.showSuggestions()).toBe(true);
   });
 
@@ -190,14 +212,13 @@ describe('HomeComponent closeMobileWizard', () => {
     component.selectedMake.set({ makeName: 'Ford', id: 1 });
     component.selectedModel.set({ model: 'F-150', id: '123' });
 
-    // Initial state check
     expect(component.selectedModel()).not.toBe(null);
 
     component.closeMobileWizard();
 
     expect(component.selectedModel()).toBe(null);
-    expect(component.selectedMake()).not.toBe(null); // Make should remain
-    expect(component.selectedYear()).toBe(2023); // Year should remain
+    expect(component.selectedMake()).not.toBe(null);
+    expect(component.selectedYear()).toBe(2023);
     expect(component.showSuggestions()).toBe(true);
   });
 });

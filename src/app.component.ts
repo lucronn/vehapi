@@ -27,12 +27,21 @@ export class AppComponent {
     // but the underlying promises rejected without a catch.
     if (typeof window !== 'undefined') {
       window.addEventListener('unhandledrejection', (event) => {
-        if (event.reason?.name === 'AbortError' || event.reason?.message?.includes('user aborted')) {
+        const reason = event.reason;
+        // Suppress intentional aborts
+        if (reason?.name === 'AbortError' || reason?.message?.includes('user aborted')) {
           event.preventDefault();
-          // Log it silently if in dev, but don't let it crash/spam
-          if (typeof process !== 'undefined' && process.env?.['NODE_ENV'] === 'development') {
-            console.debug('Suppressed AbortError:', event.reason);
-          }
+          return;
+        }
+        // Suppress Supabase auth session errors (non-fatal)
+        if (reason?.message?.includes('Auth session missing') || reason?.message?.includes('JWT expired')) {
+          event.preventDefault();
+          return;
+        }
+        // Suppress HTTP errors already handled by components (4xx/5xx)
+        if (reason?.status >= 400 && reason?.status < 600) {
+          event.preventDefault();
+          return;
         }
       });
     }

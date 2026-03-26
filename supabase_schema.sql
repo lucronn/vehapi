@@ -615,33 +615,31 @@ ALTER TABLE public.component_location_document ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.labor_operation ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.content_chunk ENABLE ROW LEVEL SECURITY;
 
--- Client-readable tables keep permissive policies for the MVP browser app.
--- Server-only normalization / evidence / L2 tables should default deny for anon/authenticated
--- roles; vehapiproxi uses the service role and bypasses RLS.
-CREATE POLICY "Allow all vehicles" ON public.vehicles FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all articles" ON public.articles FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all procedures" ON public.procedures FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all procedure_step" ON public.procedure_step FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all procedure_tool" ON public.procedure_tool FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all procedure_part" ON public.procedure_part FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all tsbs" ON public.tsbs FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all dtcs" ON public.dtcs FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all specifications" ON public.specifications FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all spec_fact" ON public.spec_fact FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all categories" ON public.categories FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all vehicle_metadata" ON public.vehicle_metadata FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all ai_processing_logs" ON public.ai_processing_logs FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all failed_extractions" ON public.failed_extractions FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all common_issues_cache" ON public.common_issues_cache FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all parts" ON public.parts FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all maintenance_schedules" ON public.maintenance_schedules FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all maintenance_task" ON public.maintenance_task FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all canonical_bucket" ON public.canonical_bucket FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all bucket_alias" ON public.bucket_alias FOR ALL USING (true) WITH CHECK (true);
-
--- No replacement policies on these tables: default deny for direct clients.
--- Apply the additive migration `documentation/migrations/20260321_rls_staging_tightening.sql`
--- on existing environments that still have the older broad policies.
+-- Direct Supabase clients (anon / authenticated JWT): Group A = read-only SELECT on
+-- vehicle and catalog data. INSERT/UPDATE/DELETE are denied — vehapiproxi uses the
+-- service role and bypasses RLS. Group B (ai_processing_logs, failed_extractions):
+-- RLS enabled, no policies = default deny for clients; service role only.
+-- Evidence/L2 tables (evidence_*, content_*, etc.): already default-deny; see
+-- documentation/migrations/20260321_rls_staging_tightening.sql and 20260326_rls_tightening.sql.
+CREATE POLICY "Read-only vehicles" ON public.vehicles FOR SELECT USING (true);
+CREATE POLICY "Read-only articles" ON public.articles FOR SELECT USING (true);
+CREATE POLICY "Read-only procedures" ON public.procedures FOR SELECT USING (true);
+CREATE POLICY "Read-only procedure_step" ON public.procedure_step FOR SELECT USING (true);
+CREATE POLICY "Read-only procedure_tool" ON public.procedure_tool FOR SELECT USING (true);
+CREATE POLICY "Read-only procedure_part" ON public.procedure_part FOR SELECT USING (true);
+CREATE POLICY "Read-only tsbs" ON public.tsbs FOR SELECT USING (true);
+CREATE POLICY "Read-only dtcs" ON public.dtcs FOR SELECT USING (true);
+CREATE POLICY "Read-only specifications" ON public.specifications FOR SELECT USING (true);
+CREATE POLICY "Read-only spec_fact" ON public.spec_fact FOR SELECT USING (true);
+CREATE POLICY "Read-only categories" ON public.categories FOR SELECT USING (true);
+CREATE POLICY "Read-only vehicle_metadata" ON public.vehicle_metadata FOR SELECT USING (true);
+CREATE POLICY "Read-only common_issues_cache" ON public.common_issues_cache FOR SELECT USING (true);
+CREATE POLICY "Read-only parts" ON public.parts FOR SELECT USING (true);
+CREATE POLICY "Read-only maintenance_schedules" ON public.maintenance_schedules FOR SELECT USING (true);
+CREATE POLICY "Read-only maintenance_task" ON public.maintenance_task FOR SELECT USING (true);
+CREATE POLICY "Read-only canonical_bucket" ON public.canonical_bucket FOR SELECT USING (true);
+CREATE POLICY "Read-only bucket_alias" ON public.bucket_alias FOR SELECT USING (true);
+-- ai_processing_logs, failed_extractions: RLS ON, no policy (default deny for anon/auth).
 
 -- =============================================================================
 -- MIGRATION: Add missing article catalog fields (run on existing deployments)

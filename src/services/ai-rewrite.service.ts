@@ -75,16 +75,16 @@ export class AiRewriteService {
 
     /**
      * Generates common issues for a given vehicle using AI.
-     * @param vehicleName - The year make model of the vehicle.
-     * @returns Observable that emits an array of CommonIssue objects.
+     * When vehicleId is provided, the backend queries Supabase for DTCs, TSBs,
+     * procedures, specs, and maintenance to ground the LLM output in real data.
      */
-    generateCommonIssues(vehicleName: string): Observable<CommonIssuesResult> {
+    generateCommonIssues(vehicleName: string, vehicleId?: string): Observable<CommonIssuesResult> {
         if (!vehicleName || !vehicleName.trim()) {
             return of({ issues: [] });
         }
         return this.http.post<{ issues: CommonIssue[] }>(
             `${this.baseUrl}/api/common-issues/generate`,
-            { vehicleMetadata: { vehicleName } } // Passing as dynamic context
+            { vehicleMetadata: { vehicleName, vehicleId } }
         ).pipe(
             timeout(60_000),
             map((res): CommonIssuesResult => ({ issues: res?.issues || [] })),

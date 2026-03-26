@@ -1,20 +1,25 @@
-import { expect, test, describe, beforeEach, afterEach, mock } from 'bun:test';
 import { WindowManagerService } from './window-manager.service';
 
-// Mock Angular Core
-const mockSignal = (initialValue: any) => {
-    let _val = initialValue;
-    const s = () => _val;
-    s.set = (v: any) => { _val = v; };
-    s.update = (fn: (val: any) => any) => { _val = fn(_val); };
-    return s;
-};
+const { mockSignal } = vi.hoisted(() => {
+    const mockSignal = (initialValue: any) => {
+        let _val = initialValue;
+        const s = () => _val;
+        s.set = (v: any) => { _val = v; };
+        s.update = (fn: (val: any) => any) => { _val = fn(_val); };
+        return s;
+    };
+    return { mockSignal };
+});
 
-mock.module('@angular/core', () => ({
+vi.mock('@angular/core', () => ({
     Injectable: () => (target: any) => target,
     signal: mockSignal,
     Type: class {},
     TemplateRef: class {}
+}));
+
+vi.mock('@angular/core/rxjs-interop', () => ({
+    takeUntilDestroyed: () => (source: any) => source,
 }));
 
 describe('WindowManagerService', () => {
@@ -23,7 +28,6 @@ describe('WindowManagerService', () => {
     let originalWindow: any;
 
     beforeEach(() => {
-        // Mock crypto.randomUUID
         originalCrypto = global.crypto;
 
         let uuidCounter = 0;
@@ -32,7 +36,6 @@ describe('WindowManagerService', () => {
             randomUUID: () => `test-uuid-${++uuidCounter}`
         };
 
-        // Override crypto
         try {
             global.crypto = mockCrypto as any;
         } catch (e) {
@@ -43,17 +46,20 @@ describe('WindowManagerService', () => {
             });
         }
 
-        // Mock window
         originalWindow = global.window;
         const mockMatchMedia = (query: string) => ({
-            matches: true, // Simulate desktop
+            matches: true,
             addEventListener: () => {},
-            addListener: () => {}, // Fallback
+            addListener: () => {},
         });
 
+        const listeners: Record<string, Function[]> = {};
         const mockWindow = {
             innerWidth: 1024,
-            matchMedia: mockMatchMedia
+            matchMedia: mockMatchMedia,
+            addEventListener: (type: string, fn: Function) => { (listeners[type] ??= []).push(fn); },
+            removeEventListener: (type: string, fn: Function) => { listeners[type] = (listeners[type] || []).filter(f => f !== fn); },
+            dispatchEvent: () => true,
         };
 
         global.window = mockWindow as any;
@@ -62,7 +68,6 @@ describe('WindowManagerService', () => {
     });
 
     afterEach(() => {
-        // Restore globals
         if (originalCrypto) {
             try {
                 global.crypto = originalCrypto;
@@ -93,10 +98,9 @@ describe('WindowManagerService', () => {
         const win = windows[0];
         expect(win.id).toBe('test-uuid-1');
         expect(win.title).toBe('Test Window');
-        expect(win.zIndex).toBe(1001); // Initial 1000 + 1
+        expect(win.zIndex).toBe(1001);
         expect(win.isMinimized).toBe(false);
         expect(win.isMaximized).toBe(false);
-        // Position logic: 50 + (length * 20). length was 0 when created.
         expect(win.position).toEqual({ x: 50, y: 50 });
         expect(win.size).toEqual({ width: 800, height: 600 });
     });
@@ -105,7 +109,7 @@ describe('WindowManagerService', () => {
         const longTitle = 'A'.repeat(70);
         service.openWindow(longTitle, 'Content' as any);
         const win = service.windows()[0];
-        expect(win.title.length).toBe(63); // 60 chars + '...'
+        expect(win.title.length).toBe(63);
         expect(win.title.endsWith('...')).toBe(true);
     });
 
@@ -136,20 +140,16 @@ describe('WindowManagerService', () => {
         const id1 = service.openWindow('Window 1', 'Content' as any);
         const id2 = service.openWindow('Window 2', 'Content' as any);
 
-        // Window 2 is naturally on top (zIndex 1002)
         expect(service.windows()[1].zIndex).toBe(1002);
 
-        // Maximize Window 1
         service.maximizeWindow(id1);
 
         const windows = service.windows();
         const win1 = windows.find(w => w.id === id1);
 
         expect(win1?.isMaximized).toBe(true);
-        // It should be brought to front, so zIndex should increase
-        expect(win1?.zIndex).toBe(1003); // Next available zIndex
+        expect(win1?.zIndex).toBe(1003);
 
-        // Toggle back
         service.maximizeWindow(id1);
         expect(service.windows().find(w => w.id === id1)?.isMaximized).toBe(false);
     });

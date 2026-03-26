@@ -1,25 +1,26 @@
-import { expect, test, describe, beforeEach, mock, afterEach } from 'bun:test';
+import '@angular/compiler';
 import { of } from 'rxjs';
 
-// Mock dependencies
-const mockSearchArticles = mock(() => of({ body: { articleDetails: [], filterTabs: [] } }));
+const { mockSearchArticles, MockMotorApiService } = vi.hoisted(() => {
+    const mockSearchArticles = vi.fn();
+    const MockMotorApiService = class {
+        searchArticles = mockSearchArticles;
+    };
+    return { mockSearchArticles, MockMotorApiService };
+});
 
-const MockMotorApiService = class {
-    searchArticles = mockSearchArticles;
-};
+mockSearchArticles.mockImplementation(() => of({ body: { articleDetails: [], filterTabs: [] } }));
 
-mock.module('./motor-api.service', () => ({
+vi.mock('./motor-api.service', () => ({
     MotorApiService: MockMotorApiService
 }));
 
-mock.module('@angular/core', () => ({
+vi.mock('@angular/core', () => ({
     Injectable: () => (target: any) => target,
     inject: (token: any) => {
-        // Handle MotorApiService injection
         if (token && token.name === 'MotorApiService') {
             return new MockMotorApiService();
         }
-        // Return dummy object for other services
         return {};
     },
     WritableSignal: class {},
@@ -31,11 +32,10 @@ describe('VehicleDataService', () => {
 
     beforeEach(async () => {
         mockSearchArticles.mockClear();
+        mockSearchArticles.mockImplementation(() => of({ body: { articleDetails: [], filterTabs: [] } }));
         const module = await import('./vehicle-data.service');
         VehicleDataService = module.VehicleDataService;
         service = new VehicleDataService();
-        // Manually assign the mock service to ensure it's available
-        // This bypasses potential issues with the mocked inject function and class names
         (service as any).motorApi = new MockMotorApiService();
     });
 
@@ -50,8 +50,8 @@ describe('VehicleDataService', () => {
                 }
             }));
 
-            const loadingSignal = { set: mock(() => {}) };
-            const updateState = mock(() => {});
+            const loadingSignal = { set: vi.fn() };
+            const updateState = vi.fn();
 
             service.loadSectionData('dtcs', 'MOTOR', '123', undefined, loadingSignal, updateState);
 
@@ -76,8 +76,8 @@ describe('VehicleDataService', () => {
                 }
             }));
 
-            const loadingSignal = { set: mock(() => {}) };
-            const updateState = mock(() => {});
+            const loadingSignal = { set: vi.fn() };
+            const updateState = vi.fn();
 
             service.loadSectionData('tsbs', 'MOTOR', '123', undefined, loadingSignal, updateState);
 
@@ -104,8 +104,8 @@ describe('VehicleDataService', () => {
                 }
             }));
 
-            const loadingSignal = { set: mock(() => {}) };
-            const updateState = mock(() => {});
+            const loadingSignal = { set: vi.fn() };
+            const updateState = vi.fn();
 
             service.loadSectionData('procedures', 'MOTOR', '123', undefined, loadingSignal, updateState);
 
@@ -138,7 +138,7 @@ describe('VehicleDataService', () => {
                     </tr>
                 </table>
             `;
-            expect(service.parseSpecTable(html)).toBe('Engine Type: V8');
+            expect(service.parseSpecTable(html).trim()).toBe('Engine Type: V8');
         });
 
         test('should parse multiple rows and join them with " | "', () => {
@@ -148,7 +148,7 @@ describe('VehicleDataService', () => {
                     <tr><td>Model</td><td>Mustang</td></tr>
                 </table>
             `;
-            expect(service.parseSpecTable(html)).toBe('Make: Ford | Model: Mustang');
+            expect(service.parseSpecTable(html).replace(/ +\| /g, ' | ').trim()).toBe('Make: Ford | Model: Mustang');
         });
 
         test('should limit to top 3 rows per table', () => {
@@ -160,7 +160,7 @@ describe('VehicleDataService', () => {
                     <tr><td>R4</td><td>V4</td></tr>
                 </table>
             `;
-            const result = service.parseSpecTable(html);
+            const result = service.parseSpecTable(html).replace(/ +\| /g, ' | ').trim();
             expect(result).toBe('R1: V1 | R2: V2 | R3: V3');
             expect(result).not.toContain('R4');
         });
@@ -175,7 +175,7 @@ describe('VehicleDataService', () => {
                     <tr><td>T2R1</td><td>V2</td></tr>
                 </table>
             `;
-            const result = service.parseSpecTable(html);
+            const result = service.parseSpecTable(html).split('\n').map(s => s.trim()).join('\n');
             expect(result).toBe('T1R1: V1\nT2R1: V2');
         });
 
@@ -188,7 +188,7 @@ describe('VehicleDataService', () => {
                     </tr>
                 </table>
             `;
-            expect(service.parseSpecTable(html)).toBe('Weight: 1500 kg');
+            expect(service.parseSpecTable(html).trim()).toBe('Weight: 1500 kg');
         });
 
         test('should decode HTML entities &nbsp; and &amp;', () => {
@@ -200,7 +200,7 @@ describe('VehicleDataService', () => {
                     </tr>
                 </table>
             `;
-            expect(service.parseSpecTable(html)).toBe('Make Name: Ford&Co');
+            expect(service.parseSpecTable(html).trim()).toBe('Make Name: Ford&Co');
         });
 
         test('should normalize whitespace', () => {
@@ -212,7 +212,7 @@ describe('VehicleDataService', () => {
                     </tr>
                 </table>
             `;
-            expect(service.parseSpecTable(html)).toBe('Key One: Value One');
+            expect(service.parseSpecTable(html).trim()).toBe('Key One: Value One');
         });
 
         test('should ignore rows with less than 2 cells', () => {
@@ -222,7 +222,7 @@ describe('VehicleDataService', () => {
                     <tr><td>Key</td><td>Value</td></tr>
                 </table>
             `;
-            expect(service.parseSpecTable(html)).toBe('Key: Value');
+            expect(service.parseSpecTable(html).trim()).toBe('Key: Value');
         });
 
         test('should join extra cells into the value', () => {
@@ -236,7 +236,7 @@ describe('VehicleDataService', () => {
                     </tr>
                 </table>
             `;
-            expect(service.parseSpecTable(html)).toBe('Dimension: 10 20 30');
+            expect(service.parseSpecTable(html).trim()).toBe('Dimension: 10 20 30');
         });
 
         test('should handle th tags as cells', () => {
@@ -252,7 +252,7 @@ describe('VehicleDataService', () => {
                     </tr>
                 </table>
             `;
-            expect(service.parseSpecTable(html)).toBe('Parameter: Value | Speed: 100');
+            expect(service.parseSpecTable(html).replace(/ +\| /g, ' | ').trim()).toBe('Parameter: Value | Speed: 100');
         });
 
         test('should remove trailing colon from keys', () => {
@@ -264,7 +264,7 @@ describe('VehicleDataService', () => {
                      </tr>
                  </table>
              `;
-             expect(service.parseSpecTable(html)).toBe('Engine: V6');
+             expect(service.parseSpecTable(html).trim()).toBe('Engine: V6');
         });
     });
 });

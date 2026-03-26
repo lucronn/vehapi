@@ -1,16 +1,18 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { PersistedVehicle } from '../models/motor.models';
+import { LoggerService } from './logger.service';
 
 const STORAGE_KEY = 'torque-persisted-vehicle';
 
 @Injectable({ providedIn: 'root' })
 export class VehiclePersistenceService {
+  private logger = inject(LoggerService);
 
   saveVehicle(vehicle: PersistedVehicle): void {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(vehicle));
     } catch (e) {
-      console.error('Error saving vehicle to local storage', e);
+      this.logger.error('Error saving vehicle to local storage', e);
     }
   }
 
@@ -19,7 +21,7 @@ export class VehiclePersistenceService {
       const storedVehicle = localStorage.getItem(STORAGE_KEY);
       return storedVehicle ? JSON.parse(storedVehicle) : null;
     } catch (e) {
-      console.error('Error getting vehicle from local storage', e);
+      this.logger.error('Error getting vehicle from local storage', e);
       return null;
     }
   }
@@ -28,7 +30,7 @@ export class VehiclePersistenceService {
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch (e) {
-      console.error('Error clearing vehicle from local storage', e);
+      this.logger.error('Error clearing vehicle from local storage', e);
     }
   }
 }

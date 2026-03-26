@@ -1,6 +1,7 @@
-import { Injectable, inject, signal, isDevMode } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { lastValueFrom } from 'rxjs';
 import { MotorApiService } from './motor-api.service';
+import { LoggerService } from './logger.service';
 import { VehiclePersistenceService } from './vehicle-persistence.service';
 import { AiRewriteService } from './ai-rewrite.service';
 import { SupabaseService } from './supabase.service';
@@ -10,7 +11,7 @@ import {
     flattenMaintenanceFrequencyResponseBody,
     flattenMaintenanceIntervalResponseBody
 } from '../utils/maintenance-response.util';
-import type { Article } from '../models/motor.models';
+import type { Article, CommonIssue } from '../models/motor.models';
 import type { ContentItem, NormalizedArticle } from '../models/normalized_schema';
 
 /** Resolved canonical body from Supabase (structured or cached enhanced HTML). */
@@ -24,6 +25,7 @@ export interface CanonicalArticleBodyResult {
     providedIn: 'root'
 })
 export class DataSyncService {
+    private logger = inject(LoggerService);
     private motorApi = inject(MotorApiService);
     private aiRewrite = inject(AiRewriteService);
     private supabase = inject(SupabaseService);
@@ -92,7 +94,7 @@ export class DataSyncService {
             .upsert(taskRows, { onConflict: 'vehicle_id,interval_value,action,item' });
 
         if (error) {
-            console.warn('[DataSync] maintenance_task L1 upsert skipped:', error.message);
+            this.logger.warn('[DataSync] maintenance_task L1 upsert skipped:', error.message);
         }
     }
 
@@ -138,7 +140,7 @@ export class DataSyncService {
             model,
             updated_at: new Date().toISOString()
         }, { onConflict: 'external_id' }).then(null, (e: any) =>
-            console.warn('[DataSync] Vehicle upsert failed (non-fatal):', e)
+            this.logger.warn('[DataSync] Vehicle upsert failed (non-fatal):', e)
         );
     }
 
@@ -219,7 +221,7 @@ export class DataSyncService {
                     .update({ is_normalized: true, updated_at: nowIso })
                     .eq('external_id', vehicleId);
                 if (normErr) {
-                    console.warn('[DataSync] is_normalized update failed:', normErr);
+                    this.logger.warn('[DataSync] is_normalized update failed:', normErr);
                 }
             } else if (vehicleRow?.is_normalized) {
                 const { error: clearErr } = await this.supabase.client
@@ -227,9 +229,9 @@ export class DataSyncService {
                     .update({ is_normalized: false, updated_at: nowIso })
                     .eq('external_id', vehicleId);
                 if (clearErr) {
-                    console.warn('[DataSync] is_normalized clear failed:', clearErr);
+                    this.logger.warn('[DataSync] is_normalized clear failed:', clearErr);
                 } else {
-                    console.warn(
+                    this.logger.warn(
                         '[DataSync] No article rows after reference sync; cleared is_normalized drift for',
                         vehicleId
                     );
@@ -238,7 +240,7 @@ export class DataSyncService {
 
             setStep(100, 'Done');
         } catch (e) {
-            console.warn('[DataSync] eagerSyncVehicleReferenceData failed (non-fatal):', e);
+            this.logger.warn('[DataSync] eagerSyncVehicleReferenceData failed (non-fatal):', e);
         } finally {
             this.isSyncing.set(false);
             this.eagerReferenceSyncInFlight.delete(key);
@@ -259,7 +261,7 @@ export class DataSyncService {
             this.motorApi.searchArticles(contentSource, vehicleId, '', motorVehicleId, { catalogSync: true })
         );
         if (res.header.statusCode !== 200) {
-            console.warn('[DataSync] searchArticles for catalog failed', res.header);
+            this.logger.warn('[DataSync] searchArticles for catalog failed', res.header);
             return;
         }
 
@@ -274,7 +276,7 @@ export class DataSyncService {
             .eq('vehicle_id', vehicleId);
 
         if (existingErr) {
-            console.warn('[DataSync] Could not read existing articles for merge:', existingErr);
+            this.logger.warn('[DataSync] Could not read existing articles for merge:', existingErr);
         }
 
         const existingById = new Map<string, { original_content: string | null; enhanced_content: string | null }>();
@@ -330,7 +332,7 @@ export class DataSyncService {
 
         const dedupedRows = this.dedupeArticleCatalogRows(rows);
         if (dedupedRows.length < rows.length) {
-            console.warn(
+            this.logger.warn(
                 `[DataSync] Deduped ${rows.length - dedupedRows.length} duplicate original_id(s) for vehicle ${vehicleId}`
             );
         }
@@ -342,7 +344,7 @@ export class DataSyncService {
                 .from('articles')
                 .upsert(chunk, { onConflict: 'vehicle_id,original_id' });
             if (error) {
-                console.warn('[DataSync] Article catalog upsert chunk failed:', error);
+                this.logger.warn('[DataSync] Article catalog upsert chunk failed:', error);
             }
         }
 
@@ -362,7 +364,7 @@ export class DataSyncService {
         try {
             data = JSON.parse(JSON.stringify(payload)) as object;
         } catch {
-            console.warn('[DataSync] cacheVehicleMetadata: payload not serializable, skipping', path);
+            this.logger.warn('[DataSync] cacheVehicleMetadata: payload not serializable, skipping', path);
             return;
         }
         try {
@@ -371,10 +373,10 @@ export class DataSyncService {
                 { onConflict: 'path' }
             );
             if (error) {
-                console.warn('[DataSync] cacheVehicleMetadata upsert failed:', path, error);
+                this.logger.warn('[DataSync] cacheVehicleMetadata upsert failed:', path, error);
             }
         } catch (e) {
-            console.warn('[DataSync] cacheVehicleMetadata failed (non-fatal):', path, e);
+            this.logger.warn('[DataSync] cacheVehicleMetadata failed (non-fatal):', path, e);
         }
     }
 
@@ -390,7 +392,7 @@ export class DataSyncService {
             .neq('category', 'Fluids');
 
         if (countErr) {
-            console.warn('[DataSync] syncSpecificationsIfMissing count error:', countErr);
+            this.logger.warn('[DataSync] syncSpecificationsIfMissing count error:', countErr);
         }
         if ((count ?? 0) > 0) {
             return;
@@ -402,7 +404,7 @@ export class DataSyncService {
             .eq('vehicle_id', vehicleId);
 
         if (error) {
-            console.warn('[DataSync] syncSpecificationsIfMissing articles read failed:', error);
+            this.logger.warn('[DataSync] syncSpecificationsIfMissing articles read failed:', error);
             return;
         }
 
@@ -418,7 +420,7 @@ export class DataSyncService {
                 .from('specifications')
                 .upsert(chunk, { onConflict: 'vehicle_id,category,name' });
             if (upErr) {
-                console.warn('[DataSync] specifications upsert chunk failed:', upErr);
+                this.logger.warn('[DataSync] specifications upsert chunk failed:', upErr);
             }
         }
     }
@@ -482,12 +484,31 @@ export class DataSyncService {
             .eq('vehicle_id', vehicleId);
 
         if (error) {
-            console.warn('[DataSync] syncPartsIfMissing count error:', error);
+            this.logger.warn('[DataSync] syncPartsIfMissing count error:', error);
         }
         if ((count ?? 0) > 0) {
             return;
         }
         await this.syncParts(contentSource, vehicleId, motorVehicleId);
+    }
+
+    async getArticleTitleFromSupabase(vehicleId: string, articleId: string): Promise<string | null> {
+        const { data } = await this.supabase.client
+            .from('articles')
+            .select('title')
+            .eq('vehicle_id', vehicleId)
+            .eq('original_id', articleId)
+            .maybeSingle();
+        return data?.title || null;
+    }
+
+    async getCachedCommonIssues(vehicleId: string): Promise<CommonIssue[] | null> {
+        const { data } = await this.supabase.client
+            .from('common_issues_cache')
+            .select('issues')
+            .eq('vehicle_id', vehicleId)
+            .maybeSingle();
+        return (data?.issues as CommonIssue[]) || null;
     }
 
     /**
@@ -523,13 +544,13 @@ export class DataSyncService {
                     .eq('category', 'Fluids');
 
                 if (countErr) {
-                    console.warn('[DataSync] syncFluidsIfMissing count error:', countErr);
+                    this.logger.warn('[DataSync] syncFluidsIfMissing count error:', countErr);
                 }
                 if ((count ?? 0) > 0) return;
 
                 await this.syncFluids(contentSource, vehicleId);
             } catch (e) {
-                console.warn('[DataSync] syncFluidsIfMissing failed (non-fatal):', e);
+                this.logger.warn('[DataSync] syncFluidsIfMissing failed (non-fatal):', e);
             } finally {
                 this.fluidSyncPromises.delete(key);
             }
@@ -599,7 +620,7 @@ export class DataSyncService {
                 await this.dualWriteMaintenanceTaskL1(rows, 'motor_interval');
             }
         } catch (e) {
-            console.warn(`[DataSync] Maintenance sync failed for interval ${interval}`, e);
+            this.logger.warn(`[DataSync] Maintenance sync failed for interval ${interval}`, e);
         }
     }
 
@@ -624,7 +645,7 @@ export class DataSyncService {
                 .eq('frequency_code', code);
 
             if (cErr) {
-                console.warn('[DataSync] lazySyncMaintenanceByFrequency count error:', cErr);
+                this.logger.warn('[DataSync] lazySyncMaintenanceByFrequency count error:', cErr);
             }
             if ((count ?? 0) > 0) {
                 return;
@@ -667,7 +688,7 @@ export class DataSyncService {
                 .upsert(scheduleRows, { onConflict: 'vehicle_id,interval_value,action,item' });
             await this.dualWriteMaintenanceTaskL1(rows, 'motor_frequency');
         } catch (e) {
-            console.warn(`[DataSync] Maintenance frequency sync failed for ${code}`, e);
+            this.logger.warn(`[DataSync] Maintenance frequency sync failed for ${code}`, e);
         }
     }
 
@@ -684,7 +705,7 @@ export class DataSyncService {
             .eq('original_id', originalId)
             .maybeSingle();
         if (error) {
-            console.warn('[DataSync] fetchArticleRowForViewer:', error.message);
+            this.logger.warn('[DataSync] fetchArticleRowForViewer:', error.message);
             return null;
         }
         return (data as NormalizedArticle) ?? null;
@@ -707,7 +728,7 @@ export class DataSyncService {
                 .eq('content_source', source)
                 .maybeSingle();
             if (error) {
-                console.warn('[DataSync] content_item fetch:', error.message);
+                this.logger.warn('[DataSync] content_item fetch:', error.message);
                 return null;
             }
             return (data as ContentItem) ?? null;
@@ -784,7 +805,7 @@ export class DataSyncService {
             .eq('vehicle_id', vehicleId)
             .eq('original_id', originalId);
         if (error) {
-            console.warn('[DataSync] persistArticleEnhancedHtml failed:', error.message);
+            this.logger.warn('[DataSync] persistArticleEnhancedHtml failed:', error.message);
         }
     }
 
@@ -821,7 +842,7 @@ export class DataSyncService {
             // Use pre-fetched HTML when available; only call API as last resort
             let rawHtml = prefetchedHtml || '';
             if (!rawHtml && !existing) {
-                if (isDevMode()) console.log(`[DataSync] Fetching ${item.id} from Motor API (no prefetched HTML)...`);
+                this.logger.info(`[DataSync] Fetching ${item.id} from Motor API (no prefetched HTML)...`);
                 if (String(item.id || '').startsWith('L:')) {
                     const laborRes = await lastValueFrom(this.motorApi.getLaborDetails(cs, vid, item.id));
                     rawHtml = (laborRes?.body as any)?.content || (laborRes?.body as any)?.html || '';
@@ -863,7 +884,6 @@ export class DataSyncService {
     }
 
     private async syncCommonIssues(cs: string, vid: string, name: string) {
-        // Attempt to see if we already generated it previously
         const { data: cached } = await this.supabase.client
             .from('common_issues_cache')
             .select('*')
@@ -871,9 +891,8 @@ export class DataSyncService {
             .maybeSingle();
 
         if (!cached) {
-            const { issues } = await lastValueFrom(this.aiRewrite.generateCommonIssues(name));
+            const { issues } = await lastValueFrom(this.aiRewrite.generateCommonIssues(name, vid));
             if (issues && issues.length > 0) {
-                // Upsert newly generated common issues
                 await this.supabase.client.from('common_issues_cache').upsert({
                     vehicle_id: vid,
                     source: cs,
@@ -925,11 +944,11 @@ export class DataSyncService {
                     .from('specifications')
                     .upsert(chunk, { onConflict: 'vehicle_id,category,name' });
                 if (upErr) {
-                    console.warn('[DataSync] fluids specifications upsert chunk failed:', upErr);
+                    this.logger.warn('[DataSync] fluids specifications upsert chunk failed:', upErr);
                 }
             }
         } catch (e) {
-            console.warn('[DataSync] syncFluids failed (non-fatal):', e);
+            this.logger.warn('[DataSync] syncFluids failed (non-fatal):', e);
         }
     }
 
@@ -980,7 +999,7 @@ export class DataSyncService {
                 await this.supabase.client.from('parts').upsert(partData, { onConflict: 'vehicle_id,part_number' });
             }
         } catch (e) {
-            console.error('Parts sync failed', e);
+            this.logger.error('Parts sync failed', e);
         }
     }
 

@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams, HttpRequest, HttpEvent } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map, of, tap, catchError, timeout } from 'rxjs';
 import { OrientationOption } from '../components/orientation-selector-modal/orientation-selector-modal.component';
 import {
@@ -9,43 +9,20 @@ import {
   ModelsData,
   VinDecodeData,
   ArticleContentData,
-  ArticleResponse,
   LaborResponseOpenApi,
-  DtcsResponse,
-  TsbsResponse,
-  WiringDiagramsResponse,
-  ComponentLocationsResponse,
-  DiagramsResponse,
-  ProceduresResponse,
-  CategoriesResponse,
   FluidsResponse,
-  SpecsResponse,
   PartsResponse,
-  LaborResponse,
   StringResponse,
   MaintenanceSchedulesByFrequencyResponse,
   MaintenanceSchedulesByIntervalResponse,
-  IndicatorsWithMaintenanceSchedulesResponse,
-  ModelAndVehicleIdListResponse,
-  GetVehiclesRequest,
   SearchResultsResponse,
   PartLineItemListResponse,
-  ArticleBookmarkResponse,
-  UiUserSettingsResponse,
-  FeedbackConfigurationResponse,
-  Feedback,
-  StringListResponse,
-  VehicleDeltaReportListResponse,
-  LogEntry,
-  EmptyResponse,
   IntervalType,
   MaintenanceScheduleSeverity,
-  ContentSource,
   AuthStatusResponse
 } from '../models/motor.models';
 import { parsePrice } from '../utils/price-parser';
 import { getMotorProxyBaseUrl } from '../utils/motor-api.constants';
-import { MotorHtmlProcessorService } from './motor-html-processor.service';
 import { environment } from '../environments/environment';
 
 /** L1 citation bundle (POST /api/vehicle/:id/l2/search). */
@@ -73,7 +50,6 @@ export interface L2SearchResponse {
 @Injectable({ providedIn: 'root' })
 export class MotorApiService {
   private http = inject(HttpClient);
-  private motorHtml = inject(MotorHtmlProcessorService);
   // public readonly baseUrl = 'https://motorapiauthproxy-yonqvhjh7a-uc.a.run.app';
   public readonly baseUrl = getMotorProxyBaseUrl();
 
@@ -348,32 +324,6 @@ export class MotorApiService {
     });
   }
 
-  /**
-   * Motor Information YMME — engine list for `EN` on RecommendedFluids.
-   */
-  getMotorInformationEngines(
-    year: number,
-    make: string,
-    model: string
-  ): Observable<{
-    engines: { id: string | number; name: string; raw?: unknown }[];
-    year: number;
-    make: string;
-    model: string;
-  }> {
-    const url = `${this.baseUrl}/api/motor-information/ymme/engines`;
-    return this.getWithLogging<{
-      engines: { id: string | number; name: string; raw?: unknown }[];
-      year: number;
-      make: string;
-      model: string;
-    }>(url, {
-      year: String(year),
-      make,
-      model
-    });
-  }
-
   // Backward compatible method - kept for existing code
   getParts(
     contentSource: string,
@@ -405,13 +355,6 @@ export class MotorApiService {
         };
       })
     );
-  }
-
-  getArticleLabor(contentSource: string, vehicleId: string, articleId: string, motorVehicleId?: string): Observable<ApiResponse<LaborResponse>> {
-    const params: any = {};
-    if (motorVehicleId) params.motorVehicleId = motorVehicleId;
-    const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/labor/${articleId}`;
-    return this.getWithLogging<ApiResponse<LaborResponse>>(url, params);
   }
 
   // Backward compatible method
@@ -492,22 +435,6 @@ export class MotorApiService {
     return this.getWithLogging<ApiResponse<MaintenanceSchedulesByIntervalResponse>>(url, params);
   }
 
-  getIndicatorsWithMaintenanceSchedules(
-    contentSource: string,
-    vehicleId: string,
-    severity?: MaintenanceScheduleSeverity,
-    searchTerm?: string,
-    motorVehicleId?: string
-  ): Observable<ApiResponse<IndicatorsWithMaintenanceSchedulesResponse>> {
-    const route = this.motorVehicleRoute(contentSource, vehicleId, motorVehicleId);
-    let params: any = {};
-    if (severity) params.severity = severity;
-    params.searchTerm = searchTerm ?? '';
-
-    const url = `${this.baseUrl}/api/source/${route.source}/vehicle/${route.id}/maintenanceSchedules/indicators`;
-    return this.getWithLogging<ApiResponse<IndicatorsWithMaintenanceSchedulesResponse>>(url, params);
-  }
-
   getArticleContent(contentSource: string, vehicleId: string, articleId: string, motorVehicleId?: string): Observable<ApiResponse<ArticleContentData>> {
     // Motor shards by contentSource (e.g. GeneralMotors vs MOTOR). Only remap to MOTOR when the
     // caller is already on the MOTOR shard (legacy composite engine id flows). For OEM sources,
@@ -573,11 +500,6 @@ export class MotorApiService {
 
 
 
-  getArticleXml(contentSource: string, articleId: string): Observable<string> {
-    const url = `${this.baseUrl}/api/source/${contentSource}/xml/${articleId}`;
-    return this.http.get(url, { responseType: 'text', withCredentials: true });
-  }
-
   getArticleMetadata(contentSource: string, vehicleId: string, articleId: string): Observable<{ bucket: string; parent_bucket: string; moduleType: string | null }> {
     const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/article/${articleId}/metadata`;
     return this.getWithLogging<{ bucket: string; parent_bucket: string; moduleType: string | null }>(url);
@@ -593,116 +515,6 @@ export class MotorApiService {
         } as ApiResponse<string>;
       })
     );
-  }
-
-  getGraphicUrl(graphicPath: string): string {
-    if (!graphicPath) return '';
-    // If already a full URL, return as is
-    if (graphicPath.startsWith('http://') || graphicPath.startsWith('https://')) {
-      return graphicPath;
-    }
-    // If it starts with /api/, use it directly
-    if (graphicPath.startsWith('/api/') || graphicPath.startsWith('api/')) {
-      const cleanPath = graphicPath.startsWith('/') ? graphicPath : `/${graphicPath}`;
-      return `${this.baseUrl}${cleanPath}`;
-    }
-    // If it's an absolute path starting with /
-    if (graphicPath.startsWith('/')) {
-      return `${this.baseUrl}${graphicPath}`;
-    }
-    // Otherwise, treat as relative and prepend baseUrl with /
-    return `${this.baseUrl}/${graphicPath}`;
-  }
-
-  processHtmlContent(html: string, contentSource?: string, vehicleId?: string): string {
-    return this.motorHtml.processHtmlContent(html, contentSource, vehicleId);
-  }
-
-  // ==========================================
-  // ASSET ENDPOINTS
-  // ==========================================
-
-  /**
-   * Get graphic/image by ID and content source
-   * @param contentSource Content source identifier
-   * @param id Graphic/image ID
-   * @param width Optional width parameter
-   * @param height Optional height parameter
-   * @returns Observable of image blob
-   */
-  getGraphic(contentSource: string, id: string, width?: number, height?: number): Observable<Blob> {
-    let params = new HttpParams();
-    if (width) params = params.set('w', width.toString());
-    if (height) params = params.set('h', height.toString());
-
-    return this.http.get(
-      `${this.baseUrl}/api/source/${contentSource}/graphic/${id}`,
-      { params, responseType: 'blob', withCredentials: true }
-    );
-  }
-
-  /**
-   * Get graphic (backwards compatible route)
-   * @param manufacturerId Manufacturer ID
-   * @param id Graphic ID
-   * @param width Optional width parameter
-   * @param height Optional height parameter
-   * @returns Observable of image blob
-   */
-  getGraphicBackwardsCompatible(manufacturerId: string, id: string, width?: number, height?: number): Observable<Blob> {
-    let params = new HttpParams();
-    if (width) params = params.set('w', width.toString());
-    if (height) params = params.set('h', height.toString());
-
-    return this.http.get(
-      `${this.baseUrl}/api/manufacturer/${manufacturerId}/graphic/${id}`,
-      { params, responseType: 'blob', withCredentials: true }
-    );
-  }
-
-  /**
-   * Get asset by handle ID
-   * @param handleId Asset handle ID
-   * @returns Observable of asset blob
-   */
-  getAssetByHandleId(handleId: string): Observable<Blob> {
-    return this.http.get(
-      `${this.baseUrl}/api/asset/${handleId}`,
-      { responseType: 'blob', withCredentials: true }
-    );
-  }
-
-  /**
-   * Get article by ID with full parameters
-   * @param contentSource Content source identifier
-   * @param vehicleId Vehicle ID
-   * @param articleId Article ID
-   * @param motorVehicleId Optional Motor vehicle ID
-   * @param prettyPrint Optional pretty print flag
-   * @param bucketName Optional bucket name
-   * @param articleSubtype Optional article subtype
-   * @param searchTerm Optional search term
-   * @returns Observable of ArticleResponse
-   */
-  getArticleById(
-    contentSource: string,
-    vehicleId: string,
-    articleId: string,
-    motorVehicleId?: string,
-    prettyPrint?: boolean,
-    bucketName?: string,
-    articleSubtype?: string,
-    searchTerm?: string
-  ): Observable<ApiResponse<ArticleResponse>> {
-    let params: any = {};
-    if (motorVehicleId) params.motorVehicleId = motorVehicleId;
-    if (prettyPrint !== undefined) params.prettyPrint = prettyPrint.toString();
-    if (bucketName) params.bucketName = bucketName;
-    if (articleSubtype) params.articleSubtype = articleSubtype;
-    if (searchTerm) params.searchTerm = searchTerm;
-
-    const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/article/${articleId}`;
-    return this.getWithLogging<ApiResponse<ArticleResponse>>(url, params);
   }
 
   /**
@@ -730,36 +542,6 @@ export class MotorApiService {
 
     const url = `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/labor/${articleId}`;
     return this.getWithLogging<ApiResponse<LaborResponseOpenApi>>(url, params);
-  }
-
-  // ==========================================
-  // VEHICLE ENDPOINTS
-  // ==========================================
-
-  /**
-   * Get motor models for a given year and make
-   * @param year Year
-   * @param make Make name or make ID (numeric)
-   * @returns Observable of ModelAndVehicleIdListResponse
-   */
-  getMotorModels(year: number, make: string | number): Observable<ApiResponse<ModelAndVehicleIdListResponse>> {
-    const url = `${this.baseUrl}/api/motor/year/${year}/make/${make}/models`;
-    return this.getWithLogging<ApiResponse<ModelAndVehicleIdListResponse>>(url);
-  }
-
-  /**
-   * Get vehicles by vehicle IDs (POST)
-   * @param contentSource Content source identifier
-   * @param vehicleIds Array of vehicle IDs
-   * @returns Observable of ModelAndVehicleIdListResponse
-   */
-  getVehicles(contentSource: ContentSource, vehicleIds: string[]): Observable<ApiResponse<ModelAndVehicleIdListResponse>> {
-    const request: GetVehiclesRequest = { vehicleIds };
-    return this.http.post<ApiResponse<ModelAndVehicleIdListResponse>>(
-      `${this.baseUrl}/api/source/${contentSource}/vehicles`,
-      request,
-      { withCredentials: true  }
-    );
   }
 
   // ==========================================
@@ -820,25 +602,6 @@ export class MotorApiService {
   }
 
   // ==========================================
-  // BOOKMARK ENDPOINTS
-  // ==========================================
-
-  /**
-   * Save a bookmark for an article
-   * @param contentSource Content source identifier
-   * @param vehicleId Vehicle ID
-   * @param articleId Article ID
-   * @returns Observable of ArticleBookmarkResponse
-   */
-  saveBookmark(contentSource: string, vehicleId: string, articleId: string): Observable<ApiResponse<ArticleBookmarkResponse>> {
-    return this.http.post<ApiResponse<ArticleBookmarkResponse>>(
-      `${this.baseUrl}/api/source/${contentSource}/vehicle/${vehicleId}/article/${articleId}/bookmark`,
-      null,
-      { withCredentials: true }
-    );
-  }
-
-  // ==========================================
   // AUTH ENDPOINTS
   // ==========================================
 
@@ -864,149 +627,6 @@ export class MotorApiService {
         return of({ status: 'error' as const, progress: 0, message: error.message || 'Connection failed' });
       })
     );
-  }
-
-  /**
-   * Get a bookmark by ID
-   * @param bookmarkId Bookmark ID
-   * @returns Observable of ArticleResponse
-   */
-  getBookmark(bookmarkId: number): Observable<ApiResponse<ArticleResponse>> {
-    return this.http.get<ApiResponse<ArticleResponse>>(
-      `${this.baseUrl}/api/bookmark/${bookmarkId}`,
-      { withCredentials: true }
-    );
-  }
-
-  // ==========================================
-  // UI ENDPOINTS
-  // ==========================================
-
-  /**
-   * Get favicon
-   * @returns Observable of favicon blob
-   */
-  getFavicon(): Observable<Blob> {
-    return this.http.get(
-      `${this.baseUrl}/api/ui/favicon`,
-      { responseType: 'blob', withCredentials: true }
-    );
-  }
-
-  /**
-   * Get Bootstrap CSS
-   * @returns Observable of CSS text
-   */
-  getBootstrapCss(): Observable<string> {
-    return this.http.get(
-      `${this.baseUrl}/api/ui/css/bootstrap`,
-      { responseType: 'text', withCredentials: true }
-    );
-  }
-
-  /**
-   * Get banner HTML
-   * @returns Observable of HTML text
-   */
-  getBannerHtml(): Observable<string> {
-    return this.http.get(
-      `${this.baseUrl}/api/ui/banner.html`,
-      { responseType: 'text', withCredentials: true }
-    );
-  }
-
-  /**
-   * Get user settings
-   * @returns Observable of UiUserSettingsResponse
-   */
-  getUserSettings(): Observable<ApiResponse<UiUserSettingsResponse>> {
-    return this.http.get<ApiResponse<UiUserSettingsResponse>>(
-      `${this.baseUrl}/api/ui/usersettings`,
-      { withCredentials: true }
-    );
-  }
-
-  /**
-   * Get feedback configurations
-   * @returns Observable of FeedbackConfigurationResponse
-   */
-  getFeedbackConfigurations(): Observable<ApiResponse<FeedbackConfigurationResponse>> {
-    return this.http.get<ApiResponse<FeedbackConfigurationResponse>>(
-      `${this.baseUrl}/api/ui/feedbackconfigurations`,
-      { withCredentials: true }
-    );
-  }
-
-  /**
-   * Save feedback
-   * @param feedback Feedback object
-   * @returns Observable of empty response
-   */
-  saveFeedback(feedback: Feedback): Observable<ApiResponse<EmptyResponse>> {
-    return this.http.post<ApiResponse<EmptyResponse>>(
-      `${this.baseUrl}/api/ui/savefeedback`,
-      feedback,
-      { withCredentials: true }
-    );
-  }
-
-  // ==========================================
-  // TRACK CHANGE ENDPOINTS
-  // ==========================================
-
-  /**
-   * Get processing quarters
-   * @returns Observable of StringListResponse
-   */
-  getProcessingQuarters(): Observable<ApiResponse<StringListResponse>> {
-    return this.http.get<ApiResponse<StringListResponse>>(
-      `${this.baseUrl}/api/source/track-change/processingquarters`,
-      { withCredentials: true }
-    );
-  }
-
-  /**
-   * Get vehicle delta report
-   * @param quarter Optional processing quarter
-   * @returns Observable of VehicleDeltaReportListResponse
-   */
-  getVehicleDeltaReport(quarter?: string): Observable<ApiResponse<VehicleDeltaReportListResponse>> {
-    let params = new HttpParams();
-    if (quarter) params = params.set('quarter', quarter);
-
-    return this.http.get<ApiResponse<VehicleDeltaReportListResponse>>(
-      `${this.baseUrl}/api/source/track-change/deltareport`,
-      { params, withCredentials: true }
-    );
-  }
-
-  // ==========================================
-  // ERROR LOGGING ENDPOINTS
-  // ==========================================
-
-  /**
-   * Log error
-   * @param logEntry Log entry object
-   * @returns Observable of empty response
-   */
-  logError(logEntry: LogEntry): Observable<ApiResponse<EmptyResponse>> {
-    return this.http.post<ApiResponse<EmptyResponse>>(
-      `${this.baseUrl}/api/logError`,
-      logEntry,
-      { withCredentials: true }
-    );
-  }
-
-  // ==========================================
-  // AUTHENTICATION ENDPOINTS
-  // ==========================================
-
-  /**
-   * Logout
-   * @returns Observable of any (may redirect)
-   */
-  logout(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/logout`, { observe: 'response' });
   }
 
   /**

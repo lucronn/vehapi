@@ -255,6 +255,8 @@ export interface CommonIssue {
   symptoms: string[];
   severity: 'High' | 'Medium' | 'Low';
   fixComplexity: 'Easy' | 'Moderate' | 'Hard';
+  suggestedAction?: string;
+  relatedArticleIds?: string[];
 }
 
 export interface Fluid {

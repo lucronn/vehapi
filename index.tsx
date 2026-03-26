@@ -4,16 +4,19 @@ import { bootstrapApplication } from '@angular/platform-browser';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { authHeaderInterceptor } from './src/interceptors/auth-header.interceptor';
 import { provideRouter, withHashLocation } from '@angular/router';
-import { provideExperimentalZonelessChangeDetection } from '@angular/core';
+import { ErrorHandler, provideExperimentalZonelessChangeDetection } from '@angular/core';
+import { GlobalErrorHandler } from './src/services/global-error-handler';
 
 import { AppComponent } from './src/app.component';
 import { HomeComponent } from './src/pages/home/home.component';
 import { VehicleDashboardComponent } from './src/pages/vehicle-dashboard/vehicle-dashboard.component';
 import { ArticleViewerComponent } from './src/pages/article-viewer/article-viewer.component';
 import { CreditsDashboardComponent } from './src/pages/credits-dashboard/credits-dashboard.component';
+import { NotFoundComponent } from './src/pages/not-found/not-found.component';
 
 bootstrapApplication(AppComponent, {
   providers: [
+    { provide: ErrorHandler, useClass: GlobalErrorHandler },
     provideExperimentalZonelessChangeDetection(),
     provideHttpClient(withFetch(), withInterceptors([authHeaderInterceptor])),
     provideRouter([
@@ -22,7 +25,7 @@ bootstrapApplication(AppComponent, {
       { path: 'account', component: CreditsDashboardComponent },
       { path: 'vehicle/:contentSource/:vehicleId', component: VehicleDashboardComponent },
       { path: 'vehicle/:contentSource/:vehicleId/article/:articleId', component: ArticleViewerComponent },
-      { path: '**', redirectTo: '', pathMatch: 'full' }
+      { path: '**', component: NotFoundComponent }
     ], withHashLocation())
   ]
 }).catch(err => console.error(err));

@@ -10,6 +10,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { WindowManagerService } from '../../../../../services/window-manager.service';
 import { ArticleViewerComponent } from '../../../../article-viewer/article-viewer.component';
 import { CreditsService } from '../../../../../services/credits.service';
+import { DataSyncService } from '../../../../../services/data-sync.service';
 
 /**
  * Displays common vehicle issues with AI-generated solutions
@@ -27,6 +28,7 @@ export class CommonIssuesSectionComponent implements OnInit {
     @Input({ required: true }) vehicleId!: string;
 
     private aiRewrite = inject(AiRewriteService);
+    private dataSync = inject(DataSyncService);
     private sanitizer = inject(DomSanitizer);
     private windowManager = inject(WindowManagerService);
     private router = inject(Router);
@@ -54,18 +56,30 @@ export class CommonIssuesSectionComponent implements OnInit {
         this.loadIssues();
     }
 
-    private loadIssues() {
+    private async loadIssues() {
         if (this.commonIssues().length > 0 || this.hasAttemptedLoad) return;
         this.hasAttemptedLoad = true;
         this.isLoading.set(true);
 
-        // Fetch common issues via AI rewriting service
-        this.aiRewrite.generateCommonIssues(this.vehicleName).subscribe({
+        try {
+            const cached = await this.dataSync.getCachedCommonIssues(this.vehicleId);
+            if (cached?.length) {
+                this.commonIssues.set(cached);
+                this.updateDisplayedCommonIssues();
+                this.isLoading.set(false);
+                return;
+            }
+        } catch { /* cache miss — generate below */ }
+
+        this.aiRewrite.generateCommonIssues(this.vehicleName, this.vehicleId).subscribe({
             next: ({ issues, aiUnavailable }) => {
                 this.commonIssues.set(issues);
                 this.aiUnavailable.set(!!aiUnavailable);
                 this.updateDisplayedCommonIssues();
                 this.isLoading.set(false);
+                if (issues.length) {
+                    void this.dataSync.lazySyncCommonIssues(this.contentSource, this.vehicleId, this.vehicleName);
+                }
             },
             error: (err) => {
                 console.error('Failed to load common issues', err);
@@ -108,16 +122,31 @@ export class CommonIssuesSectionComponent implements OnInit {
             return;
         }
 
-        // For now, we simulate a solution or use the description.
-        // In a real scenario, we might fetch this from the API or AI.
         const issue = this.commonIssues().find(i => i.title === issueTitle);
         const description = issue?.description || 'No description available.';
+        const action = issue?.suggestedAction || description;
+        const relatedIds = issue?.relatedArticleIds || [];
+
+        let relatedHtml = '';
+        if (relatedIds.length) {
+            const links = relatedIds.map(id =>
+                `<li class="text-[hsl(var(--accent-primary))]">${id}</li>`
+            ).join('');
+            relatedHtml = `<div class="mt-4"><strong>Related:</strong><ul class="list-disc ml-4 mt-1">${links}</ul></div>`;
+        }
+
+        const symptomsHtml = issue?.symptoms?.length
+            ? `<ul class="list-disc ml-4 mt-2 mb-4">${issue.symptoms.map(s => `<li>${s}</li>`).join('')}</ul>`
+            : '';
+
         const htmlContent = `
             <div class="p-4">
                 <h3>${issueTitle}</h3>
                 <p>${description}</p>
+                ${symptomsHtml}
                 <hr class="my-4"/>
-                <p><strong>Suggested Action:</strong> Please consult the service manual or a certified technician for detailed diagnostic procedures related to this issue.</p>
+                <p><strong>Suggested Action:</strong> ${action}</p>
+                ${relatedHtml}
             </div>
         `;
 
@@ -131,7 +160,6 @@ export class CommonIssuesSectionComponent implements OnInit {
                 }
             );
         } else {
-            // For mobile, navigate and pass content via history state
             this.router.navigate(['/vehicle', this.contentSource, this.vehicleId, 'article', 'issue-' + encodeURIComponent(issueTitle)], {
                 state: {
                     title: issueTitle,

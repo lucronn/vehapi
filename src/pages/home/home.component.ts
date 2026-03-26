@@ -12,6 +12,8 @@ import { LogoComponent } from '../../components/logo/logo.component';
 import { Make, Model, Engine, PersistedVehicle } from '../../models/motor.models';
 import { LucideAngularModule, Search, X, ArrowRight, ArrowUpRight, ArrowLeft } from 'lucide-angular';
 import { ThemeToggleComponent } from '../../components/theme-toggle/theme-toggle.component';
+import { PageTitleService } from '../../services/page-title.service';
+import { LoggerService } from '../../services/logger.service';
 
 type Suggestion =
   | { type: 'Year'; value: number; display: string }
@@ -33,6 +35,8 @@ export class HomeComponent implements OnInit {
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
   private cdr = inject(ChangeDetectorRef);
+  private pageTitle = inject(PageTitleService);
+  private logger = inject(LoggerService);
 
   constructor() { }
 
@@ -69,6 +73,7 @@ export class HomeComponent implements OnInit {
   selectedSuggestionIndex = signal<number>(-1); // For keyboard navigation
 
   ngOnInit(): void {
+    this.pageTitle.set();
     void this.loadYears();
     this.persistedVehicle.set(this.persistence.getVehicle());
 
@@ -131,8 +136,8 @@ export class HomeComponent implements OnInit {
         await this.dataSync.cacheVehicleMetadata('/years', res);
       }
     } catch (error: any) {
-      console.error('Failed to load years:', error);
-      console.error('Error details:', {
+      this.logger.error('Failed to load years:', error);
+      this.logger.error('Error details:', {
         error,
         message: error?.message || error?.toString() || 'Unknown error',
         status: error?.status
@@ -420,7 +425,7 @@ export class HomeComponent implements OnInit {
       }
 
     } catch (e) {
-      console.error('Smart vehicle parsing failed', e);
+      this.logger.error('Smart vehicle parsing failed', e);
       // Fallback: Just stay at whatever step we reached
     } finally {
       this.isLoading.set(false);
@@ -593,7 +598,7 @@ export class HomeComponent implements OnInit {
               }
             },
             error: (err) => {
-              console.error('Error loading models:', err);
+              this.logger.error('Error loading models:', err);
               this.isLoading.set(false);
               this.errorMessage.set('Could not load models.');
               this.showSuggestions.set(false);

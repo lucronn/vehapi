@@ -1,32 +1,40 @@
-
-import { expect, test, describe, beforeEach, mock, spyOn } from 'bun:test';
+import '@angular/compiler';
 import { of } from 'rxjs';
 
-// Mock dependencies
-const mockMotorApi = {
-  getArticleOrientations: mock(() => of({ header: { statusCode: 200 }, body: { orientations: [{ id: 'test-id', displayName: 'Test Engine' }], total: 1 } })),
-  getVehicleName: () => of({ body: 'Test Vehicle' }),
-  getMotorVehicles: () => of({ body: [] }),
-};
+const { mockMotorApi, mockSearchResultsState, mockVehicleData, mockWindowManager, MockComponent } = vi.hoisted(() => {
+    const mockMotorApi = {
+        getArticleOrientations: vi.fn(() => of({ header: { statusCode: 200 }, body: { orientations: [{ id: 'test-id', displayName: 'Test Engine' }], total: 1 } })),
+        getVehicleName: () => of({ body: 'Test Vehicle' }),
+        getMotorVehicles: () => of({ body: [] }),
+    };
 
-const mockSearchResultsState = {
-  search: () => {},
-  articleDetails: () => [],
-  filterTabsAndTheirFullBuckets: () => [],
-};
+    const mockSearchResultsState = {
+        search: () => {},
+        articleDetails: () => [],
+        filterTabsAndTheirFullBuckets: () => [],
+    };
 
-const mockVehicleData = {
-  getAvailableSections: () => of(null),
-};
+    const mockVehicleData = {
+        getAvailableSections: () => of(null),
+    };
 
-const mockWindowManager = {
-  openWindow: () => {},
-};
+    const mockWindowManager = {
+        openWindow: () => {},
+    };
 
-// Mock @angular/core
-mock.module('@angular/core', () => ({
+    const MockComponent = class {};
+
+    return { mockMotorApi, mockSearchResultsState, mockVehicleData, mockWindowManager, MockComponent };
+});
+
+vi.mock('@angular/core', () => ({
   Injectable: () => (target: any) => target,
   Component: () => (target: any) => target,
+  Input: () => (target: any, key: string) => {},
+  Output: () => (target: any, key: string) => {},
+  HostListener: () => (target: any, key: string) => {},
+  EventEmitter: class { emit() {} subscribe() { return { unsubscribe: () => {} }; } },
+  ViewChild: () => () => {},
   inject: (token: any) => {
     if (token === 'MotorApiService' || token.name === 'MotorApiService') return mockMotorApi;
     if (token === 'SearchResultsState' || token.name === 'SearchResultsState') return mockSearchResultsState;
@@ -53,51 +61,47 @@ mock.module('@angular/core', () => ({
   ChangeDetectionStrategy: { OnPush: 0 }
 }));
 
-mock.module('@angular/core/rxjs-interop', () => ({
+vi.mock('@angular/core/rxjs-interop', () => ({
   toSignal: (obs: any, options: any) => {
-      // Mock returning a ParamMap with expected values
       return () => new Map([['contentSource', 'MOTOR'], ['vehicleId', '123']]);
   }
 }));
 
-mock.module('@angular/router', () => ({
+vi.mock('@angular/router', () => ({
   ActivatedRoute: class {},
   Router: class {},
   RouterModule: class {}
 }));
 
-mock.module('@angular/common', () => ({
+vi.mock('@angular/common', () => ({
   CommonModule: class {}
 }));
 
-mock.module('lucide-angular', () => ({
+vi.mock('lucide-angular', () => ({
   LucideAngularModule: class {},
-  Menu: {}, X: {}, House: {}, TriangleAlert: {}, FileText: {}, Wrench: {}, Package: {}
+  Menu: {}, X: {}, House: {}, TriangleAlert: {}, FileText: {}, Wrench: {}, Package: {}, Lightbulb: {}, CreditCard: {}
 }));
 
-// Mock Child Components
-const MockComponent = class {};
-mock.module('./components/layout/dashboard-sidebar/dashboard-sidebar.component', () => ({ DashboardSidebarComponent: MockComponent }));
-mock.module('./components/layout/dashboard-search/dashboard-search.component', () => ({ DashboardSearchComponent: MockComponent }));
-mock.module('./components/sections/specs-fluids-section/specs-fluids-section.component', () => ({ SpecsFluidsSectionComponent: MockComponent }));
-mock.module('./components/sections/dtc-section/dtc-section.component', () => ({ DtcSectionComponent: MockComponent }));
-mock.module('./components/sections/tsb-section/tsb-section.component', () => ({ TsbSectionComponent: MockComponent }));
-mock.module('./components/sections/procedures-section/procedures-section.component', () => ({ ProceduresSectionComponent: MockComponent }));
-mock.module('./components/sections/diagrams-section/diagrams-section.component', () => ({ DiagramsSectionComponent: MockComponent }));
-mock.module('./components/sections/component-locations-section/component-locations-section.component', () => ({ ComponentLocationsSectionComponent: MockComponent }));
-mock.module('./components/sections/maintenance-section/maintenance-section.component', () => ({ MaintenanceSectionComponent: MockComponent }));
-mock.module('./components/sections/parts-section/parts-section.component', () => ({ PartsSectionComponent: MockComponent }));
-mock.module('./components/sections/common-issues-section/common-issues-section.component', () => ({ CommonIssuesSectionComponent: MockComponent }));
-mock.module('../../components/logo/logo.component', () => ({ LogoComponent: MockComponent }));
-mock.module('../../components/orientation-selector-modal/orientation-selector-modal.component', () => ({ OrientationSelectorModalComponent: MockComponent }));
-mock.module('../../components/theme-toggle/theme-toggle.component', () => ({ ThemeToggleComponent: MockComponent }));
-mock.module('../article-viewer/article-viewer.component', () => ({ ArticleViewerComponent: MockComponent }));
+vi.mock('./components/layout/dashboard-sidebar/dashboard-sidebar.component', () => ({ DashboardSidebarComponent: MockComponent }));
+vi.mock('./components/layout/dashboard-search/dashboard-search.component', () => ({ DashboardSearchComponent: MockComponent }));
+vi.mock('./components/sections/specs-fluids-section/specs-fluids-section.component', () => ({ SpecsFluidsSectionComponent: MockComponent }));
+vi.mock('./components/sections/dtc-section/dtc-section.component', () => ({ DtcSectionComponent: MockComponent }));
+vi.mock('./components/sections/tsb-section/tsb-section.component', () => ({ TsbSectionComponent: MockComponent }));
+vi.mock('./components/sections/procedures-section/procedures-section.component', () => ({ ProceduresSectionComponent: MockComponent }));
+vi.mock('./components/sections/diagrams-section/diagrams-section.component', () => ({ DiagramsSectionComponent: MockComponent }));
+vi.mock('./components/sections/component-locations-section/component-locations-section.component', () => ({ ComponentLocationsSectionComponent: MockComponent }));
+vi.mock('./components/sections/maintenance-section/maintenance-section.component', () => ({ MaintenanceSectionComponent: MockComponent }));
+vi.mock('./components/sections/parts-section/parts-section.component', () => ({ PartsSectionComponent: MockComponent }));
+vi.mock('./components/sections/common-issues-section/common-issues-section.component', () => ({ CommonIssuesSectionComponent: MockComponent }));
+vi.mock('../../components/logo/logo.component', () => ({ LogoComponent: MockComponent }));
+vi.mock('../../components/orientation-selector-modal/orientation-selector-modal.component', () => ({ OrientationSelectorModalComponent: MockComponent }));
+vi.mock('../../components/theme-toggle/theme-toggle.component', () => ({ ThemeToggleComponent: MockComponent }));
+vi.mock('../article-viewer/article-viewer.component', () => ({ ArticleViewerComponent: MockComponent }));
 
-// Mock Services
-mock.module('../../services/motor-api.service', () => ({ MotorApiService: class {} }));
-mock.module('../../services/search-results.state', () => ({ SearchResultsState: class {} }));
-mock.module('../../services/vehicle-data.service', () => ({ VehicleDataService: class {} }));
-mock.module('../../services/window-manager.service', () => ({ WindowManagerService: class {} }));
+vi.mock('../../services/motor-api.service', () => ({ MotorApiService: class {} }));
+vi.mock('../../services/search-results.state', () => ({ SearchResultsState: class {} }));
+vi.mock('../../services/vehicle-data.service', () => ({ VehicleDataService: class {} }));
+vi.mock('../../services/window-manager.service', () => ({ WindowManagerService: class {} }));
 
 
 describe('VehicleDashboardComponent Integration', () => {
@@ -109,19 +113,15 @@ describe('VehicleDashboardComponent Integration', () => {
     VehicleDashboardComponent = module.VehicleDashboardComponent;
     component = new VehicleDashboardComponent();
 
-    // Reset mocks
     mockMotorApi.getArticleOrientations.mockClear();
   });
 
   test('loadOrientationOptions should call API and update options', () => {
-    // Access private method
     (component as any).loadOrientationOptions('article-123');
 
-    // Verify API call
     expect(mockMotorApi.getArticleOrientations).toHaveBeenCalledTimes(1);
     expect(mockMotorApi.getArticleOrientations).toHaveBeenCalledWith('MOTOR', '123', 'article-123');
 
-    // Verify state update
     const options = component.orientationOptions();
     expect(options.length).toBe(1);
     expect(options[0].id).toBe('test-id');

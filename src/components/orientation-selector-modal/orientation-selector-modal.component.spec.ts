@@ -1,7 +1,4 @@
-import { expect, test, describe, beforeEach, mock } from 'bun:test';
-
-// Mock Angular Dependencies
-mock.module('@angular/core', () => ({
+vi.mock('@angular/core', () => ({
   Component: () => (target: any) => target,
   EventEmitter: class {
     private listeners: any[] = [];
@@ -17,13 +14,14 @@ mock.module('@angular/core', () => ({
   },
   Input: () => (target: any, propertyKey: string) => {},
   Output: () => (target: any, propertyKey: string) => {},
+  HostListener: () => (target: any, propertyKey: string) => {},
 }));
 
-mock.module('@angular/common', () => ({
+vi.mock('@angular/common', () => ({
   CommonModule: class {}
 }));
 
-mock.module('lucide-angular', () => ({
+vi.mock('lucide-angular', () => ({
   LucideAngularModule: class {},
   X: {},
   ChevronRight: {}
@@ -33,7 +31,6 @@ describe('OrientationSelectorModalComponent', () => {
   let component: any;
 
   beforeEach(async () => {
-    // Dynamically import the component after mocks are set up
     const module = await import('./orientation-selector-modal.component');
     component = new module.OrientationSelectorModalComponent();
   });

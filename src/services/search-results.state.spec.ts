@@ -1,51 +1,46 @@
-import '@angular/compiler'; // Load JIT compiler
-import { expect, test, describe, beforeEach, mock } from 'bun:test';
-import { resolve } from 'path';
+import '@angular/compiler';
 
-// Mocks must be defined before imports
-
-const mockSignal = (initialValue: any) => {
-    let _val = initialValue;
-    const s = () => _val;
-    s.set = (v: any) => { _val = v; };
-    return s;
-};
-
-const mockComputed = (fn: () => any) => {
-    return () => fn();
-};
-
-const mockInject = (token: any) => {
-    return {
-        getSearchResultsByVehicleId: () => ({ pipe: () => ({ subscribe: () => { } }) })
+const { mockSignal, mockComputed, mockInject } = vi.hoisted(() => {
+    const mockSignal = (initialValue: any) => {
+        let _val = initialValue;
+        const s = () => _val;
+        s.set = (v: any) => { _val = v; };
+        return s;
     };
-};
 
-// Mock Angular Core
-mock.module('@angular/core', () => ({
+    const mockComputed = (fn: () => any) => {
+        return () => fn();
+    };
+
+    const mockInject = (token: any) => {
+        return {
+            getSearchResultsByVehicleId: () => ({ pipe: () => ({ subscribe: () => { } }) })
+        };
+    };
+
+    return { mockSignal, mockComputed, mockInject };
+});
+
+vi.mock('@angular/core', () => ({
     Injectable: () => (target: any) => target,
     signal: mockSignal,
     computed: mockComputed,
     inject: mockInject,
 }));
 
-// Mock Angular Common (fixes JIT compilation error)
-mock.module('@angular/common', () => ({
+vi.mock('@angular/common', () => ({
     PlatformLocation: class { },
     APP_BASE_HREF: 'APP_BASE_HREF'
 }));
 
-// Mock Angular Common HTTP
-mock.module('@angular/common/http', () => ({
+vi.mock('@angular/common/http', () => ({
     HttpClient: class { },
     HttpParams: class { set() { return this; } },
     HttpRequest: class { },
     HttpEvent: class { }
 }));
 
-// Mock MotorApiService using absolute path
-const motorServicePath = resolve(import.meta.dir, 'motor-api.service.ts');
-mock.module(motorServicePath, () => {
+vi.mock('./motor-api.service', () => {
     return {
         MotorApiService: class {
             getSearchResultsByVehicleId() { return { pipe: () => ({ subscribe: () => { } }) }; }
@@ -53,7 +48,6 @@ mock.module(motorServicePath, () => {
     };
 });
 
-// Import the service under test
 import { SearchResultsState } from './search-results.state';
 import { Article, FilterTab } from '../models/motor.models';
 
@@ -91,7 +85,7 @@ describe('SearchResultsState', () => {
                         count: 0,
                         sort: 3,
                         children: [
-                            { name: 'Procedures', count: 0, sort: 1 } // Child bucket same name as parent
+                            { name: 'Procedures', count: 0, sort: 1 }
                         ]
                     },
                     { name: 'DTCs', count: 0, sort: 4 },
@@ -108,16 +102,9 @@ describe('SearchResultsState', () => {
 
             const buckets = state.bucketsFilledWithArticles();
 
-            // General has articles, should be present
             expect(buckets.some(b => b.bucketName === 'General')).toBe(true);
-
-            // Diagnostics is empty but important, should be present
             expect(buckets.some(b => b.bucketName === 'Diagnostics')).toBe(true);
-
-            // DTCs is empty but important, should be present
             expect(buckets.some(b => b.bucketName === 'DTCs')).toBe(true);
-
-            // EmptyBucket is empty and not important, should be removed
             expect(buckets.some(b => b.bucketName === 'EmptyBucket')).toBe(false);
         });
 
@@ -171,7 +158,7 @@ describe('SearchResultsState', () => {
         });
 
         test('should keep procedures nested when showProcedureSilo is true', () => {
-            state.showProcedureSilo.set(true); // Default
+            state.showProcedureSilo.set(true);
 
             const articles = [
                 { id: 'p1', title: 'Proc 1', bucket: 'Procedures', parentBucket: 'Procedures' } as Article
@@ -195,14 +182,7 @@ describe('SearchResultsState', () => {
             const procBucket = buckets.find(b => b.bucketName === 'Procedures');
 
             expect(procBucket).toBeDefined();
-
-            // Logic check:
-            // articles still have parentBucket='Procedures'
-            // nonParentedArticles will NOT include 'p1'
-            // So procBucket.articles should be empty (direct articles)
             expect(procBucket?.articles.length).toBe(0);
-
-            // But children buckets should be populated
             expect(procBucket?.isParent).toBe(true);
             expect(procBucket?.children?.length).toBe(1);
             expect(procBucket?.children?.[0].articles.length).toBe(1);
@@ -278,9 +258,6 @@ describe('SearchResultsState', () => {
             const allTab = results.find((r: any) => r.filterTab === 'Browse All');
 
             expect(allTab).toBeDefined();
-            // Browse All tab receives all distributed buckets.
-            // In the logic: fullBucketByFilterTab[allTab.name]?.push(fullBucket)
-            // fullBuckets will have General, Diagnostics, Procedures. So Browse All gets all of them.
             expect(allTab?.buckets.length).toBe(3);
         });
 
@@ -288,11 +265,9 @@ describe('SearchResultsState', () => {
             const results = state.filterTabsAndTheirFullBuckets();
             const serviceTab = results.find((r: any) => r.filterTab === 'Service');
 
-            // Service tab -> General bucket. Articles: '1', '-999'. Magic ID '-999' is excluded. Count: 1.
             expect(serviceTab?.articlesCount).toBe(1);
 
             const repairTab = results.find((r: any) => r.filterTab === 'Repair');
-            // Repair tab -> Diagnostics ('2', '-998' -> count 1) and Procedures ('3' -> count 1). Total: 2.
             expect(repairTab?.articlesCount).toBe(2);
         });
 
@@ -319,7 +294,6 @@ describe('SearchResultsState', () => {
             const results = state.filterTabsAndTheirFullBuckets();
             const repairTab = results.find((r: any) => r.filterTab === 'Repair');
 
-            // Parent has 1 article, child has 1 article, so total is 2.
             expect(repairTab?.articlesCount).toBe(2);
         });
 

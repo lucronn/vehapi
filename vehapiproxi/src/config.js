@@ -15,6 +15,8 @@ export const config = {
     libraryBarcode: process.env.LIBRARY_BARCODE || '',
     ebscoUser: process.env.EBSCO_USER || '',
     ebscoPassword: process.env.EBSCO_PASSWORD || '',
+    ebscoProfile: process.env.EBSCO_PROFILE || 'autorepso',
+    ebscoGroupId: process.env.EBSCO_GROUP_ID || 'remote',
 
     // API configuration
     motorApiBase: process.env.MOTOR_API_BASE || 'https://sites.motor.com/m1',
@@ -34,11 +36,8 @@ export const config = {
 };
 
 // Validate required configuration
-// Validate required configuration
 export function validateConfig() {
-    // Credentials are now hardcoded in auth.js for the simplified flow
-    // We don't strictly require these env vars anymore for the function to start
-    const required = ['motorApiBase']; // Removed credentials from required list
+    const required = ['motorApiBase'];
     const missing = required.filter(key => !config[key] || config[key].trim() === '');
 
     if (missing.length > 0) {

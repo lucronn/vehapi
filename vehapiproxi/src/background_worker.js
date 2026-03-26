@@ -69,6 +69,58 @@ async function extractTextFromPdfPageViaNemotronSafe(pdfBuf, pageIndex, options)
     }
 }
 
+const ENABLE_HTML_IMAGE_OCR = String(process.env.ENABLE_HTML_IMAGE_OCR || '').toLowerCase() === 'true';
+const HTML_IMAGE_OCR_MAX = Number.parseInt(process.env.HTML_IMAGE_OCR_MAX || '10', 10);
+
+/**
+ * OCR inline `<img>` tags in article HTML using Nemotron vision.
+ * Appends transcribed text after each image. Gated behind ENABLE_HTML_IMAGE_OCR.
+ * @returns augmented HTML or original if OCR is disabled/fails.
+ */
+async function extractTextFromHtmlImages(html, taskId) {
+    if (!ENABLE_HTML_IMAGE_OCR || !html || typeof html !== 'string') return html;
+
+    let cheerio;
+    try { cheerio = await import('cheerio'); } catch { return html; }
+
+    const $ = cheerio.load(html);
+    const imgs = $('img[src]').toArray().slice(0, HTML_IMAGE_OCR_MAX);
+    if (!imgs.length) return html;
+
+    let mod;
+    try { mod = await import('./nemotron_multimodal.js'); }
+    catch (err) {
+        logger.warn(`[${taskId}] HTML image OCR: multimodal module unavailable: ${err?.message}`);
+        return html;
+    }
+
+    let augmented = 0;
+    for (const img of imgs) {
+        const src = $(img).attr('src');
+        if (!src) continue;
+        const isProcessable = src.startsWith('data:image/') || src.startsWith('http');
+        if (!isProcessable) continue;
+
+        try {
+            const text = await mod.extractTextFromImageDataUri(src, {
+                instruction: 'Transcribe all readable text from this automotive service image. Preserve line breaks and formatting. Return only text.'
+            });
+            if (text && text.trim().length > 10) {
+                $(img).after(`<div class="torque-ocr-text" data-source="html-image-ocr">${text.trim()}</div>`);
+                augmented++;
+            }
+        } catch (err) {
+            logger.warn(`[${taskId}] HTML image OCR failed for one image: ${err?.message}`);
+        }
+    }
+
+    if (augmented > 0) {
+        logger.info(`[${taskId}] HTML image OCR: transcribed ${augmented}/${imgs.length} images`);
+        return $.html();
+    }
+    return html;
+}
+
 function isMissingProcedureToolTableError(errText) {
     const s = String(errText || '');
     return (
@@ -232,32 +284,70 @@ function buildProcedurePartRows(normalized) {
 function buildEnrichmentFromParsedData(schemaType, parsedData, htmlContent) {
     const fromText = (v) => (typeof v === 'string' ? v.trim() : '');
     const cap = (s, n = 360) => (s.length > n ? `${s.slice(0, n - 3)}...` : s);
+    const capLong = (s) => (s.length > 32000 ? `${s.slice(0, 32000)}` : s);
+    const esc = (s) => s.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
     let desc = '';
+    let longDesc = '';
+
     if (schemaType === 'procedures' && parsedData && typeof parsedData === 'object') {
         const step1 = Array.isArray(parsedData.steps) && parsedData.steps.length > 0 ? fromText(parsedData.steps[0]?.text) : '';
         desc = fromText(parsedData.description) || step1;
-    } else if ((schemaType === 'dtcs' || schemaType === 'tsbs' || schemaType === 'specifications') && parsedData) {
+        if (Array.isArray(parsedData.steps) && parsedData.steps.length > 0) {
+            const items = parsedData.steps
+                .filter(s => s && (s.text || s.instruction))
+                .map((s, i) => {
+                    const txt = esc(fromText(s.text || s.instruction));
+                    const note = s.note ? `<br/><small>${esc(fromText(s.note))}</small>` : '';
+                    return `<li><strong>Step ${i + 1}:</strong> ${txt}${note}</li>`;
+                })
+                .join('');
+            if (items) {
+                const header = parsedData.description ? `<p>${esc(fromText(parsedData.description))}</p>` : '';
+                longDesc = `${header}<ol>${items}</ol>`;
+            }
+        }
+    } else if ((schemaType === 'dtcs' || schemaType === 'tsbs') && parsedData) {
+        const row = Array.isArray(parsedData) ? parsedData[0] : parsedData;
+        if (row && typeof row === 'object') {
+            desc = fromText(row.summary) || fromText(row.description) || fromText(row.content);
+            const parts = [];
+            if (row.description) parts.push(`<p>${esc(fromText(row.description))}</p>`);
+            if (Array.isArray(row.possible_causes) && row.possible_causes.length) {
+                parts.push(`<h4>Possible Causes</h4><ul>${row.possible_causes.map(c => `<li>${esc(fromText(c))}</li>`).join('')}</ul>`);
+            }
+            if (Array.isArray(row.symptoms) && row.symptoms.length) {
+                parts.push(`<h4>Symptoms</h4><ul>${row.symptoms.map(s => `<li>${esc(fromText(s))}</li>`).join('')}</ul>`);
+            }
+            if (Array.isArray(row.diagnostic_steps) && row.diagnostic_steps.length) {
+                parts.push(`<h4>Diagnostic Steps</h4><ol>${row.diagnostic_steps.map(s => `<li>${esc(fromText(s))}</li>`).join('')}</ol>`);
+            }
+            if (row.content) parts.push(`<div>${esc(fromText(row.content))}</div>`);
+            if (parts.length > 1) longDesc = parts.join('');
+        }
+    } else if (schemaType === 'specifications' && parsedData) {
         const row = Array.isArray(parsedData) ? parsedData[0] : parsedData;
         if (row && typeof row === 'object') {
             desc = fromText(row.summary) || fromText(row.description) || fromText(row.display_text) || fromText(row.content);
         }
     }
 
+    if (!longDesc && typeof htmlContent === 'string' && htmlContent.trim().length > 200) {
+        longDesc = htmlContent;
+    }
+
     if (!desc && typeof htmlContent === 'string' && htmlContent.trim()) {
-        desc = htmlContent
-            .replace(/<[^>]+>/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
+        desc = htmlContent.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
     }
 
     const displayDescription = cap(desc);
     const searchText = cap(`${displayDescription} ${fromText(htmlContent || '')}`.replace(/\s+/g, ' '), 8000);
     return {
         display_description: displayDescription || null,
+        display_long_description: longDesc ? capLong(longDesc) : null,
         search_text: searchText || null,
         enrichment_source: 'rules+parsed_content',
-        enrichment_version: 'phase1-v2',
+        enrichment_version: 'phase1-v3',
         enriched_at: new Date().toISOString()
     };
 }
@@ -750,6 +840,12 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                     logger.warn(`[${taskId}] content_item evidence_link skipped: ${links.error}`);
                 }
             }
+        }
+
+        // OCR inline images in HTML before parsing (gated by ENABLE_HTML_IMAGE_OCR)
+        if (ENABLE_HTML_IMAGE_OCR && typeof rawData === 'string' && rawData.includes('<img')) {
+            try { rawData = await extractTextFromHtmlImages(rawData, taskId); }
+            catch (err) { logger.warn(`[${taskId}] HTML image OCR pre-parse failed: ${err?.message}`); }
         }
 
         const { parsed: parsedData, usage: parseUsage } = await parseWithAI(rawData, targetSchema, {

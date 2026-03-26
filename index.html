@@ -6,6 +6,20 @@
   <title>TORQUE.AI — Vehicle Intelligence</title>
   <base href="/" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="TORQUE.AI — AI-powered vehicle intelligence. Access repair procedures, DTCs, TSBs, wiring diagrams, specifications, and maintenance schedules for any vehicle." />
+  <meta name="theme-color" content="#0a0a0f" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="TORQUE.AI — Vehicle Intelligence" />
+  <meta property="og:description" content="AI-powered vehicle service intelligence. Repair procedures, diagnostics, specifications, and more." />
+  <meta property="og:image" content="/favicon.ico" />
+  <meta property="og:site_name" content="TORQUE.AI" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="TORQUE.AI — Vehicle Intelligence" />
+  <meta name="twitter:description" content="AI-powered vehicle service intelligence. Repair procedures, diagnostics, specifications, and more." />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -63,9 +77,24 @@
 </head>
 
 <body class="antialiased bg-[#0a0a0f] text-white min-h-screen" style="background-color: #0a0a0f;">
-  <!-- Eruda: Mobile DevTools Console (loads only on touch devices) -->
-  <script src="https://cdn.jsdelivr.net/npm/eruda@3.0.1/eruda.min.js"></script>
-  <script>eruda.init();</script>
+  <!-- Eruda: opt-in via ?eruda or #/path?eruda (dev only; not loaded by default) -->
+  <script>
+    (function () {
+      function hasEruda() {
+        if (new URLSearchParams(window.location.search).has('eruda')) return true;
+        var h = window.location.hash || '';
+        var q = h.indexOf('?');
+        if (q === -1) return false;
+        return new URLSearchParams(h.slice(q)).has('eruda');
+      }
+      if (hasEruda()) {
+        var s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/eruda@3.0.1/eruda.min.js';
+        s.onload = function () { eruda.init(); };
+        document.body.appendChild(s);
+      }
+    })();
+  </script>
   <app-root></app-root>
 </body>
 

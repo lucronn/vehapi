@@ -1,12 +1,20 @@
-import { expect, test, describe, beforeEach, afterEach, mock } from 'bun:test';
-
-// Mock @angular/core before importing the service
-mock.module('@angular/core', () => ({
+vi.mock('@angular/core', () => ({
     Injectable: () => (target: any) => target,
-    // Provide basic mocks for other Angular features to avoid conflicts with other tests
-    signal: (val: any) => ({ set: () => { }, update: () => { }, asReadonly: () => { } }),
-    computed: () => ({}),
-    inject: () => ({}),
+    signal: (val: any) => {
+        let _v = val;
+        const s = () => _v;
+        s.set = (v: any) => { _v = v; };
+        s.update = (fn: any) => { _v = fn(_v); };
+        s.asReadonly = () => s;
+        return s;
+    },
+    computed: (fn: () => any) => {
+        const s = () => fn();
+        return s;
+    },
+    inject: () => ({
+        userId: () => null,
+    }),
     WritableSignal: class { }
 }));
 
@@ -17,7 +25,7 @@ describe('UserIdService', () => {
     const originalCrypto = global.crypto;
 
     afterEach(() => {
-        global.crypto = originalCrypto;
+        Object.defineProperty(global, 'crypto', { value: originalCrypto, writable: true, configurable: true });
     });
 
     beforeEach(async () => {
@@ -25,7 +33,6 @@ describe('UserIdService', () => {
         UserIdService = module.UserIdService;
         localStorageStore = {};
 
-        // Mock global localStorage
         global.localStorage = {
             getItem: (key: string) => localStorageStore[key] || null,
             setItem: (key: string, value: string) => { localStorageStore[key] = value.toString(); },
@@ -35,10 +42,11 @@ describe('UserIdService', () => {
             length: Object.keys(localStorageStore).length,
         } as Storage;
 
-        // Mock global crypto
-        global.crypto = {
-            randomUUID: () => 'test-uuid-1234'
-        } as any;
+        Object.defineProperty(global, 'crypto', {
+            value: { randomUUID: () => 'test-uuid-1234' },
+            writable: true,
+            configurable: true
+        });
     });
 
     test('should generate and save a new ID if none exists in localStorage', () => {
@@ -68,25 +76,23 @@ describe('UserIdService', () => {
     });
 
     test('should fallback to manual generation if crypto.randomUUID is not available', () => {
-        // Remove randomUUID from crypto
         global.crypto = {} as any;
 
         const service = new UserIdService();
         const userId = service.getUserId();
 
-        expect(userId).toStartWith('user_');
+        expect(userId).toMatch(/^user_/);
         expect(userId.length).toBeGreaterThan(10);
         expect(localStorageStore[STORAGE_KEY]).toBe(userId);
     });
 
     test('should handle environment where crypto is completely undefined', () => {
-        // @ts-ignore
-        global.crypto = undefined;
+        Object.defineProperty(global, 'crypto', { value: undefined, writable: true, configurable: true });
 
         const service = new UserIdService();
         const userId = service.getUserId();
 
-        expect(userId).toStartWith('user_');
+        expect(userId).toMatch(/^user_/);
         expect(localStorageStore[STORAGE_KEY]).toBe(userId);
     });
 });

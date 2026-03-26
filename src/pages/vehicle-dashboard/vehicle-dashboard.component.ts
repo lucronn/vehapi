@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map, switchMap, debounceTime, distinctUntilChanged, catchError } from 'rxjs/operators';
-import { Subject, of } from 'rxjs';
+import { Subject, of, from } from 'rxjs';
 
 // Models
 import { Article, PersistedVehicle } from '../../models/motor.models';
@@ -16,7 +16,9 @@ import { SearchResultsState } from '../../services/search-results.state';
 import { DataSyncService } from '../../services/data-sync.service';
 import { VehiclePersistenceService } from '../../services/vehicle-persistence.service';
 import { AuthService } from '../../services/auth.service';
+import { SupabaseService } from '../../services/supabase.service';
 import { effect } from '@angular/core';
+import { PageTitleService } from '../../services/page-title.service';
 
 // Components
 import { DashboardSidebarComponent } from './components/layout/dashboard-sidebar/dashboard-sidebar.component';
@@ -47,6 +49,20 @@ import { WindowManagerService } from '../../services/window-manager.service';
 import { AuthModalComponent } from '../../components/auth-modal/auth-modal.component';
 
 export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'component-locations' | 'procedures' | 'parts' | 'specs' | 'maintenance' | 'browse-all' | 'common-issues';
+
+const DASHBOARD_SECTION_LABEL: Record<DashboardSection, string | undefined> = {
+  overview: undefined,
+  dtcs: 'Diagnostic Codes',
+  tsbs: 'TSBs',
+  diagrams: 'Wiring Diagrams',
+  'component-locations': 'Component Locations',
+  procedures: 'Procedures',
+  parts: 'Parts',
+  specs: 'Specifications',
+  maintenance: 'Maintenance',
+  'browse-all': 'Browse All',
+  'common-issues': 'Common Issues',
+};
 
 /**
  * Main vehicle dashboard orchestrator component
@@ -85,10 +101,12 @@ export class VehicleDashboardComponent {
   private router = inject(Router);
   private motorApi = inject(MotorApiService);
   private vehicleData = inject(VehicleDataService);
+  private supabase = inject(SupabaseService);
   public searchResultsState = inject(SearchResultsState);
   public dataSync = inject(DataSyncService);
   private persistence = inject(VehiclePersistenceService);
   private auth = inject(AuthService);
+  private pageTitle = inject(PageTitleService);
   /** Avoid duplicate Motor Information base-vehicle requests per vehicle+YMME. */
   private motorBaseVehicleResolveInFlight = new Set<string>();
 
@@ -121,17 +139,34 @@ export class VehicleDashboardComponent {
     return undefined;
   });
 
-  // Vehicle info
+  // Vehicle info: prefer Supabase vehicles.name, fall back to Motor proxy
   private vehicleInfo$ = this.route.paramMap.pipe(
     switchMap(params => {
       const contentSource = params.get('contentSource');
       const vehicleId = params.get('vehicleId');
-      if (contentSource && vehicleId) {
-        return this.motorApi.getVehicleName(contentSource, vehicleId).pipe(
-          map(res => res.body || '')
-        );
-      }
-      return of('');
+      if (!contentSource || !vehicleId) return of('');
+
+      return from(
+        this.supabase.client
+          .from('vehicles')
+          .select('name')
+          .eq('external_id', vehicleId)
+          .maybeSingle()
+      ).pipe(
+        switchMap(({ data }) => {
+          if (data?.name) return of(data.name as string);
+          return this.motorApi.getVehicleName(contentSource, vehicleId).pipe(
+            map(res => res.body || ''),
+            catchError(() => of(''))
+          );
+        }),
+        catchError(() =>
+          this.motorApi.getVehicleName(contentSource, vehicleId).pipe(
+            map(res => res.body || ''),
+            catchError(() => of(''))
+          )
+        )
+      );
     })
   );
 
@@ -175,7 +210,7 @@ export class VehicleDashboardComponent {
         if (cs.toUpperCase() !== 'MOTOR') {
           this.resolveVehicleMapping(cs, vid);
         } else {
-          this.searchResultsState.search(cs, vid, '', mvid);
+          this.searchResultsState.searchWithNormalizationCheck(cs, vid, '', mvid);
         }
       }
     });
@@ -256,6 +291,17 @@ export class VehicleDashboardComponent {
         this.activeSection.set('overview');
       }
     });
+
+    effect(() => {
+      const name = this.vehicleName().trim();
+      const section = this.activeSection();
+      if (!name) {
+        this.pageTitle.set();
+        return;
+      }
+      const sectionLabel = DASHBOARD_SECTION_LABEL[section];
+      this.pageTitle.setVehicle(name, sectionLabel);
+    });
   }
 
   // UI State
@@ -287,7 +333,7 @@ export class VehicleDashboardComponent {
         // Only search if we are on MOTOR source (or if we decided to support others directly)
         // But for now, we rely on the redirection logic for Ford
         if (cs && vid && cs.toUpperCase() === 'MOTOR') {
-          this.searchResultsState.search(cs, vid, '', this.motorVehicleId());
+          this.searchResultsState.searchWithNormalizationCheck(cs, vid, '', this.motorVehicleId());
         }
         return of([]);
       }
@@ -296,7 +342,7 @@ export class VehicleDashboardComponent {
       if (!cs || !vid) return of([]);
 
       // Direct search without AI optimization
-      this.searchResultsState.search(cs, vid, term, this.motorVehicleId());
+      this.searchResultsState.searchWithNormalizationCheck(cs, vid, term, this.motorVehicleId());
       // Return observable purely for filteredArticles consumption if needed, 
       // but we should arguably rely on searchResultsState.articleDetails()
       return of([]);
@@ -352,7 +398,7 @@ export class VehicleDashboardComponent {
       next: (mappings: any[]) => {
         if (!mappings || mappings.length === 0) {
           console.warn('[Dashboard] No MOTOR mapping found for vehicle, falling back to original source');
-          this.searchResultsState.search(contentSource, vehicleId, '', this.motorVehicleId());
+          this.searchResultsState.searchWithNormalizationCheck(contentSource, vehicleId, '', this.motorVehicleId());
           return;
         }
 
@@ -378,7 +424,7 @@ export class VehicleDashboardComponent {
         } else {
           // No options parsed, fall back
           console.warn('[Dashboard] No valid engine options found in mapping, falling back');
-          this.searchResultsState.search(contentSource, vehicleId, '', this.motorVehicleId());
+          this.searchResultsState.searchWithNormalizationCheck(contentSource, vehicleId, '', this.motorVehicleId());
         }
       },
       error: (err) => {
@@ -387,7 +433,7 @@ export class VehicleDashboardComponent {
           return;
         }
         console.error('[Dashboard] Failed to resolve vehicle mapping, falling back', err);
-        this.searchResultsState.search(contentSource, vehicleId, '', this.motorVehicleId());
+        this.searchResultsState.searchWithNormalizationCheck(contentSource, vehicleId, '', this.motorVehicleId());
       }
     });
   }

@@ -38,6 +38,8 @@ __pycache__/
 # Local environment files (backend)
 vehapiproxi/.env
 vehapiproxi/.env.local
+vehapiproxi/.env.vercel.prod.check
+vehapiproxi/.env*.local
 
 # Local dev / test artifacts (not for the repo)
 backups/

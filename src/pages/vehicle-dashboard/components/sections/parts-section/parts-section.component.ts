@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { VehicleDataService } from '../../../../../services/vehicle-data.service';
-import { MotorApiService } from '../../../../../services/motor-api.service';
 import { Part } from '../../../../../models/motor.models';
 import { LoadingSkeletonComponent } from '../../../../../components/loading-skeleton/loading-skeleton.component';
 import { EmptyStateComponent } from '../../../../../components/empty-state/empty-state.component';
@@ -26,7 +25,6 @@ export class PartsSectionComponent implements OnInit {
     @Input({ required: true }) vehicleId!: string;
     @Input() vehicleName: string = '';
 
-    private motorApi = inject(MotorApiService);
     private destroyRef = inject(DestroyRef);
     protected creditsService = inject(CreditsService);
 

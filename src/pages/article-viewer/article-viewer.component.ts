@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, Input, signal, ViewEncapsulation, OnInit, OnChanges, SimpleChanges, SecurityContext } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, Input, signal, ViewEncapsulation, OnInit, OnChanges, SimpleChanges, SecurityContext } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -14,9 +14,12 @@ import { ImageViewerModalComponent } from './components/image-viewer-modal/image
 import { TutorialComponent } from '../../components/tutorial/tutorial.component';
 import { TutorialStep } from '../../models/motor.models';
 import { WindowManagerService } from '../../services/window-manager.service';
-import { DataSyncService } from '../../services/data-sync.service';
+import { DataSyncService, type CanonicalArticleBodyResult } from '../../services/data-sync.service';
 import { CreditsService } from '../../services/credits.service';
 import { Router } from '@angular/router';
+import { SupabaseService } from '../../services/supabase.service';
+import { bucketToModuleType } from '../../utils/module-access.util';
+import { PageTitleService } from '../../services/page-title.service';
 
 export interface TableOfContents {
   id: string;
@@ -62,10 +65,19 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   private sanitizer = inject(DomSanitizer);
   private windowManager = inject(WindowManagerService);
   private dataSync = inject(DataSyncService);
+  private supabase = inject(SupabaseService);
   protected creditsService = inject(CreditsService);
   private router = inject(Router);
+  private pageTitle = inject(PageTitleService);
 
   readonly icons = { ArrowLeft, Maximize2, List, X, Sparkles, BookOpen, Lock, RefreshCw };
+
+  constructor() {
+    effect(() => {
+      const t = this.articleTitle();
+      this.pageTitle.set(t || undefined);
+    });
+  }
 
   // Use a Subject to trigger data loading when inputs change or on init
   private loadTrigger = new Subject<void>();
@@ -173,18 +185,8 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
       this.loadData();
     }
 
-    // Resolve moduleType from metadata when missing (e.g. direct URL)
-    if (!this.resolvedModuleType() && this.contentSource && this.vehicleId && this.internalArticleId()) {
-      this.motorApi.getArticleMetadata(this.contentSource, this.vehicleId, this.internalArticleId()!).subscribe({
-        next: (meta) => {
-          if (meta.moduleType) {
-            this.resolvedModuleType.set(meta.moduleType);
-            this.loadData(); // Retry load now that we know moduleType
-          }
-        },
-        error: () => { /* ignore */ }
-      });
-    }
+    // Resolve moduleType: Supabase bucket/parent_bucket first; Motor metadata only for non-normalized vehicles
+    void this.resolveModuleTypeFromSupabaseThenMaybeMotor();
 
     if (this.articleTitleInput) {
       this.articleTitle.set(this.cleanTitle(this.articleTitleInput));
@@ -216,45 +218,224 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
     this.aiUnavailableNotice.set(null);
     this.isCached.set(false);
 
-    // Fetch Title if not provided
+    void this.loadDataWithSupabaseFirst(aid);
+  }
+
+  /**
+   * Supabase-first read: check canonical body + title before issuing Motor HTTP.
+   * Normalized vehicles: lazy ingest + Supabase re-read; no Motor HTTP fallback for display.
+   */
+  private async loadDataWithSupabaseFirst(aid: string): Promise<void> {
+    const { data: vehRow } = await this.supabase.client
+      .from('vehicles')
+      .select('is_normalized')
+      .eq('external_id', this.vehicleId!)
+      .maybeSingle();
+    const isNormalized = !!vehRow?.is_normalized;
+
+    // Title: try Supabase articles table first
     if (!this.articleTitleInput) {
-      this.motorApi.getArticleTitle(this.contentSource, this.vehicleId, aid).subscribe({
-        next: (res) => {
-          const rawTitle = res.body || aid || '';
-          const cleaned = this.cleanTitle(rawTitle);
+      try {
+        const titleRow = await this.dataSync.getArticleTitleFromSupabase(this.vehicleId!, aid);
+        if (titleRow) {
+          const cleaned = this.cleanTitle(titleRow);
           this.articleTitle.set(cleaned);
-          if (this.windowId) {
-            this.windowManager.updateTitle(this.windowId, cleaned);
-          }
-        },
-        error: () => this.articleTitle.set('Article')
-      });
+          if (this.windowId) this.windowManager.updateTitle(this.windowId, cleaned);
+        }
+      } catch { /* ignore */ }
     }
 
-    // Fetch Content
+    // Body: canonical Supabase first. Non-normalized L: articles skip this (legacy Motor path).
+    const tryCanonical = !String(aid).startsWith('L:') || isNormalized;
+    if (tryCanonical) {
+      try {
+        const canonical = await this.dataSync.tryApplyCanonicalArticleBody(
+          this.vehicleId!, aid, this.contentSource!,
+          (h) => this.sanitizer.sanitize(SecurityContext.HTML, h) || ''
+        );
+        if (canonical) {
+          this.applyCanonicalBodyToView(canonical);
+          if (!this.articleTitleInput && !this.articleTitle()) {
+            if (isNormalized) {
+              this.setNormalizedFallbackTitle(aid);
+            } else {
+              this.fetchTitleFromMotor(aid);
+            }
+          }
+          return;
+        }
+      } catch { /* fall through */ }
+    }
+
+    if (!isNormalized) {
+      this.fetchContentFromMotor(aid);
+      return;
+    }
+
+    // Normalized: lazy ingest (server-side Motor inside DataSync), then re-read Supabase — never Motor HTTP from viewer
+    try {
+      await this.dataSync.syncSingleArticle(this.contentSource!, this.vehicleId!, {
+        id: aid,
+        title: this.articleTitle() || '',
+        bucket: '',
+        parentBucket: ''
+      });
+
+      const retryCanonical = await this.dataSync.tryApplyCanonicalArticleBody(
+        this.vehicleId!, aid, this.contentSource!,
+        (h) => this.sanitizer.sanitize(SecurityContext.HTML, h) || ''
+      );
+      if (retryCanonical) {
+        this.applyCanonicalBodyToView(retryCanonical);
+        if (!this.articleTitleInput && !this.articleTitle()) {
+          this.setNormalizedFallbackTitle(aid);
+        }
+        return;
+      }
+
+      const row = await this.dataSync.fetchArticleRowForViewer(this.vehicleId!, aid);
+      const raw = row?.original_content?.trim();
+      if (raw) {
+        this.applyOriginalContentFromArticleRow(raw);
+        if (!this.articleTitleInput && !this.articleTitle()) {
+          const t = row?.title?.trim();
+          if (t) {
+            const cleaned = this.cleanTitle(t);
+            this.articleTitle.set(cleaned);
+            if (this.windowId) this.windowManager.updateTitle(this.windowId, cleaned);
+          } else {
+            this.setNormalizedFallbackTitle(aid);
+          }
+        }
+        const htmlForRewrite = this.rawHtmlForTutorial || raw;
+        this.triggerAiRewrite(htmlForRewrite);
+        return;
+      }
+    } catch (e) {
+      console.error('[ArticleViewer] Lazy ingest failed for normalized vehicle:', e);
+    }
+
+    if (!this.articleTitleInput && !this.articleTitle()) {
+      this.setNormalizedFallbackTitle(aid);
+    }
+    this.error.set('Content is being processed. Please try again in a moment.');
+    this.isLoading.set(false);
+  }
+
+  private applyCanonicalBodyToView(canonical: CanonicalArticleBodyResult): void {
+    this.articleContent.set(canonical.safeHtml);
+    this.rawHtmlForTutorial = canonical.rawForTutorial;
+    const tocSections = canonical.rawForTutorial.includes('<') && /<h[1-6][\s>]/i.test(canonical.rawForTutorial)
+      ? this.processHtml(canonical.rawForTutorial, this.contentSource!, this.vehicleId!).sections
+      : [];
+    this.sections.set(tocSections);
+    this.isCached.set(true);
+    this.isLoading.set(false);
+  }
+
+  private setNormalizedFallbackTitle(aid: string): void {
+    const t = (aid?.trim() || 'Article');
+    this.articleTitle.set(t);
+    if (this.windowId) this.windowManager.updateTitle(this.windowId, t);
+  }
+
+  private applyOriginalContentFromArticleRow(raw: string): void {
+    const { htmlString, safeHtml, sections } = this.processHtml(raw, this.contentSource!, this.vehicleId!);
+    if (!htmlString || htmlString.trim() === '') {
+      this.articleContent.set('');
+      this.sections.set([]);
+      this.isLoading.set(false);
+      return;
+    }
+    this.articleContent.set(safeHtml);
+    this.rawHtmlForTutorial = htmlString;
+    this.sections.set(sections);
+    this.isCached.set(true);
+    this.isLoading.set(false);
+    try {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch {
+      /* ignore */
+    }
+  }
+
+  private async resolveModuleTypeFromSupabaseThenMaybeMotor(): Promise<void> {
+    if (this.resolvedModuleType()) return;
+    const cs = this.contentSource || this.params()?.get('contentSource') || '';
+    const vid = this.vehicleId || this.params()?.get('vehicleId') || '';
+    const aid = this.internalArticleId();
+    if (!cs || !vid || !aid) return;
+
+    const { data: artRow } = await this.supabase.client
+      .from('articles')
+      .select('bucket,parent_bucket')
+      .eq('vehicle_id', vid)
+      .eq('original_id', aid)
+      .maybeSingle();
+
+    if (artRow) {
+      const mt = bucketToModuleType(artRow.bucket, artRow.parent_bucket);
+      if (mt) {
+        this.resolvedModuleType.set(mt);
+        this.loadData();
+        return;
+      }
+    }
+
+    const { data: vehRow } = await this.supabase.client
+      .from('vehicles')
+      .select('is_normalized')
+      .eq('external_id', vid)
+      .maybeSingle();
+
+    if (vehRow?.is_normalized) {
+      return;
+    }
+
+    this.motorApi.getArticleMetadata(cs, vid, aid).subscribe({
+      next: (meta) => {
+        if (meta.moduleType) {
+          this.resolvedModuleType.set(meta.moduleType);
+          this.loadData();
+        }
+      },
+      error: () => { /* ignore */ }
+    });
+  }
+
+  private fetchTitleFromMotor(aid: string): void {
+    this.motorApi.getArticleTitle(this.contentSource!, this.vehicleId!, aid).subscribe({
+      next: (res) => {
+        const cleaned = this.cleanTitle(res.body || aid || '');
+        this.articleTitle.set(cleaned);
+        if (this.windowId) this.windowManager.updateTitle(this.windowId, cleaned);
+      },
+      error: () => this.articleTitle.set('Article')
+    });
+  }
+
+  private fetchContentFromMotor(aid: string): void {
+    if (!this.articleTitleInput && !this.articleTitle()) {
+      this.fetchTitleFromMotor(aid);
+    }
+
     const contentRequest$: Observable<any> = String(aid).startsWith('L:')
-      ? this.motorApi.getLaborDetails(this.contentSource, this.vehicleId, aid)
-      : this.motorApi.getArticleContent(this.contentSource, this.vehicleId, aid);
+      ? this.motorApi.getLaborDetails(this.contentSource!, this.vehicleId!, aid)
+      : this.motorApi.getArticleContent(this.contentSource!, this.vehicleId!, aid);
 
     contentRequest$.subscribe({
-      next: (content) => {
-        void this.onArticleContentLoaded(content, aid);
-      },
+      next: (content) => { void this.onArticleContentLoaded(content, aid); },
       error: (err) => {
         console.error('[ArticleViewer] Failed to load article:', err);
         const status = err?.status;
         const body = err?.error;
-
-        // 403 with moduleType = access denied (not unlocked) — show lock overlay
         if (status === 403 && body?.moduleType) {
           this.resolvedModuleType.set(body.moduleType);
           this.error.set(null);
           this.isLoading.set(false);
           return;
         }
-
         if ((status === 401 || status === 403) && this.retryCount() < 3) {
-          // Auth expired — proxy is re-authenticating, poll and retry
           this.isRetrying.set(true);
           this.retryCount.update(n => n + 1);
           this.pollAndRetry();
@@ -273,10 +454,6 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
     });
   }
 
-  /**
-   * Loads article HTML from Motor, then prefers Supabase canonical body (`content_item` or
-   * `articles.enhanced_content`) when present — avoids redundant /api/rewrite when cache exists.
-   */
   private async onArticleContentLoaded(content: unknown, aid: string): Promise<void> {
     const rawBody = (content as { body?: Record<string, unknown> })?.body || {};
     const rawHtml = String(rawBody.html || rawBody.content || '');

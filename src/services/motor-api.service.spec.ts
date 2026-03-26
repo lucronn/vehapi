@@ -1,20 +1,23 @@
-import { expect, test, describe, beforeEach, mock, spyOn } from 'bun:test';
 import { of, throwError } from 'rxjs';
 
-// Mocks
-const mockGet = mock((url: string, options: any) => of({ body: { data: 'test' }, status: 200, statusText: 'OK', headers: new Map() }));
-const mockPost = mock((url: string, body: any, options: any) => of({ body: { data: 'test_post' }, status: 200, statusText: 'OK', headers: new Map() }));
+const { mockGet, mockPost, MockMotorHtmlProcessorService, MockHttpClient } = vi.hoisted(() => {
+    const mockGet = vi.fn();
+    const mockPost = vi.fn();
+    class MockMotorHtmlProcessorService {
+        processHtmlContent = vi.fn(() => 'MOCKED');
+    }
+    class MockHttpClient { }
+    return { mockGet, mockPost, MockMotorHtmlProcessorService, MockHttpClient };
+});
 
-class MockMotorHtmlProcessorService {
-  processHtmlContent = mock(() => 'MOCKED');
-}
+mockGet.mockImplementation((url: string, options: any) => of({ body: { data: 'test' }, status: 200, statusText: 'OK', headers: new Map() }));
+mockPost.mockImplementation((url: string, body: any, options: any) => of({ body: { data: 'test_post' }, status: 200, statusText: 'OK', headers: new Map() }));
 
-mock.module('./motor-html-processor.service', () => ({
+vi.mock('./motor-html-processor.service', () => ({
   MotorHtmlProcessorService: MockMotorHtmlProcessorService
 }));
 
-class MockHttpClient { }
-mock.module('@angular/common/http', () => ({
+vi.mock('@angular/common/http', () => ({
   HttpClient: MockHttpClient,
   HttpParams: class {
     private params = new Map<string, string>();
@@ -30,7 +33,7 @@ mock.module('@angular/common/http', () => ({
   HttpEvent: class { }
 }));
 
-mock.module('@angular/core', () => ({
+vi.mock('@angular/core', () => ({
   Injectable: () => (target: any) => target,
   inject: (token: any) => {
     if (token === MockMotorHtmlProcessorService || (token && token.name === 'MockMotorHtmlProcessorService') || token?.name === 'MotorHtmlProcessorService') {
@@ -50,7 +53,7 @@ mock.module('@angular/core', () => ({
   EventEmitter: class { emit() { } }
 }));
 
-mock.module('../components/orientation-selector-modal/orientation-selector-modal.component', () => ({
+vi.mock('../components/orientation-selector-modal/orientation-selector-modal.component', () => ({
   OrientationSelectorModalComponent: class { },
 }));
 
@@ -61,14 +64,16 @@ describe('MotorApiService Integration Methods', () => {
   beforeEach(async () => {
     mockGet.mockClear();
     mockPost.mockClear();
+    mockGet.mockImplementation((url: string, options: any) => of({ body: { data: 'test' }, status: 200, statusText: 'OK', headers: new Map() }));
+    mockPost.mockImplementation((url: string, body: any, options: any) => of({ body: { data: 'test_post' }, status: 200, statusText: 'OK', headers: new Map() }));
     const module = await import('./motor-api.service');
     MotorApiService = module.MotorApiService;
     service = new MotorApiService();
 
-    spyOn(console, 'group').mockImplementation(() => { });
-    spyOn(console, 'groupEnd').mockImplementation(() => { });
-    spyOn(console, 'log').mockImplementation(() => { });
-    spyOn(console, 'error').mockImplementation(() => { });
+    vi.spyOn(console, 'group').mockImplementation(() => { });
+    vi.spyOn(console, 'groupEnd').mockImplementation(() => { });
+    vi.spyOn(console, 'log').mockImplementation(() => { });
+    vi.spyOn(console, 'error').mockImplementation(() => { });
   });
 
   test('decodeVin calls correct URL', async () => {
@@ -112,7 +117,6 @@ describe('MotorApiService Integration Methods', () => {
   });
 
   test('searchArticles caches results and handles parameters', async () => {
-    // 1st call - should hit API
     mockGet.mockImplementationOnce(() => of({
       body: { data: 'test1', header: { statusCode: 200 } },
       status: 200,
@@ -123,10 +127,8 @@ describe('MotorApiService Integration Methods', () => {
     expect(mockGet).toHaveBeenCalledTimes(1);
     const args = mockGet.mock.calls[0];
     expect(args[0]).toContain('/api/source/MOTOR/vehicle/V123/articles/v2');
-    // Using string index lookup to bypass strong typing for the test
     expect((args[1].params as any)['searchTerm']).toBe('Brakes');
 
-    // Check caching logic by faking 200 response header for caching
     mockGet.mockImplementationOnce(() => of({
       body: { data: 'test2', header: { statusCode: 200 } },
       status: 200,
@@ -137,9 +139,8 @@ describe('MotorApiService Integration Methods', () => {
     const res2 = await new Promise(resolve => service.searchArticles('MOTOR', 'V124', '').subscribe(resolve));
     expect(mockGet).toHaveBeenCalledTimes(2);
 
-    // This should hit cache since the same key was used
     const res3 = await new Promise(resolve => service.searchArticles('MOTOR', 'V124', '').subscribe(resolve));
-    expect(mockGet).toHaveBeenCalledTimes(2); // Still 2
+    expect(mockGet).toHaveBeenCalledTimes(2);
     expect(res3).toEqual({ data: 'test2', header: { statusCode: 200 } });
   });
 

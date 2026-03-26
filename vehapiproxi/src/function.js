@@ -22,6 +22,7 @@ import {
     upsertMediaAssetGraphicBinary,
     insertMetadata, 
     getMetadata,
+    isMetadataStale,
     getVehicleArticles,
     getVehicleArticlesCount,
     getVehicleIsNormalized
@@ -159,13 +160,19 @@ function normalizeOriginHeader(origin) {
     return typeof v === 'string' ? v.trim() : '';
 }
 
+/** Localhost dev origins — never allow on Vercel (`VERCEL=1`) or when `NODE_ENV=production`. */
+function shouldAllowLocalhostOrigins() {
+    if (process.env.VERCEL === '1') return false;
+    if (process.env.NODE_ENV === 'production') return false;
+    return true;
+}
+
 function buildAllowedOrigins() {
-    const origins = new Set([
-        'https://vehapi.vercel.app',
-        'https://vehapiproxi.vercel.app',
-        'http://localhost:3000',
-        'http://127.0.0.1:3000'
-    ]);
+    const origins = new Set(['https://vehapi.vercel.app', 'https://vehapiproxi.vercel.app']);
+    if (shouldAllowLocalhostOrigins()) {
+        origins.add('http://localhost:3000');
+        origins.add('http://127.0.0.1:3000');
+    }
     const extra = process.env.CORS_ALLOWED_ORIGINS || process.env.ALLOWED_ORIGINS;
     if (extra) {
         for (const part of extra.split(/[\s,]+/).map((s) => s.trim()).filter(Boolean)) {
@@ -385,19 +392,86 @@ registerArticleMetadataEndpoint(app, secureAuthMiddleware, logger);
 // --- AI ENDPOINTS ---
 registerAiEndpoints(app, getAiFunctions);
 
+/** In-memory observability for Motor catch-all vs Supabase cache hits (phase-out tracking). */
+const proxyStats = { motorHits: 0, supabaseHits: 0 };
+
+/**
+ * Paths that may legitimately flow through the catch-all to Motor (ingest, non-normalized, assets).
+ * Not used for blocking — documentation + optional logging context.
+ */
+const MOTOR_PROXY_ALLOWLIST = [
+    /^\/api\/source\/[^/]+\/graphic\//,
+    /^\/api\/source\/[^/]+\/vehicle\/[^/]+\/graphic\//,
+    /^\/api\/assets\//,
+    /^\/v1\/assets\//,
+    /^\/auth\/status$/,
+    /^\/api\/years$/,
+    /^\/api\/year\//,
+    /^\/api\/motor\//,
+    /^\/api\/source\//,
+    /^\/debug\//,
+    /^\/health$/,
+    /^\/api\/health$/
+];
+
+function isMotorProxyAllowlisted(path) {
+    return MOTOR_PROXY_ALLOWLIST.some((regex) => regex.test(path));
+}
+
+function recordProxyStat(kind) {
+    if (kind === 'motor') {
+        proxyStats.motorHits++;
+    } else {
+        proxyStats.supabaseHits++;
+    }
+    const total = proxyStats.motorHits + proxyStats.supabaseHits;
+    if (total % 100 === 0 && total > 0) {
+        logger.info('[ProxyStats]', proxyStats);
+    }
+}
+
+/** YMME metadata cache TTL (days). Cached rows older than this still return immediately; a background Motor refresh is queued. */
+const METADATA_STALENESS_DAYS = (() => {
+    const v = parseInt(process.env.METADATA_STALENESS_DAYS ?? '90', 10);
+    return Number.isFinite(v) && v > 0 ? v : 90;
+})();
+
+function queueMetadataBackgroundRefresh(cachePath) {
+    const port = config.proxyPort;
+    const url = `http://127.0.0.1:${port}/api${cachePath.startsWith('/') ? cachePath : `/${cachePath}`}`;
+    fetch(url, {
+        headers: {
+            'x-metadata-refresh-bypass': '1',
+            'x-requested-with': 'XMLHttpRequest'
+        }
+    }).catch((err) => {
+        logger.warn(`Background metadata refresh failed for ${cachePath}: ${err?.message || err}`);
+    });
+}
+
 // Metadata Cache-First Middleware
 const metadataCacheMiddleware = async (req, res, next) => {
     const path = req.path;
+    if (String(req.get('x-metadata-refresh-bypass') || '').trim() === '1') {
+        return next();
+    }
+
     const isMetadata = path.includes('/years') || path.includes('/makes') || path.includes('/models') || path.includes('/engines');
     
     if (isMetadata && req.method === 'GET') {
         try {
-            const cachedData = await getMetadata(path);
-            if (cachedData) {
-                logger.info(`Serving metadata from cache: ${path}`);
+            const cachedRow = await getMetadata(path);
+            if (cachedRow && cachedRow.data != null) {
+                const stale = isMetadataStale(cachedRow, METADATA_STALENESS_DAYS);
+                logger.info(`Serving metadata from cache: ${path}${stale ? ' (stale — background refresh queued)' : ''}`);
+                recordProxyStat('supabase');
                 res.setHeader('x-data-source', 'supabase');
                 res.setHeader('x-cache-hit', 'true');
-                return res.json(cachedData);
+                if (stale) {
+                    res.setHeader('x-data-stale', 'true');
+                    queueMetadataBackgroundRefresh(path);
+                }
+                return res.json(cachedRow.data);
             }
         } catch (err) {
             logger.warn(`Failed to fetch metadata from cache for ${path}:`, err.message);
@@ -475,6 +549,7 @@ const articlesCacheMiddleware = async (req, res, next) => {
                             }
                         };
                         
+                        recordProxyStat('supabase');
                         res.setHeader('x-data-source', 'supabase');
                         res.setHeader('x-cache-hit', 'true');
                         return res.json(motorShape);
@@ -586,6 +661,7 @@ const articleContentCacheMiddleware = async (req, res, next) => {
                 const html = cached.content_html || cached.html || cached.content || '';
                 if (html) {
                     logger.info(`✓ Serving article ${articleId} from normalized cache (${cached._table})`);
+                    recordProxyStat('supabase');
                     res.setHeader('x-data-source', 'supabase');
                     res.setHeader('x-cache-hit', 'true');
                     return res.json({
@@ -599,6 +675,7 @@ const articleContentCacheMiddleware = async (req, res, next) => {
             const articleRow = await checkArticleContent(vehicleId, articleId);
             if (articleRow && articleRow.original_content) {
                 logger.info(`✓ Serving article ${articleId} from articles table cache`);
+                recordProxyStat('supabase');
                 res.setHeader('x-data-source', 'supabase');
                 res.setHeader('x-cache-hit', 'true');
                 return res.json({
@@ -617,6 +694,35 @@ app.use('/api', articleContentCacheMiddleware);
 
 // Fluids: optional direct `api.motor.com` RecommendedFluids when MOTOR_INFORMATION_* env + baseVehicleId + engineId query params
 registerMotorInformationFluidsIntercept(app, logger);
+
+// Canary: log when Motor catch-all is used for paths that should be Supabase-backed for normalized vehicles (no blocking).
+app.use('/', (req, res, next) => {
+    const path = req.path || (typeof req.url === 'string' ? req.url.split('?')[0] : '');
+
+    const supabaseCoveredPatterns = [
+        /^\/api\/source\/[^/]+\/vehicle\/[^/]+\/articles\/v2$/,
+        /^\/api\/source\/[^/]+\/vehicle\/[^/]+\/article\/[^/]+\/html$/,
+        /^\/api\/source\/[^/]+\/vehicle\/[^/]+\/article\/[^/]+$/
+    ];
+
+    const isSupabaseCovered = supabaseCoveredPatterns.some((p) => p.test(path));
+
+    if (isSupabaseCovered) {
+        const isForcedIngest =
+            req.headers['x-torque-catalog-sync'] === '1' ||
+            req.query?.torqueCatalogSync === '1' ||
+            req.query?.torqueCatalogSync === 'true';
+        if (!isForcedIngest) {
+            logger.warn(
+                `[ProxyCanary] Request to Motor for Supabase-covered path: ${req.method} ${path}` +
+                    (isMotorProxyAllowlisted(path) ? ' (allowlisted route pattern)' : '')
+            );
+            res.setHeader('x-torque-proxy-canary', 'supabase-covered-path');
+        }
+    }
+
+    next();
+});
 
 // Mount at root '/' to handle ALL requests (api, graphic, assets, v1, etc.)
 app.use('/', authMiddleware, createProxyMiddleware({
@@ -640,6 +746,7 @@ app.use('/', authMiddleware, createProxyMiddleware({
     },
     onProxyReq: (proxyReq, req, res) => {
         try {
+            recordProxyStat('motor');
             // Log the request
             logRequest(req, { route: req.path, sessionValid: authManager.isSessionValid() });
 
@@ -653,6 +760,7 @@ app.use('/', authMiddleware, createProxyMiddleware({
             // exclusively via the cookie jar established in `authMiddleware`).
             proxyReq.removeHeader('authorization');
             proxyReq.removeHeader('Authorization');
+            proxyReq.removeHeader('x-metadata-refresh-bypass');
 
             // Get cookies from request headers (set by authMiddleware)
             const cookieHeader = req.headers['cookie'];
@@ -674,6 +782,7 @@ app.use('/', authMiddleware, createProxyMiddleware({
         }
     },
     onProxyRes: responseInterceptor(async (responseBuffer, proxyRes, req, res) => {
+        res.setHeader('x-motor-proxy', 'true');
         // STRICTLY override CORS to hide upstream source
         const requestOrigin = normalizeOriginHeader(req.headers.origin);
         if (isOriginAllowed(requestOrigin)) {

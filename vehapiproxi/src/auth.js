@@ -277,7 +277,19 @@ class AuthManager {
             this._updateProgress('authenticating', 'init', 'Starting authentication...', 0);
 
             try {
-                const ebscoLoginUrl = 'https://search.ebscohost.com/login.aspx?authtype=uid&user=pl7321r&password=PL%3F7321R&profile=autorepso&groupid=remote';
+                const ebscoUser = (config.ebscoUser || '').trim();
+                const ebscoPassword = (config.ebscoPassword || '').trim();
+                if (!ebscoUser || !ebscoPassword) {
+                    throw new Error(
+                        'EBSCO authentication requires EBSCO_USER and EBSCO_PASSWORD environment variables. ' +
+                            'Set them in vehapiproxi/.env (see .env.example).'
+                    );
+                }
+                const profile = config.ebscoProfile || 'autorepso';
+                const groupId = config.ebscoGroupId || 'remote';
+                const ebscoLoginUrl =
+                    `https://search.ebscohost.com/login.aspx?authtype=uid&user=${encodeURIComponent(ebscoUser)}` +
+                    `&password=${encodeURIComponent(ebscoPassword)}&profile=${profile}&groupid=${groupId}`;
                 const cookieJar = new CookieJar();
                 let currentUrl = ebscoLoginUrl;
                 let redirectCount = 0;

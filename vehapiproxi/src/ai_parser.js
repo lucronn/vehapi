@@ -158,7 +158,9 @@ const SCHEMAS = {
                 description: { type: 'STRING' },
                 symptoms: { type: 'ARRAY', items: { type: 'STRING' } },
                 severity: { type: 'STRING', enum: ['High', 'Medium', 'Low'] },
-                fixComplexity: { type: 'STRING', enum: ['Easy', 'Moderate', 'Hard'] }
+                fixComplexity: { type: 'STRING', enum: ['Easy', 'Moderate', 'Hard'] },
+                suggestedAction: { type: 'STRING' },
+                relatedArticleIds: { type: 'ARRAY', items: { type: 'STRING' } }
             },
             required: ['title', 'description', 'severity', 'fixComplexity']
         }
@@ -573,12 +575,16 @@ export async function parseWithAI(rawData, targetSchema, meta = {}) {
     return { parsed, usage: normalizeUsage(usage) };
 }
 
-export async function generateCommonIssues(vehicleName) {
+export async function generateCommonIssues(vehicleName, vehicleContext) {
     if (!vehicleName || !vehicleName.trim()) return [];
+
+    const contextBlock = vehicleContext
+        ? `\n\nThe following vehicle-specific data is available from the service database. Ground your answers in this data whenever possible. Reference specific DTCs, TSBs, procedures, or maintenance items by name/code. For suggestedAction, provide a concrete next step referencing the available data (e.g. "Check DTC P0301 — misfire on cylinder 1" or "Follow the intake manifold gasket replacement procedure"). NEVER suggest generic actions like "consult the service manual" or "see a technician" when specific data below applies.\n\n${vehicleContext}`
+        : '';
 
     const prompt = `You are an automotive service advisor. Generate a list of common issues, failures, and known patterns for the following vehicle:
     
-Vehicle: ${vehicleName}
+Vehicle: ${vehicleName}${contextBlock}
 
 For each issue, provide:
 - title: Short name of the issue.
@@ -586,6 +592,8 @@ For each issue, provide:
 - symptoms: List of signs the driver might notice.
 - severity: High (safety/breakdown), Medium (performance/repair soon), or Low (nuisance/maintenance).
 - fixComplexity: Easy (DIY), Moderate (Special tools/shop), or Hard (Engine/Trans tear down).
+- suggestedAction: A specific, actionable next step the owner should take. Reference specific procedures, DTCs, or maintenance items from the database when available.${vehicleContext ? '' : ' If no database context is available, give the best general advice.'}
+- relatedArticleIds: Array of bulletin numbers or DTC codes from the database that relate to this issue (empty array if none).
 
 Create 4-8 high-quality common issues tailored to this specific vehicle.`;
 

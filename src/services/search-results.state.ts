@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Article, FilterTab, FilterTabType, BucketArticles, Bucket } from '../models/motor.models';
 import { MotorApiService } from './motor-api.service';
+import { SupabaseService } from './supabase.service';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 
@@ -9,6 +10,7 @@ import { of } from 'rxjs';
 })
 export class SearchResultsState {
     private motorApi = inject(MotorApiService);
+    private supabase = inject(SupabaseService);
 
     // State
     readonly articleDetails = signal<Article[]>([]);
@@ -181,9 +183,139 @@ export class SearchResultsState {
 
 
     /**
+     * Loads catalog from Supabase for normalized vehicles (no Motor HTTP).
+     */
+    private buildFilterTabsFromArticles(articles: Article[]): FilterTab[] {
+        const byParent = new Map<string, Article[]>();
+        for (const a of articles) {
+            const p = a.parentBucket || 'Other';
+            if (!byParent.has(p)) byParent.set(p, []);
+            byParent.get(p)!.push(a);
+        }
+
+        const perParentTabs: FilterTab[] = [];
+        const allTabBucketRows: Bucket[] = [];
+
+        for (const [parentName, group] of byParent) {
+            const leafSort = new Map<string, number>();
+            for (const a of group) {
+                const leaf = a.bucket || 'Uncategorized';
+                const s = a.sort ?? 0;
+                const prev = leafSort.get(leaf);
+                if (prev === undefined || s < prev) leafSort.set(leaf, s);
+            }
+            const children: Bucket[] = [...leafSort.entries()]
+                .sort((x, y) => x[1] - y[1] || x[0].localeCompare(y[0]))
+                .map(([name, sort]) => ({ name, sort, count: 0 }));
+
+            const bucketRow: Bucket = {
+                name: parentName,
+                sort: 0,
+                count: 0,
+                children
+            };
+            allTabBucketRows.push(bucketRow);
+
+            perParentTabs.push({
+                name: parentName,
+                filterTabType: parentName as FilterTabType,
+                buckets: [bucketRow]
+            });
+        }
+
+        perParentTabs.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+        const allTab: FilterTab = {
+            name: 'All',
+            filterTabType: 'All',
+            buckets: [...allTabBucketRows]
+        };
+
+        return [allTab, ...perParentTabs];
+    }
+
+    private escapeIlikePattern(term: string): string {
+        return term.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/,/g, '\\,');
+    }
+
+    private async searchFromSupabase(vehicleId: string, searchTerm: string): Promise<void> {
+        this.isLoading.set(true);
+        this.error.set(null);
+        try {
+            let q = this.supabase.client.from('articles').select('*').eq('vehicle_id', vehicleId);
+            const t = searchTerm.trim();
+            if (t.length > 0) {
+                const esc = this.escapeIlikePattern(t);
+                q = q.or(`title.ilike.%${esc}%,subtitle.ilike.%${esc}%,description.ilike.%${esc}%`);
+            }
+            const { data: rows, error } = await q;
+            if (error) {
+                this.error.set(error.message || 'Supabase article search failed');
+                this.articleDetails.set([]);
+                this.filterTabs.set([]);
+                this.normalizedMenu.set(null);
+                this.isCached.set(false);
+                return;
+            }
+
+            const articleDetails: Article[] = (rows ?? []).map((row: Record<string, unknown>) => ({
+                id: String(row['original_id'] ?? ''),
+                title: String(row['title'] ?? ''),
+                subtitle: row['subtitle'] != null ? String(row['subtitle']) : undefined,
+                description: row['description'] != null ? String(row['description']) : undefined,
+                bucket: String(row['bucket'] ?? ''),
+                parentBucket: row['parent_bucket'] != null ? String(row['parent_bucket']) : undefined,
+                thumbnailHref: row['thumbnail_href'] != null ? String(row['thumbnail_href']) : undefined,
+                code: row['code'] != null ? String(row['code']) : undefined,
+                bulletinNumber: row['bulletin_number'] != null ? String(row['bulletin_number']) : undefined,
+                releaseDate: row['release_date'] != null ? String(row['release_date']) : undefined,
+                sort: typeof row['sort'] === 'number' ? row['sort'] : Number(row['sort']) || 0
+            }));
+
+            this.articleDetails.set(articleDetails);
+            this.filterTabs.set(this.buildFilterTabsFromArticles(articleDetails));
+            this.normalizedMenu.set(null);
+            this.isCached.set(true);
+        } finally {
+            this.isLoading.set(false);
+        }
+    }
+
+    /**
+     * Resolves `vehicles.is_normalized` then runs Supabase or Motor search.
+     */
+    searchWithNormalizationCheck(
+        contentSource: string,
+        vehicleId: string,
+        searchTerm: string = '',
+        motorVehicleId?: string
+    ): void {
+        void (async () => {
+            const { data, error } = await this.supabase.client
+                .from('vehicles')
+                .select('is_normalized')
+                .eq('external_id', vehicleId)
+                .maybeSingle();
+            const isNormalized = !error && data?.is_normalized === true;
+            this.search(contentSource, vehicleId, searchTerm, motorVehicleId, isNormalized);
+        })();
+    }
+
+    /**
      * Action: Perform Search
      */
-    search(contentSource: string, vehicleId: string, searchTerm: string = '', motorVehicleId?: string): void {
+    search(
+        contentSource: string,
+        vehicleId: string,
+        searchTerm: string = '',
+        motorVehicleId?: string,
+        isNormalized: boolean = false
+    ): void {
+        if (isNormalized) {
+            void this.searchFromSupabase(vehicleId, searchTerm);
+            return;
+        }
+
         this.isLoading.set(true);
         this.error.set(null);
         this.isCached.set(false); // Reset cache status on new search

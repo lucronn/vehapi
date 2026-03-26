@@ -29,7 +29,8 @@
         "verify:evidence-links": "node scripts/verify-evidence-links-one-article.js",
         "verify:evidence-links:local": "node scripts/verify-evidence-links-one-article.js --local",
         "test:article-rate-limit": "node scripts/test-article-rate-limit.js",
-        "sync:catalog": "node scripts/sync-catalog-vehicle.js"
+        "sync:catalog": "node scripts/sync-catalog-vehicle.js",
+        "seed:ymme": "node scripts/seed-ymme.js"
     },
     "keywords": [
         "proxy",

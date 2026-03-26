@@ -1,7 +1,8 @@
-import { Injectable, inject, WritableSignal, isDevMode } from '@angular/core';
+import { Injectable, inject, WritableSignal } from '@angular/core';
 import { Observable, from, of, forkJoin } from 'rxjs';
 import { map, switchMap, tap, catchError, timeout } from 'rxjs/operators';
 import { MotorApiService } from './motor-api.service';
+import { LoggerService } from './logger.service';
 import { SupabaseService } from './supabase.service';
 import { DataSyncService } from './data-sync.service';
 import { VehiclePersistenceService } from './vehicle-persistence.service';
@@ -53,6 +54,7 @@ interface SectionStrategy {
     providedIn: 'root'
 })
 export class VehicleDataService {
+    private logger = inject(LoggerService);
     private motorApi = inject(MotorApiService);
     private supabase = inject(SupabaseService);
     private dataSync = inject(DataSyncService);
@@ -165,36 +167,6 @@ export class VehicleDataService {
     }
 
     /**
-     * Helper to handle search API calls with loading state
-     */
-    private loadFromSearch<T>(
-        contentSource: string,
-        vehicleId: string,
-        searchTerm: string,
-        motorVehicleId: string | undefined,
-        loadingSignal: WritableSignal<boolean>,
-        updateState: (data: T[]) => void,
-        transform: (articles: any[]) => T[]
-    ): void {
-        loadingSignal.set(true);
-        if (isDevMode()) console.log(`[VehicleData] Fetching from Search API(term: "${searchTerm}")...`);
-
-        this.motorApi.searchArticles(contentSource, vehicleId, searchTerm).subscribe({
-            next: (res) => {
-                // Ensure articleDetails exists
-                const articles = res.body?.articleDetails || [];
-                const mappedData = transform(articles);
-                updateState(mappedData);
-                loadingSignal.set(false);
-            },
-            error: (err) => {
-                console.error('[VehicleData] Search API failed', err);
-                loadingSignal.set(false);
-            }
-        });
-    }
-
-    /**
      * Load specs and fluids using forkJoin pattern
      */
     loadSpecs(
@@ -211,7 +183,7 @@ export class VehicleDataService {
         ).pipe(
             switchMap(({ data }) => {
                 if (data?.is_normalized) {
-                    if (isDevMode()) console.log(`[VehicleDataService] Loading specs from Supabase for ${vehicleId}`);
+                    this.logger.info(`[VehicleDataService] Loading specs from Supabase for ${vehicleId}`);
                     return from(this.supabase.client
                         .from('specifications')
                         .select('*')
@@ -239,7 +211,7 @@ export class VehicleDataService {
                             return { specs, fluids };
                         }),
                         catchError(err => {
-                            console.error('[VehicleDataService] Supabase specs fetch failed:', err);
+                            this.logger.error('[VehicleDataService] Supabase specs fetch failed:', err);
                             return of({ specs: [], fluids: [] });
                         })
                     );
@@ -261,7 +233,7 @@ export class VehicleDataService {
         const consumptionKeywords = ['consumption', 'efficiency', 'fuel', 'economy', 'intelligence'];
 
         const getFluids = () => {
-            if (isDevMode()) console.log('[Cache DISABLED] Fluids fetching from API...');
+            this.logger.info('[Cache DISABLED] Fluids fetching from API...');
             // Legacy Parity: Fluids often align with "Specs/Parts" which tend to be Motor-sourced.
             // Using Motor ID if available to ensure data consistency.
             const params = this.resolveSourceParams(contentSource, vehicleId, motorVehicleId, true);
@@ -269,7 +241,7 @@ export class VehicleDataService {
             return this.motorApi.getFluids(params.contentSource, params.vehicleId, mi).pipe(
                 map(res => (res.body as any)?.data || []),
                 catchError(err => {
-                    console.error('[VehicleDataService] Fluids fetch failed:', err);
+                    this.logger.error('[VehicleDataService] Fluids fetch failed:', err);
                     return of([]);
                 })
             );
@@ -277,10 +249,10 @@ export class VehicleDataService {
 
         const getSpecs = () => {
             const params = this.resolveSourceParams(contentSource, vehicleId, motorVehicleId, true);
-            if (isDevMode()) console.log(`[VehicleDataService - V4] Specs loading for ${params.contentSource} / ${params.vehicleId}...`);
+            this.logger.info(`[VehicleDataService - V4] Specs loading for ${params.contentSource} / ${params.vehicleId}...`);
 
             return this.motorApi.searchArticles(params.contentSource, params.vehicleId, '').pipe(
-                tap(res => { if (isDevMode()) console.log(`[VehicleDataService - V4] articles / v2 response received.Body: ${!!res?.body}, Count: ${res?.body?.articleDetails?.length || 0} `); }),
+                tap(res => { this.logger.info(`[VehicleDataService - V4] articles / v2 response received.Body: ${!!res?.body}, Count: ${res?.body?.articleDetails?.length || 0} `); }),
                 switchMap(res => {
                     const articles = res.body?.articleDetails || [];
 
@@ -295,7 +267,7 @@ export class VehicleDataService {
                             title.includes('capacity');
                     });
 
-                    if (isDevMode()) console.log(`[VehicleDataService - V4] Found ${specArticles.length} matching articles.`);
+                    this.logger.info(`[VehicleDataService - V4] Found ${specArticles.length} matching articles.`);
 
                     if (specArticles.length === 0) {
                         return of([]);
@@ -340,7 +312,7 @@ export class VehicleDataService {
                     );
                 }),
                 catchError(err => {
-                    console.error('[VehicleDataService-V4] getSpecs failed:', err);
+                    this.logger.error('[VehicleDataService-V4] getSpecs failed:', err);
                     return of([]);
                 })
             );
@@ -352,7 +324,7 @@ export class VehicleDataService {
         }).pipe(
             timeout(20000),
             catchError(err => {
-                console.warn('[VehicleDataService-V4] loadSpecs FATAL:', err);
+                this.logger.warn('[VehicleDataService-V4] loadSpecs FATAL:', err);
                 return of({ specs: [], fluids: [] });
             })
         );
@@ -582,9 +554,7 @@ export class VehicleDataService {
         ).subscribe({
             next: ({ isNormalized, mapped }) => {
                 if (mapped && mapped.length > 0) {
-                    if (isDevMode()) {
-                        console.log(`[VehicleData] Loaded ${section} from Supabase articles (${mapped.length} items)`);
-                    }
+                    this.logger.info(`[VehicleData] Loaded ${section} from Supabase articles (${mapped.length} items)`);
                     updateState(mapped);
                     loadingSignal.set(false);
                     return;
@@ -597,8 +567,10 @@ export class VehicleDataService {
                 this.loadSectionDataFromApi(section, contentSource, vehicleId, motorVehicleId, loadingSignal, updateState, errorCallback);
             },
             error: (err) => {
-                console.error('[VehicleData] Supabase read failed', err);
-                this.loadSectionDataFromApi(section, contentSource, vehicleId, motorVehicleId, loadingSignal, updateState, errorCallback);
+                this.logger.error('[VehicleData] Supabase read failed for', section, err);
+                if (errorCallback) errorCallback(err);
+                updateState([]);
+                loadingSignal.set(false);
             }
         });
     }
@@ -629,31 +601,23 @@ export class VehicleDataService {
                     });
                 }
 
-                if (isDevMode()) {
-                    const uniqueBuckets = [...new Set(articles.map((a: any) => a.bucket))];
-                    console.log(`[VehicleData] Section = ${section}, Total articles = ${articles.length}, Valid buckets = [${validBuckets.join(', ')}], All unique buckets in response=[${uniqueBuckets.join(', ')}]`);
-                }
+                const uniqueBuckets = [...new Set(articles.map((a: any) => a.bucket))];
+                this.logger.info(`[VehicleData] Section = ${section}, Total articles = ${articles.length}, Valid buckets = [${validBuckets.join(', ')}], All unique buckets in response=[${uniqueBuckets.join(', ')}]`);
 
                 let filtered = articles.filter((a: any) =>
                     validBuckets.includes(a.bucket) ||
                     (a.parentBucket && validBuckets.includes(a.parentBucket))
                 ).map(strategy.mapper);
 
-                if (isDevMode()) {
-                    console.log(`[VehicleData] Section = ${section}, Filtered count = ${filtered.length} `);
-                }
+                this.logger.info(`[VehicleData] Section = ${section}, Filtered count = ${filtered.length} `);
 
                 // Handle Fallback Search (DTCs)
                 if (strategy.enableFallbackSearch && filtered.length === 0) {
-                    if (isDevMode()) {
-                        console.log(`[VehicleData] No ${strategy.type} found with empty search.Triggering fallback search...`);
-                    }
+                    this.logger.info(`[VehicleData] No ${strategy.type} found with empty search.Triggering fallback search...`);
                     this.motorApi.searchArticles(contentSource, vehicleId, 'DTC').subscribe({
                         next: (fallbackRes) => {
                             const fallbackArticles = fallbackRes.body?.articleDetails || [];
-                            if (isDevMode()) {
-                                console.log(`[VehicleData] Fallback search returned ${fallbackArticles.length} articles`);
-                            }
+                            this.logger.info(`[VehicleData] Fallback search returned ${fallbackArticles.length} articles`);
 
                             const fallbackFiltered = fallbackArticles.filter((a: any) =>
                                 validBuckets.includes(a.bucket) ||
@@ -661,16 +625,14 @@ export class VehicleDataService {
                             ).map(strategy.mapper);
 
                             if (fallbackFiltered.length > 0) {
-                                if (isDevMode()) {
-                                    console.log(`[VehicleData] Fallback search found ${fallbackFiltered.length} items.`);
-                                }
+                                this.logger.info(`[VehicleData] Fallback search found ${fallbackFiltered.length} items.`);
                                 updateState(fallbackFiltered);
                             } else {
                                 updateState([]);
                             }
                         },
                         error: (err) => {
-                            console.error('[VehicleData] Fallback search failed', err);
+                            this.logger.error('[VehicleData] Fallback search failed', err);
                             updateState([]);
                         }
                     });
@@ -680,7 +642,7 @@ export class VehicleDataService {
                 updateState(filtered);
             },
             error: (err) => {
-                console.error(`[VehicleData] Failed to load ${section} `, err);
+                this.logger.error(`[VehicleData] Failed to load ${section} `, err);
                 loadingSignal.set(false);
                 if (errorCallback) errorCallback(err);
             }
@@ -711,7 +673,7 @@ export class VehicleDataService {
         ).pipe(
             switchMap(({ data }) => {
                 if (data?.is_normalized) {
-                    if (isDevMode()) console.log(`[VehicleDataService] Loading maintenance from Supabase for ${vehicleId}`);
+                    this.logger.info(`[VehicleDataService] Loading maintenance from Supabase for ${vehicleId}`);
                     return from(this.supabase.client
                         .from('maintenance_schedules')
                         .select('*')
@@ -775,7 +737,7 @@ export class VehicleDataService {
                         .catch(() => {});
                 },
                 error: (err) => {
-                    console.error('[VehicleDataService] Maintenance fetch failed:', err);
+                    this.logger.error('[VehicleDataService] Maintenance fetch failed:', err);
                     loadingSignal.set(false);
                     updateState([]);
                     if (errorCallback) errorCallback(err);
@@ -850,7 +812,7 @@ export class VehicleDataService {
                             }
                         },
                         error: (err) => {
-                            console.error('[VehicleDataService] Parts API failed:', err);
+                            this.logger.error('[VehicleDataService] Parts API failed:', err);
                             loadingSignal.set(false);
                             if (errorCallback) errorCallback(err);
                         }
@@ -858,7 +820,7 @@ export class VehicleDataService {
                 }
             },
             error: (err) => {
-                console.error('[VehicleDataService] Supabase parts read failed:', err);
+                this.logger.error('[VehicleDataService] Supabase parts read failed:', err);
                 loadingSignal.set(false);
                 if (errorCallback) errorCallback(err);
             }

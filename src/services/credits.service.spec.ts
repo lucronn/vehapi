@@ -1,42 +1,42 @@
-import { expect, test, describe, beforeEach, afterAll, mock } from 'bun:test';
+const {
+    MockHttpClientToken,
+    MockUserIdServiceToken,
+    mockHttpClient,
+    mockUserIdService,
+} = vi.hoisted(() => {
+    const MockHttpClientToken = class {};
+    const MockUserIdServiceToken = class {};
+    const mockHttpClient: Record<string, any> = {
+        get: () => ({ subscribe: () => {} }),
+        post: () => ({ subscribe: () => {} })
+    };
+    const mockUserIdService = {
+        getUserId: () => 'test-user-id'
+    };
+    return { MockHttpClientToken, MockUserIdServiceToken, mockHttpClient, mockUserIdService };
+});
 
-// Mock tokens
-class MockHttpClientToken {}
-class MockUserIdServiceToken {}
-
-// Mock dependencies
-const mockHttpClient = {
-    get: () => ({ subscribe: () => {} }),
-    post: () => ({ subscribe: () => {} })
-};
-
-const mockUserIdService = {
-    getUserId: () => 'test-user-id'
-};
-
-// Mock @angular/common/http
-mock.module('@angular/common/http', () => ({
+vi.mock('@angular/common/http', () => ({
     HttpClient: MockHttpClientToken,
     HttpHeaders: class {
         set() { return this; }
     }
 }));
 
-// Mock services/user-id.service
-mock.module('./user-id.service', () => ({
+vi.mock('./user-id.service', () => ({
     UserIdService: MockUserIdServiceToken
 }));
 
-// Mock environments/environment
-mock.module('../environments/environment', () => ({
+vi.mock('../environments/environment', () => ({
     environment: {
-        production: false
+        production: false,
+        apiUrl: '/api'
     }
 }));
 
 import '@angular/compiler';
-// Mock @angular/core
-mock.module('@angular/core', () => ({
+
+vi.mock('@angular/core', () => ({
     Injectable: () => (target: any) => target,
     computed: (fn: any) => fn,
     inject: (token: any) => {
@@ -59,14 +59,12 @@ mock.module('@angular/core', () => ({
     }
 }));
 
-// Mock rxjs
-mock.module('rxjs', () => ({
+vi.mock('rxjs', () => ({
     firstValueFrom: async (obs: any) => {
         return obs.toPromise();
     }
 }));
 
-// Mock localStorage for bun test
 const mockLocalStorage = {
     store: {} as Record<string, string>,
     getItem(key: string) {
@@ -86,8 +84,6 @@ const mockLocalStorage = {
 const originalLocalStorage = (globalThis as any).localStorage;
 (globalThis as any).localStorage = mockLocalStorage;
 
-// Import the service under test
-// Note: We use dynamic import to ensure mocks are applied before the module is loaded
 const { CreditsService } = await import('./credits.service');
 
 describe('CreditsService', () => {
@@ -100,7 +96,6 @@ describe('CreditsService', () => {
     beforeEach(() => {
         mockLocalStorage.clear();
         service = new CreditsService();
-        // Reset state for each test
         service.unlocks.set({});
     });
 
@@ -155,15 +150,13 @@ describe('CreditsService', () => {
     });
 
     describe('unlockModule (USE_MOCK = false)', () => {
-        let postMock: import("bun:test").Mock<any>;
+        let postMock: any;
 
         beforeEach(() => {
             (service as any).useMock = false;
-            // Provide sufficient starting balance
             service.balance.set(100);
 
-            // Set up a basic spy on mockHttpClient.post
-            postMock = mock(() => ({
+            postMock = vi.fn(() => ({
                 toPromise: async () => ({
                     success: true,
                     credits: 80,
@@ -174,7 +167,7 @@ describe('CreditsService', () => {
         });
 
         test('should return false immediately if balance is insufficient', async () => {
-            service.balance.set(5); // 5 credits
+            service.balance.set(5);
             const result = await service.unlockModule('vehicle-123', 'procedures', 10);
             expect(result).toBe(false);
             expect(postMock).not.toHaveBeenCalled();
@@ -196,7 +189,6 @@ describe('CreditsService', () => {
             });
             expect(options.headers).toBeDefined();
 
-            // Check if state was updated from the mock response
             expect(service.balance()).toBe(80);
             expect(service.unlocks()).toEqual({ 'vehicle-123': ['specs'] });
         });
@@ -204,8 +196,7 @@ describe('CreditsService', () => {
         test('should set isLoading to true before request and false after completion', async () => {
             let loadingDuringRequest = false;
 
-            // Override the post mock just for this test to check state during the promise
-            postMock = mock(() => ({
+            postMock = vi.fn(() => ({
                 toPromise: async () => {
                     loadingDuringRequest = service.isLoading();
                     return {
@@ -228,7 +219,7 @@ describe('CreditsService', () => {
         });
 
         test('should handle API success: false response correctly', async () => {
-            postMock = mock(() => ({
+            postMock = vi.fn(() => ({
                 toPromise: async () => ({
                     success: false
                 })
@@ -239,20 +230,19 @@ describe('CreditsService', () => {
             const result = await service.unlockModule('vehicle-123', 'specs', 10);
 
             expect(result).toBe(false);
-            // Balance shouldn't change
             expect(service.balance()).toBe(initialBalance);
             expect(service.isLoading()).toBe(false);
         });
 
         test('should catch HTTP errors and return false', async () => {
-            postMock = mock(() => ({
+            postMock = vi.fn(() => ({
                 toPromise: async () => {
                     throw new Error('Network error');
                 }
             }));
             mockHttpClient.post = postMock;
 
-            const consoleSpy = mock(() => {});
+            const consoleSpy = vi.fn();
             const originalError = console.error;
             console.error = consoleSpy;
 

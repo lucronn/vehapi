@@ -1134,10 +1134,21 @@ export async function insertMetadata(path, data) {
 }
 
 /**
+ * @param {{ updated_at?: string | null }} row
+ * @param {number} [maxAgeDays=90]
+ * @returns {boolean}
+ */
+export function isMetadataStale(row, maxAgeDays = 90) {
+    if (!row?.updated_at) return true;
+    const age = Date.now() - new Date(row.updated_at).getTime();
+    return age > maxAgeDays * 24 * 60 * 60 * 1000;
+}
+
+/**
  * Retrieves vehicle metadata from the vehicle_metadata table.
  * Tries canonical path first (`/years`, `/year/...`), then legacy `/api/years` rows if present.
  * @param {string} path The request path (e.g., /years or /api/years before normalize)
- * @returns {Object|null} The cached metadata or null if not found
+ * @returns {{ data: unknown, updated_at: string | null }|null} Cached row or null if not found
  */
 export async function getMetadata(path) {
     const cfg = getSupabaseConfig();
@@ -1151,7 +1162,7 @@ export async function getMetadata(path) {
 
     for (const tryPath of pathsToTry) {
         try {
-            const url = `${cfg.url}/rest/v1/vehicle_metadata?path=eq.${encodeURIComponent(tryPath)}&select=data`;
+            const url = `${cfg.url}/rest/v1/vehicle_metadata?path=eq.${encodeURIComponent(tryPath)}&select=data,updated_at`;
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -1170,13 +1181,14 @@ export async function getMetadata(path) {
             const rows = await response.json();
             if (rows && rows.length > 0) {
                 const payload = rows[0].data;
+                const updatedAt = rows[0].updated_at != null ? String(rows[0].updated_at) : null;
                 if (tryPath !== canonical) {
                     logger.info(`Serving metadata from legacy key ${tryPath} (canonical ${canonical})`);
                     void insertMetadata(canonical, payload).catch(() => {});
                 } else {
                     logger.info(`✓ Found cached metadata for: ${canonical}`);
                 }
-                return payload;
+                return { data: payload, updated_at: updatedAt };
             }
         } catch (err) {
             logger.error(`Error retrieving metadata for ${tryPath}:`, err);

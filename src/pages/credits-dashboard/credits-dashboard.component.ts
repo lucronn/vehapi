@@ -11,6 +11,7 @@ import {
   LayoutDashboard, Settings, LogIn, UserPlus, LogOut, X, AlertCircle
 } from 'lucide-angular';
 import { AuthModalComponent } from '../../components/auth-modal/auth-modal.component';
+import { PageTitleService } from '../../services/page-title.service';
 
 type Tab = 'overview' | 'vehicles' | 'receipts';
 
@@ -371,6 +372,7 @@ export class CreditsDashboardComponent implements OnInit {
   readonly creditsService = inject(CreditsService);
   readonly authService = inject(AuthService);
   readonly route = inject(ActivatedRoute);
+  private pageTitle = inject(PageTitleService);
 
   readonly icons = { CreditCard, ArrowLeft, Car, Receipt, User, Check, Clock, ChevronRight, Sparkles, Home, Lock, LayoutDashboard, Settings, LogIn, UserPlus, LogOut, X, AlertCircle };
 
@@ -434,6 +436,7 @@ export class CreditsDashboardComponent implements OnInit {
   recentTransactions = computed(() => this.creditsService.transactions().slice(0, 5));
 
   ngOnInit() {
+    this.pageTitle.set('Credits');
     const snapshot = this.route.snapshot;
     const purchase = snapshot.queryParams['purchase'];
     const sessionId = snapshot.queryParams['session_id'];

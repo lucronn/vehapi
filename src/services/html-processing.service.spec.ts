@@ -1,7 +1,4 @@
-import { expect, test, describe, beforeEach, mock } from 'bun:test';
-
-// Mock @angular/core
-mock.module('@angular/core', () => ({
+vi.mock('@angular/core', () => ({
   Injectable: () => (target: any) => target,
   inject: (token: any) => {
     return {};
@@ -44,11 +41,9 @@ describe('HtmlProcessingService', () => {
 
     test('should process mtr-image tags', () => {
       const input = `<mtr-image id='img123'></mtr-image>`;
-      // With context
       const resultWithContext = service.processHtmlContent(input, baseUrl, 'source1', 'vehicle1');
       expect(resultWithContext).toContain(`<img src="${baseUrl}/api/source/source1/graphic/img123" class="article-image" >`);
 
-      // Without context
       const resultNoContext = service.processHtmlContent(input, baseUrl);
       expect(resultNoContext).toContain(`<img src="${baseUrl}/graphic/img123" class="article-image" >`);
     });

@@ -1,9 +1,8 @@
-import { expect, test, describe, beforeEach, afterEach, mock } from 'bun:test';
 import { PersistedVehicle } from '../models/motor.models';
 
-// Mock @angular/core
-mock.module('@angular/core', () => ({
+vi.mock('@angular/core', () => ({
     Injectable: () => (target: any) => target,
+    inject: () => ({ debug: () => {}, info: () => {}, warn: () => {}, error: () => {} }),
 }));
 
 describe('VehiclePersistenceService', () => {
@@ -11,7 +10,6 @@ describe('VehiclePersistenceService', () => {
     let localStorageStore: Record<string, string> = {};
     const STORAGE_KEY = 'torque-persisted-vehicle';
 
-    // Test data
     const mockVehicle: PersistedVehicle = {
         vehicleId: 'test-vehicle-123',
         contentSource: 'MOTOR',
@@ -19,10 +17,8 @@ describe('VehiclePersistenceService', () => {
     };
 
     beforeEach(async () => {
-        // Reset storage before each test
         localStorageStore = {};
 
-        // Mock global localStorage
         global.localStorage = {
             getItem: (key: string) => localStorageStore[key] || null,
             setItem: (key: string, value: string) => { localStorageStore[key] = value.toString(); },
@@ -32,19 +28,11 @@ describe('VehiclePersistenceService', () => {
             length: Object.keys(localStorageStore).length,
         } as Storage;
 
-        // Import service after mocking dependencies
         const module = await import('./vehicle-persistence.service');
         VehiclePersistenceService = module.VehiclePersistenceService;
     });
 
     afterEach(() => {
-        // Clean up global mocks if necessary
-        // In this case, we're redefining global.localStorage in beforeEach,
-        // so strictly speaking we might not need to restore it if other tests
-        // also set it up, but it's good practice.
-        // However, since we don't have the original reference easily accessible
-        // without storing it outside, and other tests seem to overwrite it too,
-        // we'll leave it as is for now or could restore if we saved it.
     });
 
     test('should be created', () => {
@@ -64,10 +52,8 @@ describe('VehiclePersistenceService', () => {
 
         test('should handle errors during save', () => {
             const service = new VehiclePersistenceService();
-            // Force setItem to throw
             global.localStorage.setItem = () => { throw new Error('Storage full'); };
 
-            // Should not throw
             expect(() => service.saveVehicle(mockVehicle)).not.toThrow();
         });
     });
@@ -91,13 +77,6 @@ describe('VehiclePersistenceService', () => {
             const service = new VehiclePersistenceService();
             localStorageStore[STORAGE_KEY] = 'invalid-json';
 
-            // Should not throw and return null (or handle as implementation dictates)
-            // Implementation catches error and returns null?
-            // Let's check implementation:
-            // catch (e) { console.error(...); return null; } -> Yes.
-
-            // Note: JSON.parse('invalid-json') throws SyntaxError
-
             expect(() => service.getVehicle()).not.toThrow();
             expect(service.getVehicle()).toBeNull();
         });
@@ -116,10 +95,8 @@ describe('VehiclePersistenceService', () => {
             const service = new VehiclePersistenceService();
             localStorageStore[STORAGE_KEY] = JSON.stringify(mockVehicle);
 
-            // Force removeItem to throw
             global.localStorage.removeItem = () => { throw new Error('Access denied'); };
 
-            // Should not throw
             expect(() => service.clearVehicle()).not.toThrow();
         });
     });
