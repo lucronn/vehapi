@@ -43,12 +43,18 @@ const CACHE_TTL_MS = 60 * 1000; // 1 minute cache
 /**
  * Get user data or create if not exists
  */
-export async function getUserData(userId) {
+/**
+ * @param {string} userId
+ * @param {{ skipCache?: boolean }} [options] - Use skipCache for access checks after unlock/purchase (serverless instances share DB but not memory).
+ */
+export async function getUserData(userId, options = {}) {
     try {
-        // Check cache first
-        const cached = userCache.get(userId);
-        if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
-            return cached.data;
+        const skipCache = options.skipCache === true;
+        if (!skipCache) {
+            const cached = userCache.get(userId);
+            if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
+                return cached.data;
+            }
         }
 
         const users = await fetchSupabase(`users?id=eq.${userId}&select=*`);

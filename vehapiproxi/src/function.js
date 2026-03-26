@@ -41,7 +41,11 @@ import {
     registerMotorInformationYmmeRoutes
 } from './routes/motor-information.js';
 import { createArticleContentRateLimiter, articleContentRateLimitGate } from './rate_limit.js';
-import { checkArticleAccess, resolveModuleTypeFromCatalogMetadata } from './article-access.js';
+import {
+    checkArticleAccess,
+    inferModuleTypeFromArticleId,
+    resolveModuleTypeFromCatalogMetadata
+} from './article-access.js';
 import { normalizeMotorResponse, buildMenuFromNormalizedArticles } from './menu-normalizer.js';
 // AI parser is loaded lazily to avoid cold-start crashes when no Nemotron API key (NVIDIA_API_KEY / LLM_API_KEY)
 let _rewriteArticleHtml = null;
@@ -576,7 +580,12 @@ const articleAccessMiddleware = async (req, res, next) => {
     }
 
     const vehicleId = decodeURIComponent(articleContentMatch[1]);
-    const articleId = articleContentMatch[2];
+    let articleId = articleContentMatch[2];
+    try {
+        articleId = decodeURIComponent(articleId);
+    } catch {
+        /* use raw segment */
+    }
 
     const skipFlag = String(process.env.SKIP_ARTICLE_ACCESS_AUTH || '')
         .trim()
@@ -610,12 +619,17 @@ const articleAccessMiddleware = async (req, res, next) => {
     }
 
     const userId = decoded.sub;
-    const userData = await getUserData(userId);
+    // Always read fresh unlocks from Supabase: in-memory cache is per-instance and stale after
+    // unlock/purchase on another serverless worker (common on Vercel).
+    const userData = await getUserData(userId, { skipCache: true });
     const unlocks = userData.unlocks || {};
     const vehicleUnlocks = unlocks[vehicleId] || [];
 
     const metadata = await getArticleMetadata(vehicleId, articleId);
-    const moduleType = metadata ? resolveModuleTypeFromCatalogMetadata(metadata) : null;
+    let moduleType = metadata ? resolveModuleTypeFromCatalogMetadata(metadata) : null;
+    if (!moduleType) {
+        moduleType = inferModuleTypeFromArticleId(articleId);
+    }
     const { allowed } = checkArticleAccess(vehicleUnlocks, articleId, moduleType);
 
     if (allowed) {

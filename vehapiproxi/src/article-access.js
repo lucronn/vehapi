@@ -72,6 +72,27 @@ function siloCanonicalToCreditsModule(canonicalSiloCode) {
  * @param {{ bucket?: string|null, parent_bucket?: string|null, title?: string|null, code?: string|null, bulletin_number?: string|null }} meta
  * @returns {string|null}
  */
+/**
+ * When `articles` has no row (empty catalog) or metadata cannot be resolved, infer the credits
+ * module from Motor-style article id prefixes so section unlocks (e.g. dtcs) still match on prod.
+ * @param {string} articleId
+ * @returns {string|null}
+ */
+export function inferModuleTypeFromArticleId(articleId) {
+    if (articleId == null || typeof articleId !== 'string') return null;
+    const id = articleId.trim();
+    if (!id) return null;
+    const upper = id.toUpperCase();
+    if (upper.startsWith('DTC:')) return 'dtcs';
+    if (upper.startsWith('TSB:')) return 'tsbs';
+    if (upper.startsWith('SPEC:')) return 'specs';
+    if (upper.startsWith('L:')) return 'procedures';
+    // Fluid / spec bundles (e.g. F:…-SPEC:…)
+    if (upper.startsWith('F:') || id.includes('-SPEC:')) return 'specs';
+    if (upper.startsWith('PART') || upper.includes('PART:')) return 'parts';
+    return null;
+}
+
 export function resolveModuleTypeFromCatalogMetadata(meta) {
     if (!meta || typeof meta !== 'object') return null;
     if (looksLikeObdDtcCode(meta.code)) return 'dtcs';
