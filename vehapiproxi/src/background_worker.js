@@ -20,6 +20,7 @@ import {
     upsertMediaAssetPdfFromArticleBody,
     getArticleCatalogEntry
 } from './supabase.js';
+import { inferKindAndSiloFromHeuristics } from './catalog_intelligence.js';
 import {
     buildArticlesTableRowFromMotorCatalogArticle,
     buildContentItemFromCatalogArticle,
@@ -27,7 +28,11 @@ import {
 } from './content_item_mapper.js';
 import { extractTextFromPdfBase64 } from './pdf_native_text.js';
 import { ingestL2ContentChunksIfEnabled } from './l2_rag_ingest.js';
-import { bucketToModuleType } from './article-access.js';
+import {
+    bucketToModuleType,
+    hasMeaningfulBulletinNumber,
+    looksLikeObdDtcCode
+} from './article-access.js';
 
 const ENABLE_NEMOTRON_PDF_VISION_FALLBACK =
     String(process.env.ENABLE_NEMOTRON_PDF_VISION_FALLBACK || '').toLowerCase() === 'true';
@@ -278,6 +283,27 @@ function articleModuleTypeToSchema(moduleType) {
     return null;
 }
 
+/** Maps Catalog Intelligence silo codes to worker `insertParsedData` schema names. */
+function siloCodeToTargetSchema(canonicalSiloCode) {
+    if (!canonicalSiloCode || typeof canonicalSiloCode !== 'string') return null;
+    switch (canonicalSiloCode) {
+        case 'dtcs':
+            return 'dtcs';
+        case 'tsbs':
+            return 'tsbs';
+        case 'specs':
+            return 'specifications';
+        case 'diagrams':
+            return 'diagram_document';
+        case 'component-locations':
+            return 'component_location_document';
+        case 'procedures':
+            return 'procedures';
+        default:
+            return null;
+    }
+}
+
 async function resolveArticleSchema(urlPath, fallbackSchema) {
     const articleMatch = urlPath.match(/\/article\/([^?/]+)/);
     if (!articleMatch || fallbackSchema !== 'procedures') {
@@ -307,8 +333,35 @@ async function resolveArticleSchema(urlPath, fallbackSchema) {
         return 'diagram_document';
     }
 
+    if (looksLikeObdDtcCode(metadata.code)) {
+        return 'dtcs';
+    }
+    if (hasMeaningfulBulletinNumber(metadata.bulletin_number)) {
+        return 'tsbs';
+    }
+
     const moduleType = bucketToModuleType(metadata.bucket, metadata.parent_bucket);
-    return articleModuleTypeToSchema(moduleType) || fallbackSchema;
+    const fromBucket = articleModuleTypeToSchema(moduleType);
+    if (fromBucket && fromBucket !== 'procedures') {
+        return fromBucket;
+    }
+
+    const h = inferKindAndSiloFromHeuristics(
+        metadata.title,
+        metadata.parent_bucket,
+        metadata.bucket
+    );
+    const heuristicSchema = siloCodeToTargetSchema(h.canonical_silo_code);
+    if (!heuristicSchema || h.confidence === 'low') {
+        return fromBucket || fallbackSchema;
+    }
+    if (heuristicSchema === 'procedures') {
+        return fromBucket || fallbackSchema;
+    }
+    if (fromBucket === 'procedures' || !fromBucket) {
+        return heuristicSchema;
+    }
+    return fromBucket || fallbackSchema;
 }
 
 /**

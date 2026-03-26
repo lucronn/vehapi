@@ -221,18 +221,21 @@ export async function checkArticleContent(vehicleId, articleId) {
 }
 
 /**
- * Gets article metadata (bucket, parent_bucket) for access control.
+ * Gets article metadata for access control and worker schema routing.
  * Used by article access middleware to map bucket → module type and verify unlocks.
  * @param {string} vehicleId
  * @param {string} articleId The Motor API article ID (original_id)
- * @returns {{ bucket: string, parent_bucket: string } | null}
+ * @returns {{ bucket: string|null, parent_bucket: string|null, title?: string|null, code?: string|null, bulletin_number?: string|null, description?: string|null } | null}
  */
 export async function getArticleMetadata(vehicleId, articleId) {
     const cfg = getSupabaseConfig();
     if (!cfg) return null;
 
     try {
-        const url = `${cfg.url}/rest/v1/articles?vehicle_id=eq.${encodeURIComponent(vehicleId)}&original_id=eq.${encodeURIComponent(articleId)}&select=bucket,parent_bucket&limit=1`;
+        const url =
+            `${cfg.url}/rest/v1/articles?vehicle_id=eq.${encodeURIComponent(vehicleId)}` +
+            `&original_id=eq.${encodeURIComponent(articleId)}` +
+            '&select=bucket,parent_bucket,title,code,bulletin_number,description&limit=1';
         const response = await fetch(url, {
             method: 'GET',
             headers: {
@@ -244,7 +247,15 @@ export async function getArticleMetadata(vehicleId, articleId) {
         if (!response.ok) return null;
         const data = await response.json();
         if (data && data.length > 0) {
-            return { bucket: data[0].bucket, parent_bucket: data[0].parent_bucket };
+            const r = data[0];
+            return {
+                bucket: r.bucket ?? null,
+                parent_bucket: r.parent_bucket ?? null,
+                title: r.title ?? null,
+                code: r.code ?? null,
+                bulletin_number: r.bulletin_number ?? null,
+                description: r.description ?? null
+            };
         }
         return null;
     } catch {

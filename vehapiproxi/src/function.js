@@ -40,7 +40,7 @@ import {
     registerMotorInformationYmmeRoutes
 } from './routes/motor-information.js';
 import { createArticleContentRateLimiter, articleContentRateLimitGate } from './rate_limit.js';
-import { bucketToModuleType, checkArticleAccess } from './article-access.js';
+import { checkArticleAccess, resolveModuleTypeFromCatalogMetadata } from './article-access.js';
 import { normalizeMotorResponse, buildMenuFromNormalizedArticles } from './menu-normalizer.js';
 // AI parser is loaded lazily to avoid cold-start crashes when no Nemotron API key (NVIDIA_API_KEY / LLM_API_KEY)
 let _rewriteArticleHtml = null;
@@ -540,7 +540,7 @@ const articleAccessMiddleware = async (req, res, next) => {
     const vehicleUnlocks = unlocks[vehicleId] || [];
 
     const metadata = await getArticleMetadata(vehicleId, articleId);
-    const moduleType = metadata ? bucketToModuleType(metadata.bucket, metadata.parent_bucket) : null;
+    const moduleType = metadata ? resolveModuleTypeFromCatalogMetadata(metadata) : null;
     const { allowed } = checkArticleAccess(vehicleUnlocks, articleId, moduleType);
 
     if (allowed) {

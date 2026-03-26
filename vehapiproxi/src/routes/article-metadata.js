@@ -1,5 +1,5 @@
 import { getArticleMetadata } from '../supabase.js';
-import { bucketToModuleType } from '../article-access.js';
+import { resolveModuleTypeFromCatalogMetadata } from '../article-access.js';
 
 export function registerArticleMetadataEndpoint(app, secureAuthMiddleware, logger) {
     app.get(
@@ -14,7 +14,7 @@ export function registerArticleMetadataEndpoint(app, secureAuthMiddleware, logge
                     return res.status(404).json({ error: 'Article not found' });
                 }
 
-                const moduleType = bucketToModuleType(metadata.bucket, metadata.parent_bucket);
+                const moduleType = resolveModuleTypeFromCatalogMetadata(metadata);
                 res.json({
                     bucket: metadata.bucket,
                     parent_bucket: metadata.parent_bucket,
