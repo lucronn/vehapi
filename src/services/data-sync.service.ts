@@ -6,6 +6,14 @@ import { AiRewriteService } from './ai-rewrite.service';
 import { SupabaseService } from './supabase.service';
 import { normalizeCategoryParams } from '../utils/categorize.util';
 import type { Article } from '../models/motor.models';
+import type { ContentItem, NormalizedArticle } from '../models/normalized_schema';
+
+/** Resolved canonical body from Supabase (structured or cached enhanced HTML). */
+export interface CanonicalArticleBodyResult {
+    safeHtml: string;
+    rawForTutorial: string;
+    source: 'content_item' | 'enhanced_cache';
+}
 
 @Injectable({
     providedIn: 'root'
@@ -637,6 +645,123 @@ export class DataSyncService {
     }
 
     /**
+     * Fetch `articles` row for viewer (enhanced cache, etc.).
+     */
+    async fetchArticleRowForViewer(vehicleId: string, originalId: string): Promise<NormalizedArticle | null> {
+        const { data, error } = await this.supabase.client
+            .from('articles')
+            .select(
+                'id, vehicle_id, original_id, enhanced_content, original_content, title, content_source'
+            )
+            .eq('vehicle_id', vehicleId)
+            .eq('original_id', originalId)
+            .maybeSingle();
+        if (error) {
+            console.warn('[DataSync] fetchArticleRowForViewer:', error.message);
+            return null;
+        }
+        return (data as NormalizedArticle) ?? null;
+    }
+
+    /**
+     * Fetch normalized `content_item` for this catalog article (structured display fields).
+     */
+    async fetchContentItemForArticle(
+        vehicleExternalId: string,
+        motorArticleId: string,
+        contentSource: string
+    ): Promise<ContentItem | null> {
+        const tryOne = async (source: string) => {
+            const { data, error } = await this.supabase.client
+                .from('content_item')
+                .select('*')
+                .eq('vehicle_external_id', vehicleExternalId)
+                .eq('motor_article_id', motorArticleId)
+                .eq('content_source', source)
+                .maybeSingle();
+            if (error) {
+                console.warn('[DataSync] content_item fetch:', error.message);
+                return null;
+            }
+            return (data as ContentItem) ?? null;
+        };
+        let row = await tryOne(contentSource);
+        if (!row && contentSource.toUpperCase() !== 'MOTOR') {
+            row = await tryOne('MOTOR');
+        }
+        return row;
+    }
+
+    /**
+     * Prefer Supabase structured / cached body over ad-hoc Motor HTML + rewrite.
+     * Returns null if nothing canonical is available (caller uses Motor path).
+     */
+    async tryApplyCanonicalArticleBody(
+        vehicleId: string,
+        articleId: string,
+        contentSource: string,
+        sanitizeHtml: (raw: string) => string
+    ): Promise<CanonicalArticleBodyResult | null> {
+        const [articleRow, ci] = await Promise.all([
+            this.fetchArticleRowForViewer(vehicleId, articleId),
+            this.fetchContentItemForArticle(vehicleId, articleId, contentSource)
+        ]);
+
+        const long = ci?.display_long_description?.trim();
+        const short = ci?.display_description?.trim();
+        const enriched = Boolean(ci?.enriched_at || ci?.enrichment_source);
+
+        let rawBody = '';
+        if (long) {
+            rawBody = long.includes('<') ? long : this.wrapStructuredPlainText(long);
+        } else if (enriched && short && short.length >= 40) {
+            rawBody = short.includes('<') ? short : this.wrapStructuredPlainText(short);
+        }
+
+        if (rawBody) {
+            const safe = sanitizeHtml(rawBody);
+            if (safe) {
+                return { safeHtml: safe, rawForTutorial: rawBody, source: 'content_item' };
+            }
+        }
+
+        const ec = articleRow?.enhanced_content?.trim();
+        if (ec) {
+            const safe = sanitizeHtml(ec);
+            if (safe) {
+                return { safeHtml: safe, rawForTutorial: ec, source: 'enhanced_cache' };
+            }
+        }
+        return null;
+    }
+
+    private wrapStructuredPlainText(text: string): string {
+        const escaped = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/\n/g, '<br />');
+        return `<div class="torque-prose torque-structured-body">${escaped}</div>`;
+    }
+
+    /**
+     * Persist LLM-rewritten HTML so repeat views use Supabase instead of re-calling /api/rewrite.
+     */
+    async persistArticleEnhancedHtml(vehicleId: string, originalId: string, html: string): Promise<void> {
+        const trimmed = html?.trim();
+        if (!trimmed) return;
+        const { error } = await this.supabase.client
+            .from('articles')
+            .update({ enhanced_content: trimmed, updated_at: new Date().toISOString() })
+            .eq('vehicle_id', vehicleId)
+            .eq('original_id', originalId);
+        if (error) {
+            console.warn('[DataSync] persistArticleEnhancedHtml failed:', error.message);
+        }
+    }
+
+    /**
      * Lazy synchronization: Saves a single article's content to Supabase.
      * Called by ArticleViewerComponent AFTER it already has the HTML content,
      * so no additional API call is needed.
@@ -690,7 +815,7 @@ export class DataSyncService {
                 release_date: item.releaseDate ?? null,
                 sort: typeof item.sort === 'number' ? item.sort : null,
                 original_content: rawHtml || (existing?.original_content ?? ''),
-                enhanced_content: '',
+                enhanced_content: (existing as NormalizedArticle)?.enhanced_content ?? '',
                 vehicle_id: vid,
                 content_source: cs,
                 source: cs,

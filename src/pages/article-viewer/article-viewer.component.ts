@@ -238,58 +238,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
 
     contentRequest$.subscribe({
       next: (content) => {
-        const rawBody = (content?.body as any) || {};
-        const rawHtml = rawBody.html || rawBody.content || '';
-        if (!content || !content.body || !rawHtml) {
-          console.error('[ArticleViewer] API returned empty content body or html');
-        }
-
-        this.isCached.set(content.header?.isCached || false);
-
-        if (!this.articleTitleInput && rawBody?.title) {
-          const cleaned = this.cleanTitle(String(rawBody.title));
-          this.articleTitle.set(cleaned);
-          if (this.windowId) {
-            this.windowManager.updateTitle(this.windowId, cleaned);
-          }
-        }
-
-        const pdfUri = rawBody?.pdfDataUri || null;
-
-        if (pdfUri) {
-          // PDF content — set safe URI for inline viewer, clear HTML
-          this.pdfDataUri.set(this.sanitizer.bypassSecurityTrustResourceUrl(pdfUri));
-          this.articleContent.set('');
-          this.sections.set([]);
-          this.isLoading.set(false);
-          return;
-        }
-
-        this.pdfDataUri.set(null);
-        const { htmlString, safeHtml, sections } = this.processHtml(rawHtml, this.contentSource!, this.vehicleId!);
-
-        if (!htmlString || htmlString.trim() === '') {
-          this.articleContent.set('');
-        } else {
-          // Show original content immediately
-          this.articleContent.set(safeHtml);
-          // Store for tutorial generation
-          this.rawHtmlForTutorial = htmlString;
-          // Save content to Supabase (passes pre-fetched HTML to avoid double-fetch)
-          this.dataSync.syncSingleArticle(this.contentSource!, this.vehicleId!, {
-            id: aid,
-            title: rawBody?.title || this.articleTitle(),
-            bucket: rawBody?.bucket || '',
-            parentBucket: rawBody?.parentBucket || ''
-          }, rawHtml);
-          // Background AI rewrite
-          this.triggerAiRewrite(htmlString);
-        }
-
-        this.sections.set(sections);
-        this.isLoading.set(false);
-        // Reset scroll position when loading new article content in modal
-        try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) { }
+        void this.onArticleContentLoaded(content, aid);
       },
       error: (err) => {
         console.error('[ArticleViewer] Failed to load article:', err);
@@ -322,6 +271,114 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
         }
       }
     });
+  }
+
+  /**
+   * Loads article HTML from Motor, then prefers Supabase canonical body (`content_item` or
+   * `articles.enhanced_content`) when present — avoids redundant /api/rewrite when cache exists.
+   */
+  private async onArticleContentLoaded(content: unknown, aid: string): Promise<void> {
+    const rawBody = (content as { body?: Record<string, unknown> })?.body || {};
+    const rawHtml = String(rawBody.html || rawBody.content || '');
+    if (!content || !(content as { body?: unknown }).body || !rawHtml) {
+      console.error('[ArticleViewer] API returned empty content body or html');
+    }
+
+    this.isCached.set(Boolean((content as { header?: { isCached?: boolean } })?.header?.isCached));
+
+    if (!this.articleTitleInput && rawBody?.title) {
+      const cleaned = this.cleanTitle(String(rawBody.title));
+      this.articleTitle.set(cleaned);
+      if (this.windowId) {
+        this.windowManager.updateTitle(this.windowId, cleaned);
+      }
+    }
+
+    const pdfUri = (rawBody?.pdfDataUri as string | undefined) || null;
+
+    if (pdfUri) {
+      this.pdfDataUri.set(this.sanitizer.bypassSecurityTrustResourceUrl(String(pdfUri)));
+      this.articleContent.set('');
+      this.sections.set([]);
+      this.isLoading.set(false);
+      return;
+    }
+
+    this.pdfDataUri.set(null);
+    const { htmlString, safeHtml, sections } = this.processHtml(
+      rawHtml,
+      this.contentSource!,
+      this.vehicleId!
+    );
+
+    if (!htmlString || htmlString.trim() === '') {
+      this.articleContent.set('');
+      this.sections.set([]);
+      this.isLoading.set(false);
+      try {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (_) {
+        /* ignore */
+      }
+      return;
+    }
+
+    const canonical = await this.dataSync.tryApplyCanonicalArticleBody(
+      this.vehicleId!,
+      aid,
+      this.contentSource!,
+      (h) => this.sanitizer.sanitize(SecurityContext.HTML, h) || ''
+    );
+
+    if (canonical) {
+      this.articleContent.set(canonical.safeHtml);
+      this.rawHtmlForTutorial = canonical.rawForTutorial;
+      const tocFromCanonical =
+        canonical.rawForTutorial.includes('<') && /<h[1-6][\s>]/i.test(canonical.rawForTutorial)
+          ? this.processHtml(canonical.rawForTutorial, this.contentSource!, this.vehicleId!).sections
+          : [];
+      this.sections.set(tocFromCanonical.length ? tocFromCanonical : sections);
+      void this.dataSync.syncSingleArticle(
+        this.contentSource!,
+        this.vehicleId!,
+        {
+          id: aid,
+          title: (rawBody?.title as string) || this.articleTitle(),
+          bucket: (rawBody?.bucket as string) || '',
+          parentBucket: (rawBody?.parentBucket as string) || ''
+        },
+        rawHtml
+      );
+      this.isLoading.set(false);
+      try {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (_) {
+        /* ignore */
+      }
+      return;
+    }
+
+    this.articleContent.set(safeHtml);
+    this.rawHtmlForTutorial = htmlString;
+    void this.dataSync.syncSingleArticle(
+      this.contentSource!,
+      this.vehicleId!,
+      {
+        id: aid,
+        title: (rawBody?.title as string) || this.articleTitle(),
+        bucket: (rawBody?.bucket as string) || '',
+        parentBucket: (rawBody?.parentBucket as string) || ''
+      },
+      rawHtml
+    );
+    this.triggerAiRewrite(htmlString);
+    this.sections.set(sections);
+    this.isLoading.set(false);
+    try {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (_) {
+      /* ignore */
+    }
   }
 
   /** Poll /auth/status until ready, then re-attempt loadData */
@@ -378,6 +435,11 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
           if (safe) {
             this.articleContent.set(safe);
             this.rawHtmlForTutorial = rewritten;
+            const vid = this.vehicleId;
+            const articleId = this.internalArticleId();
+            if (vid && articleId) {
+              void this.dataSync.persistArticleEnhancedHtml(vid, articleId, rewritten);
+            }
           }
         }
         this.isRewriting.set(false);

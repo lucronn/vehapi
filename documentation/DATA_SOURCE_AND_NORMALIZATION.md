@@ -46,11 +46,26 @@ This **lazy-by-usage** pattern **phases Motor out** of routine use: the more the
 
 ---
 
+## Article body: structured canonical vs HTML rewrite (problem & direction)
+
+**Problem:** Relying on **`/api/rewrite`** over **chunks of Motor HTML** produces **inconsistent** storage, weak alignment with **normalized tables**, and makes plagiarism controls depend on **ad hoc** paraphrase passes instead of a **single schema**.
+
+**Direction (north star):**
+
+1. **Ingest / canonical:** Article substance should land in **structured** Supabase data — at minimum **`content_item`** (`display_*`, `search_text`, enrichment metadata) and, where applicable, **`procedures`**, **`diagram_document`**, etc., from the **same** `parseWithAI` / worker pipeline already used for normalization — **not** as the only artifact of a streaming HTML rewrite.
+2. **Read path:** The article viewer should **prefer**, in order: enriched **`content_item`** display fields (when present) → **`articles.enhanced_content`** (persisted after a successful rewrite for cache) → processed Motor HTML + optional rewrite.
+3. **HTML rewrite:** Treat **`/api/rewrite`** as a **display polish** / **fallback** when structured body is missing, and **persist** the result to **`articles.enhanced_content`** so repeat views stay consistent without re-querying the LLM.
+
+**Implementation status:** Partial — viewer + `DataSyncService` now query Supabase for `content_item` and `articles.enhanced_content` before defaulting to rewrite; full parity requires worker/enrichment populating **`display_long_description`** and related fields for all article types.
+
+---
+
 ## Anti-patterns
 
 - **No `motor.com` from the SPA** — unchanged: all upstream calls go through **`vehapiproxi`** (`environment.apiUrl`).
 - **No “Motor fallback” for display** when Supabase is already supposed to hold normalized data for that vehicle—fix **ingest**, **flags**, or **RLS**, not the read contract.
 - **No repeated full-catalog Motor reads** for routine navigation once Supabase has the catalog for that vehicle (unless repair).
+- **Do not treat LLM HTML rewrite as the only normalization step** — structured rows must be the source of truth for consistency and policy.
 
 ---
 
@@ -68,7 +83,7 @@ This **lazy-by-usage** pattern **phases Motor out** of routine use: the more the
 |------|--------|
 | **Dashboard sections (normalized)** | `loadSectionData`, `loadMaintenanceSchedules`, `loadParts` — Supabase-only; empty → UI empty + background `DataSyncService` lazy ingest where applicable (2026-03-25). |
 | **Specs / section availability** | Already Supabase-only when normalized. |
-| **Article bodies** | Lazy via article viewer / proxy + `syncSingleArticle` (existing). |
+| **Article bodies** | Prefer **`content_item`** + **`articles.enhanced_content`** when present; else Motor + `syncSingleArticle` + optional `/api/rewrite` with persist — see **Article body** section above. |
 | **Pre-normalization vehicles** | Motor proxy reads remain until `is_normalized` is false. |
 
 ---
@@ -77,3 +92,4 @@ This **lazy-by-usage** pattern **phases Motor out** of routine use: the more the
 
 - **2026-03-25** — Initial version: codifies Supabase-first reads, first-touch catalog ingest, lazy per-article normalization, and Motor as ingest/index only.
 - **2026-03-25** — `VehicleDataService` aligned: no Motor display fallback for normalized vehicles on section lists, maintenance, or parts; implementation status table added.
+- **2026-03-26** — **Article body** section: structured canonical vs HTML rewrite; article viewer + `DataSyncService` prefer `content_item` / `articles.enhanced_content` before `/api/rewrite`; persist enhanced HTML after rewrite.
