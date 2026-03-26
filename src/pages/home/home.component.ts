@@ -37,6 +37,7 @@ export class HomeComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   private pageTitle = inject(PageTitleService);
   private logger = inject(LoggerService);
+  private motorVehicleMappingInFlight = false;
 
   constructor() { }
 
@@ -396,7 +397,13 @@ export class HomeComponent implements OnInit {
 
         if (matchedModel) {
           this.selectedModel.set(matchedModel);
-
+          const mapped = await this.resolveMotorVehicleOptionsForModel(matchedModel);
+          if (mapped) {
+            this.searchInput.set('');
+            this.searchSubject.next('');
+            this.showSuggestions.set(true);
+            return;
+          }
           // Check engines
           if (matchedModel.engines && matchedModel.engines.length > 0) {
             this.engines.set(matchedModel.engines);
@@ -609,21 +616,37 @@ export class HomeComponent implements OnInit {
       case 'Model':
         const model = suggestion.value as Model;
         this.selectedModel.set(model);
-
-        // Check for engines
-        if (model.engines && model.engines.length > 0) {
-          this.engines.set(model.engines);
-          // Show suggestions immediately since engines are already in the model
-          this.showSuggestions.set(true);
-        } else {
-          // No engines, auto-select the model
+        this.resolveMotorVehicleOptionsForModel(model).then((mapped) => {
+          if (mapped) {
+            this.showSuggestions.set(true);
+            return;
+          }
+          // Check for engines
+          if (model.engines && model.engines.length > 0) {
+            this.engines.set(model.engines);
+            // Show suggestions immediately since engines are already in the model
+            this.showSuggestions.set(true);
+          } else {
+            // No engines, auto-select the model
+            this.selectedVehicle.set({ vehicleId: model.id, displayName: model.model });
+            this.showSuggestions.set(false);
+            // Auto-advance if on mobile since there is no continue button in wizard
+            if (this.isMobile()) {
+              this.submitSearch();
+            }
+          }
+        }).catch(() => {
+          if (model.engines && model.engines.length > 0) {
+            this.engines.set(model.engines);
+            this.showSuggestions.set(true);
+            return;
+          }
           this.selectedVehicle.set({ vehicleId: model.id, displayName: model.model });
           this.showSuggestions.set(false);
-          // Auto-advance if on mobile since there is no continue button in wizard
           if (this.isMobile()) {
             this.submitSearch();
           }
-        }
+        });
         break;
       case 'Engine':
         const selectedEngine = suggestion.value as { vehicleId: string; displayName: string };
@@ -719,6 +742,48 @@ export class HomeComponent implements OnInit {
       this.router.navigate(['/vehicle', this.currentContentSource(), vehicle.vehicleId]);
     } else {
       this.errorMessage.set('Please select a complete vehicle.');
+    }
+  }
+
+  /**
+   * Resolve OEM model id to MOTOR engine ids during YMME selection.
+   * Prevents a second "orientation" modal after navigation.
+   */
+  private async resolveMotorVehicleOptionsForModel(model: Model): Promise<boolean> {
+    const source = this.currentContentSource();
+    if (!source || source.toUpperCase() === 'MOTOR') {
+      return false;
+    }
+    if (this.motorVehicleMappingInFlight) {
+      return false;
+    }
+    this.motorVehicleMappingInFlight = true;
+    this.isLoading.set(true);
+    try {
+      const res = await firstValueFrom(this.motorApi.getMotorVehicles(source, model.id));
+      const mappings = Array.isArray(res?.body) ? res.body : [];
+      const options: Engine[] = mappings.flatMap((mapping: any) =>
+        Array.isArray(mapping?.engines)
+          ? mapping.engines
+            .filter((engine: any) => !!engine?.id)
+            .map((engine: any) => ({
+              id: String(engine.id),
+              name: `${mapping?.model || model.model} - ${engine?.name || 'Engine'}`
+            }))
+          : []
+      );
+      if (options.length === 0) {
+        return false;
+      }
+      this.currentContentSource.set('MOTOR');
+      this.engines.set(options);
+      return true;
+    } catch (err) {
+      this.logger.warn('[Home] MOTOR vehicle mapping failed during YMME, falling back to model engines', err);
+      return false;
+    } finally {
+      this.motorVehicleMappingInFlight = false;
+      this.isLoading.set(false);
     }
   }
 

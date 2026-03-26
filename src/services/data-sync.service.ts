@@ -39,6 +39,10 @@ export class DataSyncService {
     private eagerReferenceSyncInFlight = new Set<string>();
     /** Dedupe concurrent Motor `/fluids` → `specifications` upserts (eager + specs section). */
     private fluidSyncPromises = new Map<string, Promise<void>>();
+    /** Browser anon clients are read-only after RLS tightening; disable metadata writes after first deny. */
+    private metadataClientWriteDisabled = false;
+    /** Browser client write path is disabled after first RLS/auth deny. */
+    private clientWriteDisabled = false;
 
     /** Mile intervals to prefetch into `maintenance_schedules` (each skipped if already present). */
     private readonly eagerMaintenanceIntervalsMiles = [7500, 15000, 30000, 45000, 60000, 100000];
@@ -127,21 +131,30 @@ export class DataSyncService {
      * from catalog articles, fluids via `/fluids`, parts, maintenance). Full article HTML stays lazy per article.
      */
     async ensureVehicleRecord(contentSource: string, vehicleId: string, vehicleName: string): Promise<void> {
+        if (this.clientWriteDisabled) {
+            return;
+        }
         const parts = vehicleName.split(' ');
         const year = parseInt(parts[0]) || 0;
         const make = parts[1] || '';
         const model = parts.slice(2).join(' ') || '';
 
-        await this.supabase.client.from('vehicles').upsert({
+        const { error } = await this.supabase.client.from('vehicles').upsert({
             external_id: vehicleId,
             content_source: contentSource,
             year,
             make,
             model,
             updated_at: new Date().toISOString()
-        }, { onConflict: 'external_id' }).then(null, (e: any) =>
-            this.logger.warn('[DataSync] Vehicle upsert failed (non-fatal):', e)
-        );
+        }, { onConflict: 'external_id' });
+        if (error) {
+            if (this.isClientWriteDenied(error)) {
+                this.clientWriteDisabled = true;
+                this.logger.info('[DataSync] Disabling browser DB writes (RLS/auth read-only).');
+                return;
+            }
+            this.logger.warn('[DataSync] Vehicle upsert failed (non-fatal):', error);
+        }
     }
 
     /**
@@ -356,6 +369,9 @@ export class DataSyncService {
      * Use paths without `/api` prefix (e.g. `/years`, `/year/2020/makes`).
      */
     async cacheVehicleMetadata(apiPath: string, payload: unknown): Promise<void> {
+        if (this.metadataClientWriteDisabled || this.clientWriteDisabled) {
+            return;
+        }
         let path = apiPath.startsWith('/api/') ? apiPath.slice(4) : apiPath;
         if (!path.startsWith('/')) {
             path = `/${path}`;
@@ -373,6 +389,12 @@ export class DataSyncService {
                 { onConflict: 'path' }
             );
             if (error) {
+                if (this.isClientWriteDenied(error)) {
+                    this.metadataClientWriteDisabled = true;
+                    this.clientWriteDisabled = true;
+                    this.logger.info('[DataSync] Disabling client vehicle_metadata cache writes (RLS read-only).');
+                    return;
+                }
                 this.logger.warn('[DataSync] cacheVehicleMetadata upsert failed:', path, error);
             }
         } catch (e) {
@@ -885,12 +907,8 @@ export class DataSyncService {
                 .select()
                 .single();
             if (upsertError) {
-                const msg = upsertError.message || '';
-                const isRlsWriteDenied =
-                    upsertError.code === '42501' ||
-                    msg.toLowerCase().includes('row-level security') ||
-                    msg.toLowerCase().includes('permission denied');
-                if (isRlsWriteDenied) {
+                if (this.isClientWriteDenied(upsertError)) {
+                    this.clientWriteDisabled = true;
                     // Expected in production after RLS tightening: browser anon clients are read-only.
                     // Content ingest was still triggered through proxy GET above.
                     this.logger.info('[DataSync] Browser write blocked by RLS; waiting for backend ingest path.', {
@@ -905,6 +923,24 @@ export class DataSyncService {
         } finally {
             this.inProgressArticleSyncs.delete(syncKey);
         }
+    }
+
+    private isClientWriteDenied(error: any): boolean {
+        const msg = String(error?.message || '').toLowerCase();
+        const details = String(error?.details || '').toLowerCase();
+        const hint = String(error?.hint || '').toLowerCase();
+        const status = Number(error?.status || 0);
+        return (
+            error?.code === '42501' ||
+            status === 401 ||
+            status === 403 ||
+            msg.includes('row-level security') ||
+            msg.includes('permission denied') ||
+            msg.includes('unauthorized') ||
+            details.includes('row-level security') ||
+            details.includes('permission denied') ||
+            hint.includes('row-level security')
+        );
     }
 
     private async syncCommonIssues(cs: string, vid: string, name: string) {

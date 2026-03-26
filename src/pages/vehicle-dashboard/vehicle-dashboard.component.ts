@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map, switchMap, debounceTime, distinctUntilChanged, catchError } from 'rxjs/operators';
-import { Subject, of, from } from 'rxjs';
+import { Subject, of } from 'rxjs';
 
 // Models
 import { Article, PersistedVehicle } from '../../models/motor.models';
@@ -16,7 +16,6 @@ import { SearchResultsState } from '../../services/search-results.state';
 import { DataSyncService } from '../../services/data-sync.service';
 import { VehiclePersistenceService } from '../../services/vehicle-persistence.service';
 import { AuthService } from '../../services/auth.service';
-import { SupabaseService } from '../../services/supabase.service';
 import { effect } from '@angular/core';
 import { PageTitleService } from '../../services/page-title.service';
 
@@ -101,7 +100,6 @@ export class VehicleDashboardComponent {
   private router = inject(Router);
   private motorApi = inject(MotorApiService);
   private vehicleData = inject(VehicleDataService);
-  private supabase = inject(SupabaseService);
   public searchResultsState = inject(SearchResultsState);
   public dataSync = inject(DataSyncService);
   private persistence = inject(VehiclePersistenceService);
@@ -139,33 +137,16 @@ export class VehicleDashboardComponent {
     return undefined;
   });
 
-  // Vehicle info: prefer Supabase vehicles.name, fall back to Motor proxy
+  // Vehicle info: always resolve via proxy; `vehicles.name` is not guaranteed in current schema.
   private vehicleInfo$ = this.route.paramMap.pipe(
     switchMap(params => {
       const contentSource = params.get('contentSource');
       const vehicleId = params.get('vehicleId');
       if (!contentSource || !vehicleId) return of('');
 
-      return from(
-        this.supabase.client
-          .from('vehicles')
-          .select('name')
-          .eq('external_id', vehicleId)
-          .maybeSingle()
-      ).pipe(
-        switchMap(({ data }) => {
-          if (data?.name) return of(data.name as string);
-          return this.motorApi.getVehicleName(contentSource, vehicleId).pipe(
-            map(res => res.body || ''),
-            catchError(() => of(''))
-          );
-        }),
-        catchError(() =>
-          this.motorApi.getVehicleName(contentSource, vehicleId).pipe(
-            map(res => res.body || ''),
-            catchError(() => of(''))
-          )
-        )
+      return this.motorApi.getVehicleName(contentSource, vehicleId).pipe(
+        map(res => res.body || ''),
+        catchError(() => of(''))
       );
     })
   );
