@@ -281,35 +281,42 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
         parentBucket: ''
       });
 
-      const retryCanonical = await this.dataSync.tryApplyCanonicalArticleBody(
-        this.vehicleId!, aid, this.contentSource!,
-        (h) => this.sanitizer.sanitize(SecurityContext.HTML, h) || ''
-      );
-      if (retryCanonical) {
-        this.applyCanonicalBodyToView(retryCanonical);
-        if (!this.articleTitleInput && !this.articleTitle()) {
-          this.setNormalizedFallbackTitle(aid);
-        }
-        return;
-      }
-
-      const row = await this.dataSync.fetchArticleRowForViewer(this.vehicleId!, aid);
-      const raw = row?.original_content?.trim();
-      if (raw) {
-        this.applyOriginalContentFromArticleRow(raw);
-        if (!this.articleTitleInput && !this.articleTitle()) {
-          const t = row?.title?.trim();
-          if (t) {
-            const cleaned = this.cleanTitle(t);
-            this.articleTitle.set(cleaned);
-            if (this.windowId) this.windowManager.updateTitle(this.windowId, cleaned);
-          } else {
+      // Allow backend ingest/worker a brief window to persist content before declaring processing.
+      for (let attempt = 0; attempt < 4; attempt++) {
+        const retryCanonical = await this.dataSync.tryApplyCanonicalArticleBody(
+          this.vehicleId!, aid, this.contentSource!,
+          (h) => this.sanitizer.sanitize(SecurityContext.HTML, h) || ''
+        );
+        if (retryCanonical) {
+          this.applyCanonicalBodyToView(retryCanonical);
+          if (!this.articleTitleInput && !this.articleTitle()) {
             this.setNormalizedFallbackTitle(aid);
           }
+          return;
         }
-        const htmlForRewrite = this.rawHtmlForTutorial || raw;
-        this.triggerAiRewrite(htmlForRewrite);
-        return;
+
+        const row = await this.dataSync.fetchArticleRowForViewer(this.vehicleId!, aid);
+        const raw = row?.original_content?.trim();
+        if (raw) {
+          this.applyOriginalContentFromArticleRow(raw);
+          if (!this.articleTitleInput && !this.articleTitle()) {
+            const t = row?.title?.trim();
+            if (t) {
+              const cleaned = this.cleanTitle(t);
+              this.articleTitle.set(cleaned);
+              if (this.windowId) this.windowManager.updateTitle(this.windowId, cleaned);
+            } else {
+              this.setNormalizedFallbackTitle(aid);
+            }
+          }
+          const htmlForRewrite = this.rawHtmlForTutorial || raw;
+          this.triggerAiRewrite(htmlForRewrite);
+          return;
+        }
+
+        if (attempt < 3) {
+          await new Promise((resolve) => setTimeout(resolve, 700));
+        }
       }
     } catch (e) {
       console.error('[ArticleViewer] Lazy ingest failed for normalized vehicle:', e);

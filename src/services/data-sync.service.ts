@@ -840,15 +840,16 @@ export class DataSyncService {
                 .eq('original_id', item.id)
                 .maybeSingle();
 
+            const existingHtml = typeof existing?.original_content === 'string' ? existing.original_content.trim() : '';
             // If we already have the content cached, skip
-            if (existing?.original_content) {
+            if (existingHtml) {
                 return existing;
             }
 
             // Use pre-fetched HTML when available; only call API as last resort
             let rawHtml = prefetchedHtml || '';
-            if (!rawHtml && !existing) {
-                this.logger.info(`[DataSync] Fetching ${item.id} from Motor API (no prefetched HTML)...`);
+            if (!rawHtml && !existingHtml) {
+                this.logger.info(`[DataSync] Fetching ${item.id} from proxy for ingest/cache...`);
                 if (String(item.id || '').startsWith('L:')) {
                     const laborRes = await lastValueFrom(this.motorApi.getLaborDetails(cs, vid, item.id));
                     rawHtml = (laborRes?.body as any)?.content || (laborRes?.body as any)?.html || '';
@@ -878,11 +879,28 @@ export class DataSyncService {
                 updated_at: new Date().toISOString()
             };
 
-            const { data: upserted } = await this.supabase.client
+            const { data: upserted, error: upsertError } = await this.supabase.client
                 .from('articles')
                 .upsert(articleData, { onConflict: 'vehicle_id,original_id' })
                 .select()
                 .single();
+            if (upsertError) {
+                const msg = upsertError.message || '';
+                const isRlsWriteDenied =
+                    upsertError.code === '42501' ||
+                    msg.toLowerCase().includes('row-level security') ||
+                    msg.toLowerCase().includes('permission denied');
+                if (isRlsWriteDenied) {
+                    // Expected in production after RLS tightening: browser anon clients are read-only.
+                    // Content ingest was still triggered through proxy GET above.
+                    this.logger.info('[DataSync] Browser write blocked by RLS; waiting for backend ingest path.', {
+                        articleId: item.id,
+                        vehicleId: vid
+                    });
+                    return existing ?? articleData;
+                }
+                this.logger.warn('[DataSync] Article upsert failed:', upsertError);
+            }
             return upserted ?? articleData;
         } finally {
             this.inProgressArticleSyncs.delete(syncKey);
