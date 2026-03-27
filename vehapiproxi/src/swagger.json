@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Vehicle Service API",
-    "description": "Comprehensive API for accessing vehicle information, articles, maintenance schedules, parts, and related content.\n\n**Architecture Notes:**\n* **Environments:** This specification covers both the upstream Motor.com service and the custom Vercel Proxy. \n* **Routing/Sharding:** The `{contentSource}` parameter acts as a primary shard key, routing requests to specific OEM (Toyota, Ford) or aftermarket (MOTOR) databases.\n* **ID Hierarchy:** `{vehicleId}` represents the Base Model. `motorVehicleId` (passed as a query parameter) represents the highly specific Engine/Trim level.\n\n**Consumption guide (practical call flow):**\n* **Step 1 \u2014 Resolve Year/Make/Model:** `GET /api/years` \u2192 `GET /api/year/{year}/makes` \u2192 `GET /api/year/{year}/make/{make}/models`\n  - The **models response carries `contentSource`** (this is authoritative; do not guess from make name).\n* **Step 2 \u2014 Pick the vehicleId:** Choose a model row from `models` and use its `vehicleId` (format varies by source; treat as opaque string).\n* **Step 3 \u2014 If engine/trim is required:** For many non-`MOTOR` sources, call\n  `GET /api/source/{contentSource}/{vehicleId}/motorvehicles` and select an engine; pass the selected engine id as `motorVehicleId` on downstream calls.\n* **Step 4 \u2014 Content:** Use the `/api/source/{contentSource}/vehicle/{vehicleId}/...` endpoints.\n* **Toyota Delta mode:** When comparing quarters, the client uses `contentSource=ToyotaDelta` and calls `toyotadeltaarticles`\n  with `sourceQuarter` + `targetQuarter` (instead of `articles/v2`).\n\n**M1 connector frontend (reference):** Parameter usage and response shapes for `sites.motor.com/m1` are documented in **`vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md`** (e.g. `searchTerm` on search/parts/maintenance, `frequencyTypeCode` F/N/R for maintenance-by-frequency, labor only for `L:` article IDs, placeholders `-997`/`-998`/`-999`).\n",
-    "version": "1.15.0",
+    "title": "Torque — Vehicle Service API (vehapiproxi)",
+    "description": "Comprehensive API for the **Torque** app: Motor M1 proxy (`sites.motor.com/m1`), Supabase-backed caches, Stripe credits, AI (Nemotron), and L2 search.\n\n**Torque auth (credits, L2, article metadata, Motor Information YMME):** `Authorization: Bearer <Supabase access_token>`. The proxy rejects `x-user-id`; use a real JWT.\n\n**Motor upstream auth:** Most `/api/...` passthrough routes require the proxy\u2019s EBSCO session (managed server-side); browser clients call the **Vercel proxy** origin only.\n\n**Architecture Notes:**\n* **Environments:** This specification covers both the upstream Motor.com service and the custom Vercel Proxy. \n* **Routing/Sharding:** The `{contentSource}` parameter acts as a primary shard key, routing requests to specific OEM (Toyota, Ford) or aftermarket (MOTOR) databases.\n* **ID Hierarchy:** `{vehicleId}` represents the Base Model. `motorVehicleId` (passed as a query parameter) represents the highly specific Engine/Trim level.\n\n**Consumption guide (practical call flow):**\n* **Step 1 \u2014 Resolve Year/Make/Model:** `GET /api/years` \u2192 `GET /api/year/{year}/makes` \u2192 `GET /api/year/{year}/make/{make}/models`\n  - The **models response carries `contentSource`** (this is authoritative; do not guess from make name).\n* **Step 2 \u2014 Pick the vehicleId:** Choose a model row from `models` and use its `vehicleId` (format varies by source; treat as opaque string).\n* **Step 3 \u2014 If engine/trim is required:** For many non-`MOTOR` sources, call\n  `GET /api/source/{contentSource}/{vehicleId}/motorvehicles` and select an engine; pass the selected engine id as `motorVehicleId` on downstream calls.\n* **Step 4 \u2014 Content:** Use the `/api/source/{contentSource}/vehicle/{vehicleId}/...` endpoints.\n* **Toyota Delta mode:** When comparing quarters, the client uses `contentSource=ToyotaDelta` and calls `toyotadeltaarticles`\n  with `sourceQuarter` + `targetQuarter` (instead of `articles/v2`).\n\n**M1 connector frontend (reference):** Parameter usage and response shapes for `sites.motor.com/m1` are documented in **`vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md`** (e.g. `searchTerm` on search/parts/maintenance, `frequencyTypeCode` F/N/R for maintenance-by-frequency, labor only for `L:` article IDs, placeholders `-997`/`-998`/`-999`).\n\n**Repo:** Also published as `documentation/vehapiproxi-openapi.yaml` (generated from this file).\n",
+    "version": "1.16.0",
     "contact": {
       "name": "API Support"
     }
@@ -11,11 +11,15 @@
   "servers": [
     {
       "url": "https://vehapiproxi.vercel.app",
-      "description": "Production server (Vercel Proxy)"
+      "description": "Production proxy (Vercel)"
+    },
+    {
+      "url": "http://localhost:3001",
+      "description": "Local vehapiproxi (`cd vehapiproxi && npm start`)"
     },
     {
       "url": "https://sites.motor.com/m1",
-      "description": "Upstream MOTOR Server"
+      "description": "Upstream MOTOR Server (direct — not used by Torque SPA)"
     }
   ],
   "tags": [
@@ -66,6 +70,22 @@
     {
       "name": "UI",
       "description": "Operations for UI configuration, assets, and settings"
+    },
+    {
+      "name": "AI",
+      "description": "Nemotron-backed rewrite, tutorials, and common-issues generation"
+    },
+    {
+      "name": "L2 RAG",
+      "description": "Vector search over normalized content chunks (requires unlock + embeddings)"
+    },
+    {
+      "name": "Motor Information",
+      "description": "Optional `api.motor.com` Information API — YMME base vehicle, engines, recommended fluids"
+    },
+    {
+      "name": "Article access",
+      "description": "Article metadata for paywall / module resolution"
     }
   ],
   "paths": {
@@ -95,6 +115,15 @@
                     "lastAuth": {
                       "type": "number",
                       "description": "Epoch ms of last successful auth"
+                    },
+                    "llmKeyConfigured": {
+                      "type": "boolean",
+                      "description": "True when NVIDIA_API_KEY / LLM_API_KEY is set (value never returned)"
+                    },
+                    "llmKeyEnv": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "Which env var name provides the LLM key (for deployment verification)"
                     }
                   }
                 }
@@ -372,14 +401,9 @@
         ],
         "summary": "Get credit balance",
         "operationId": "getCreditBalance",
-        "parameters": [
+        "security": [
           {
-            "name": "x-user-id",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
+            "BearerAuth": []
           }
         ],
         "responses": {
@@ -417,14 +441,9 @@
         ],
         "summary": "Create checkout session",
         "operationId": "createCheckout",
-        "parameters": [
+        "security": [
           {
-            "name": "x-user-id",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
+            "BearerAuth": []
           }
         ],
         "requestBody": {
@@ -474,14 +493,9 @@
         ],
         "summary": "Create billing portal session",
         "operationId": "createBillingPortal",
-        "parameters": [
+        "security": [
           {
-            "name": "x-user-id",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
+            "BearerAuth": []
           }
         ],
         "requestBody": {
@@ -527,14 +541,9 @@
         ],
         "summary": "Unlock module",
         "operationId": "unlockModule",
-        "parameters": [
+        "security": [
           {
-            "name": "x-user-id",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
+            "BearerAuth": []
           }
         ],
         "requestBody": {
@@ -546,6 +555,10 @@
                 "properties": {
                   "vehicleId": {
                     "type": "string"
+                  },
+                  "vehicleName": {
+                    "type": "string",
+                    "description": "Display label; defaults to vehicleId"
                   },
                   "moduleType": {
                     "type": "string"
@@ -579,6 +592,638 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/credits/transactions": {
+      "get": {
+        "tags": [
+          "Credits"
+        ],
+        "summary": "List credit transactions",
+        "operationId": "getCreditTransactions",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "transactions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Bearer token"
+          }
+        }
+      }
+    },
+    "/api/credits/verify-session": {
+      "post": {
+        "tags": [
+          "Credits"
+        ],
+        "summary": "Verify Stripe checkout session after redirect",
+        "operationId": "verifyCheckoutSession",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "sessionId"
+                ],
+                "properties": {
+                  "sessionId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Fulfillment result"
+          },
+          "400": {
+            "description": "sessionId missing or invalid"
+          }
+        }
+      }
+    },
+    "/api/credits/webhook": {
+      "post": {
+        "tags": [
+          "Credits"
+        ],
+        "summary": "Stripe webhook (server-to-server)",
+        "description": "Raw JSON body with `Stripe-Signature`. Called by Stripe only — not for browsers.",
+        "operationId": "stripeWebhook",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook processed"
+          }
+        }
+      }
+    },
+    "/api/rewrite": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Rewrite article HTML via Nemotron",
+        "operationId": "rewriteArticleHtml",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "html"
+                ],
+                "properties": {
+                  "html": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rewritten HTML",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "html": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing html"
+          },
+          "503": {
+            "description": "AI module unavailable or missing LLM API key"
+          }
+        }
+      }
+    },
+    "/api/tutorials/generate": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Generate tutorial steps from article HTML",
+        "operationId": "generateTutorialSteps",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "html"
+                ],
+                "properties": {
+                  "html": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Generated steps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "steps": {
+                      "type": "array",
+                      "items": {}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "AI unavailable"
+          }
+        }
+      }
+    },
+    "/api/common-issues/generate": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Generate common issues for a vehicle",
+        "operationId": "generateCommonIssues",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "vehicleMetadata": {
+                    "type": "object",
+                    "required": [
+                      "vehicleName"
+                    ],
+                    "properties": {
+                      "vehicleName": {
+                        "type": "string"
+                      },
+                      "vehicleId": {
+                        "type": "string",
+                        "description": "External vehicle id for Supabase context enrichment"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Generated issues",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "issues": {
+                      "type": "array",
+                      "items": {}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "vehicleName required"
+          },
+          "503": {
+            "description": "AI unavailable"
+          }
+        }
+      }
+    },
+    "/api/vehicle/{vehicleId}/l2/search": {
+      "post": {
+        "tags": [
+          "L2 RAG"
+        ],
+        "summary": "L2 semantic search (vehicle in path)",
+        "operationId": "l2SearchByVehiclePath",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "vehicleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "URL-encoded vehicle external id (e.g. 81596:10217)"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "query"
+                ],
+                "properties": {
+                  "query": {
+                    "type": "string"
+                  },
+                  "matchCount": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 24,
+                    "default": 8
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ranked chunks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "chunks": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/L2SearchChunk"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing query or vehicle"
+          },
+          "403": {
+            "description": "No module unlock for this vehicle"
+          },
+          "503": {
+            "description": "Embedding or RPC unavailable"
+          }
+        }
+      }
+    },
+    "/api/l2/search": {
+      "post": {
+        "tags": [
+          "L2 RAG"
+        ],
+        "summary": "L2 semantic search (legacy — vehicle in body)",
+        "operationId": "l2SearchLegacyBody",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "vehicleExternalId",
+                  "query"
+                ],
+                "properties": {
+                  "vehicleExternalId": {
+                    "type": "string"
+                  },
+                  "query": {
+                    "type": "string"
+                  },
+                  "matchCount": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 24,
+                    "default": 8
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ranked chunks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "chunks": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/L2SearchChunk"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/source/{contentSource}/vehicle/{vehicleId}/article/{articleId}/metadata": {
+      "get": {
+        "tags": [
+          "Article access"
+        ],
+        "summary": "Article catalog metadata (bucket, moduleType)",
+        "operationId": "getArticleMetadataTorque",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "contentSource",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vehicleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "articleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Metadata for access checks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "bucket": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "parent_bucket": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "moduleType": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Article not found in Supabase"
+          }
+        }
+      }
+    },
+    "/api/motor-information/ymme/base-vehicle": {
+      "get": {
+        "tags": [
+          "Motor Information"
+        ],
+        "summary": "Resolve Motor Information baseVehicleId from YMME",
+        "operationId": "getMotorInformationBaseVehicle",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          {
+            "name": "make",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Base vehicle id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "baseVehicleId": {},
+                    "year": {},
+                    "make": {
+                      "type": "string"
+                    },
+                    "model": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "MOTOR_INFORMATION_* keys not configured"
+          }
+        }
+      }
+    },
+    "/api/motor-information/ymme/engines": {
+      "get": {
+        "tags": [
+          "Motor Information"
+        ],
+        "summary": "List engines for YMME (Motor Information API)",
+        "operationId": "getMotorInformationEngines",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          {
+            "name": "make",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Engine list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "engines": {
+                      "type": "array",
+                      "items": {}
+                    },
+                    "year": {},
+                    "make": {
+                      "type": "string"
+                    },
+                    "model": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "MOTOR_INFORMATION_* keys not configured"
           }
         }
       }
@@ -3273,9 +3918,58 @@
             "type": "string"
           }
         }
+      },
+      "L2SearchChunk": {
+        "type": "object",
+        "description": "Single L2 retrieval hit — see `l2_retrieval.js` `mapChunksToL2ApiResponse`",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "content_item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "score": {
+            "type": "number"
+          },
+          "citation": {
+            "type": "object",
+            "properties": {
+              "content_item_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "motor_article_id": {
+                "type": "string"
+              },
+              "canonical_silo_code": {
+                "type": "string",
+                "nullable": true
+              },
+              "content_source": {
+                "type": "string",
+                "nullable": true
+              },
+              "chunk_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "chunk_index": {
+                "type": "integer"
+              }
+            }
+          }
+        }
       }
     },
     "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Supabase Auth access_token (used for credits, L2, article metadata, Motor Information YMME)."
+      },
       "CookieAuth": {
         "type": "apiKey",
         "in": "header",

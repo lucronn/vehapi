@@ -1,0 +1,1093 @@
+openapi: 3.0.3
+info:
+  title: Torque — Supabase data (PostgREST)
+  description: |
+    **Contract for row shapes** in the Torque Supabase project, exposed via **PostgREST** at
+    `https://{project_ref}.supabase.co/rest/v1/`.
+
+    **Not** the Angular app or `vehapiproxi` Motor proxy — this describes **table-backed REST**
+    and one RPC. Source of truth for columns: `supabase_schema.sql` in the repo.
+
+    **Auth**
+    - `apikey`: Supabase anon or service-role key (see project settings).
+    - `Authorization: Bearer <JWT>`: user session (RLS applies).
+    - `service_role` bypasses RLS (server-side only — never ship to browsers).
+
+    **RLS**
+    - Many tables allow `SELECT` for authenticated/anon clients (see schema comments).
+    - `ai_processing_logs`, `failed_extractions`: RLS enabled with **no** read policy → default deny for clients.
+    - `match_content_chunks` RPC is **service_role** only in production migrations.
+
+    **Querying**
+    PostgREST filter/order/limit: column operators `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, `is`, etc.
+    See [PostgREST API](https://postgrest.org/en/stable/references/api.html).
+  version: "1.0.0"
+  contact:
+    name: Torque / vehapi
+
+servers:
+  - url: "https://{project_ref}.supabase.co/rest/v1"
+    variables:
+      project_ref:
+        default: your-project-ref
+        description: Supabase project reference (Settings → API)
+
+tags:
+  - name: Vehicles
+  - name: Catalog
+  - name: Procedures
+  - name: Diagnostics
+  - name: Specifications
+  - name: Taxonomy
+  - name: Parts
+  - name: Maintenance
+  - name: Normalization
+  - name: Evidence
+  - name: L2-RAG
+  - name: System
+  - name: RPC
+
+# PostgREST requires `apikey`; `Authorization: Bearer` is optional (RLS user context).
+security:
+  - ApiKeyAuth: []
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: apikey
+      description: Supabase anon or service_role key
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Supabase Auth JWT (optional for some read paths)
+
+  parameters:
+    PostgrestSelect:
+      name: select
+      in: query
+      description: Column selection (PostgREST), e.g. `*,vehicles(year,make,model)`
+      schema: { type: string }
+    PostgrestOrder:
+      name: order
+      in: query
+      description: Sort, e.g. `created_at.desc`
+      schema: { type: string }
+    PostgrestLimit:
+      name: limit
+      in: query
+      description: Max rows (use with Range header for pagination)
+      schema: { type: integer, minimum: 1 }
+    PostgrestOffset:
+      name: offset
+      in: query
+      schema: { type: integer, minimum: 0 }
+
+  schemas:
+    Vehicle:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        external_id: { type: string }
+        content_source: { type: string, default: MOTOR }
+        year: { type: integer, nullable: true }
+        make: { type: string, nullable: true }
+        model: { type: string, nullable: true }
+        is_normalized: { type: boolean, default: false }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    Article:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        vehicle_id: { type: string }
+        original_id: { type: string }
+        title: { type: string, nullable: true }
+        subtitle: { type: string, nullable: true }
+        code: { type: string, nullable: true }
+        description: { type: string, nullable: true }
+        bucket: { type: string, nullable: true }
+        parent_bucket: { type: string, nullable: true }
+        thumbnail_href: { type: string, nullable: true }
+        bulletin_number: { type: string, nullable: true }
+        release_date: { type: string, nullable: true }
+        sort: { type: integer, nullable: true }
+        content_source: { type: string, default: MOTOR }
+        original_content: { type: string, nullable: true }
+        enhanced_content: { type: string, nullable: true }
+        source: { type: string, default: MOTOR }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    Procedure:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        vehicle_id: { type: string }
+        external_id: { type: string }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        content_html: { type: string, nullable: true }
+        steps:
+          type: array
+          items: {}
+        tools_required:
+          type: array
+          items: {}
+        parts_required:
+          type: array
+          items: {}
+        time_estimate_hours: { type: number, nullable: true }
+        cautions: { type: string, nullable: true }
+        category_id: { type: string, format: uuid, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ProcedureStep:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        vehicle_id: { type: string }
+        source_article_id: { type: string }
+        step_index: { type: integer }
+        display_order: { type: integer, nullable: true }
+        step_text: { type: string }
+        image_url: { type: string, nullable: true }
+        warning: { type: string, nullable: true }
+        note: { type: string, nullable: true }
+        extractor_version: { type: string, default: l1-v1 }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ProcedureTool:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        vehicle_id: { type: string }
+        source_article_id: { type: string }
+        line_index: { type: integer }
+        tool_text: { type: string }
+        extractor_version: { type: string, default: l1-v1 }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ProcedurePart:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        vehicle_id: { type: string }
+        source_article_id: { type: string }
+        line_index: { type: integer }
+        part_number: { type: string, nullable: true }
+        description: { type: string }
+        quantity: { type: number, default: 1 }
+        extractor_version: { type: string, default: l1-v1 }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    Tsb:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        vehicle_id: { type: string }
+        bulletin_number: { type: string }
+        title: { type: string }
+        summary: { type: string, nullable: true }
+        content: { type: string, nullable: true }
+        content_html: { type: string, nullable: true }
+        issue_date: { type: string, format: date, nullable: true }
+        affected_components:
+          type: array
+          items: {}
+        models_affected:
+          type: array
+          items: {}
+        external_id: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    Dtc:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        vehicle_id: { type: string }
+        code: { type: string }
+        description: { type: string, nullable: true }
+        content_html: { type: string, nullable: true }
+        possible_causes:
+          type: array
+          items: {}
+        symptoms:
+          type: array
+          items: {}
+        diagnostic_steps:
+          type: array
+          items: {}
+        monitor_strategy: { type: string, nullable: true }
+        malfunction_criteria: { type: string, nullable: true }
+        external_id: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    Specification:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        vehicle_id: { type: string }
+        category: { type: string }
+        name: { type: string }
+        value: { type: string, nullable: true }
+        unit: { type: string, nullable: true }
+        display_text: { type: string, nullable: true }
+        metadata: {}
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    SpecFact:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        vehicle_id: { type: string }
+        category: { type: string }
+        name: { type: string }
+        spec_type: { type: string, default: other }
+        component: { type: string, nullable: true }
+        value_num: { type: number, nullable: true }
+        value_text: { type: string, nullable: true }
+        unit: { type: string, nullable: true }
+        display_text: { type: string, nullable: true }
+        conditions: {}
+        confidence: { type: number, default: 1 }
+        source_article_id: { type: string, nullable: true }
+        metadata: {}
+        extractor_version: { type: string, default: l1-v1 }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    Category:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        parent_id: { type: string, format: uuid, nullable: true }
+        name: { type: string }
+        type: { type: string }
+        sort_order: { type: integer, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    VehicleMetadata:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        path: { type: string }
+        data: {}
+        updated_at: { type: string, format: date-time }
+
+    AiProcessingLog:
+      type: object
+      description: RLS default deny for anon/auth clients in production tightening
+      properties:
+        id: { type: string, format: uuid }
+        source_file: { type: string }
+        category: { type: string, nullable: true }
+        status: { type: string }
+        error_message: { type: string, nullable: true }
+        tokens_used: { type: integer, nullable: true }
+        prompt_tokens: { type: integer, nullable: true }
+        completion_tokens: { type: integer, nullable: true }
+        processed_at: { type: string, format: date-time }
+
+    FailedExtraction:
+      type: object
+      description: RLS default deny for anon/auth clients
+      properties:
+        id: { type: string, format: uuid }
+        article_id: { type: string }
+        raw_text: { type: string, nullable: true }
+        error_message: { type: string }
+        url_path: { type: string, nullable: true }
+        category: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    CommonIssuesCache:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        vehicle_id: { type: string }
+        source: { type: string, default: MOTOR }
+        issues:
+          type: array
+          items: {}
+        updated_at: { type: string, format: date-time }
+
+    Part:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        vehicle_id: { type: string }
+        part_number: { type: string }
+        description: { type: string, nullable: true }
+        manufacturer: { type: string, nullable: true }
+        list_price: { type: number, nullable: true }
+        dealer_price: { type: number, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    MaintenanceSchedule:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        vehicle_id: { type: string }
+        interval_value: { type: integer }
+        interval_unit: { type: string, default: Miles }
+        action: { type: string, nullable: true }
+        item: { type: string }
+        description: { type: string, nullable: true }
+        frequency_code: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    MaintenanceTask:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        vehicle_id: { type: string }
+        interval_value: { type: integer }
+        interval_unit: { type: string, default: Miles }
+        action: { type: string }
+        item: { type: string }
+        description: { type: string, nullable: true }
+        frequency_code: { type: string, nullable: true }
+        ingest_source: { type: string, default: motor_interval }
+        severity_bucket: { type: string, nullable: true }
+        metadata_json: {}
+        extractor_version: { type: string, default: l1-client-v1 }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    CanonicalBucket:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        display_name: { type: string }
+        description: { type: string, nullable: true }
+        parent_id: { type: string, format: uuid, nullable: true }
+        module_type: { type: string, nullable: true }
+        sort_order: { type: integer, default: 0 }
+        created_at: { type: string, format: date-time }
+
+    BucketAlias:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        content_source: { type: string, default: MOTOR }
+        raw_parent_bucket: { type: string, nullable: true }
+        raw_bucket: { type: string, nullable: true }
+        canonical_bucket_id: { type: string, format: uuid }
+        confidence: { type: number, default: 1 }
+        created_at: { type: string, format: date-time }
+
+    EvidenceIngest:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        fetched_at: { type: string, format: date-time }
+        url_path: { type: string, nullable: true }
+        http_status: { type: integer, nullable: true }
+        content_type: { type: string, nullable: true }
+        body_json: {}
+        body_storage_ref: { type: string, nullable: true }
+        sha256: { type: string, nullable: true }
+        vehicle_external_id: { type: string, nullable: true }
+        content_source: { type: string, default: MOTOR }
+        source_label: { type: string, nullable: true }
+
+    EvidenceLink:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        evidence_id: { type: string, format: uuid }
+        entity_type: { type: string }
+        entity_id: { type: string, format: uuid }
+        extractor_version: { type: string, default: v1 }
+        created_at: { type: string, format: date-time }
+
+    ContentItem:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string, default: unknown }
+        motor_article_id: { type: string }
+        vehicle_external_id: { type: string }
+        variant_id: { type: string, format: uuid, nullable: true }
+        content_source: { type: string, default: MOTOR }
+        motor_title: { type: string, nullable: true }
+        motor_subtitle: { type: string, nullable: true }
+        motor_description: { type: string, nullable: true }
+        motor_parent_bucket: { type: string, nullable: true }
+        motor_bucket: { type: string, nullable: true }
+        motor_code: { type: string, nullable: true }
+        motor_sort: { type: integer, nullable: true }
+        bulletin_number: { type: string, nullable: true }
+        release_date: { type: string, nullable: true }
+        thumbnail_href: { type: string, nullable: true }
+        canonical_silo_code: { type: string, nullable: true }
+        canonical_category_id: { type: string, format: uuid, nullable: true }
+        canonical_subcategory_id: { type: string, format: uuid, nullable: true }
+        tags:
+          type: array
+          items: { type: string }
+        display_title: { type: string, nullable: true }
+        display_subtitle: { type: string, nullable: true }
+        display_description: { type: string, nullable: true }
+        display_long_description: { type: string, nullable: true }
+        search_text: { type: string, nullable: true }
+        enrichment_source: { type: string, nullable: true }
+        enrichment_version: { type: string, nullable: true }
+        enriched_at: { type: string, format: date-time, nullable: true }
+        metadata_json: {}
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    MediaAsset:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        vehicle_external_id: { type: string, nullable: true }
+        content_source: { type: string, default: MOTOR }
+        motor_graphic_id: { type: string, nullable: true }
+        mime_type: { type: string, nullable: true }
+        sha256: { type: string, nullable: true }
+        source_label: { type: string, nullable: true }
+        storage_path: { type: string, nullable: true }
+        metadata_json: {}
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    DiagramDocument:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        vehicle_id: { type: string }
+        source_article_id: { type: string }
+        title: { type: string, nullable: true }
+        description: { type: string, nullable: true }
+        content_html: { type: string, nullable: true }
+        thumbnail_graphic_id: { type: string, nullable: true }
+        thumbnail_media_asset_id: { type: string, format: uuid, nullable: true }
+        extractor_version: { type: string, nullable: true }
+        metadata_json: {}
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ComponentLocationDocument:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        vehicle_id: { type: string }
+        source_article_id: { type: string }
+        title: { type: string, nullable: true }
+        description: { type: string, nullable: true }
+        content_html: { type: string, nullable: true }
+        thumbnail_graphic_id: { type: string, nullable: true }
+        thumbnail_media_asset_id: { type: string, format: uuid, nullable: true }
+        extractor_version: { type: string, nullable: true }
+        metadata_json: {}
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    LaborOperation:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        vehicle_id: { type: string }
+        source_article_id: { type: string }
+        title: { type: string, nullable: true }
+        description: { type: string, nullable: true }
+        content_html: { type: string, nullable: true }
+        metadata_json: {}
+        extractor_version: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ContentChunk:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        content_item_id: { type: string, format: uuid, nullable: true }
+        chunk_index: { type: integer }
+        text_content: { type: string }
+        embedding:
+          description: pgvector(1024); JSON representation depends on PostgREST/pgvector version
+          nullable: true
+        media_asset_id: { type: string, format: uuid, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    MatchContentChunksResult:
+      type: object
+      properties:
+        chunk_id: { type: string, format: uuid }
+        content_item_id: { type: string, format: uuid }
+        motor_article_id: { type: string }
+        canonical_silo_code: { type: string, nullable: true }
+        content_source: { type: string }
+        chunk_index: { type: integer }
+        text_content: { type: string }
+        similarity: { type: number }
+
+paths:
+  /vehicles:
+    get:
+      tags: [Vehicles]
+      summary: List or filter vehicles
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vehicle"
+  /articles:
+    get:
+      tags: [Catalog]
+      summary: Article catalog rows
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Article"
+  /procedures:
+    get:
+      tags: [Procedures]
+      summary: Normalized procedures
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Procedure"
+  /procedure_step:
+    get:
+      tags: [Procedures]
+      summary: L1 procedure steps
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProcedureStep"
+  /procedure_tool:
+    get:
+      tags: [Procedures]
+      summary: L1 procedure tools
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProcedureTool"
+  /procedure_part:
+    get:
+      tags: [Procedures]
+      summary: L1 procedure parts
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProcedurePart"
+  /tsbs:
+    get:
+      tags: [Diagnostics]
+      summary: Technical service bulletins
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tsb"
+  /dtcs:
+    get:
+      tags: [Diagnostics]
+      summary: Diagnostic trouble codes
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Dtc"
+  /specifications:
+    get:
+      tags: [Specifications]
+      summary: Specifications (legacy shape)
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Specification"
+  /spec_fact:
+    get:
+      tags: [Specifications]
+      summary: L1 spec facts
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SpecFact"
+  /categories:
+    get:
+      tags: [Taxonomy]
+      summary: Hierarchical categories
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+  /vehicle_metadata:
+    get:
+      tags: [Vehicles]
+      summary: Cached year/make/model JSON by path
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VehicleMetadata"
+  /ai_processing_logs:
+    get:
+      tags: [System]
+      summary: AI parse logs (typically service_role only)
+      description: RLS may deny anon/authenticated clients.
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AiProcessingLog"
+        "401":
+          description: Unauthorized
+  /failed_extractions:
+    get:
+      tags: [System]
+      summary: Failed extraction records (typically service_role only)
+      description: RLS may deny anon/authenticated clients.
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FailedExtraction"
+        "401":
+          description: Unauthorized
+  /common_issues_cache:
+    get:
+      tags: [Catalog]
+      summary: AI common issues JSON per vehicle
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CommonIssuesCache"
+  /parts:
+    get:
+      tags: [Parts]
+      summary: Parts catalog
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Part"
+  /maintenance_schedules:
+    get:
+      tags: [Maintenance]
+      summary: Maintenance intervals (legacy shape)
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MaintenanceSchedule"
+  /maintenance_task:
+    get:
+      tags: [Maintenance]
+      summary: L1 maintenance tasks
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MaintenanceTask"
+  /canonical_bucket:
+    get:
+      tags: [Normalization]
+      summary: Canonical silos / buckets
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CanonicalBucket"
+  /bucket_alias:
+    get:
+      tags: [Normalization]
+      summary: Raw Motor bucket → canonical mapping
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BucketAlias"
+  /evidence_ingest:
+    get:
+      tags: [Evidence]
+      summary: Raw ingest payloads (may be restricted by RLS)
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EvidenceIngest"
+  /evidence_link:
+    get:
+      tags: [Evidence]
+      summary: Links evidence rows to entities
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EvidenceLink"
+  /content_item:
+    get:
+      tags: [Catalog]
+      summary: Unified catalog rows (normalization phase 1)
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContentItem"
+  /media_asset:
+    get:
+      tags: [L2-RAG]
+      summary: Media asset metadata
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MediaAsset"
+  /diagram_document:
+    get:
+      tags: [Diagnostics]
+      summary: Wiring diagram documents
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DiagramDocument"
+  /component_location_document:
+    get:
+      tags: [Diagnostics]
+      summary: Component location documents
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ComponentLocationDocument"
+  /labor_operation:
+    get:
+      tags: [Maintenance]
+      summary: Labor operation articles
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LaborOperation"
+  /content_chunk:
+    get:
+      tags: [L2-RAG]
+      summary: RAG text chunks (embeddings)
+      parameters:
+        - $ref: "#/components/parameters/PostgrestSelect"
+        - $ref: "#/components/parameters/PostgrestOrder"
+        - $ref: "#/components/parameters/PostgrestLimit"
+        - $ref: "#/components/parameters/PostgrestOffset"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContentChunk"
+  /rpc/match_content_chunks:
+    post:
+      tags: [RPC]
+      summary: Vector similarity search over chunks (scoped by vehicle)
+      description: |
+        Defined in `documentation/migrations/20260321_match_content_chunks_rpc.sql`.
+        **Execute privilege** may be restricted to `service_role` — confirm in your database.
+
+        Request body must match PostgREST RPC conventions (named arguments).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - query_embedding
+                - vehicle_external_id_filter
+              properties:
+                query_embedding:
+                  description: 1024-dimensional vector (JSON array of numbers)
+                  type: array
+                  items: { type: number }
+                  minItems: 1024
+                  maxItems: 1024
+                vehicle_external_id_filter:
+                  type: string
+                match_count:
+                  type: integer
+                  default: 8
+                  maximum: 24
+      responses:
+        "200":
+          description: Ranked chunks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MatchContentChunksResult"
+        "403":
+          description: Forbidden if role cannot execute

@@ -396,6 +396,9 @@ registerArticleMetadataEndpoint(app, secureAuthMiddleware, logger);
 // --- AI ENDPOINTS ---
 registerAiEndpoints(app, getAiFunctions);
 
+// Motor Information API — YMME helpers (base vehicle id, engines); requires Supabase JWT
+registerMotorInformationYmmeRoutes(app, secureAuthMiddleware, logger);
+
 /** In-memory observability for Motor catch-all vs Supabase cache hits (phase-out tracking). */
 const proxyStats = { motorHits: 0, supabaseHits: 0 };
 
