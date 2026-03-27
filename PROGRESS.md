@@ -163,6 +163,7 @@
 - (2026-03-23) Golden-vehicle normalization verification green: `documentation/release-artifacts/golden-vehicle-verification-20260323-051007.md`.
 - (2026-03-24) Home wizard persists YMME + `motorEngineId`; dashboard caches `motorBaseVehicleId`; Motor Information params on `/fluids`.
 - (2026-03-24) AGENTS.md / WORKER_LOOP: hook toggles + `npm run cursor:auto-once` / `continue-once.ps1` documented.
+- (2026-03-27) **AGENTS.md** refreshed: deduped repo tree; backend ESM + `index.js` vs `function.js`; Vitest commands; Nemotron/NIM + `routes/`; `NVAPI_KEY`; `.cursor/skills` pointer; removed duplicate API doc row.
 - (2026-03-23) Full-vehicle unlock on article lock overlay (unlockModule full, COSTS.FULL_ACCESS).
 
 ## Vehicle data normalization / migration

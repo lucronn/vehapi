@@ -16,18 +16,16 @@
 │   ├── environments/    # environment.ts / environment.prod.ts
 │   └── styles.css       # global Tailwind + design-system tokens
 ├── vehapiproxi/         # Express backend (proxy only from browser; Stripe, Supabase, AI)
-│   ├── src/             # function.js (entry), routes/, swagger.json, stripe, credits, supabase…
+│   ├── src/             # function.js (app), index.js (local dev server), routes/, stripe, credits, supabase…
 │   └── API_CONSUMPTION_DOCUMENTATION.md  # upstream/M1 API behavior reference (not a client target)
 ├── api/                 # Vercel serverless shim → vehapiproxi
 ├── documentation/       # IMPLEMENTATION_GUIDE.md, VEHAPIPROXI_API_CONSUMPTION.md, DEPLOYMENT.md, AGENT_INSTRUCTIONS…
-├── vehapiproxi/         # API_CONSUMPTION_DOCUMENTATION.md (Motor proxy reference)
-├── randdev/             # optional / archived tooling (LOGGING, FIREBASE_SETUP, old crawler data)
-├── scripts/             # build helpers (inject-eruda, validate models)
-├── randdev/             # Dev utilities (crawler data)
-│   └── m1_crawler/     # Python crawler for year/make/model JSON
- ├── oldfiles/           # Archived/legacy docs + reference artifacts
- │   └── _extracted_theme/  # extracted UI kit (reference only)
-├── .cursor/             # Cursor rules and skills
+├── randdev/             # optional / dev utilities (LOGGING, FIREBASE_SETUP, m1_crawler, inject-eruda…)
+│   └── m1_crawler/      # Python crawler for year/make/model JSON
+├── oldfiles/            # archived/legacy docs + reference artifacts
+│   └── _extracted_theme/ # extracted UI kit (reference only)
+├── scripts/             # build helpers, OpenAPI export, production checks, automation
+├── .cursor/             # Cursor rules and skills (see `.cursor/skills/`)
 ├── .agents/             # agent rules (gh.md, token_efficiency.md)
 ├── .github/workflows/   # CI/CD (deploy.yml → Vercel)
 ├── index.html           # SPA shell
@@ -75,7 +73,7 @@ The backend runs separately:
 ```bash
 cd vehapiproxi
 cp .env.example .env     # fill in secrets
-node src/index.js        # Express on port 3001
+npm start                # or: node src/index.js — Express (default port from config, often 3001)
 ```
 
 ### Required environment variables (backend)
@@ -87,7 +85,7 @@ node src/index.js        # Express on port 3001
 | `SUPABASE_JWT_SECRET` | JWT verification secret |
 | `STRIPE_SANDBOX_SKEY` | Stripe secret key |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
-| `NVIDIA_API_KEY` (or `LLM_API_KEY`) | NVIDIA API key (Nemotron — parsing, rewrite, tutorials, common-issues). Optional: `LLM_URL` (e.g. `.../v1/chat/completions` → base for SDK), `LLM_MODEL` / `NEMOTRON_MODEL`, `NEMOTRON_BASE_URL` — see `vehapiproxi/src/nemotron_client.js` |
+| `NVIDIA_API_KEY`, `NVAPI_KEY`, or `LLM_API_KEY` | NVIDIA Nemotron / NIM (OpenAI-compatible) — parsing, rewrite, tutorials, common-issues, multimodal. Optional: `LLM_URL`, `LLM_MODEL` / `NEMOTRON_MODEL`, `NEMOTRON_BASE_URL`, `NEMOTRON_VISION_MODEL` — see `vehapiproxi/src/nemotron_client.js` |
 | `LIBRARY_BARCODE` / `EBSCO_USER` / `EBSCO_PASSWORD` | Motor API auth credentials |
 
 ### Frontend environments
@@ -137,12 +135,16 @@ Express app that acts as an authenticated proxy to the Motor API and hosts addit
 
 | Module | Responsibility |
 |---|---|
-| `function.js` | Express app entry — route definitions, Motor API proxy, response interceptor |
+| `function.js` | Express app — route definitions, Motor API proxy, response interceptor (Vercel/serverless entry) |
+| `index.js` | Local dev server — loads auth session, listens on `config.proxyPort` |
+| `routes/` | Modular HTTP routes (health, AI, credits, motor-information, …) |
 | `stripe.js` | Stripe checkout, portal, webhook, session verification |
 | `credits.js` | Credit balance queries, unlock logic, transaction logging |
 | `supabase.js` | Supabase client, article/session/user CRUD, caching layer |
-| `ai_parser.js` | Google GenAI integration — content rewrite, tutorial generation, common-issues generation |
-| `auth.js` | Auth middleware, JWT validation |
+| `ai_parser.js` | Nemotron (NVIDIA) — structured parse, rewrite, tutorials, common-issues |
+| `nemotron_client.js` | Shared OpenAI-compatible client for Nemotron / NIM |
+| `background_worker.js` | Optional long-running normalization / ingest worker |
+| `auth.js` | Auth middleware, Motor session + JWT validation |
 | `config.js` | Environment config |
 | `logger.js` | Winston logger |
 
@@ -188,18 +190,19 @@ Full DDL is in `supabase_schema.sql`.
 
 ### Backend (Node.js)
 
-- CommonJS modules (`require`/`module.exports`).
+- **ES modules** (`import`/`export`); `"type": "module"` in `vehapiproxi/package.json`.
 - Express middleware pattern.
 - Winston for structured logging.
 - All Supabase access uses the service-role key server-side.
 
 ## Testing
 
-Tests use Angular test utilities with `happy-dom` as the DOM implementation. Spec files live beside their source files (`*.spec.ts`).
+Frontend unit tests use **Vitest** with `happy-dom`. Spec files live beside their sources (`*.spec.ts`).
 
 ```bash
-# No global test runner configured yet — tests are referenced but need a runner setup.
-# Spec files exist for: services, components, utils.
+npm test                 # vitest run
+npm run test:watch       # vitest (watch)
+npm run test:coverage    # vitest run --coverage
 ```
 
 Additional test scripts:
@@ -237,9 +240,8 @@ Checklist items mirror `documentation/IMPLEMENTATION_GUIDE.md` Section 23.
 | File | What it covers |
 |---|---|
 | `documentation/IMPLEMENTATION_GUIDE.md` | Comprehensive architecture, algorithms, and implementation specs (~3,400 lines) |
-| `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md` | M1/upstream API behavior reference (Torque calls vehapiproxi only) |
-| `documentation/VEHAPIPROXI_API_CONSUMPTION.md` | Torque proxy: routes, auth, CORS vs Motor (companion to `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md`) |
-| `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md` | Long-form Motor API / proxy consumption notes |
+| `vehapiproxi/API_CONSUMPTION_DOCUMENTATION.md` | M1/upstream Motor API behavior; long-form proxy consumption notes (Torque calls vehapiproxi only) |
+| `documentation/VEHAPIPROXI_API_CONSUMPTION.md` | Torque proxy: routes, auth, CORS vs Motor (companion to the file above) |
 | `documentation/DEPLOYMENT.md` | Multi-platform deployment guides; **GitHub Actions and Vercel deploy verification** (two workflows, secrets, post-push checklist) |
 | `documentation/DATA_SOURCE_AND_NORMALIZATION.md` | **Supabase vs Motor:** runtime truth, first-touch catalog ingest, lazy per-article normalization, no Motor-fallback display |
 | `randdev/LOGGING.md` | Logging standards (reference) |
@@ -248,6 +250,9 @@ Checklist items mirror `documentation/IMPLEMENTATION_GUIDE.md` Section 23.
 
 - **`gh.md`** — always commit, push, and sync changes to GitHub.
 - **`token_efficiency.md`** — minimize token usage: search before reading, read targeted ranges, batch edits, skip filler language.
+- **`data-source-supabase-first.md`** — short pointer; full contract in `documentation/DATA_SOURCE_AND_NORMALIZATION.md`.
+
+**Cursor skills** (optional deep dives): `.cursor/skills/*/SKILL.md` — e.g. Angular, Stripe, UI/UX mobile-first, vehicle normalization.
 
 ## Critical requirements
 
