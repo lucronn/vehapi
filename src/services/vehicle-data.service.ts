@@ -675,8 +675,8 @@ export class VehicleDataService {
                 if (data?.is_normalized) {
                     this.logger.info(`[VehicleDataService] Loading maintenance from Supabase for ${vehicleId}`);
                     return from(this.supabase.client
-                        .from('maintenance_schedules')
-                        .select('*')
+                        .from('maintenance_task')
+                        .select('id, action, item, description, interval_value, frequency_code, metadata_json')
                         .eq('vehicle_id', vehicleId)
                         .eq('interval_value', interval)
                     ).pipe(
@@ -689,10 +689,14 @@ export class VehicleDataService {
                             }
                             return mbData.map((s: any) => ({
                                 id: s.id,
-                                description: s.item,
+                                description: s.description ?? s.item,
                                 action: s.action,
                                 interval: s.interval_value,
-                                frequency: s.frequency_code
+                                frequency: s.frequency_code,
+                                taskMetadata:
+                                    s.metadata_json && typeof s.metadata_json === 'object'
+                                        ? (s.metadata_json as Record<string, unknown>)
+                                        : null
                             }));
                         })
                     );

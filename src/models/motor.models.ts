@@ -316,6 +316,8 @@ export interface MaintenanceSchedule {
   interval?: number;
   frequency?: string;
   action: string;
+  /** Motor PMSST metadata when present (`applicationID`, `maintenanceScheduleId`, …). */
+  taskMetadata?: Record<string, unknown> | null;
 }
 
 export interface MaintenanceResponse {

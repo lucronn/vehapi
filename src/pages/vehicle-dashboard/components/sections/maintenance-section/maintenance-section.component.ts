@@ -1,11 +1,14 @@
-import { Component, Input, OnInit, signal, inject, ChangeDetectionStrategy, computed } from '@angular/core';
+import { Component, Input, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router, RouterModule } from '@angular/router';
 import { VehicleDataService } from '../../../../../services/vehicle-data.service';
 import { MaintenanceSchedule } from '../../../../../models/motor.models';
 import { LoadingSkeletonComponent } from '../../../../../components/loading-skeleton/loading-skeleton.component';
 import { EmptyStateComponent } from '../../../../../components/empty-state/empty-state.component';
 import { LucideAngularModule, ClipboardList, Gauge, Lock, Unlock, Sparkles } from 'lucide-angular';
 import { CreditsService } from '../../../../../services/credits.service';
+import { WindowManagerService } from '../../../../../services/window-manager.service';
+import { ArticleViewerComponent } from '../../../../article-viewer/article-viewer.component';
 
 /**
  * Displays Maintenance Schedules with interval selector
@@ -14,7 +17,7 @@ import { CreditsService } from '../../../../../services/credits.service';
     selector: 'app-maintenance-section',
     templateUrl: './maintenance-section.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, LoadingSkeletonComponent, EmptyStateComponent, LucideAngularModule],
+    imports: [CommonModule, RouterModule, LoadingSkeletonComponent, EmptyStateComponent, LucideAngularModule],
     standalone: true
 })
 export class MaintenanceSectionComponent implements OnInit {
@@ -24,6 +27,8 @@ export class MaintenanceSectionComponent implements OnInit {
     @Input() motorVehicleId?: string;
 
     private vehicleData = inject(VehicleDataService);
+    private router = inject(Router);
+    private windowManager = inject(WindowManagerService);
     protected creditsService = inject(CreditsService);
 
     schedules = signal<MaintenanceSchedule[]>([]);
@@ -84,6 +89,42 @@ export class MaintenanceSectionComponent implements OnInit {
     loadMore() {
         this.displayLimit.update(v => v + 50);
         this.updateDisplayedSchedules();
+    }
+
+    /** Motor application id when present — labor time rows use `L:{applicationID}` in the viewer. */
+    rowHasLaborLink(item: MaintenanceSchedule): boolean {
+        const m = item.taskMetadata;
+        if (!m) return false;
+        const id = m['applicationID'] ?? m['applicationId'];
+        return id != null && String(id).trim() !== '';
+    }
+
+    openMaintenanceRow(item: MaintenanceSchedule): void {
+        if (!this.creditsService.hasAccess(this.vehicleId, 'maintenance')) return;
+        if (!this.rowHasLaborLink(item)) return;
+
+        const m = item.taskMetadata!;
+        const raw = m['applicationID'] ?? m['applicationId'];
+        const laborId = `L:${String(raw).trim()}`;
+        const title = `${item.action} — ${item.description}`.trim();
+
+        if (this.windowManager.isDesktop()) {
+            this.windowManager.openWindow(
+                title,
+                ArticleViewerComponent,
+                {
+                    contentSource: this.contentSource,
+                    vehicleId: this.vehicleId,
+                    articleId: laborId,
+                    articleTitleInput: title,
+                    moduleType: 'maintenance'
+                }
+            );
+        } else {
+            this.router.navigate(['/vehicle', this.contentSource, this.vehicleId, 'article', laborId], {
+                queryParams: { title, moduleType: 'maintenance' }
+            });
+        }
     }
 
     async unlockSection() {

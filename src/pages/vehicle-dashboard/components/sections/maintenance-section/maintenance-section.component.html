@@ -52,10 +52,14 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @for (item of displayedSchedules(); track $index) {
+                            @for (item of displayedSchedules(); track item.id) {
                             <tr class="transition-colors animate-fade-in-up"
                                 style="border-bottom:1px solid var(--border-muted)"
-                                [style.animation-delay]="$index * 50 + 'ms'">
+                                [style.animation-delay]="$index * 50 + 'ms'"
+                                [class.cursor-pointer]="rowHasLaborLink(item)"
+                                [attr.tabindex]="rowHasLaborLink(item) ? 0 : null"
+                                (click)="openMaintenanceRow(item)"
+                                (keydown.enter)="openMaintenanceRow(item)">
                                 <td class="px-5 py-4" data-label="Action">
                                     <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold"
                                         style="background:var(--primary-subtle);color:var(--primary)">

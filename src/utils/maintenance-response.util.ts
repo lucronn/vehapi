@@ -190,12 +190,20 @@ export function flattenMaintenanceFrequencyResponseBody(body: unknown): FlatMain
 export function flatMaintenanceToUiRows(
     flat: FlatMaintenanceApplication[],
     interval?: number
-): { id: string; description: string; interval?: number; frequency?: string; action: string }[] {
+): {
+    id: string;
+    description: string;
+    interval?: number;
+    frequency?: string;
+    action: string;
+    taskMetadata?: Record<string, unknown> | null;
+}[] {
     return flat.map((r, i) => ({
         id: `m-${i}-${r.item.slice(0, 24)}`,
         description: r.description ?? r.item,
         interval,
         frequency: r.frequency_code ?? undefined,
-        action: r.action
+        action: r.action,
+        taskMetadata: r.task_metadata && Object.keys(r.task_metadata).length ? r.task_metadata : null
     }));
 }
