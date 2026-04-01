@@ -18,6 +18,32 @@ function asRecord(v: unknown): Record<string, unknown> | null {
     return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
 }
 
+/** Stable key for matching interval stubs to full `body.applications[]` (M1: `applicationID === applicationId`). */
+function applicationIdKey(v: unknown): string | null {
+    if (v == null) return null;
+    if (typeof v === 'number' && Number.isFinite(v)) return String(v);
+    const s = String(v).trim();
+    if (!s) return null;
+    const n = Number(s);
+    return Number.isFinite(n) ? String(n) : s;
+}
+
+/**
+ * M1 joins `intervals[].applications` (minimal) with top-level `body.applications` (full taxonomy, notes, …).
+ * @see maintenance-schedules.component.html — `intervalApp.applicationID === app.applicationId`
+ */
+function buildApplicationsByIdMap(applications: unknown[]): Map<string, Record<string, unknown>> {
+    const map = new Map<string, Record<string, unknown>>();
+    for (const a of applications) {
+        const ar = asRecord(a);
+        if (!ar) continue;
+        const id = ar.applicationId ?? ar.applicationID ?? ar.application_id;
+        const key = applicationIdKey(id);
+        if (key) map.set(key, ar);
+    }
+    return map;
+}
+
 function mapLegacyScheduleRow(s: Record<string, unknown>): FlatMaintenanceApplication {
     const action = String(s.action ?? s.Action ?? 'Inspect/Replace');
     const desc = s.description ?? s.Description ?? s.item ?? s.Item;
@@ -63,23 +89,37 @@ function mapApplicationToFlat(
     const scheduleId = app.maintenanceScheduleId ?? app.maintenance_schedule_id;
     const appId = app.applicationID ?? app.applicationId ?? app.application_id;
     const hasIds = scheduleId != null && appId != null;
+    const tax = asRecord(app.taxonomy);
+    const literalFromTaxonomy =
+        tax?.literalName != null ? String(tax.literalName).trim() : '';
     const desc =
         app.description ?? app.Description ?? app.item ?? app.Item ?? app.name ?? app.Name;
     const action = String(app.action ?? app.Action ?? (hasIds ? 'Service' : 'Inspect/Replace'));
-    const itemText =
-        desc != null && String(desc).trim()
-            ? String(desc).trim()
-            : hasIds
-              ? `Maintenance schedule ${scheduleId} (ref ${appId})`
-              : action;
+    const itemText = literalFromTaxonomy
+        ? literalFromTaxonomy
+        : desc != null && String(desc).trim()
+          ? String(desc).trim()
+          : hasIds
+            ? `Maintenance schedule ${scheduleId} (ref ${appId})`
+            : action;
     const meta: Record<string, unknown> = {};
     if (scheduleId != null) meta.maintenanceScheduleId = scheduleId;
     if (appId != null) meta.applicationID = appId;
     if (motorIntervalMiles != null) meta.motorIntervalMiles = motorIntervalMiles;
+    if (literalFromTaxonomy) meta.taxonomyLiteralName = literalFromTaxonomy;
+    const tid = tax?.taxonomyID ?? tax?.taxonomyId;
+    if (tid != null) meta.taxonomyID = tid;
     return {
         action,
         item: itemText,
-        description: desc != null ? String(desc) : hasIds ? itemText : null,
+        description:
+            literalFromTaxonomy
+                ? literalFromTaxonomy
+                : desc != null
+                  ? String(desc)
+                  : hasIds
+                    ? itemText
+                    : null,
         frequency_code: app.frequency_code != null ? String(app.frequency_code) : null,
         motor_interval_miles: motorIntervalMiles,
         task_metadata: Object.keys(meta).length ? meta : null
@@ -111,10 +151,22 @@ export function flattenMaintenanceIntervalResponseBody(
         }
         const bucket = pickIntervalBucket(normalized, requestedIntervalMiles);
         if (!bucket) return [];
+
+        const topApps = b.applications;
+        const fullById =
+            Array.isArray(topApps) && topApps.length > 0
+                ? buildApplicationsByIdMap(topApps)
+                : null;
+
         for (const a of bucket.applications) {
             const ar = asRecord(a);
             if (!ar) continue;
-            out.push(mapApplicationToFlat(ar, bucket.interval));
+            const stubId = ar.applicationID ?? ar.applicationId ?? ar.application_id;
+            const key = applicationIdKey(stubId);
+            const full = key && fullById ? fullById.get(key) : undefined;
+            // Stub fields (e.g. maintenanceScheduleId) overlay full record when both exist.
+            const source = full ? { ...full, ...ar } : ar;
+            out.push(mapApplicationToFlat(source, bucket.interval));
         }
         return out;
     }
