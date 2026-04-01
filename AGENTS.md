@@ -23,6 +23,7 @@
 ├── vehapiproxi/         # API_CONSUMPTION_DOCUMENTATION.md (Motor proxy reference)
 ├── randdev/             # optional / archived tooling (LOGGING, FIREBASE_SETUP, old crawler data)
 ├── scripts/             # build helpers (inject-eruda, validate models)
+├── tools/               # optional dev utilities (e.g. `normalization_tui` — Python Textual monitor for Supabase + proxy)
 ├── randdev/             # Dev utilities (crawler data)
 │   └── m1_crawler/     # Python crawler for year/make/model JSON
  ├── oldfiles/           # Archived/legacy docs + reference artifacts

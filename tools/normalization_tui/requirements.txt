@@ -1,0 +1,4 @@
+# Normalization monitor TUI — Python 3.11+
+textual>=0.86.0
+httpx>=0.27.0
+python-dotenv>=1.0.0
