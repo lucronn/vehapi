@@ -39,6 +39,8 @@ python tools/normalization_tui/app.py
 
 Keys: `q` quit, `r` refresh, `h` health, `s` sync, `t` test, `m` monitor toggle.
 
+**Enter** in vehicle / content source / proxy fields runs a **stats refresh** (so you are not stuck if focus landed on the table). The stats table and log are **non-focusable** so Tab cycles the top inputs and action buttons.
+
 ## Scope
 
 This tool **does not** reimplement normalization — it **observes** Supabase and **calls** existing proxy/scripts. Heavy parsing still happens inside **Node** (`background_worker.js`).

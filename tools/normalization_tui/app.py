@@ -11,7 +11,7 @@ Requires:
   - SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (vehapiproxi/.env or env)
   - vehapiproxi running for sync / test (default http://localhost:3001)
 
-Keys: q quit | r refresh stats | h health | s catalog sync | t test script | m toggle auto-refresh
+Keys: q quit | Enter in vehicle/source/proxy fields refreshes stats | r refresh | h/s/t/m as below
 """
 
 from __future__ import annotations
@@ -136,10 +136,24 @@ class NormalizationTui(App[None]):
     def on_mount(self) -> None:
         table: DataTable = self.query_one("#stats-table", DataTable)
         table.add_columns("Table", "Rows", "Note")
+        table.can_focus = False
         self._log = self.query_one("#log", RichLog)
-        self._log.write("[dim]Normalization monitor — edit vehicle / source / proxy above.[/]")
+        self._log.can_focus = False
+        self._log.write("[dim]Normalization monitor — type vehicle id, press [bold]Enter[/] to refresh stats.[/]")
         self.action_refresh_stats()
         self.set_interval(5.0, self._tick_monitor)
+        # DataTable/RichLog otherwise steal focus; keep typing in the top inputs.
+        self.set_timer(0.05, self._focus_vehicle_input)
+
+    def _focus_vehicle_input(self) -> None:
+        try:
+            self.query_one("#vehicle-input", Input).focus()
+        except Exception:
+            pass
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        """Enter in any config field applies vehicle id and reloads Supabase counts."""
+        self.action_refresh_stats()
 
     def _tick_monitor(self) -> None:
         if self._monitor:
