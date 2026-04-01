@@ -1,7 +1,10 @@
 import { Component, Input, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
+import { lastValueFrom } from 'rxjs';
 import { VehicleDataService } from '../../../../../services/vehicle-data.service';
+import { MotorApiService } from '../../../../../services/motor-api.service';
+import { SupabaseService } from '../../../../../services/supabase.service';
 import { MaintenanceSchedule } from '../../../../../models/motor.models';
 import { LoadingSkeletonComponent } from '../../../../../components/loading-skeleton/loading-skeleton.component';
 import { EmptyStateComponent } from '../../../../../components/empty-state/empty-state.component';
@@ -9,9 +12,15 @@ import { LucideAngularModule, ClipboardList, Gauge, Lock, Unlock, Sparkles } fro
 import { CreditsService } from '../../../../../services/credits.service';
 import { WindowManagerService } from '../../../../../services/window-manager.service';
 import { ArticleViewerComponent } from '../../../../article-viewer/article-viewer.component';
+import { pickLaborArticleFromCatalog } from '../../../../../utils/maintenance-labor-resolve.util';
 
 /**
- * Displays Maintenance Schedules with interval selector
+ * Displays Maintenance Schedules with interval selector.
+ *
+ * **Why `/labor/L:…` for “maintenance” rows:** Motor stores PMSST lines under estimating/labor silos;
+ * flat-rate time is served from the **labor** API, not `GET /article/…`. Credits still use
+ * `moduleType: 'maintenance'` so the maintenance unlock applies. `applicationID` on schedule stubs
+ * is **not** a labor catalog id — we resolve a real `L:` via `taxonomyLiteralName` + catalog match.
  */
 @Component({
     selector: 'app-maintenance-section',
@@ -27,6 +36,8 @@ export class MaintenanceSectionComponent implements OnInit {
     @Input() motorVehicleId?: string;
 
     private vehicleData = inject(VehicleDataService);
+    private motorApi = inject(MotorApiService);
+    private supabase = inject(SupabaseService);
     private router = inject(Router);
     private windowManager = inject(WindowManagerService);
     protected creditsService = inject(CreditsService);
@@ -34,6 +45,8 @@ export class MaintenanceSectionComponent implements OnInit {
     schedules = signal<MaintenanceSchedule[]>([]);
     isLoading = signal(false);
     isUnlocking = signal(false);
+    /** True while resolving PMSST row → catalog `L:` id (async). */
+    isResolvingLabor = signal(false);
 
     // Pagination state
     displayLimit = signal(50);
@@ -91,39 +104,127 @@ export class MaintenanceSectionComponent implements OnInit {
         this.updateDisplayedSchedules();
     }
 
-    /** Motor application id when present — labor time rows use `L:{applicationID}` in the viewer. */
-    rowHasLaborLink(item: MaintenanceSchedule): boolean {
+    /**
+     * Row can open detail if we have either a PMSST application id (weak fallback) or
+     * `taxonomyLiteralName` from merged `body.applications` (strong match path).
+     */
+    rowCanOpenDetail(item: MaintenanceSchedule): boolean {
         const m = item.taskMetadata;
         if (!m) return false;
         const id = m['applicationID'] ?? m['applicationId'];
-        return id != null && String(id).trim() !== '';
+        const lit = m['taxonomyLiteralName'];
+        const hasApp = id != null && String(id).trim() !== '';
+        const hasLit = typeof lit === 'string' && lit.trim() !== '';
+        return hasApp || hasLit;
     }
 
-    openMaintenanceRow(item: MaintenanceSchedule): void {
-        if (!this.creditsService.hasAccess(this.vehicleId, 'maintenance')) return;
-        if (!this.rowHasLaborLink(item)) return;
-
+    /**
+     * Resolve catalog `L:` id: Supabase `articles` → Motor search by taxonomy → full catalog scan.
+     */
+    private async resolveLaborArticleId(item: MaintenanceSchedule): Promise<{ id: string; title: string } | null> {
         const m = item.taskMetadata!;
-        const raw = m['applicationID'] ?? m['applicationId'];
-        const laborId = `L:${String(raw).trim()}`;
-        const title = `${item.action} — ${item.description}`.trim();
+        const literal =
+            typeof m['taxonomyLiteralName'] === 'string' ? m['taxonomyLiteralName'].trim() : '';
+        const appRaw = m['applicationID'] ?? m['applicationId'];
+        const appId = appRaw != null ? String(appRaw).trim() : '';
 
-        if (this.windowManager.isDesktop()) {
-            this.windowManager.openWindow(
-                title,
-                ArticleViewerComponent,
-                {
+        const mapRow = (r: {
+            original_id: string;
+            title?: string | null;
+            bucket?: string | null;
+            parent_bucket?: string | null;
+        }) => ({
+            id: r.original_id,
+            title: r.title || '',
+            bucket: r.bucket || undefined,
+            parentBucket: r.parent_bucket || undefined
+        });
+
+        const { data: supRows, error: supErr } = await this.supabase.client
+            .from('articles')
+            .select('original_id,title,bucket,parent_bucket')
+            .eq('vehicle_id', this.vehicleId)
+            .like('original_id', 'L:%')
+            .limit(2000);
+
+        if (!supErr && supRows?.length) {
+            const picked = pickLaborArticleFromCatalog(
+                supRows.map(mapRow),
+                literal,
+                item.description
+            );
+            if (picked) return picked;
+        }
+
+        if (literal) {
+            try {
+                const res = await lastValueFrom(
+                    this.motorApi.searchArticles(
+                        this.contentSource,
+                        this.vehicleId,
+                        literal,
+                        this.motorVehicleId
+                    )
+                );
+                const picked = pickLaborArticleFromCatalog(
+                    res.body?.articleDetails || [],
+                    literal,
+                    item.description
+                );
+                if (picked) return picked;
+            } catch {
+                /* fall through */
+            }
+        }
+
+        try {
+            const resAll = await lastValueFrom(
+                this.motorApi.searchArticles(this.contentSource, this.vehicleId, '', this.motorVehicleId)
+            );
+            const picked = pickLaborArticleFromCatalog(
+                resAll.body?.articleDetails || [],
+                literal,
+                item.description
+            );
+            if (picked) return picked;
+        } catch {
+            /* fall through */
+        }
+
+        if (appId) {
+            return { id: `L:${appId}`, title: `${item.action} — ${item.description}`.trim() };
+        }
+        return null;
+    }
+
+    async openMaintenanceRow(item: MaintenanceSchedule): Promise<void> {
+        if (!this.creditsService.hasAccess(this.vehicleId, 'maintenance')) return;
+        if (!this.rowCanOpenDetail(item)) return;
+        if (this.isResolvingLabor()) return;
+
+        this.isResolvingLabor.set(true);
+        try {
+            const resolved = await this.resolveLaborArticleId(item);
+            if (!resolved) return;
+
+            const title = `${item.action} — ${resolved.title}`.trim();
+            const laborId = resolved.id;
+
+            if (this.windowManager.isDesktop()) {
+                this.windowManager.openWindow(title, ArticleViewerComponent, {
                     contentSource: this.contentSource,
                     vehicleId: this.vehicleId,
                     articleId: laborId,
                     articleTitleInput: title,
                     moduleType: 'maintenance'
-                }
-            );
-        } else {
-            this.router.navigate(['/vehicle', this.contentSource, this.vehicleId, 'article', laborId], {
-                queryParams: { title, moduleType: 'maintenance' }
-            });
+                });
+            } else {
+                this.router.navigate(['/vehicle', this.contentSource, this.vehicleId, 'article', laborId], {
+                    queryParams: { title, moduleType: 'maintenance' }
+                });
+            }
+        } finally {
+            this.isResolvingLabor.set(false);
         }
     }
 
