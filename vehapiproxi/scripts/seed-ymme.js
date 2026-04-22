@@ -71,9 +71,15 @@ async function main() {
         const makesUrl = `${base}/api${makesPath}`;
         
         if (requestCount >= MAX_REQUESTS_PER_SESSION) {
-            console.warn(`[seed-ymme] Approaching Motor API session limit (${requestCount} requests). Pausing for 60 minutes to let session expire...`);
-            await delay(60 * 60 * 1000);
-            requestCount = 0; // Reset after long wait, assuming proxy re-authenticated
+            console.warn(`[seed-ymme] Approaching Motor API session limit (${requestCount} requests). Forcing a new session via /auth/reset...`);
+            try {
+                await fetch(`${base}/auth/reset`, { method: 'POST' });
+                console.log(`[seed-ymme] Session reset requested. Waiting 10 seconds for re-authentication to settle...`);
+                await delay(10000);
+            } catch (resetErr) {
+                console.error(`[seed-ymme] Failed to reset session:`, resetErr);
+            }
+            requestCount = 0;
         }
 
         await delay(500);
@@ -101,8 +107,14 @@ async function main() {
                 const modelsUrl = `${base}/api${modelsPath}`;
                 
                 if (requestCount >= MAX_REQUESTS_PER_SESSION) {
-                    console.warn(`[seed-ymme] Approaching Motor API session limit (${requestCount} requests). Pausing for 60 minutes to let session expire...`);
-                    await delay(60 * 60 * 1000);
+                    console.warn(`[seed-ymme] Approaching Motor API session limit (${requestCount} requests). Forcing a new session via /auth/reset...`);
+                    try {
+                        await fetch(`${base}/auth/reset`, { method: 'POST' });
+                        console.log(`[seed-ymme] Session reset requested. Waiting 10 seconds for re-authentication to settle...`);
+                        await delay(10000);
+                    } catch (resetErr) {
+                        console.error(`[seed-ymme] Failed to reset session:`, resetErr);
+                    }
                     requestCount = 0;
                 }
 
