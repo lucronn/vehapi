@@ -80,6 +80,32 @@ async function main() {
             } else {
                 console.log(`[seed-ymme] [${i}/${sorted.length}] stored ${makesPath}`);
             }
+            
+            // Seed Models + Engines for this Make
+            const makesArr = Array.isArray(makesJson?.body) ? makesJson.body : [];
+            for (const m of makesArr) {
+                const makeName = m.make_name || m.makeName;
+                if (!makeName) continue;
+                const modelsPath = `/year/${y}/make/${encodeURIComponent(makeName)}/models`;
+                const modelsUrl = `${base}/api${modelsPath}`;
+                await delay(250); // Respect rate limits
+                try {
+                    const modRes = await fetch(modelsUrl, { headers: { Accept: 'application/json' } });
+                    const modJson = await modRes.json();
+                    if (!modRes.ok) {
+                        console.warn(`[seed-ymme] ${modelsUrl} HTTP ${modRes.status} (skip)`);
+                        continue;
+                    }
+                    const mIns = await insertMetadata(modelsPath, modJson);
+                    if (!mIns.success) {
+                        console.warn(`[seed-ymme] insertMetadata ${modelsPath} failed:`, mIns.error);
+                    } else {
+                        console.log(`[seed-ymme]   -> stored ${modelsPath}`);
+                    }
+                } catch (err) {
+                    console.warn(`[seed-ymme] ${modelsUrl} error:`, err?.message || err);
+                }
+            }
         } catch (e) {
             console.warn(`[seed-ymme] ${makesUrl} error:`, e?.message || e);
         }
