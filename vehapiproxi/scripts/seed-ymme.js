@@ -62,11 +62,22 @@ async function main() {
 
     const sorted = [...years].sort((a, b) => a - b);
     let i = 0;
+    let requestCount = 1; // Count the /years request
+    const MAX_REQUESTS_PER_SESSION = 4800; // Leave buffer for the 5000 limit
+
     for (const y of sorted) {
         i += 1;
         const makesPath = `/year/${y}/makes`;
         const makesUrl = `${base}/api${makesPath}`;
+        
+        if (requestCount >= MAX_REQUESTS_PER_SESSION) {
+            console.warn(`[seed-ymme] Approaching Motor API session limit (${requestCount} requests). Pausing for 60 minutes to let session expire...`);
+            await delay(60 * 60 * 1000);
+            requestCount = 0; // Reset after long wait, assuming proxy re-authenticated
+        }
+
         await delay(500);
+        requestCount++;
         try {
             const mRes = await fetch(makesUrl, { headers: { Accept: 'application/json' } });
             const makesJson = await mRes.json();
@@ -88,7 +99,15 @@ async function main() {
                 if (!makeName) continue;
                 const modelsPath = `/year/${y}/make/${encodeURIComponent(makeName)}/models`;
                 const modelsUrl = `${base}/api${modelsPath}`;
+                
+                if (requestCount >= MAX_REQUESTS_PER_SESSION) {
+                    console.warn(`[seed-ymme] Approaching Motor API session limit (${requestCount} requests). Pausing for 60 minutes to let session expire...`);
+                    await delay(60 * 60 * 1000);
+                    requestCount = 0;
+                }
+
                 await delay(250); // Respect rate limits
+                requestCount++;
                 try {
                     const modRes = await fetch(modelsUrl, { headers: { Accept: 'application/json' } });
                     const modJson = await modRes.json();
