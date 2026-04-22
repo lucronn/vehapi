@@ -316,8 +316,26 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
           await new Promise((resolve) => setTimeout(resolve, 700));
         }
       }
-    } catch (e) {
+    } catch (e: any) {
       this.logger.error('[ArticleViewer] Lazy ingest failed for normalized vehicle:', e);
+      const status = e?.status;
+      const body = e?.error;
+      
+      // Handle 403 Content Locked from Proxy
+      if (status === 403 && body?.moduleType) {
+        this.resolvedModuleType.set(body.moduleType);
+        this.error.set(null);
+        this.isLoading.set(false);
+        return;
+      }
+      
+      // Handle Session Expiration / Re-auth
+      if ((status === 401 || status === 403) && this.retryCount() < 3) {
+        this.isRetrying.set(true);
+        this.retryCount.update(n => n + 1);
+        this.pollAndRetry();
+        return;
+      }
     }
 
     if (!this.articleTitleInput && !this.articleTitle()) {
