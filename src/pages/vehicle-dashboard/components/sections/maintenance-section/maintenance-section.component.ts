@@ -1,3 +1,4 @@
+import { LoggerService } from '@/src/services/logger.service';
 import { Component, Input, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
@@ -30,6 +31,8 @@ import { pickLaborArticleFromCatalog } from '../../../../../utils/maintenance-la
     standalone: true
 })
 export class MaintenanceSectionComponent implements OnInit {
+    private logger = inject(LoggerService);
+
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
     @Input() vehicleName: string = '';
@@ -86,7 +89,7 @@ export class MaintenanceSectionComponent implements OnInit {
                 this.updateDisplayedSchedules();
             },
             (error) => {
-                console.error('Failed to load maintenance schedules', error);
+                this.logger.error('Failed to load maintenance schedules', error);
                 // Ensure loading state is cleared even if service didn't handle it
                 this.isLoading.set(false);
             }

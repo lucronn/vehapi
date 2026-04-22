@@ -1,3 +1,4 @@
+import { LoggerService } from '@/src/services/logger.service';
 import { Component, Input, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -23,6 +24,8 @@ import { DataSyncService } from '../../../../../services/data-sync.service';
     standalone: true
 })
 export class CommonIssuesSectionComponent implements OnInit {
+
+  private logger = inject(LoggerService);
     @Input({ required: true }) vehicleName!: string;
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
@@ -82,7 +85,7 @@ export class CommonIssuesSectionComponent implements OnInit {
                 }
             },
             error: (err) => {
-                console.error('Failed to load common issues', err);
+                this.logger.error('Failed to load common issues', err);
                 this.isLoading.set(false);
             }
         });

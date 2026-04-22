@@ -703,7 +703,11 @@ export class DataSyncService {
                     .upsert(scheduleRows, { onConflict: 'vehicle_id,interval_value,action,item' });
                 await this.dualWriteMaintenanceTaskL1(rows, 'motor_interval');
             }
-        } catch (e) {
+        } catch (e: any) {
+            if (this.isClientWriteDenied(e)) {
+                this.clientWriteDisabled = true;
+                return;
+            }
             this.logger.warn(`[DataSync] Maintenance sync failed for interval ${interval}`, e);
         }
     }
@@ -840,6 +844,20 @@ export class DataSyncService {
             this.fetchContentItemForArticle(vehicleId, articleId, contentSource)
         ]);
 
+        const ec = articleRow?.enhanced_content?.trim();
+        if (ec) {
+            const safe = sanitizeHtml(ec);
+            if (safe) {
+                return { safeHtml: safe, rawForTutorial: ec, source: 'enhanced_cache' };
+            }
+        }
+
+        // If we have original_content, let the caller handle it (renders PDF/HTML + triggers AI rewrite)
+        // instead of falling back to extracted content_item text.
+        if (articleRow?.original_content?.trim()) {
+            return null;
+        }
+
         const long = ci?.display_long_description?.trim();
         const short = ci?.display_description?.trim();
         const enriched = Boolean(ci?.enriched_at || ci?.enrichment_source);
@@ -864,13 +882,6 @@ export class DataSyncService {
             }
         }
 
-        const ec = articleRow?.enhanced_content?.trim();
-        if (ec) {
-            const safe = sanitizeHtml(ec);
-            if (safe) {
-                return { safeHtml: safe, rawForTutorial: ec, source: 'enhanced_cache' };
-            }
-        }
         return null;
     }
 
@@ -896,6 +907,10 @@ export class DataSyncService {
             .eq('vehicle_id', vehicleId)
             .eq('original_id', originalId);
         if (error) {
+            if (this.isClientWriteDenied(error)) {
+                this.clientWriteDisabled = true;
+                return;
+            }
             this.logger.warn('[DataSync] persistArticleEnhancedHtml failed:', error.message);
         }
     }
@@ -1147,7 +1162,11 @@ export class DataSyncService {
                 }));
                 await this.supabase.client.from('parts').upsert(partData, { onConflict: 'vehicle_id,part_number' });
             }
-        } catch (e) {
+        } catch (e: any) {
+            if (this.isClientWriteDenied(e)) {
+                this.clientWriteDisabled = true;
+                return;
+            }
             this.logger.error('Parts sync failed', e);
         }
     }

@@ -4,6 +4,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { UserIdService } from './user-id.service';
 import { AuthService } from './auth.service';
+import { LoggerService } from './logger.service';
 import { environment } from '../environments/environment';
 
 export interface UnlockMap {
@@ -31,6 +32,7 @@ export class CreditsService {
     private http = inject(HttpClient);
     private userIdService = inject(UserIdService);
     private authService = inject(AuthService);
+    private logger = inject(LoggerService);
 
     private readonly USE_MOCK = false;
     private readonly STORAGE_KEYS = {
@@ -119,7 +121,7 @@ export class CreditsService {
                 }
                 headers = headers.set('x-user-id', user.id);
             } catch (e) {
-                console.error('Failed to get ID token', e);
+                this.logger.error('Failed to get ID token', e);
             }
         } else {
              // Fallback for guest (if supported) or unauthenticated requests
@@ -146,7 +148,7 @@ export class CreditsService {
             this.balance.set(data.credits);
             this.unlocks.set(data.unlocks);
         } catch (error) {
-            console.error('Failed to fetch credit balance:', error);
+            this.logger.error('Failed to fetch credit balance:', error);
         }
     }
 
@@ -164,7 +166,7 @@ export class CreditsService {
             );
             this.transactions.set(res.transactions ?? []);
         } catch (error) {
-            console.error('Failed to fetch transactions:', error);
+            this.logger.error('Failed to fetch transactions:', error);
         } finally {
             this.transactionsLoading.set(false);
         }
@@ -195,7 +197,7 @@ export class CreditsService {
             await new Promise(r => setTimeout(r, 100));
         }
         if (!this.authService.user()) {
-            console.warn('Auth not restored after Stripe redirect; session saved for retry after sign-in');
+            this.logger.warn('Auth not restored after Stripe redirect; session saved for retry after sign-in');
             return false;
         }
 
@@ -224,7 +226,7 @@ export class CreditsService {
             }
             return false;
         } catch (error) {
-            console.error('Session verification failed:', error);
+            this.logger.error('Session verification failed:', error);
             return false;
         }
     }
@@ -264,7 +266,7 @@ export class CreditsService {
             return { success: false, error: 'No checkout URL received' };
         } catch (err: unknown) {
             const msg = this.extractErrorMessage(err, 'Checkout failed. Please try again.');
-            console.error('Checkout failed:', err);
+            this.logger.error('Checkout failed:', err);
             this.lastError.set(msg);
             return { success: false, error: msg };
         } finally {
@@ -333,7 +335,7 @@ export class CreditsService {
             });
         } catch (err: unknown) {
             const msg = this.extractErrorMessage(err, 'Checkout failed. Please try again.');
-            console.error('Checkout failed:', err);
+            this.logger.error('Checkout failed:', err);
             this.lastError.set(msg);
             return { success: false, error: msg };
         } finally {
@@ -370,7 +372,7 @@ export class CreditsService {
             }
         } catch (err: unknown) {
             const msg = this.extractErrorMessage(err, 'Unable to open billing. Make a purchase first to manage payment methods.');
-            console.error('Billing portal failed:', err);
+            this.logger.error('Billing portal failed:', err);
             this.lastError.set(msg);
         } finally {
             this.portalLoading.set(false);
@@ -421,7 +423,7 @@ export class CreditsService {
             }
             return false;
         } catch (error: unknown) {
-            console.error('Unlock failed:', error);
+            this.logger.error('Unlock failed:', error);
             const err = error as { error?: string | { error?: string } };
             const msg = typeof err?.error === 'string' ? err.error : err?.error?.error ?? 'Unlock failed';
             this.lastError.set(msg);

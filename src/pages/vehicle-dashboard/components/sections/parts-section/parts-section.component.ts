@@ -1,3 +1,4 @@
+import { LoggerService } from '@/src/services/logger.service';
 import { Component, Input, OnInit, signal, inject, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -21,6 +22,8 @@ import { CreditsService } from '../../../../../services/credits.service';
     standalone: true
 })
 export class PartsSectionComponent implements OnInit {
+    private logger = inject(LoggerService);
+
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
     @Input() vehicleName: string = '';
@@ -73,7 +76,7 @@ export class PartsSectionComponent implements OnInit {
             this.updateDisplayedParts();
             this.isLoading.set(false);
         }, (err) => {
-            console.error('Failed to load parts', err);
+            this.logger.error('Failed to load parts', err);
             this.isLoading.set(false);
             this.parts.set([]);
             this.updateDisplayedParts();

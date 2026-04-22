@@ -47,6 +47,11 @@ vi.mock('@angular/core', () => ({
             getIdToken: async () => null,
             signInWithGoogle: async () => null
         };
+        if (token && token.name === 'LoggerService') return {
+            info: () => {},
+            warn: () => {},
+            error: () => {}
+        };
         return null;
     },
     effect: () => {},
@@ -168,14 +173,14 @@ describe('CreditsService', () => {
 
         test('should return false immediately if balance is insufficient', async () => {
             service.balance.set(5);
-            const result = await service.unlockModule('vehicle-123', 'procedures', 10);
+            const result = await service.unlockModule('vehicle-123', 'Vehicle Name', 'procedures', 10);
             expect(result).toBe(false);
             expect(postMock).not.toHaveBeenCalled();
         });
 
         test('should make HTTP POST request and update state on success', async () => {
             const cost = 20;
-            const result = await service.unlockModule('vehicle-123', 'specs', cost);
+            const result = await service.unlockModule('vehicle-123', 'Vehicle Name', 'specs', cost);
 
             expect(result).toBe(true);
             expect(postMock).toHaveBeenCalledTimes(1);
@@ -184,6 +189,7 @@ describe('CreditsService', () => {
             expect(url).toContain('/api/credits/unlock');
             expect(body).toEqual({
                 vehicleId: 'vehicle-123',
+                vehicleName: 'Vehicle Name',
                 moduleType: 'specs',
                 cost
             });
@@ -210,7 +216,7 @@ describe('CreditsService', () => {
 
             expect(service.isLoading()).toBe(false);
 
-            const promise = service.unlockModule('vehicle-123', 'specs', 10);
+            const promise = service.unlockModule('vehicle-123', 'Vehicle Name', 'specs', 10);
 
             await promise;
 
@@ -227,7 +233,7 @@ describe('CreditsService', () => {
             mockHttpClient.post = postMock;
 
             const initialBalance = service.balance();
-            const result = await service.unlockModule('vehicle-123', 'specs', 10);
+            const result = await service.unlockModule('vehicle-123', 'Vehicle Name', 'specs', 10);
 
             expect(result).toBe(false);
             expect(service.balance()).toBe(initialBalance);
@@ -242,17 +248,14 @@ describe('CreditsService', () => {
             }));
             mockHttpClient.post = postMock;
 
-            const consoleSpy = vi.fn();
-            const originalError = console.error;
-            console.error = consoleSpy;
+            const loggerSpy = vi.fn();
+            (service as any).logger = { error: loggerSpy };
 
-            const result = await service.unlockModule('vehicle-123', 'specs', 10);
+            const result = await service.unlockModule('vehicle-123', 'Vehicle Name', 'specs', 10);
 
             expect(result).toBe(false);
-            expect(consoleSpy).toHaveBeenCalled();
+            expect(loggerSpy).toHaveBeenCalled();
             expect(service.isLoading()).toBe(false);
-
-            console.error = originalError;
         });
     });
 });

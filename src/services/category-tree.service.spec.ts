@@ -45,7 +45,7 @@ test('CategoryTreeService should use bucket as parent when parentBucket is missi
     expect(elecNode).toBeTruthy();
     expect(elecNode?.type).toBe('system');
 
-    const elecGroup = elecNode?.children.find((n: any) => n.name === 'Elec');
+    const elecGroup = elecNode?.children.find((n: any) => n.name === 'General');
     expect(elecGroup).toBeTruthy();
     expect(elecGroup?.type).toBe('group');
     expect(elecGroup?.children[0].id).toBe('4');
@@ -76,7 +76,7 @@ test('CategoryTreeService should group articles with no bucket and no parentBuck
     expect(uncategorizedNode).toBeTruthy();
     expect(uncategorizedNode?.type).toBe('system');
 
-    const uncategorizedGroup = uncategorizedNode?.children.find((n: any) => n.name === 'Uncategorized');
+    const uncategorizedGroup = uncategorizedNode?.children.find((n: any) => n.name === 'General');
     expect(uncategorizedGroup).toBeTruthy();
     expect(uncategorizedGroup?.children[0].id).toBe('6');
 });

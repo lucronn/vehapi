@@ -1,3 +1,4 @@
+import { LoggerService } from '@/src/services/logger.service';
 import { Component, Input, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
@@ -22,6 +23,8 @@ import { CreditsService } from '../../../../../services/credits.service';
     standalone: true
 })
 export class DiagramsSectionComponent implements OnInit {
+    private logger = inject(LoggerService);
+
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
     @Input() vehicleName: string = '';
@@ -63,7 +66,7 @@ export class DiagramsSectionComponent implements OnInit {
                 this.updateDisplayedDiagrams();
             },
             (error) => {
-                console.error('Failed to load diagrams', error);
+                this.logger.error('Failed to load diagrams', error);
                 this.isLoading.set(false);
             }
         );

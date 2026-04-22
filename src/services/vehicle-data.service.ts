@@ -343,7 +343,7 @@ export class VehicleDataService {
                         .select('bucket,parent_bucket')
                         .eq('vehicle_id', vehicleId)
                     ).pipe(
-                        map(({ data: articles }) => {
+                        switchMap(({ data: articles }) => {
                             const allBuckets = new Set<string>();
                             (articles || []).forEach(a => {
                                 if (a.bucket) allBuckets.add(a.bucket.toLowerCase());
@@ -352,16 +352,22 @@ export class VehicleDataService {
                             const has = (keywords: string[]) =>
                                 [...allBuckets].some(b => keywords.some(k => b.includes(k)));
 
-                            return {
-                                hasDtcs: has(['dtc', 'diagnostic']),
-                                hasTsbs: has(['tsb', 'bulletin']),
-                                hasDiagrams: has(['diagram', 'wiring']),
-                                hasProcedures: has(['procedure', 'labor', 'service procedures']),
-                                hasSpecs: has(['spec', 'capacity', 'fluid']),
-                                hasMaintenance: has(['maintenance']),
-                                hasComponentLocations: has(['component location', 'locations']),
-                                hasParts: true
-                            };
+                            return from(this.supabase.client
+                                .from('parts')
+                                .select('id', { head: true, count: 'exact' })
+                                .eq('vehicle_id', vehicleId)
+                            ).pipe(
+                                map(({ count }) => ({
+                                    hasDtcs: has(['dtc', 'diagnostic']),
+                                    hasTsbs: has(['tsb', 'bulletin']),
+                                    hasDiagrams: has(['diagram', 'wiring']),
+                                    hasProcedures: has(['procedure', 'labor', 'service procedures']),
+                                    hasSpecs: has(['spec', 'capacity', 'fluid']),
+                                    hasMaintenance: has(['maintenance']),
+                                    hasComponentLocations: has(['component location', 'locations']),
+                                    hasParts: (count ?? 0) > 0
+                                }))
+                            );
                         })
                     );
                 }

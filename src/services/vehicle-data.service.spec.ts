@@ -21,6 +21,18 @@ vi.mock('@angular/core', () => ({
         if (token && token.name === 'MotorApiService') {
             return new MockMotorApiService();
         }
+        if (token && token.name === 'DataSyncService') {
+            return { checkNormalizationStatus: vi.fn(() => Promise.resolve(false)) };
+        }
+        if (token && token.name === 'SupabaseService') {
+            return { client: { from: vi.fn(() => ({ select: vi.fn(() => ({ eq: vi.fn(() => Promise.resolve({ data: [] })) })) })) } };
+        }
+        if (token && token.name === 'LoggerService') {
+            return { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+        }
+        if (token && token.name === 'VehiclePersistenceService') {
+            return { getVehicle: vi.fn(() => null) };
+        }
         return {};
     },
     WritableSignal: class {},
@@ -40,7 +52,7 @@ describe('VehicleDataService', () => {
     });
 
     describe('loadSectionData', () => {
-        test('should load DTCs correctly', () => {
+        test('should load DTCs correctly', async () => {
             mockSearchArticles.mockReturnValue(of({
                 body: {
                     articleDetails: [
@@ -55,6 +67,8 @@ describe('VehicleDataService', () => {
 
             service.loadSectionData('dtcs', 'MOTOR', '123', undefined, loadingSignal, updateState);
 
+            await new Promise(process.nextTick);
+
             expect(updateState).toHaveBeenCalled();
             const calledArg = updateState.mock.calls[0][0];
             expect(calledArg).toHaveLength(1);
@@ -66,7 +80,7 @@ describe('VehicleDataService', () => {
             });
         });
 
-        test('should load TSBs correctly', () => {
+        test('should load TSBs correctly', async () => {
             mockSearchArticles.mockReturnValue(of({
                 body: {
                     articleDetails: [
@@ -81,6 +95,8 @@ describe('VehicleDataService', () => {
 
             service.loadSectionData('tsbs', 'MOTOR', '123', undefined, loadingSignal, updateState);
 
+            await new Promise(process.nextTick);
+
             expect(updateState).toHaveBeenCalled();
             const calledArg = updateState.mock.calls[0][0];
             expect(calledArg).toHaveLength(1);
@@ -94,7 +110,7 @@ describe('VehicleDataService', () => {
             });
         });
 
-        test('should load Procedures correctly', () => {
+        test('should load Procedures correctly', async () => {
             mockSearchArticles.mockReturnValue(of({
                 body: {
                     articleDetails: [
@@ -109,6 +125,8 @@ describe('VehicleDataService', () => {
 
             service.loadSectionData('procedures', 'MOTOR', '123', undefined, loadingSignal, updateState);
 
+            await new Promise(process.nextTick);
+
             expect(updateState).toHaveBeenCalled();
             const calledArg = updateState.mock.calls[0][0];
             expect(calledArg).toHaveLength(1);
@@ -117,7 +135,7 @@ describe('VehicleDataService', () => {
                 bucket: 'Procedures',
                 title: 'Replace Oil',
                 subtitle: 'Step by step',
-                parentBucket: undefined
+                parentBucket: ''
             });
         });
     });

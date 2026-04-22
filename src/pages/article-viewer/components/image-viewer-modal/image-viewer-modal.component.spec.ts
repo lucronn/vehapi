@@ -1,3 +1,4 @@
+import { LoggerService } from '@/src/services/logger.service';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -29,7 +30,7 @@ describe('ImageViewerModalComponent Static Analysis', () => {
         buttons.forEach((buttonHtml, index) => {
             const hasAriaLabel = /aria-label=["']/.test(buttonHtml) || /\[attr.aria-label\]=["']/.test(buttonHtml);
             if (!hasAriaLabel) {
-                console.error(`Button at index ${index} missing aria-label: ${buttonHtml}`);
+                this.logger.error(`Button at index ${index} missing aria-label: ${buttonHtml}`);
             }
             expect(hasAriaLabel).toBe(true);
         });
@@ -40,7 +41,7 @@ describe('ImageViewerModalComponent Static Analysis', () => {
             const hasLargePadding = /p-[3-9]/.test(buttonHtml) || /p-\[[1-9][0-9]px\]/.test(buttonHtml);
 
             if (!hasLargePadding) {
-                 console.error(`Button at index ${index} has insufficient padding: ${buttonHtml}`);
+                 this.logger.error(`Button at index ${index} has insufficient padding: ${buttonHtml}`);
             }
             expect(hasLargePadding).toBe(true);
         });

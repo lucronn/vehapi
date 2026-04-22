@@ -1,3 +1,4 @@
+import { LoggerService } from './logger.service';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, catchError, map, of, timeout } from 'rxjs';
@@ -23,6 +24,8 @@ export interface CommonIssuesResult {
  */
 @Injectable({ providedIn: 'root' })
 export class AiRewriteService {
+
+  private logger = inject(LoggerService);
     private http = inject(HttpClient);
     private readonly baseUrl = getMotorProxyBaseUrl();
 
@@ -91,7 +94,7 @@ export class AiRewriteService {
             catchError((err: HttpErrorResponse): Observable<CommonIssuesResult> => {
                 const aiUnavailable = err?.status === 503;
                 if (!aiUnavailable) {
-                    console.error('Failed to generate common issues:', err);
+                    this.logger.error('Failed to generate common issues:', err);
                 }
                 return of({ issues: [], aiUnavailable });
             })

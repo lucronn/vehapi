@@ -1,3 +1,4 @@
+import { LoggerService } from '@/src/services/logger.service';
 import { Component, Input, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
@@ -22,6 +23,8 @@ import { CreditsService } from '../../../../../services/credits.service';
     standalone: true
 })
 export class ComponentLocationsSectionComponent implements OnInit {
+    private logger = inject(LoggerService);
+
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
     @Input() vehicleName: string = '';
@@ -53,7 +56,7 @@ export class ComponentLocationsSectionComponent implements OnInit {
             this.isLoading,
             (data) => this.locations.set(data as ComponentLocation[]),
             (error) => {
-                console.error('Failed to load component locations', error);
+                this.logger.error('Failed to load component locations', error);
                 this.isLoading.set(false);
             }
         );

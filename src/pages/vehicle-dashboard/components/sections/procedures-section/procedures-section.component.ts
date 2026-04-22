@@ -1,3 +1,4 @@
+import { LoggerService } from '@/src/services/logger.service';
 import { Component, Input, OnInit, signal, inject, ChangeDetectionStrategy, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
@@ -22,6 +23,8 @@ import { WindowManagerService } from '../../../../../services/window-manager.ser
     standalone: true
 })
 export class ProceduresSectionComponent implements OnInit {
+    private logger = inject(LoggerService);
+
     @Input({ required: true }) contentSource!: string;
     @Input({ required: true }) vehicleId!: string;
     @Input() vehicleName: string = '';
@@ -94,7 +97,7 @@ export class ProceduresSectionComponent implements OnInit {
             this.isLoading,
             (data) => this.procedures.set(data),
             (error) => {
-                console.error('Failed to load procedures', error);
+                this.logger.error('Failed to load procedures', error);
                 this.isLoading.set(false);
             }
         );

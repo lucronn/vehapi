@@ -18,6 +18,7 @@ import { VehiclePersistenceService } from '../../services/vehicle-persistence.se
 import { AuthService } from '../../services/auth.service';
 import { effect } from '@angular/core';
 import { PageTitleService } from '../../services/page-title.service';
+import { LoggerService } from '../../services/logger.service';
 
 // Components
 import { DashboardSidebarComponent } from './components/layout/dashboard-sidebar/dashboard-sidebar.component';
@@ -103,6 +104,7 @@ export class VehicleDashboardComponent {
   private persistence = inject(VehiclePersistenceService);
   private auth = inject(AuthService);
   private pageTitle = inject(PageTitleService);
+  private logger = inject(LoggerService);
   /** Avoid duplicate Motor Information base-vehicle requests per vehicle+YMME. */
   private motorBaseVehicleResolveInFlight = new Set<string>();
 
@@ -266,7 +268,7 @@ export class VehicleDashboardComponent {
       };
 
       if (mapping[current] === false) {
-        console.warn(`[Dashboard] Section "${current}" is unavailable. Reverting to overview.`);
+        this.logger.warn(`[Dashboard] Section "${current}" is unavailable. Reverting to overview.`);
         this.activeSection.set('overview');
       }
     });
@@ -376,7 +378,7 @@ export class VehicleDashboardComponent {
     ).subscribe({
       next: (mappings: any[]) => {
         if (!mappings || mappings.length === 0) {
-          console.warn('[Dashboard] No MOTOR mapping found for vehicle, falling back to original source');
+          this.logger.warn('[Dashboard] No MOTOR mapping found for vehicle, falling back to original source');
           this.searchResultsState.searchWithNormalizationCheck(contentSource, vehicleId, '', this.motorVehicleId());
           return;
         }
@@ -402,7 +404,7 @@ export class VehicleDashboardComponent {
           this.showOrientationModal.set(true);
         } else {
           // No options parsed, fall back
-          console.warn('[Dashboard] No valid engine options found in mapping, falling back');
+          this.logger.warn('[Dashboard] No valid engine options found in mapping, falling back');
           this.searchResultsState.searchWithNormalizationCheck(contentSource, vehicleId, '', this.motorVehicleId());
         }
       },
@@ -411,7 +413,7 @@ export class VehicleDashboardComponent {
           // Silently ignore HTTP cancellations during rapid navigation
           return;
         }
-        console.error('[Dashboard] Failed to resolve vehicle mapping, falling back', err);
+        this.logger.error('[Dashboard] Failed to resolve vehicle mapping, falling back', err);
         this.searchResultsState.searchWithNormalizationCheck(contentSource, vehicleId, '', this.motorVehicleId());
       }
     });
@@ -425,7 +427,7 @@ export class VehicleDashboardComponent {
     const mvid = this.motorVehicleId();
     await this.dataSync.ensureVehicleRecord(cs, vid, name);
     void this.dataSync.eagerSyncVehicleReferenceData(cs, vid, mvid).catch((err: unknown) =>
-      console.warn('[VehicleDashboard] Eager reference sync failed (non-fatal):', err)
+      this.logger.warn('[VehicleDashboard] Eager reference sync failed (non-fatal):', err)
     );
   }
 
@@ -474,7 +476,7 @@ export class VehicleDashboardComponent {
     const vid = this.vehicleId();
 
     if (!cs || !vid) {
-      console.error('Missing contentSource or vehicleId');
+      this.logger.error('Missing contentSource or vehicleId');
       return;
     }
 
@@ -485,11 +487,11 @@ export class VehicleDashboardComponent {
           this.pendingArticleId.set(articleId);
           this.showOrientationModal.set(true);
         } else {
-          console.warn('No orientations found for article', articleId);
+          this.logger.warn('No orientations found for article', articleId);
         }
       },
       error: (err) => {
-        console.error('Failed to load orientations', err);
+        this.logger.error('Failed to load orientations', err);
       }
     });
   }

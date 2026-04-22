@@ -1,3 +1,4 @@
+import { LoggerService } from '@/src/services/logger.service';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, Input, signal, ViewEncapsulation, OnInit, OnChanges, SimpleChanges, SecurityContext } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
@@ -49,6 +50,8 @@ function cleanSpecificTag(match: string): string {
   standalone: true
 })
 export class ArticleViewerComponent implements OnInit, OnChanges {
+
+  private logger = inject(LoggerService);
   // Inputs for Window Mode
   @Input() contentSource?: string;
   @Input() vehicleId?: string;
@@ -314,7 +317,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
         }
       }
     } catch (e) {
-      console.error('[ArticleViewer] Lazy ingest failed for normalized vehicle:', e);
+      this.logger.error('[ArticleViewer] Lazy ingest failed for normalized vehicle:', e);
     }
 
     if (!this.articleTitleInput && !this.articleTitle()) {
@@ -431,7 +434,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
     contentRequest$.subscribe({
       next: (content) => { void this.onArticleContentLoaded(content, aid); },
       error: (err) => {
-        console.error('[ArticleViewer] Failed to load article:', err);
+        this.logger.error('[ArticleViewer] Failed to load article:', err);
         const status = err?.status;
         const body = err?.error;
         if (status === 403 && body?.moduleType) {
@@ -463,7 +466,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
     const rawBody = (content as { body?: Record<string, unknown> })?.body || {};
     const rawHtml = String(rawBody.html || rawBody.content || '');
     if (!content || !(content as { body?: unknown }).body || !rawHtml) {
-      console.error('[ArticleViewer] API returned empty content body or html');
+      this.logger.error('[ArticleViewer] API returned empty content body or html');
     }
 
     this.isCached.set(Boolean((content as { header?: { isCached?: boolean } })?.header?.isCached));

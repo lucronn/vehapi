@@ -12,6 +12,7 @@ import { ArticleViewerComponent } from '../../../../article-viewer/article-viewe
 import { WindowManagerService } from '../../../../../services/window-manager.service';
 import { CreditsService } from '../../../../../services/credits.service';
 import { DataSyncService } from '../../../../../services/data-sync.service';
+import { LoggerService } from '../../../../../services/logger.service';
 
 /**
  * Displays vehicle specifications and fluids
@@ -33,6 +34,7 @@ export class SpecsFluidsSectionComponent implements OnInit {
 
     private vehicleData = inject(VehicleDataService);
     private dataSync = inject(DataSyncService);
+    private logger = inject(LoggerService);
     private windowManager = inject(WindowManagerService);
     private router = inject(Router);
     protected creditsService = inject(CreditsService); // Protected for template access
@@ -66,14 +68,14 @@ export class SpecsFluidsSectionComponent implements OnInit {
         // Safety timeout
         setTimeout(() => {
             if (this.isLoading()) {
-                console.warn('[SpecsFluidsSectionComponent] Force stopping spinner via safety timeout');
+                this.logger.warn('[SpecsFluidsSectionComponent] Force stopping spinner via safety timeout');
                 this.isLoading.set(false);
             }
         }, 10000);
 
         void this.dataSync
             .lazySyncFluids(this.contentSource, this.vehicleId)
-            .catch((e) => console.warn('[SpecsFluids] lazySyncFluids (non-fatal):', e))
+            .catch((e) => this.logger.warn('[SpecsFluids] lazySyncFluids (non-fatal):', e))
             .finally(() => {
                 this.vehicleData.loadSpecs(this.contentSource, this.vehicleId, this.motorVehicleId).subscribe({
                     next: (results) => {
@@ -83,7 +85,7 @@ export class SpecsFluidsSectionComponent implements OnInit {
                         this.isLoading.set(false);
                     },
                     error: (err) => {
-                        console.error('Failed to load specs/fluids', err);
+                        this.logger.error('Failed to load specs/fluids', err);
                         this.isLoading.set(false);
                     }
                 });
