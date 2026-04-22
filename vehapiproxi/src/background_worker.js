@@ -585,10 +585,8 @@ export function enqueueParsingTask(urlPath, rawData, options = {}) {
         processTaskImmediate(taskId, targetSchema, urlPath, rawData.toString('utf8')).catch(e => {
             logger.error(`Unhandled error inside immediate background task [${taskId}]:`, e);
         });
-    }).catch(() => {
-        processTaskImmediate(taskId, targetSchema, urlPath, rawData.toString('utf8')).catch(e => {
-            logger.error(`Unhandled error inside immediate background task [${taskId}]:`, e);
-        });
+    }).catch((err) => {
+        logger.error(`wasAlreadyParsed failed for ${urlPath}, aborting parse task [${taskId}]:`, err);
     });
 }
 
@@ -653,9 +651,10 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                     );
                     const ciResult = await insertParsedData('content_item', ciRows);
                     if (!ciResult.success) {
-                        logger.warn(`content_item upsert skipped (run phase-1 migration?): ${ciResult.error}`);
-                    }
-                    if (articles.length > 0) {
+                        logger.error(`content_item upsert failed: ${ciResult.error?.message || ciResult.error}`);
+                        status = 'FAILED';
+                        errorMessage = ciResult.error?.message || ciResult.error || 'content_item Insert Failed';
+                    } else if (articles.length > 0) {
                         await markVehicleNormalized(vehicleIdStr);
                     }
                 }
@@ -684,6 +683,28 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
             const articleMeta = sourceArticleId
                 ? await getArticleCatalogEntry(vehicleIdStr, sourceArticleId)
                 : null;
+
+            let evidenceId = null;
+            try {
+                const evSha = crypto.createHash('sha256').update(rawData).digest('hex');
+                const ev = await insertEvidenceIngest({
+                    url_path: urlPath.slice(0, 4000),
+                    http_status: 200,
+                    content_type: targetSchema === 'labor_operation' ? 'application/json' : 'text/html',
+                    body_json: { targetSchema },
+                    sha256: evSha,
+                    vehicle_external_id: vehicleIdStr,
+                    content_source: extractContentSource(urlPath),
+                    source_label: `${targetSchema}_content`
+                });
+                if (!ev.success) {
+                    logger.warn(`[${taskId}] evidence_ingest skipped: ${ev.error}`);
+                } else {
+                    evidenceId = ev.id || ev.data?.[0]?.id || null;
+                }
+            } catch (evErr) {
+                logger.warn(`[${taskId}] evidence_ingest failed: ${evErr.message}`);
+            }
 
             let contentHtml = null;
             let metadataJson = {
@@ -734,11 +755,15 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                     : {})
             };
 
-            const docResult = await insertParsedData(targetSchema, row);
+            const docResult = await insertParsedData(targetSchema, row, { returnRepresentation: true });
             if (!docResult.success) {
                 status = 'FAILED';
                 errorMessage = docResult.error?.message || docResult.error || `${targetSchema} insert failed`;
                 return;
+            }
+
+            if (evidenceId && docResult.data?.[0]?.id) {
+                await insertEvidenceLinks(evidenceId, targetSchema, [docResult.data[0].id], 'l1-v1');
             }
 
             if (sourceArticleId) {
@@ -751,9 +776,11 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                 contentItem.display_title = row.title;
                 contentItem.display_description = row.description;
                 contentItem.search_text = `${row.title || ''} ${row.description || ''} ${String(contentHtml || '').replace(/<[^>]+>/g, ' ')}`.slice(0, 8000);
-                const ciResult = await insertParsedData('content_item', contentItem);
+                const ciResult = await insertParsedData('content_item', contentItem, { returnRepresentation: true });
                 if (!ciResult.success) {
                     logger.warn(`[${taskId}] content_item upsert skipped for ${targetSchema}: ${ciResult.error}`);
+                } else if (evidenceId && ciResult.data?.[0]?.id) {
+                    await insertEvidenceLinks(evidenceId, 'content_item', [ciResult.data[0].id], 'l1-v1');
                 }
 
                 await ingestL2ContentChunksIfEnabled({

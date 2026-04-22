@@ -78,7 +78,7 @@ export class CommonIssuesSectionComponent implements OnInit {
                 this.updateDisplayedCommonIssues();
                 this.isLoading.set(false);
                 if (issues.length) {
-                    void this.dataSync.lazySyncCommonIssues(this.contentSource, this.vehicleId, this.vehicleName);
+                    void this.dataSync.lazySyncCommonIssues(this.contentSource, this.vehicleId, this.vehicleName, issues);
                 }
             },
             error: (err) => {
@@ -116,7 +116,7 @@ export class CommonIssuesSectionComponent implements OnInit {
         }
     }
 
-    generateSolution(issueTitle: string): void {
+    async generateSolution(issueTitle: string): Promise<void> {
         if (!this.creditsService.hasAccess(this.vehicleId, 'common_issues')) {
             this.unlockSection();
             return;
@@ -129,9 +129,15 @@ export class CommonIssuesSectionComponent implements OnInit {
 
         let relatedHtml = '';
         if (relatedIds.length) {
-            const links = relatedIds.map(id =>
-                `<li class="text-[hsl(var(--accent-primary))]">${id}</li>`
-            ).join('');
+            const resolvedMap = await this.dataSync.resolveRelatedLinks(this.vehicleId, relatedIds);
+            const links = relatedIds.map(id => {
+                const articleId = resolvedMap[id];
+                if (articleId) {
+                    const href = `#/vehicle/${this.contentSource}/${this.vehicleId}/article/${encodeURIComponent(articleId)}`;
+                    return `<li class="text-[hsl(var(--accent-primary))]"><a href="${href}" class="text-cyan-400 hover:text-cyan-300 underline">${id}</a></li>`;
+                }
+                return `<li class="text-[hsl(var(--accent-primary))]">${id}</li>`;
+            }).join('');
             relatedHtml = `<div class="mt-4"><strong>Related:</strong><ul class="list-disc ml-4 mt-1">${links}</ul></div>`;
         }
 

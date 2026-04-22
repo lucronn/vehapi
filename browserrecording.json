@@ -1,0 +1,1158 @@
+{
+    "title": "Recording 3/25/2026 at 1:36:37 PM",
+    "steps": [
+        {
+            "type": "setViewport",
+            "width": 1821,
+            "height": 1248,
+            "deviceScaleFactor": 1,
+            "isMobile": false,
+            "hasTouch": false,
+            "isLandscape": false
+        },
+        {
+            "type": "navigate",
+            "url": "chrome-extension://eeijfnjmjelapkebgockoeaadonbchdd/static/browserLanding.html",
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "chrome-extension://eeijfnjmjelapkebgockoeaadonbchdd/static/browserLanding.html",
+                    "title": "Browser"
+                }
+            ]
+        },
+        {
+            "type": "navigate",
+            "url": "https://vehapi.vercel.app/",
+            "assertedEvents": [
+                {
+                    "type": "navigation",
+                    "url": "https://vehapi.vercel.app/",
+                    "title": ""
+                }
+            ]
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Reset"
+                ],
+                [
+                    "div.gap-2 > button"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-home/div/header/div[2]/button"
+                ],
+                [
+                    "pierce/div.gap-2 > button"
+                ],
+                [
+                    "text/Reset"
+                ]
+            ],
+            "offsetY": 13,
+            "offsetX": 54.34375
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "div.glass-card"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-home/div/main/div/div[2]/div/div[2]"
+                ],
+                [
+                    "pierce/div.glass-card"
+                ]
+            ],
+            "offsetY": 241.5,
+            "offsetX": 429
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Continue"
+                ],
+                [
+                    "div.space-y-4 > div.relative button"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-home/div/main/div/div[2]/div[2]/div[2]/div/button"
+                ],
+                [
+                    "pierce/div.space-y-4 > div.relative button"
+                ]
+            ],
+            "offsetY": 26.80877685546875,
+            "offsetX": 82.70703125
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "button:nth-of-type(15) > div"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/main/app-orientation-selector-modal/div/div/div[3]/button[15]/div"
+                ],
+                [
+                    "pierce/button:nth-of-type(15) > div"
+                ]
+            ],
+            "offsetY": 24.25,
+            "offsetX": 189
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "app-dashboard-sidebar button:nth-of-type(2) > span"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/button[2]/span"
+                ],
+                [
+                    "pierce/app-dashboard-sidebar button:nth-of-type(2) > span"
+                ]
+            ],
+            "offsetY": 14,
+            "offsetX": 15
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "div.grid > div:nth-of-type(1) > div"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/main/div[3]/div/app-dtc-section/div/div[1]/div[1]/div"
+                ],
+                [
+                    "pierce/div.grid > div:nth-of-type(1) > div"
+                ],
+                [
+                    "text/1380Misfire Detected -"
+                ]
+            ],
+            "offsetY": 66.40625,
+            "offsetX": 238
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Unlock section (5 credits)"
+                ],
+                [
+                    "div.flex-1 button:nth-of-type(2)"
+                ],
+                [
+                    "xpath//html/body/app-root/app-window-container/div/app-window/div/div[2]/app-article-viewer/div/main/div/div/div[2]/button[2]"
+                ],
+                [
+                    "pierce/div.flex-1 button:nth-of-type(2)"
+                ],
+                [
+                    "text/Unlock section"
+                ]
+            ],
+            "offsetY": 18,
+            "offsetX": 59.515625
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/DISMISS"
+                ],
+                [
+                    "div.w-full > button"
+                ],
+                [
+                    "xpath//html/body/app-root/app-window-container/div/app-window/div/div[2]/app-article-viewer/div/main/div/div[1]/button"
+                ],
+                [
+                    "pierce/div.w-full > button"
+                ],
+                [
+                    "text/Dismiss"
+                ]
+            ],
+            "offsetY": 6,
+            "offsetX": 32.90625
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Close",
+                    "aria/[role=\"image\"]"
+                ],
+                [
+                    "button.hover\\:bg-red-500\\/20 svg"
+                ],
+                [
+                    "xpath//html/body/app-root/app-window-container/div/app-window/div/div[1]/div[2]/button[3]/lucide-icon/svg"
+                ],
+                [
+                    "pierce/button.hover\\:bg-red-500\\/20 svg"
+                ]
+            ],
+            "offsetY": 8,
+            "offsetX": 10
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "app-dashboard-sidebar button:nth-of-type(3) > span"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/button[3]/span"
+                ],
+                [
+                    "pierce/app-dashboard-sidebar button:nth-of-type(3) > span"
+                ]
+            ],
+            "offsetY": 4,
+            "offsetX": 66
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "div.grid > div:nth-of-type(1) p"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/main/div[3]/div/app-tsb-section/div/div[1]/div[1]/div[1]/p"
+                ],
+                [
+                    "pierce/div.grid > div:nth-of-type(1) p"
+                ]
+            ],
+            "offsetY": 1.90625,
+            "offsetX": 203
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Unlock section (5 credits)"
+                ],
+                [
+                    "div.flex-1 button:nth-of-type(2)"
+                ],
+                [
+                    "xpath//html/body/app-root/app-window-container/div/app-window/div/div[2]/app-article-viewer/div/main/div/div/div[2]/button[2]"
+                ],
+                [
+                    "pierce/div.flex-1 button:nth-of-type(2)"
+                ],
+                [
+                    "text/Unlock section"
+                ]
+            ],
+            "offsetY": 10,
+            "offsetX": 118.515625
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Download"
+                ],
+                [
+                    "div.justify-between a.font-semibold"
+                ],
+                [
+                    "xpath//html/body/app-root/app-window-container/div/app-window/div/div[2]/app-article-viewer/div/main/div/div/div[1]/div[2]/a[2]"
+                ],
+                [
+                    "pierce/div.justify-between a.font-semibold"
+                ],
+                [
+                    "text/Download"
+                ]
+            ],
+            "offsetY": 6,
+            "offsetX": 73.15625
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Close",
+                    "aria/[role=\"image\"]"
+                ],
+                [
+                    "button.hover\\:bg-red-500\\/20 svg"
+                ],
+                [
+                    "xpath//html/body/app-root/app-window-container/div/app-window/div/div[1]/div[2]/button[3]/lucide-icon/svg"
+                ],
+                [
+                    "pierce/button.hover\\:bg-red-500\\/20 svg"
+                ]
+            ],
+            "offsetY": 0,
+            "offsetX": 5
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "app-dashboard-sidebar button:nth-of-type(4) > span"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/button[4]/span"
+                ],
+                [
+                    "pierce/app-dashboard-sidebar button:nth-of-type(4) > span"
+                ]
+            ],
+            "offsetY": 14,
+            "offsetX": 99
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "div:nth-of-type(1) > div.grid > div:nth-of-type(1) div.flex-1"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/main/div[3]/div/app-procedures-section/div/div[1]/div[1]/div[2]/div[1]/div/div[2]"
+                ],
+                [
+                    "pierce/div:nth-of-type(1) > div.grid > div:nth-of-type(1) div.flex-1"
+                ],
+                [
+                    "text/Air Conditioning Accumulator R&R Component"
+                ]
+            ],
+            "offsetY": 20.40625,
+            "offsetX": 180
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Unlock section (10 credits)"
+                ],
+                [
+                    "div.flex-1 button:nth-of-type(2)"
+                ],
+                [
+                    "xpath//html/body/app-root/app-window-container/div/app-window/div/div[2]/app-article-viewer/div/main/div/div/div[2]/button[2]"
+                ],
+                [
+                    "pierce/div.flex-1 button:nth-of-type(2)"
+                ],
+                [
+                    "text/Unlock section"
+                ]
+            ],
+            "offsetY": 26,
+            "offsetX": 143.8125
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "div.window-title-bar path:nth-of-type(2)"
+                ],
+                [
+                    "xpath//html/body/app-root/app-window-container/div/app-window/div/div[1]/div[2]/button[3]/lucide-icon/svg/path[2]"
+                ],
+                [
+                    "pierce/div.window-title-bar path:nth-of-type(2)"
+                ]
+            ],
+            "offsetY": 8,
+            "offsetX": 8
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/DIAGRAMS"
+                ],
+                [
+                    "app-dashboard-sidebar button:nth-of-type(5)"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/button[5]"
+                ],
+                [
+                    "pierce/app-dashboard-sidebar button:nth-of-type(5)"
+                ]
+            ],
+            "offsetY": 7,
+            "offsetX": 78
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "div.grid > div:nth-of-type(1) img"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/main/div[3]/div/app-diagrams-section/div/div[1]/div[1]/div/div[1]/img"
+                ],
+                [
+                    "pierce/div.grid > div:nth-of-type(1) img"
+                ]
+            ],
+            "offsetY": 175.40625,
+            "offsetX": 308
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Unlock section (10 credits)"
+                ],
+                [
+                    "div.flex-1 button:nth-of-type(2)"
+                ],
+                [
+                    "xpath//html/body/app-root/app-window-container/div/app-window/div/div[2]/app-article-viewer/div/main/div/div/div[2]/button[2]"
+                ],
+                [
+                    "pierce/div.flex-1 button:nth-of-type(2)"
+                ],
+                [
+                    "text/Unlock section"
+                ]
+            ],
+            "offsetY": 27,
+            "offsetX": 106.8125
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Close"
+                ],
+                [
+                    "button.hover\\:bg-red-500\\/20"
+                ],
+                [
+                    "xpath//html/body/app-root/app-window-container/div/app-window/div/div[1]/div[2]/button[3]"
+                ],
+                [
+                    "pierce/button.hover\\:bg-red-500\\/20"
+                ]
+            ],
+            "offsetY": 5,
+            "offsetX": 22
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "button:nth-of-type(6) > span"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/button[6]/span"
+                ],
+                [
+                    "pierce/button:nth-of-type(6) > span"
+                ],
+                [
+                    "text/Specs & Fluids"
+                ]
+            ],
+            "offsetY": 8,
+            "offsetX": 86
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/MAINTENANCE"
+                ],
+                [
+                    "button:nth-of-type(7)"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/button[7]"
+                ],
+                [
+                    "pierce/button:nth-of-type(7)"
+                ]
+            ],
+            "offsetY": 26,
+            "offsetX": 137
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "select"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/main/div[3]/div/app-maintenance-section/div/div[1]/div/select"
+                ],
+                [
+                    "pierce/select"
+                ]
+            ],
+            "offsetY": 25.40625,
+            "offsetX": 47
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Unlock Now 5 CR"
+                ],
+                [
+                    "div.max-w-\\[1600px\\] button"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/main/div[3]/div/app-maintenance-section/div/div[2]/div/div[3]/div[2]/button"
+                ],
+                [
+                    "pierce/div.max-w-\\[1600px\\] button"
+                ]
+            ],
+            "offsetY": 32.735595703125,
+            "offsetX": 182.501220703125
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "div.max-w-\\[1600px\\] div.card"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/main/div[3]/div/app-maintenance-section/div/div[1]"
+                ],
+                [
+                    "pierce/div.max-w-\\[1600px\\] div.card"
+                ]
+            ],
+            "offsetY": 62.40625,
+            "offsetX": 1405
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "select"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/main/div[3]/div/app-maintenance-section/div/div[1]/div/select"
+                ],
+                [
+                    "pierce/select"
+                ]
+            ],
+            "offsetY": 36.40625,
+            "offsetX": 82
+        },
+        {
+            "type": "change",
+            "value": "100000",
+            "selectors": [
+                [
+                    "select"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/main/div[3]/div/app-maintenance-section/div/div[1]/div/select"
+                ],
+                [
+                    "pierce/select"
+                ]
+            ],
+            "target": "main"
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "div.max-w-\\[1600px\\] div.card > div"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/main/div[3]/div/app-maintenance-section/div/div[1]/div"
+                ],
+                [
+                    "pierce/div.max-w-\\[1600px\\] div.card > div"
+                ],
+                [
+                    "text/Service IntervalSelect Mileage100000"
+                ]
+            ],
+            "offsetY": 26.40625,
+            "offsetX": 486
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "button:nth-of-type(8) > span"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/button[8]/span"
+                ],
+                [
+                    "pierce/button:nth-of-type(8) > span"
+                ],
+                [
+                    "text/Common Issues"
+                ]
+            ],
+            "offsetY": 13,
+            "offsetX": 102
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Unlock Now 5 CR"
+                ],
+                [
+                    "div.max-w-\\[1600px\\] button"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/main/div[3]/div/app-common-issues-section/div/div[2]/div[3]/div[2]/button"
+                ],
+                [
+                    "pierce/div.max-w-\\[1600px\\] button"
+                ]
+            ],
+            "offsetY": 6.998291015625,
+            "offsetX": 90.9622802734375
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "button:nth-of-type(9) > span"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/button[9]/span"
+                ],
+                [
+                    "pierce/button:nth-of-type(9) > span"
+                ],
+                [
+                    "text/Browse All"
+                ]
+            ],
+            "offsetY": 4,
+            "offsetX": 70
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "li:nth-of-type(1) > button > span"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/app-category-tree/ul/li[1]/button/span"
+                ],
+                [
+                    "pierce/li:nth-of-type(1) > button > span"
+                ]
+            ],
+            "offsetY": 9.25,
+            "offsetX": 134
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Brakes 19"
+                ],
+                [
+                    "li:nth-of-type(1) li:nth-of-type(2) > button"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/app-category-tree/ul/li[1]/div/ul/li[2]/button"
+                ],
+                [
+                    "pierce/li:nth-of-type(1) li:nth-of-type(2) > button"
+                ],
+                [
+                    "text/Brakes 19"
+                ]
+            ],
+            "offsetY": 3.5,
+            "offsetX": 119
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/ABS Acceleration Sensor[role=\"button\"]"
+                ],
+                [
+                    "li:nth-of-type(2) li:nth-of-type(1) > button"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/app-category-tree/ul/li[1]/div/ul/li[2]/div/ul/li[1]/button"
+                ],
+                [
+                    "pierce/li:nth-of-type(2) li:nth-of-type(1) > button"
+                ]
+            ],
+            "offsetY": 26.5,
+            "offsetX": 112
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Close",
+                    "aria/[role=\"image\"]"
+                ],
+                [
+                    "button.hover\\:bg-red-500\\/20 svg"
+                ],
+                [
+                    "xpath//html/body/app-root/app-window-container/div/app-window/div/div[1]/div[2]/button[3]/lucide-icon/svg"
+                ],
+                [
+                    "pierce/button.hover\\:bg-red-500\\/20 svg"
+                ]
+            ],
+            "offsetY": 11,
+            "offsetX": 10
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "li:nth-of-type(1) > div > ul > li:nth-of-type(2) > button > lucide-icon.w-3 > svg"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/app-category-tree/ul/li[1]/div/ul/li[2]/button/lucide-icon[1]/svg"
+                ],
+                [
+                    "pierce/li:nth-of-type(1) > div > ul > li:nth-of-type(2) > button > lucide-icon.w-3 > svg"
+                ]
+            ],
+            "offsetY": 5.5,
+            "offsetX": 3
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/COMPONENT LOCATION DIAGRAMS 12"
+                ],
+                [
+                    "app-category-tree > ul > li:nth-of-type(1) > button"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/app-category-tree/ul/li[1]/button"
+                ],
+                [
+                    "pierce/app-category-tree > ul > li:nth-of-type(1) > button"
+                ],
+                [
+                    "text/Component Location Diagrams 12"
+                ]
+            ],
+            "offsetY": 10,
+            "offsetX": 195
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "li:nth-of-type(2) > button > span"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/app-category-tree/ul/li[2]/button/span"
+                ],
+                [
+                    "pierce/li:nth-of-type(2) > button > span"
+                ]
+            ],
+            "offsetY": 15.75,
+            "offsetX": 91
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/General 1323"
+                ],
+                [
+                    "li:nth-of-type(2) > div button"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/app-category-tree/ul/li[2]/div/ul/li/button"
+                ],
+                [
+                    "pierce/li:nth-of-type(2) > div button"
+                ],
+                [
+                    "text/General 1323"
+                ]
+            ],
+            "offsetY": 2,
+            "offsetX": 114
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "li:nth-of-type(2) li:nth-of-type(8) > button"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/app-category-tree/ul/li[2]/div/ul/li/div/ul/li[8]/button"
+                ],
+                [
+                    "pierce/li:nth-of-type(2) li:nth-of-type(8) > button"
+                ]
+            ],
+            "offsetY": 10,
+            "offsetX": 78
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Close",
+                    "aria/[role=\"image\"]"
+                ],
+                [
+                    "button.hover\\:bg-red-500\\/20 svg"
+                ],
+                [
+                    "xpath//html/body/app-root/app-window-container/div/app-window/div/div[1]/div[2]/button[3]/lucide-icon/svg"
+                ],
+                [
+                    "pierce/button.hover\\:bg-red-500\\/20 svg"
+                ]
+            ],
+            "offsetY": 11,
+            "offsetX": 7,
+            "duration": 442
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/General 1323"
+                ],
+                [
+                    "li:nth-of-type(2) > div > ul > li > button"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/app-category-tree/ul/li[2]/div/ul/li/button"
+                ],
+                [
+                    "pierce/li:nth-of-type(2) > div > ul > li > button"
+                ],
+                [
+                    "text/General 1323"
+                ]
+            ],
+            "offsetY": 7,
+            "offsetX": 15
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/DIAGNOSTIC TROUBLE CODES 1"
+                ],
+                [
+                    "li:nth-of-type(2) > button"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/app-category-tree/ul/li[2]/button"
+                ],
+                [
+                    "pierce/li:nth-of-type(2) > button"
+                ],
+                [
+                    "text/Diagnostic Trouble Codes 1"
+                ]
+            ],
+            "offsetY": 23.5,
+            "offsetX": 33
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "li:nth-of-type(6) > button > span"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/app-category-tree/ul/li[6]/button/span"
+                ],
+                [
+                    "pierce/li:nth-of-type(6) > button > span"
+                ]
+            ],
+            "offsetY": 3.75,
+            "offsetX": 71
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "ul ul"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/app-category-tree/ul/li[6]/div/ul"
+                ],
+                [
+                    "pierce/ul ul"
+                ]
+            ],
+            "offsetY": 63,
+            "offsetX": 111
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Electrical & Sensors 6"
+                ],
+                [
+                    "li:nth-of-type(6) li:nth-of-type(3) > button"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/app-category-tree/ul/li[6]/div/ul/li[3]/button"
+                ],
+                [
+                    "pierce/li:nth-of-type(6) li:nth-of-type(3) > button"
+                ],
+                [
+                    "text/Electrical & Sensors 6"
+                ]
+            ],
+            "offsetY": 5,
+            "offsetX": 97
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Battery Specifications[role=\"button\"]"
+                ],
+                [
+                    "li:nth-of-type(3) li:nth-of-type(2) > button"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/app-category-tree/ul/li[6]/div/ul/li[3]/div/ul/li[2]/button"
+                ],
+                [
+                    "pierce/li:nth-of-type(3) li:nth-of-type(2) > button"
+                ]
+            ],
+            "offsetY": 0.5,
+            "offsetX": 75
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Close",
+                    "aria/[role=\"image\"]"
+                ],
+                [
+                    "button.hover\\:bg-red-500\\/20 svg"
+                ],
+                [
+                    "xpath//html/body/app-root/app-window-container/div/app-window/div/div[1]/div[2]/button[3]/lucide-icon/svg"
+                ],
+                [
+                    "pierce/button.hover\\:bg-red-500\\/20 svg"
+                ]
+            ],
+            "offsetY": 9,
+            "offsetX": 10
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "app-category-tree > ul > li:nth-of-type(2) > button > span"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/app-category-tree/ul/li[2]/button/span"
+                ],
+                [
+                    "pierce/app-category-tree > ul > li:nth-of-type(2) > button > span"
+                ]
+            ],
+            "offsetY": 7.75,
+            "offsetX": 88
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "li:nth-of-type(2) > div span.text-xs"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/app-category-tree/ul/li[2]/div/ul/li/button/span[1]"
+                ],
+                [
+                    "pierce/li:nth-of-type(2) > div span.text-xs"
+                ]
+            ],
+            "offsetY": 15,
+            "offsetX": 58
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "li:nth-of-type(23) > button"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/app-category-tree/ul/li[2]/div/ul/li/div/ul/li[23]/button"
+                ],
+                [
+                    "pierce/li:nth-of-type(23) > button"
+                ]
+            ],
+            "offsetY": 16,
+            "offsetX": 73
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/Close",
+                    "aria/[role=\"image\"]"
+                ],
+                [
+                    "button.hover\\:bg-red-500\\/20 svg"
+                ],
+                [
+                    "xpath//html/body/app-root/app-window-container/div/app-window/div/div[1]/div[2]/button[3]/lucide-icon/svg"
+                ],
+                [
+                    "pierce/button.hover\\:bg-red-500\\/20 svg"
+                ]
+            ],
+            "offsetY": 11,
+            "offsetX": 1
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/TROUBLE CODES"
+                ],
+                [
+                    "app-dashboard-sidebar button:nth-of-type(2)"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/button[2]"
+                ],
+                [
+                    "pierce/app-dashboard-sidebar button:nth-of-type(2)"
+                ]
+            ],
+            "offsetY": 28,
+            "offsetX": 110
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "aria/MAINTENANCE"
+                ],
+                [
+                    "button:nth-of-type(7)"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/button[7]"
+                ],
+                [
+                    "pierce/button:nth-of-type(7)"
+                ]
+            ],
+            "offsetY": 6,
+            "offsetX": 49
+        },
+        {
+            "type": "click",
+            "target": "main",
+            "selectors": [
+                [
+                    "button:nth-of-type(8) > span"
+                ],
+                [
+                    "xpath//html/body/app-root/main/app-vehicle-dashboard/div/app-dashboard-sidebar/aside/nav/button[8]/span"
+                ],
+                [
+                    "pierce/button:nth-of-type(8) > span"
+                ],
+                [
+                    "text/Common Issues"
+                ]
+            ],
+            "offsetY": 14,
+            "offsetX": 37
+        }
+    ]
+}

@@ -117,13 +117,24 @@ export class DataSyncService {
     }
 
     async checkNormalizationStatus(vehicleId: string): Promise<boolean> {
-        const { data } = await this.supabase.client
+        const { data, error } = await this.supabase.client
             .from('vehicles')
             .select('is_normalized')
             .eq('external_id', vehicleId)
             .maybeSingle();
 
-        return !!data?.is_normalized;
+        if (!error && data !== null) {
+            return !!data.is_normalized;
+        }
+
+        this.logger.warn(`[DataSync] is_normalized read failed or missing for ${vehicleId}, falling back to articles count:`, error);
+        
+        const { count } = await this.supabase.client
+            .from('articles')
+            .select('*', { count: 'exact', head: true })
+            .eq('vehicle_id', vehicleId);
+            
+        return (count ?? 0) > 0;
     }
 
     /**
@@ -553,12 +564,42 @@ export class DataSyncService {
         return (data?.issues as CommonIssue[]) || null;
     }
 
+    async resolveRelatedLinks(vehicleId: string, codes: string[]): Promise<Record<string, string>> {
+        if (!codes || codes.length === 0) return {};
+        
+        // Find matching articles by code, bulletin_number, or original_id
+        // Since Supabase `in` filter works on arrays, we can construct an OR query
+        const queryStr = codes.map(c => {
+            const clean = c.replace(/'/g, "''");
+            return `code.eq.'${clean}',bulletin_number.eq.'${clean}',original_id.eq.'${clean}'`;
+        }).join(',');
+        
+        const { data } = await this.supabase.client
+            .from('articles')
+            .select('original_id, code, bulletin_number')
+            .eq('vehicle_id', vehicleId)
+            .or(queryStr);
+            
+        const map: Record<string, string> = {};
+        if (data) {
+            for (const row of data) {
+                // Match back to the input codes
+                for (const c of codes) {
+                    if (row.code === c || row.bulletin_number === c || row.original_id === c) {
+                        map[c] = row.original_id;
+                    }
+                }
+            }
+        }
+        return map;
+    }
+
     /**
      * Lazily sync common issues — called by the common-issues section.
      * Checks Supabase cache first; only hits the AI endpoint when missing.
      */
-    async lazySyncCommonIssues(contentSource: string, vehicleId: string, vehicleName: string): Promise<void> {
-        await this.syncCommonIssues(contentSource, vehicleId, vehicleName);
+    async lazySyncCommonIssues(contentSource: string, vehicleId: string, vehicleName: string, generatedIssues?: CommonIssue[]): Promise<void> {
+        await this.syncCommonIssues(contentSource, vehicleId, vehicleName, generatedIssues);
     }
 
     /**
@@ -968,22 +1009,42 @@ export class DataSyncService {
         );
     }
 
-    private async syncCommonIssues(cs: string, vid: string, name: string) {
+    private async syncCommonIssues(cs: string, vid: string, name: string, generatedIssues?: CommonIssue[]) {
+        if (this.clientWriteDisabled) return;
+
         const { data: cached } = await this.supabase.client
             .from('common_issues_cache')
-            .select('*')
+            .select('updated_at')
             .eq('vehicle_id', vid)
             .maybeSingle();
 
         if (!cached) {
-            const { issues } = await lastValueFrom(this.aiRewrite.generateCommonIssues(name, vid));
-            if (issues && issues.length > 0) {
-                await this.supabase.client.from('common_issues_cache').upsert({
-                    vehicle_id: vid,
-                    source: cs,
-                    issues,
-                    updated_at: new Date().toISOString()
-                }, { onConflict: 'vehicle_id' });
+            try {
+                let issues = generatedIssues;
+                if (!issues) {
+                    const res = await lastValueFrom(this.aiRewrite.generateCommonIssues(name, vid));
+                    issues = res.issues;
+                }
+
+                if (issues && issues.length > 0) {
+                    const { error } = await this.supabase.client.from('common_issues_cache').upsert({
+                        vehicle_id: vid,
+                        source: cs,
+                        issues,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'vehicle_id' });
+                    
+                    if (error) {
+                        if (this.isClientWriteDenied(error)) {
+                            this.clientWriteDisabled = true;
+                            this.logger.warn(`Browser Supabase write disabled after auth/RLS deny (syncCommonIssues)`);
+                        } else {
+                            this.logger.warn(`common_issues_cache upsert failed: ${error.message}`);
+                        }
+                    }
+                }
+            } catch (err) {
+                this.logger.warn(`Failed to sync common issues: ${err}`);
             }
         }
     }

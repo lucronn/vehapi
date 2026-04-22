@@ -37,7 +37,7 @@ const UPSERT_CONFLICT_COLUMNS = {
  */
 function articlesRowsForRest(rows) {
     const extended =
-        String(process.env.ARTICLES_UPSERT_EXTENDED || '').toLowerCase() === 'true' ||
+        String(process.env.ARTICLES_UPSERT_EXTENDED || 'true').toLowerCase() === 'true' ||
         process.env.ARTICLES_UPSERT_EXTENDED === '1';
     const minimal = new Set([
         'vehicle_id',
@@ -465,12 +465,25 @@ export async function insertEvidenceLinks(evidenceId, entityType, entityIds, ext
         return { success: false, error: 'Missing link args' };
     }
     try {
-        const payload = entityIds.map((id) => ({
+        const existingResponse = await fetch(
+            `${cfg.url}/rest/v1/evidence_link?evidence_id=eq.${evidenceId}&entity_type=eq.${entityType}&entity_id=in.(${entityIds.join(',')})&select=entity_id`,
+            { headers: { apikey: cfg.key, Authorization: `Bearer ${cfg.key}` } }
+        );
+        let existingIds = new Set();
+        if (existingResponse.ok) {
+            const data = await existingResponse.json();
+            existingIds = new Set(data.map(d => d.entity_id));
+        }
+
+        const payload = entityIds.filter(id => !existingIds.has(id)).map((id) => ({
             evidence_id: evidenceId,
             entity_type: entityType,
             entity_id: id,
             extractor_version: extractorVersion
         }));
+
+        if (payload.length === 0) return { success: true };
+
         const response = await fetch(`${cfg.url}/rest/v1/evidence_link`, {
             method: 'POST',
             headers: {
@@ -540,7 +553,10 @@ export async function updateContentItemEnrichment(vehicleExternalId, motorArticl
                 return { success: false, error: errorText };
             }
         }
-        return { success: true };
+        if (!Array.isArray(rows) || rows.length === 0) {
+            return { success: false, error: 'No matching row found for patch' };
+        }
+        return { success: true, updated: rows?.length || 0 };
     } catch (err) {
         logger.error('updateContentItemEnrichment error:', err);
         return { success: false, error: err.message };

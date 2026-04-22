@@ -175,14 +175,9 @@ export class VehicleDataService {
         motorVehicleId?: string
     ): Observable<{ specs: Spec[], fluids: Fluid[] }> {
         // Priority: Check Supabase if vehicle is normalized
-        return from(this.supabase.client
-            .from('vehicles')
-            .select('is_normalized')
-            .eq('external_id', vehicleId)
-            .maybeSingle()
-        ).pipe(
-            switchMap(({ data }) => {
-                if (data?.is_normalized) {
+        return from(this.dataSync.checkNormalizationStatus(vehicleId)).pipe(
+            switchMap((isNormalized) => {
+                if (isNormalized) {
                     this.logger.info(`[VehicleDataService] Loading specs from Supabase for ${vehicleId}`);
                     return from(this.supabase.client
                         .from('specifications')
@@ -340,14 +335,9 @@ export class VehicleDataService {
         motorVehicleId?: string
     ): Observable<SectionAvailability> {
         // Priority: Check Supabase if vehicle is normalized
-        return from(this.supabase.client
-            .from('vehicles')
-            .select('is_normalized')
-            .eq('external_id', vehicleId)
-            .maybeSingle()
-        ).pipe(
-            switchMap(({ data }) => {
-                if (data?.is_normalized) {
+        return from(this.dataSync.checkNormalizationStatus(vehicleId)).pipe(
+            switchMap((isNormalized) => {
+                if (isNormalized) {
                     return from(this.supabase.client
                         .from('articles')
                         .select('bucket,parent_bucket')
@@ -527,15 +517,8 @@ export class VehicleDataService {
 
         loadingSignal.set(true);
 
-        from(this.supabase.client
-            .from('vehicles')
-            .select('is_normalized')
-            .eq('external_id', vehicleId)
-            .maybeSingle()
-        ).pipe(
-            catchError(() => of({ data: null as { is_normalized?: boolean } | null })),
-            switchMap(({ data: veh }) => {
-                const isNormalized = !!veh?.is_normalized;
+        from(this.dataSync.checkNormalizationStatus(vehicleId)).pipe(
+            switchMap((isNormalized) => {
                 return from(this.supabase.client.from('articles').select('*').eq('vehicle_id', vehicleId)).pipe(
                     map(({ data }) => {
                         if (!data || data.length === 0) {
@@ -665,14 +648,9 @@ export class VehicleDataService {
         loadingSignal.set(true);
 
         // 1. Check Supabase first
-        from(this.supabase.client
-            .from('vehicles')
-            .select('is_normalized')
-            .eq('external_id', vehicleId)
-            .maybeSingle()
-        ).pipe(
-            switchMap(({ data }) => {
-                if (data?.is_normalized) {
+        from(this.dataSync.checkNormalizationStatus(vehicleId)).pipe(
+            switchMap((isNormalized) => {
+                if (isNormalized) {
                     this.logger.info(`[VehicleDataService] Loading maintenance from Supabase for ${vehicleId}`);
                     return from(this.supabase.client
                         .from('maintenance_task')
@@ -763,14 +741,9 @@ export class VehicleDataService {
     ): void {
         loadingSignal.set(true);
 
-        from(this.supabase.client
-            .from('vehicles')
-            .select('is_normalized')
-            .eq('external_id', vehicleId)
-            .maybeSingle()
-        ).pipe(
-            switchMap(({ data }) => {
-                if (data?.is_normalized) {
+        from(this.dataSync.checkNormalizationStatus(vehicleId)).pipe(
+            switchMap((isNormalized) => {
+                if (isNormalized) {
                     let query = this.supabase.client
                         .from('parts')
                         .select('*')

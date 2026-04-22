@@ -563,7 +563,8 @@ CREATE TABLE public.content_chunk (
     text_content TEXT NOT NULL,
     embedding vector(1024),
     media_asset_id UUID REFERENCES public.media_asset(id) ON DELETE SET NULL,
-    created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
+    created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE(content_item_id, chunk_index)
 );
 
 CREATE INDEX idx_content_chunk_embedding_hnsw ON public.content_chunk USING hnsw (embedding vector_ip_ops);

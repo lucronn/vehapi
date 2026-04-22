@@ -226,12 +226,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
    * Normalized vehicles: lazy ingest + Supabase re-read; no Motor HTTP fallback for display.
    */
   private async loadDataWithSupabaseFirst(aid: string): Promise<void> {
-    const { data: vehRow } = await this.supabase.client
-      .from('vehicles')
-      .select('is_normalized')
-      .eq('external_id', this.vehicleId!)
-      .maybeSingle();
-    const isNormalized = !!vehRow?.is_normalized;
+    const isNormalized = await this.dataSync.checkNormalizationStatus(this.vehicleId!);
 
     // Title: try Supabase articles table first
     if (!this.articleTitleInput) {
@@ -396,13 +391,9 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
       }
     }
 
-    const { data: vehRow } = await this.supabase.client
-      .from('vehicles')
-      .select('is_normalized')
-      .eq('external_id', vid)
-      .maybeSingle();
+    const isNormalized = await this.dataSync.checkNormalizationStatus(vid);
 
-    if (vehRow?.is_normalized) {
+    if (isNormalized) {
       return;
     }
 

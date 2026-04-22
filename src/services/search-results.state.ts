@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Article, FilterTab, FilterTabType, BucketArticles, Bucket } from '../models/motor.models';
 import { MotorApiService } from './motor-api.service';
 import { SupabaseService } from './supabase.service';
+import { DataSyncService } from './data-sync.service';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 
@@ -11,6 +12,7 @@ import { of } from 'rxjs';
 export class SearchResultsState {
     private motorApi = inject(MotorApiService);
     private supabase = inject(SupabaseService);
+    private dataSync = inject(DataSyncService);
 
     // State
     readonly articleDetails = signal<Article[]>([]);
@@ -291,12 +293,7 @@ export class SearchResultsState {
         motorVehicleId?: string
     ): void {
         void (async () => {
-            const { data, error } = await this.supabase.client
-                .from('vehicles')
-                .select('is_normalized')
-                .eq('external_id', vehicleId)
-                .maybeSingle();
-            const isNormalized = !error && data?.is_normalized === true;
+            const isNormalized = await this.dataSync.checkNormalizationStatus(vehicleId);
             this.search(contentSource, vehicleId, searchTerm, motorVehicleId, isNormalized);
         })();
     }
