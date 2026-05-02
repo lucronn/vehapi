@@ -7,7 +7,6 @@ import {
     wasAlreadyParsed,
     insertMetadata,
     ensureVehicleExists,
-    markVehicleNormalized,
     insertEvidenceIngest,
     updateContentItemEnrichment,
     fetchContentItemId,
@@ -21,11 +20,7 @@ import {
     getArticleCatalogEntry
 } from './supabase.js';
 import { inferKindAndSiloFromHeuristics } from './catalog_intelligence.js';
-import {
-    buildArticlesTableRowFromMotorCatalogArticle,
-    buildContentItemFromCatalogArticle,
-    buildMinimalContentItemFromParse
-} from './content_item_mapper.js';
+import { buildMinimalContentItemFromParse } from './content_item_mapper.js';
 import { extractTextFromPdfBase64 } from './pdf_native_text.js';
 import { ingestL2ContentChunksIfEnabled } from './l2_rag_ingest.js';
 import {
@@ -33,6 +28,7 @@ import {
     hasMeaningfulBulletinNumber,
     looksLikeObdDtcCode
 } from './article-access.js';
+import { ingestArticlesCatalogFromMotorJson } from './ingest/ingest_articles_catalog.js';
 
 const ENABLE_NEMOTRON_PDF_VISION_FALLBACK =
     String(process.env.ENABLE_NEMOTRON_PDF_VISION_FALLBACK || '').toLowerCase() === 'true';
@@ -169,8 +165,9 @@ function parseLeadingNumber(valueStr) {
 /**
  * Maps legacy `specifications` upsert rows → `spec_fact` L1 rows (same natural key: vehicle_id, category, name).
  */
-function specificationRowsToSpecFacts(normalized, sourceArticleId) {
+function specificationRowsToSpecFacts(normalized, sourceArticleId, now) {
     const arr = Array.isArray(normalized) ? normalized : normalized ? [normalized] : [];
+    const ts = now || new Date().toISOString();
     return arr
         .map((row) => {
             const category = row.category != null ? String(row.category).trim() : '';
@@ -192,7 +189,7 @@ function specificationRowsToSpecFacts(normalized, sourceArticleId) {
                 source_article_id: sourceArticleId || null,
                 metadata: row.metadata && typeof row.metadata === 'object' ? row.metadata : null,
                 extractor_version: 'l1-v1',
-                updated_at: new Date().toISOString()
+                updated_at: ts
             };
         })
         .filter((r) => r.vehicle_id && r.category && r.name);
@@ -201,8 +198,9 @@ function specificationRowsToSpecFacts(normalized, sourceArticleId) {
 /**
  * L1 rows for `procedure_step` — `step_index` is stable 0..n-1 array position (delete+insert per article).
  */
-function buildProcedureStepRows(normalized) {
+function buildProcedureStepRows(normalized, now) {
     const list = Array.isArray(normalized) ? normalized : normalized ? [normalized] : [];
+    const ts = now || new Date().toISOString();
     const rows = [];
     for (const proc of list) {
         const vid = proc.vehicle_id;
@@ -221,7 +219,7 @@ function buildProcedureStepRows(normalized) {
                 warning: s.warning || null,
                 note: s.note || null,
                 extractor_version: 'l1-v1',
-                updated_at: new Date().toISOString()
+                updated_at: ts
             });
         });
     }
@@ -229,8 +227,9 @@ function buildProcedureStepRows(normalized) {
 }
 
 /** L1 `procedure_tool` rows from `tools_required` string array. */
-function buildProcedureToolRows(normalized) {
+function buildProcedureToolRows(normalized, now) {
     const list = Array.isArray(normalized) ? normalized : normalized ? [normalized] : [];
+    const ts = now || new Date().toISOString();
     const rows = [];
     for (const proc of list) {
         const vid = proc.vehicle_id;
@@ -245,7 +244,7 @@ function buildProcedureToolRows(normalized) {
                 line_index: idx,
                 tool_text: toolText,
                 extractor_version: 'l1-v1',
-                updated_at: new Date().toISOString()
+                updated_at: ts
             });
         });
     }
@@ -253,8 +252,9 @@ function buildProcedureToolRows(normalized) {
 }
 
 /** L1 `procedure_part` rows from `parts_required` object array. */
-function buildProcedurePartRows(normalized) {
+function buildProcedurePartRows(normalized, now) {
     const list = Array.isArray(normalized) ? normalized : normalized ? [normalized] : [];
+    const ts = now || new Date().toISOString();
     const rows = [];
     for (const proc of list) {
         const vid = proc.vehicle_id;
@@ -274,7 +274,7 @@ function buildProcedurePartRows(normalized) {
                 description: typeof pr.description === 'string' ? pr.description : '',
                 quantity: qty,
                 extractor_version: 'l1-v1',
-                updated_at: new Date().toISOString()
+                updated_at: ts
             });
         });
     }
@@ -532,9 +532,18 @@ function normalizeForSupabase(data, schemaType) {
         out.unit = (out.unit != null && typeof out.unit === 'string') ? out.unit : null;
         out.display_text = (out.display_text != null && typeof out.display_text === 'string') ? out.display_text : null;
         out.metadata = out.metadata && typeof out.metadata === 'object' ? out.metadata : null;
-        // `specifications` table has no external_id / content_html — strip before REST upsert.
         delete out.external_id;
         delete out.content_html;
+    } else if (schemaType === 'diagram_document' || schemaType === 'component_location_document') {
+        out.title = (out.title != null && typeof out.title === 'string') ? out.title : null;
+        out.description = (out.description != null && typeof out.description === 'string') ? out.description : null;
+        out.content_html = (out.content_html != null && typeof out.content_html === 'string') ? out.content_html : null;
+        out.metadata_json = out.metadata_json && typeof out.metadata_json === 'object' ? out.metadata_json : null;
+    } else if (schemaType === 'labor_operation') {
+        out.title = (out.title != null && typeof out.title === 'string') ? out.title : null;
+        out.description = (out.description != null && typeof out.description === 'string') ? out.description : null;
+        out.content_html = (out.content_html != null && typeof out.content_html === 'string') ? out.content_html : null;
+        out.metadata_json = out.metadata_json && typeof out.metadata_json === 'object' ? out.metadata_json : null;
     }
 
     return out;
@@ -582,16 +591,19 @@ export function enqueueParsingTask(urlPath, rawData, options = {}) {
         }
 
         logger.info(`Started asynchronous AI parsing task: [${taskId}] schema=${targetSchema}, path=${urlPath}`);
-        processTaskImmediate(taskId, targetSchema, urlPath, rawData.toString('utf8')).catch(e => {
-            logger.error(`Unhandled error inside immediate background task [${taskId}]:`, e);
-        });
+        processTaskImmediate(taskId, targetSchema, urlPath, rawData.toString('utf8'))
+            .then(() => {})
+            .catch((e) => {
+                logger.error(`Unhandled error inside immediate background task [${taskId}]:`, e);
+            });
     }).catch((err) => {
         logger.error(`wasAlreadyParsed failed for ${urlPath}, aborting parse task [${taskId}]:`, err);
     });
 }
 
-async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
+export async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
     const startTime = Date.now();
+    const batchNow = new Date().toISOString();
     let status = 'COMPLETED';
     let errorMessage = null;
     let evidenceId = null;
@@ -609,57 +621,18 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                 status = 'FAILED';
                 errorMessage = result.error?.message || result.error || 'Metadata Insert Failed';
             }
-            return;
+            return { status, errorMessage };
         }
 
         const vehicleIdStr = extractVehicleId(urlPath);
 
         if (targetSchema === 'articles') {
-            const parsedJson = JSON.parse(rawData);
-            if (parsedJson?.body?.articleDetails && vehicleIdStr) {
-                const contentSource = extractContentSource(urlPath);
-                await ensureVehicleExists(vehicleIdStr, contentSource);
-
-                const sha256 = crypto.createHash('sha256').update(rawData).digest('hex');
-                const ev = await insertEvidenceIngest({
-                    url_path: urlPath.slice(0, 4000),
-                    http_status: 200,
-                    content_type: 'application/json',
-                    body_json: {
-                        kind: 'articles_v2_catalog',
-                        articleCount: parsedJson.body.articleDetails.length
-                    },
-                    sha256,
-                    vehicle_external_id: vehicleIdStr,
-                    content_source: contentSource,
-                    source_label: 'articles_v2_catalog'
-                });
-                if (!ev.success) {
-                    logger.warn(`evidence_ingest (catalog) skipped: ${ev.error}`);
-                }
-
-                const articles = parsedJson.body.articleDetails.map((a) =>
-                    buildArticlesTableRowFromMotorCatalogArticle(a, vehicleIdStr, contentSource)
-                );
-                const result = await insertParsedData('articles', articles);
-                if (!result.success) {
-                    status = 'FAILED';
-                    errorMessage = result.error?.message || result.error || 'Articles Insert Failed';
-                } else {
-                    const ciRows = parsedJson.body.articleDetails.map((a) =>
-                        buildContentItemFromCatalogArticle(a, vehicleIdStr, contentSource)
-                    );
-                    const ciResult = await insertParsedData('content_item', ciRows);
-                    if (!ciResult.success) {
-                        logger.error(`content_item upsert failed: ${ciResult.error?.message || ciResult.error}`);
-                        status = 'FAILED';
-                        errorMessage = ciResult.error?.message || ciResult.error || 'content_item Insert Failed';
-                    } else if (articles.length > 0) {
-                        await markVehicleNormalized(vehicleIdStr);
-                    }
-                }
+            const ingestRes = await ingestArticlesCatalogFromMotorJson({ urlPath, rawUtf8: rawData });
+            if (!ingestRes.success) {
+                status = 'FAILED';
+                errorMessage = ingestRes.error || 'Catalog ingest failed';
             }
-            return;
+            return { status, errorMessage };
         }
 
         // For AI-parsed content (procedures, dtcs, tsbs, specifications)
@@ -668,7 +641,7 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
             logger.warn(`[${taskId}] No vehicle_id in URL, skipping insert to avoid orphan rows: ${urlPath}`);
             status = 'FAILED';
             errorMessage = 'Could not extract vehicle_id from URL';
-            return;
+            return { status, errorMessage };
         }
 
         await ensureVehicleExists(vehicleIdStr, extractContentSource(urlPath));
@@ -737,7 +710,6 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                 };
             }
 
-            const now = new Date().toISOString();
             const row = {
                 vehicle_id: vehicleIdStr,
                 source_article_id: sourceArticleId,
@@ -746,7 +718,7 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                 content_html: contentHtml,
                 extractor_version: 'l1-v1',
                 metadata_json: metadataJson,
-                updated_at: now,
+                updated_at: batchNow,
                 ...(targetSchema !== 'labor_operation'
                     ? {
                           thumbnail_graphic_id: articleMeta?.thumbnail_href || null,
@@ -759,7 +731,7 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
             if (!docResult.success) {
                 status = 'FAILED';
                 errorMessage = docResult.error?.message || docResult.error || `${targetSchema} insert failed`;
-                return;
+                return { status, errorMessage };
             }
 
             if (evidenceId && docResult.data?.[0]?.id) {
@@ -793,7 +765,7 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                     parsedData: row
                 });
             }
-            return;
+            return { status, errorMessage };
         }
 
         // L0 traceability for single-article / parse-target payloads.
@@ -878,6 +850,12 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
         const { parsed: parsedData, usage: parseUsage } = await parseWithAI(rawData, targetSchema, {
             urlPath
         });
+
+        if (parseUsage) {
+            promptTokens = parseUsage.prompt_tokens ?? null;
+            completionTokens = parseUsage.completion_tokens ?? null;
+            totalTokensUsed = (parseUsage.prompt_tokens || 0) + (parseUsage.completion_tokens || 0);
+        }
 
         const attachMeta = (item) => {
             item.vehicle_id = vehicleIdStr;
@@ -974,21 +952,10 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
             errorMessage = result.error?.message || result.error || 'DB Insert Failed';
         } else {
             // Lazy catalog enrichment: when parsing article bodies, improve content_item discoverability.
+            // content_item row was already ensured in the pre-parse block above; only enrich + L2 here.
             const isArticleId = Boolean(urlPath.match(/\/article\/([^?/]+)/));
             if (isArticleId && externalIdStr) {
                 const cs = articleContentSource;
-                if (!(await fetchContentItemId(vehicleIdStr, externalIdStr, cs))) {
-                    const minimal = buildMinimalContentItemFromParse({
-                        vehicleExternalId: vehicleIdStr,
-                        motorArticleId: externalIdStr,
-                        contentSource: cs,
-                        targetSchema
-                    });
-                    const ciIns = await insertParsedData('content_item', [minimal], { returnRepresentation: true });
-                    if (!ciIns.success) {
-                        logger.warn(`[${taskId}] content_item parse-path upsert skipped: ${ciIns.error}`);
-                    }
-                }
                 const patch = buildEnrichmentFromParsedData(targetSchema, parsedData, htmlContent);
                 const ci = await updateContentItemEnrichment(vehicleIdStr, externalIdStr, cs, patch);
                 if (!ci.success) {
@@ -1020,7 +987,7 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
             if (targetSchema === 'specifications') {
                 const articleMatch = urlPath.match(/\/article\/([^?/]+)/);
                 const sourceArticleId = articleMatch ? articleMatch[1] : null;
-                const specFactRows = specificationRowsToSpecFacts(normalized, sourceArticleId);
+                const specFactRows = specificationRowsToSpecFacts(normalized, sourceArticleId, batchNow);
                 if (specFactRows.length > 0) {
                     const sf = await insertParsedData('spec_fact', specFactRows, { returnRepresentation: true });
                     if (!sf.success) {
@@ -1037,7 +1004,9 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                 }
             }
 
-            // L1 procedure_step: replace steps per (vehicle, article) then insert; evidence_link to step rows.
+            // L1 procedure_step/tool/part: delete-then-insert per (vehicle, article).
+            // Wrapped with retry: if delete succeeds but insert fails, retry the insert once
+            // to avoid data loss from the non-atomic replace.
             if (targetSchema === 'procedures') {
                 const procList = Array.isArray(normalized) ? normalized : normalized ? [normalized] : [];
                 const pairKeys = new Map();
@@ -1047,74 +1016,60 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
                         pairKeys.set(k, [proc.vehicle_id, proc.external_id]);
                     }
                 }
-                for (const [, pair] of pairKeys) {
-                    const [vid, aid] = pair;
-                    const del = await deleteProcedureStepsForArticle(vid, aid);
-                    if (!del.success) {
-                        logger.warn(
-                            `[${taskId}] procedure_step delete skipped (run migrate:l1-procedure-step?): ${del.error}`
-                        );
+
+                const l1Tables = [
+                    {
+                        name: 'procedure_step',
+                        rows: buildProcedureStepRows(normalized, batchNow),
+                        deleteFn: deleteProcedureStepsForArticle,
+                        isMissingTable: false
+                    },
+                    {
+                        name: 'procedure_tool',
+                        rows: buildProcedureToolRows(normalized, batchNow),
+                        deleteFn: deleteProcedureToolsForArticle,
+                        isMissingTable: true
+                    },
+                    {
+                        name: 'procedure_part',
+                        rows: buildProcedurePartRows(normalized, batchNow),
+                        deleteFn: deleteProcedurePartsForArticle,
+                        isMissingTable: true
                     }
-                    const delT = await deleteProcedureToolsForArticle(vid, aid);
-                    if (!delT.success) {
-                        if (isMissingProcedureToolTableError(delT.error)) warnProcedureToolTablesOnce(delT.error);
-                        else
-                            logger.warn(
-                                `[${taskId}] procedure_tool delete skipped (run migrate:l1-procedure-tool-part?): ${delT.error}`
-                            );
-                    }
-                    const delP = await deleteProcedurePartsForArticle(vid, aid);
-                    if (!delP.success) {
-                        if (isMissingProcedureToolTableError(delP.error)) warnProcedureToolTablesOnce(delP.error);
-                        else
-                            logger.warn(
-                                `[${taskId}] procedure_part delete skipped (run migrate:l1-procedure-tool-part?): ${delP.error}`
-                            );
-                    }
-                }
-                const stepRows = buildProcedureStepRows(normalized);
-                if (stepRows.length > 0) {
-                    const ps = await insertParsedData('procedure_step', stepRows, { returnRepresentation: true });
-                    if (!ps.success) {
-                        logger.warn(`[${taskId}] procedure_step insert skipped: ${ps.error}`);
-                    } else if (evidenceId && Array.isArray(ps.rows) && ps.rows.length > 0) {
-                        const stepIds = ps.rows.map((r) => r.id).filter(Boolean);
-                        if (stepIds.length > 0) {
-                            const links = await insertEvidenceLinks(evidenceId, 'procedure_step', stepIds, 'l1-v1');
-                            if (!links.success) {
-                                logger.warn(`[${taskId}] procedure_step evidence_link skipped: ${links.error}`);
+                ];
+
+                for (const { name, rows, deleteFn, isMissingTable } of l1Tables) {
+                    for (const [, pair] of pairKeys) {
+                        const [vid, aid] = pair;
+                        const del = await deleteFn(vid, aid);
+                        if (!del.success) {
+                            if (isMissingTable && isMissingProcedureToolTableError(del.error)) {
+                                warnProcedureToolTablesOnce(del.error);
+                            } else {
+                                logger.warn(`[${taskId}] ${name} delete skipped: ${del.error}`);
                             }
                         }
                     }
-                }
-                const toolRows = buildProcedureToolRows(normalized);
-                if (toolRows.length > 0) {
-                    const pt = await insertParsedData('procedure_tool', toolRows, { returnRepresentation: true });
-                    if (!pt.success) {
-                        if (isMissingProcedureToolTableError(pt.error)) warnProcedureToolTablesOnce(pt.error);
-                        else logger.warn(`[${taskId}] procedure_tool insert skipped: ${pt.error}`);
-                    } else if (evidenceId && Array.isArray(pt.rows) && pt.rows.length > 0) {
-                        const toolIds = pt.rows.map((r) => r.id).filter(Boolean);
-                        if (toolIds.length > 0) {
-                            const links = await insertEvidenceLinks(evidenceId, 'procedure_tool', toolIds, 'l1-v1');
-                            if (!links.success) {
-                                logger.warn(`[${taskId}] procedure_tool evidence_link skipped: ${links.error}`);
-                            }
+
+                    if (rows.length > 0) {
+                        let res = await insertParsedData(name, rows, { returnRepresentation: true });
+                        if (!res.success) {
+                            logger.warn(`[${taskId}] ${name} insert failed, retrying once: ${res.error}`);
+                            res = await insertParsedData(name, rows, { returnRepresentation: true });
                         }
-                    }
-                }
-                const partRows = buildProcedurePartRows(normalized);
-                if (partRows.length > 0) {
-                    const pp = await insertParsedData('procedure_part', partRows, { returnRepresentation: true });
-                    if (!pp.success) {
-                        if (isMissingProcedureToolTableError(pp.error)) warnProcedureToolTablesOnce(pp.error);
-                        else logger.warn(`[${taskId}] procedure_part insert skipped: ${pp.error}`);
-                    } else if (evidenceId && Array.isArray(pp.rows) && pp.rows.length > 0) {
-                        const partIds = pp.rows.map((r) => r.id).filter(Boolean);
-                        if (partIds.length > 0) {
-                            const links = await insertEvidenceLinks(evidenceId, 'procedure_part', partIds, 'l1-v1');
-                            if (!links.success) {
-                                logger.warn(`[${taskId}] procedure_part evidence_link skipped: ${links.error}`);
+                        if (!res.success) {
+                            if (isMissingTable && isMissingProcedureToolTableError(res.error)) {
+                                warnProcedureToolTablesOnce(res.error);
+                            } else {
+                                logger.warn(`[${taskId}] ${name} insert skipped after retry: ${res.error}`);
+                            }
+                        } else if (evidenceId && Array.isArray(res.rows) && res.rows.length > 0) {
+                            const ids = res.rows.map((r) => r.id).filter(Boolean);
+                            if (ids.length > 0) {
+                                const links = await insertEvidenceLinks(evidenceId, name, ids, 'l1-v1');
+                                if (!links.success) {
+                                    logger.warn(`[${taskId}] ${name} evidence_link skipped: ${links.error}`);
+                                }
                             }
                         }
                     }
@@ -1141,4 +1096,21 @@ async function processTaskImmediate(taskId, targetSchema, urlPath, rawData) {
 
         logger.info(`Finished background task [${taskId}] in ${duration}ms. Status: ${status}`);
     }
+    return { status, errorMessage };
+}
+
+/**
+ * Await full worker ingest for a single Motor proxy response (catalog, article body, etc.).
+ * @param {string} urlPath Path as seen by the proxy (e.g. /api/source/MOTOR/vehicle/…/article/…)
+ * @param {string} rawUtf8 Response body (UTF-8)
+ * @param {{ taskId?: string }} [options]
+ */
+export async function ingestMotorProxyPayloadAwait(urlPath, rawUtf8, options = {}) {
+    const taskId = options.taskId || Math.random().toString(36).substring(2, 9);
+    let schema = determineSchemaType(urlPath);
+    if (!schema) {
+        return { status: 'FAILED', errorMessage: `unsupported_path: ${urlPath}` };
+    }
+    schema = await resolveArticleSchema(urlPath, schema);
+    return processTaskImmediate(taskId, schema, urlPath, rawUtf8);
 }

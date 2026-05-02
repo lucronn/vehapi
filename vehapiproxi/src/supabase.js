@@ -4,7 +4,7 @@ import logger from './logger.js';
 // Use the Supabase REST API directly via fetch - no SDK needed
 // This avoids any ESM/CJS module loading issues on Vercel serverless
 
-function getSupabaseConfig() {
+export function getSupabaseConfig() {
     const url = (process.env.SUPABASE_URL || '').trim();
     const key = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
     if (!url || !key) return null;
@@ -20,6 +20,8 @@ const UPSERT_CONFLICT_COLUMNS = {
     dtcs: 'vehicle_id,code',
     specifications: 'vehicle_id,category,name',
     spec_fact: 'vehicle_id,category,name',
+    parts: 'vehicle_id,part_number',
+    maintenance_schedules: 'vehicle_id,interval_value,action,item',
     maintenance_task: 'vehicle_id,interval_value,action,item',
     diagram_document: 'vehicle_id,source_article_id',
     component_location_document: 'vehicle_id,source_article_id',
@@ -27,7 +29,8 @@ const UPSERT_CONFLICT_COLUMNS = {
     categories: 'name,type',
     vehicle_metadata: 'path',
     articles: 'vehicle_id,original_id',
-    content_item: 'vehicle_external_id,motor_article_id,content_source'
+    content_item: 'vehicle_external_id,motor_article_id,content_source',
+    evidence_link: 'evidence_id,entity_type,entity_id'
 };
 
 /**
@@ -106,6 +109,81 @@ function dedupeContentItemsByConflictKey(rows) {
     if (out.length < rows.length) {
         logger.info(
             `Deduped content_item upsert: ${rows.length} -> ${out.length} (duplicate motor_article_id in catalog)`
+        );
+    }
+    return out;
+}
+
+/**
+ * Motor interval/frequency payloads can list the same maintenance line twice under different
+ * stubs. Upsert batches must have at most one row per UNIQUE(vehicle_id, interval_value, action, item).
+ * Postgres 21000 otherwise: "cannot affect row a second time".
+ */
+function dedupeMaintenanceByConflictKey(rows) {
+    const map = new Map();
+    /** @returns {unknown} whichever description is longer (more detail preserved) */
+    const longerDescription = (a, b) => {
+        const sa = String(a ?? '').trim().length;
+        const sb = String(b ?? '').trim().length;
+        return sb > sa ? b : a;
+    };
+    for (const r of rows) {
+        const vid = String(r.vehicle_id ?? '');
+        const ivRaw = r.interval_value;
+        const ivNum = Number(ivRaw);
+        const ivKey = Number.isFinite(ivNum) ? String(ivNum) : String(ivRaw ?? '');
+        const action = String(r.action ?? '').trim();
+        const item = String(r.item ?? '').trim();
+        const k = `${vid}|${ivKey}|${action}|${item}`;
+        const prev = map.get(k);
+        if (!prev) {
+            map.set(k, { ...r });
+            continue;
+        }
+        const merged = { ...prev };
+        merged.description = longerDescription(prev.description, r.description);
+        merged.frequency_code = prev.frequency_code || r.frequency_code || null;
+        merged.interval_unit = prev.interval_unit || r.interval_unit;
+        merged.updated_at =
+            String(prev.updated_at || '') > String(r.updated_at || '')
+                ? prev.updated_at
+                : r.updated_at;
+
+        const pa =
+            typeof prev.task_metadata === 'object' &&
+            prev.task_metadata !== null &&
+            !Array.isArray(prev.task_metadata)
+                ? prev.task_metadata
+                : {};
+        const ra =
+            typeof r.task_metadata === 'object' && r.task_metadata !== null && !Array.isArray(r.task_metadata)
+                ? r.task_metadata
+                : {};
+        if (Object.keys({ ...pa, ...ra }).length) {
+            merged.task_metadata = { ...pa, ...ra };
+        }
+        const paj =
+            typeof prev.metadata_json === 'object' &&
+            prev.metadata_json !== null &&
+            !Array.isArray(prev.metadata_json)
+                ? prev.metadata_json
+                : {};
+        const raj =
+            typeof r.metadata_json === 'object' &&
+            r.metadata_json !== null &&
+            !Array.isArray(r.metadata_json)
+                ? r.metadata_json
+                : {};
+        if (Object.keys({ ...paj, ...raj }).length) {
+            merged.metadata_json = { ...paj, ...raj };
+        }
+        map.set(k, merged);
+    }
+    const out = [...map.values()];
+    if (out.length < rows.length) {
+        logger.info(
+            `Deduped maintenance upsert: ${rows.length} -> ${out.length} ` +
+                '(duplicate UNIQUE(vehicle_id, interval_value, action, item) in Motor payload)'
         );
     }
     return out;
@@ -465,35 +543,26 @@ export async function insertEvidenceLinks(evidenceId, entityType, entityIds, ext
         return { success: false, error: 'Missing link args' };
     }
     try {
-        const existingResponse = await fetch(
-            `${cfg.url}/rest/v1/evidence_link?evidence_id=eq.${evidenceId}&entity_type=eq.${entityType}&entity_id=in.(${entityIds.join(',')})&select=entity_id`,
-            { headers: { apikey: cfg.key, Authorization: `Bearer ${cfg.key}` } }
-        );
-        let existingIds = new Set();
-        if (existingResponse.ok) {
-            const data = await existingResponse.json();
-            existingIds = new Set(data.map(d => d.entity_id));
-        }
-
-        const payload = entityIds.filter(id => !existingIds.has(id)).map((id) => ({
+        const payload = entityIds.map((id) => ({
             evidence_id: evidenceId,
             entity_type: entityType,
             entity_id: id,
             extractor_version: extractorVersion
         }));
 
-        if (payload.length === 0) return { success: true };
-
-        const response = await fetch(`${cfg.url}/rest/v1/evidence_link`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                apikey: cfg.key,
-                Authorization: `Bearer ${cfg.key}`,
-                Prefer: 'return=minimal'
-            },
-            body: JSON.stringify(payload)
-        });
+        const response = await fetch(
+            `${cfg.url}/rest/v1/evidence_link?on_conflict=evidence_id,entity_type,entity_id`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    apikey: cfg.key,
+                    Authorization: `Bearer ${cfg.key}`,
+                    Prefer: 'return=minimal,resolution=ignore-duplicates'
+                },
+                body: JSON.stringify(payload)
+            }
+        );
         if (!response.ok) {
             const errorText = await response.text();
             return { success: false, error: errorText };
@@ -850,6 +919,9 @@ export async function insertParsedData(table, data, options = {}) {
     if (table === 'content_item') {
         rows = dedupeContentItemsByConflictKey(rows);
     }
+    if (table === 'maintenance_schedules' || table === 'maintenance_task') {
+        rows = dedupeMaintenanceByConflictKey(rows);
+    }
 
     const onConflict = UPSERT_CONFLICT_COLUMNS[table];
     const returnRepresentation = Boolean(options.returnRepresentation);
@@ -1031,8 +1103,8 @@ export async function checkParsedArticle(articleId) {
         { table: 'labor_operation', filter: `source_article_id=eq.${idEq}` }
     ];
 
-    for (const { table, filter } of lookups) {
-        try {
+    const results = await Promise.allSettled(
+        lookups.map(async ({ table, filter }) => {
             const url = `${cfg.url}/rest/v1/${table}?${filter}&select=*&limit=1`;
             const response = await fetch(url, {
                 method: 'GET',
@@ -1042,20 +1114,23 @@ export async function checkParsedArticle(articleId) {
                     'Authorization': `Bearer ${cfg.key}`,
                 },
             });
-
             if (!response.ok) {
                 const errorText = await response.text();
                 logger.error(`Supabase REST error checking article ${articleId} in ${table} [${response.status}]: ${errorText}`);
-                continue;
+                return null;
             }
-
             const data = await response.json();
             if (data && data.length > 0) {
-                logger.info(`✓ Found cached content for article ${articleId} in table: ${table}`);
                 return { ...data[0], _table: table };
             }
-        } catch (err) {
-            logger.error(`Unexpected error checking Supabase table ${table} for article ${articleId}:`, err);
+            return null;
+        })
+    );
+
+    for (const result of results) {
+        if (result.status === 'fulfilled' && result.value) {
+            logger.info(`✓ Found cached content for article ${articleId} in table: ${result.value._table}`);
+            return result.value;
         }
     }
 
@@ -1230,7 +1305,7 @@ export async function getVehicleArticles(vehicleId) {
 
     try {
         while (offset < maxRows) {
-            const url = `${cfg.url}/rest/v1/articles?vehicle_id=eq.${encodeURIComponent(vehicleId)}&select=*&limit=${pageSize}&offset=${offset}`;
+            const url = `${cfg.url}/rest/v1/articles?vehicle_id=eq.${encodeURIComponent(vehicleId)}&select=original_id,title,subtitle,code,description,bucket,parent_bucket,thumbnail_href,bulletin_number,release_date,sort,content_source&limit=${pageSize}&offset=${offset}`;
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {

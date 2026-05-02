@@ -402,6 +402,24 @@ registerMotorInformationYmmeRoutes(app, secureAuthMiddleware, logger);
 /** In-memory observability for Motor catch-all vs Supabase cache hits (phase-out tracking). */
 const proxyStats = { motorHits: 0, supabaseHits: 0 };
 
+/** Short-lived cache for vehicle normalization eligibility (avoids repeated Supabase queries within a serverless instance). */
+const vehicleCatalogCache = new Map();
+const VEHICLE_CATALOG_CACHE_TTL_MS = 60_000;
+
+function getCachedCatalogEligibility(vehicleId) {
+    const entry = vehicleCatalogCache.get(vehicleId);
+    if (entry && Date.now() < entry.expiry) return entry;
+    return null;
+}
+
+function setCachedCatalogEligibility(vehicleId, count, isNormalized) {
+    vehicleCatalogCache.set(vehicleId, { count, isNormalized, expiry: Date.now() + VEHICLE_CATALOG_CACHE_TTL_MS });
+    if (vehicleCatalogCache.size > 500) {
+        const first = vehicleCatalogCache.keys().next().value;
+        vehicleCatalogCache.delete(first);
+    }
+}
+
 /**
  * Paths that may legitimately flow through the catch-all to Motor (ingest, non-normalized, assets).
  * Not used for blocking — documentation + optional logging context.
@@ -437,6 +455,44 @@ function recordProxyStat(kind) {
     }
 }
 
+/** In-memory YMME metadata — avoids Supabase round-trip for stable paths like /years, /makes, /models. */
+const metadataMemCache = new Map();
+const METADATA_MEM_CACHE_TTL_MS = 300_000;
+
+function getMetadataFromMemCache(path) {
+    const entry = metadataMemCache.get(path);
+    if (entry && Date.now() < entry.expiry) return entry.data;
+    return null;
+}
+
+function setMetadataMemCache(path, data) {
+    metadataMemCache.set(path, { data, expiry: Date.now() + METADATA_MEM_CACHE_TTL_MS });
+    if (metadataMemCache.size > 200) {
+        const first = metadataMemCache.keys().next().value;
+        metadataMemCache.delete(first);
+    }
+}
+
+/** In-memory article content — avoids repeated Supabase lookups for hot articles (back button, multiple users). */
+const articleContentMemCache = new Map();
+const ARTICLE_CONTENT_MEM_CACHE_TTL_MS = 120_000;
+
+function getArticleContentFromMemCache(vehicleId, articleId) {
+    const key = `${vehicleId}:${articleId}`;
+    const entry = articleContentMemCache.get(key);
+    if (entry && Date.now() < entry.expiry) return entry.payload;
+    return null;
+}
+
+function setArticleContentMemCache(vehicleId, articleId, payload) {
+    const key = `${vehicleId}:${articleId}`;
+    articleContentMemCache.set(key, { payload, expiry: Date.now() + ARTICLE_CONTENT_MEM_CACHE_TTL_MS });
+    if (articleContentMemCache.size > 300) {
+        const first = articleContentMemCache.keys().next().value;
+        articleContentMemCache.delete(first);
+    }
+}
+
 /** YMME metadata cache TTL (days). Cached rows older than this still return immediately; a background Motor refresh is queued. */
 const METADATA_STALENESS_DAYS = (() => {
     const v = parseInt(process.env.METADATA_STALENESS_DAYS ?? '90', 10);
@@ -466,12 +522,20 @@ const metadataCacheMiddleware = async (req, res, next) => {
     const isMetadata = path.includes('/years') || path.includes('/makes') || path.includes('/models') || path.includes('/engines');
     
     if (isMetadata && req.method === 'GET') {
+        const memHit = getMetadataFromMemCache(path);
+        if (memHit) {
+            recordProxyStat('supabase');
+            res.setHeader('x-data-source', 'memory');
+            res.setHeader('x-cache-hit', 'true');
+            return res.json(memHit);
+        }
         try {
             const cachedRow = await getMetadata(path);
             if (cachedRow && cachedRow.data != null) {
                 const stale = isMetadataStale(cachedRow, METADATA_STALENESS_DAYS);
                 logger.info(`Serving metadata from cache: ${path}${stale ? ' (stale — background refresh queued)' : ''}`);
                 recordProxyStat('supabase');
+                setMetadataMemCache(path, cachedRow.data);
                 res.setHeader('x-data-source', 'supabase');
                 res.setHeader('x-cache-hit', 'true');
                 if (stale) {
@@ -508,22 +572,31 @@ const articlesCacheMiddleware = async (req, res, next) => {
             const vehicleIdx = pathParts.indexOf('vehicle');
             if (vehicleIdx !== -1 && pathParts.length > vehicleIdx + 1) {
                 const vehicleId = decodeURIComponent(pathParts[vehicleIdx + 1]);
-                
-                const count = await getVehicleArticlesCount(vehicleId);
-                if (count === 0) {
-                    return next();
+
+                let count, isNormalized;
+                const cached = getCachedCatalogEligibility(vehicleId);
+                if (cached) {
+                    count = cached.count;
+                    isNormalized = cached.isNormalized;
+                } else {
+                    [count, isNormalized] = await Promise.all([
+                        getVehicleArticlesCount(vehicleId),
+                        getVehicleIsNormalized(vehicleId)
+                    ]);
+                    setCachedCatalogEligibility(vehicleId, count, isNormalized);
                 }
 
-                const isNormalized = await getVehicleIsNormalized(vehicleId);
                 const minRows = parseInt(process.env.ARTICLE_CATALOG_MIN_ROWS ?? '10', 10);
                 const serveFromSupabase =
                     isNormalized === true &&
                     count >= minRows;
 
                 if (!serveFromSupabase) {
-                    logger.info(
-                        `Articles cache bypass for ${vehicleId}: count=${count}, is_normalized=${isNormalized} (need both normalized flag and count>=${minRows})`
-                    );
+                    if (count > 0 || isNormalized != null) {
+                        logger.info(
+                            `Articles cache bypass for ${vehicleId}: count=${count}, is_normalized=${isNormalized} (need both normalized flag and count>=${minRows})`
+                        );
+                    }
                     return next();
                 }
 
@@ -668,23 +741,33 @@ const articleContentCacheMiddleware = async (req, res, next) => {
         if (isVerifyBypass(req)) {
             return next();
         }
-        try {
-            const articleId = articleContentMatch[2];
-            const vehicleId = decodeURIComponent(articleContentMatch[1]);
+        const articleId = articleContentMatch[2];
+        const vehicleId = decodeURIComponent(articleContentMatch[1]);
 
+        const memPayload = getArticleContentFromMemCache(vehicleId, articleId);
+        if (memPayload) {
+            recordProxyStat('supabase');
+            res.setHeader('x-data-source', 'memory');
+            res.setHeader('x-cache-hit', 'true');
+            return res.json(memPayload);
+        }
+
+        try {
             // 1. Check normalized content tables (procedures, dtcs, tsbs, specifications)
             const cached = await checkParsedArticle(articleId);
             if (cached) {
                 const html = cached.content_html || cached.html || cached.content || '';
                 if (html) {
                     logger.info(`✓ Serving article ${articleId} from normalized cache (${cached._table})`);
+                    const payload = {
+                        header: { status: 'OK', statusCode: 200 },
+                        body: { html, title: cached.title, id: articleId }
+                    };
+                    setArticleContentMemCache(vehicleId, articleId, payload);
                     recordProxyStat('supabase');
                     res.setHeader('x-data-source', 'supabase');
                     res.setHeader('x-cache-hit', 'true');
-                    return res.json({
-                        header: { status: 'OK', statusCode: 200 },
-                        body: { html, title: cached.title, id: articleId }
-                    });
+                    return res.json(payload);
                 }
             }
 
@@ -692,13 +775,15 @@ const articleContentCacheMiddleware = async (req, res, next) => {
             const articleRow = await checkArticleContent(vehicleId, articleId);
             if (articleRow && articleRow.original_content) {
                 logger.info(`✓ Serving article ${articleId} from articles table cache`);
+                const payload = {
+                    header: { status: 'OK', statusCode: 200 },
+                    body: { html: articleRow.original_content, title: articleRow.title, id: articleId }
+                };
+                setArticleContentMemCache(vehicleId, articleId, payload);
                 recordProxyStat('supabase');
                 res.setHeader('x-data-source', 'supabase');
                 res.setHeader('x-cache-hit', 'true');
-                return res.json({
-                    header: { status: 'OK', statusCode: 200 },
-                    body: { html: articleRow.original_content, title: articleRow.title, id: articleId }
-                });
+                return res.json(payload);
             }
         } catch (err) {
             logger.warn(`Failed to fetch article content from cache for ${path}:`, err.message);
@@ -999,6 +1084,13 @@ app.use('/', authMiddleware, createProxyMiddleware({
 
                 // Enqueue for background AI parsing and caching to Supabase
                 enqueueBackgroundParse(req, responseBuffer);
+
+                // Warm in-memory metadata cache from Motor responses so the next request skips Supabase entirely
+                if (isMetadata && proxyRes.statusCode >= 200 && proxyRes.statusCode < 300) {
+                    try {
+                        setMetadataMemCache(req.path, JSON.parse(normalizedData));
+                    } catch { /* best-effort */ }
+                }
             }
 
             logResponse(req, res, normalizedData, proxyRes.statusCode >= 400 ? new Error(`HTTP ${proxyRes.statusCode}`) : null);

@@ -43,6 +43,9 @@ export class DataSyncService {
     private metadataClientWriteDisabled = false;
     /** Browser client write path is disabled after first RLS/auth deny. */
     private clientWriteDisabled = false;
+    /** In-memory normalization status cache — avoids repeated Supabase round-trips within a dashboard session. */
+    private normalizationCache = new Map<string, { result: boolean; expiry: number }>();
+    private static readonly NORMALIZATION_CACHE_TTL_MS = 30_000;
 
     /** Mile intervals to prefetch into `maintenance_schedules` (each skipped if already present). */
     private readonly eagerMaintenanceIntervalsMiles = [7500, 15000, 30000, 45000, 60000, 100000];
@@ -117,6 +120,11 @@ export class DataSyncService {
     }
 
     async checkNormalizationStatus(vehicleId: string): Promise<boolean> {
+        const cached = this.normalizationCache.get(vehicleId);
+        if (cached && Date.now() < cached.expiry) {
+            return cached.result;
+        }
+
         const { data, error } = await this.supabase.client
             .from('vehicles')
             .select('is_normalized')
@@ -124,17 +132,31 @@ export class DataSyncService {
             .maybeSingle();
 
         if (!error && data !== null) {
-            return !!data.is_normalized;
+            const result = !!data.is_normalized;
+            this.normalizationCache.set(vehicleId, {
+                result,
+                expiry: Date.now() + DataSyncService.NORMALIZATION_CACHE_TTL_MS
+            });
+            return result;
         }
 
         this.logger.warn(`[DataSync] is_normalized read failed or missing for ${vehicleId}, falling back to articles count:`, error);
-        
+
         const { count } = await this.supabase.client
             .from('articles')
             .select('*', { count: 'exact', head: true })
             .eq('vehicle_id', vehicleId);
-            
-        return (count ?? 0) > 0;
+
+        const result = (count ?? 0) > 0;
+        this.normalizationCache.set(vehicleId, {
+            result,
+            expiry: Date.now() + DataSyncService.NORMALIZATION_CACHE_TTL_MS
+        });
+        return result;
+    }
+
+    invalidateNormalizationCache(vehicleId: string): void {
+        this.normalizationCache.delete(vehicleId);
     }
 
     /**
@@ -216,17 +238,11 @@ export class DataSyncService {
                 await this.syncArticleCatalogMetadataOnly(contentSource, vehicleId, motorVehicleId);
             }
 
-            setStep(30, 'Specifications…');
-            await this.syncSpecificationsIfMissing(contentSource, vehicleId);
-
-            setStep(42, 'Fluids…');
-            await this.syncFluidsIfMissing(contentSource, vehicleId);
-
-            setStep(55, 'Parts catalog…');
-            await this.syncPartsIfMissing(contentSource, vehicleId, motorVehicleId);
-
-            setStep(70, 'Maintenance schedules…');
+            setStep(30, 'Reference data…');
             await Promise.all([
+                this.syncSpecificationsIfMissing(contentSource, vehicleId),
+                this.syncFluidsIfMissing(contentSource, vehicleId),
+                this.syncPartsIfMissing(contentSource, vehicleId, motorVehicleId),
                 ...this.eagerMaintenanceIntervalsMiles.map((interval) =>
                     this.lazySyncMaintenanceInterval(contentSource, vehicleId, interval, motorVehicleId)
                 ),
@@ -252,6 +268,11 @@ export class DataSyncService {
                             this.clientWriteDisabled = true;
                         }
                         this.logger.warn('[DataSync] is_normalized update failed:', normErr);
+                    } else {
+                        this.normalizationCache.set(vehicleId, {
+                            result: true,
+                            expiry: Date.now() + DataSyncService.NORMALIZATION_CACHE_TTL_MS
+                        });
                     }
                 } else if (vehicleRow?.is_normalized) {
                     const { error: clearErr } = await this.supabase.client
@@ -264,6 +285,10 @@ export class DataSyncService {
                         }
                         this.logger.warn('[DataSync] is_normalized clear failed:', clearErr);
                     } else {
+                        this.normalizationCache.set(vehicleId, {
+                            result: false,
+                            expiry: Date.now() + DataSyncService.NORMALIZATION_CACHE_TTL_MS
+                        });
                         this.logger.warn(
                             '[DataSync] No article rows after reference sync; cleared is_normalized drift for',
                             vehicleId
@@ -935,7 +960,7 @@ export class DataSyncService {
         try {
             const { data: existing } = await this.supabase.client
                 .from('articles')
-                .select('*')
+                .select('original_content, enhanced_content')
                 .eq('vehicle_id', vid)
                 .eq('original_id', item.id)
                 .maybeSingle();

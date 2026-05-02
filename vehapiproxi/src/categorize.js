@@ -1,3 +1,38 @@
+const SUB_CATEGORY_RULES = [
+    { category: 'Brakes', keywords: ['brake', 'abs'], weight: 2 },
+    { category: 'HVAC', keywords: ['air conditioning', 'hvac', 'heater', 'refrigerant'], weight: 2 },
+    { category: 'Engine Mechanical', keywords: ['engine', 'cylinder', 'crankshaft', 'camshaft', 'valve', 'piston', 'block', 'timing'], weight: 1 },
+    { category: 'Transmission & Driveline', keywords: ['transmission', 'clutch', 'differential', 'axle', 'driveline', 'transfer case'], weight: 1 },
+    { category: 'Electrical & Sensors', keywords: ['sensor', 'module', 'ignition', 'spark', 'battery', 'alternator', 'starter', 'wire', 'electrical', 'relay', 'fuse'], weight: 1 },
+    { category: 'Fuel & Emissions', keywords: ['fuel', 'intake', 'exhaust', 'emission', 'throttle'], weight: 1 },
+    { category: 'Steering & Suspension', keywords: ['steering', 'suspension', 'wheel', 'tire', 'alignment', 'strut', 'shock'], weight: 1 },
+    { category: 'Cooling System', keywords: ['coolant', 'cooling', 'radiator', 'water pump', 'thermostat'], weight: 2 },
+    { category: 'Fluids & Maintenance', keywords: ['fluid', 'oil', 'lubricant', 'capacity'], weight: 1 },
+    { category: 'Body & Interior', keywords: ['body', 'door', 'window', 'mirror', 'seat', 'interior', 'exterior', 'bumper', 'glass', 'panel'], weight: 1 },
+    { category: 'Restraints & Safety', keywords: ['air bag', 'restraint', 'seat belt'], weight: 2 },
+];
+
+function inferSubCategoryFromTitle(title) {
+    const lower = (title || '').toLowerCase();
+    if (!lower) return 'General';
+
+    let bestCategory = 'General';
+    let bestScore = 0;
+
+    for (const { category, keywords, weight } of SUB_CATEGORY_RULES) {
+        let score = 0;
+        for (const kw of keywords) {
+            if (lower.includes(kw)) score += weight;
+        }
+        if (score > bestScore) {
+            bestScore = score;
+            bestCategory = category;
+        }
+    }
+
+    return bestCategory;
+}
+
 export function normalizeCategoryParams(title, parentBucketRaw, bucketRaw) {
     const rootNameMap = {
         Procedures: 'Service Procedures',
@@ -49,19 +84,7 @@ export function normalizeCategoryParams(title, parentBucketRaw, bucketRaw) {
                 subName = 'Other Codes';
             }
         } else {
-            const lowerTitle = safeTitle.toLowerCase();
-            if (lowerTitle.includes('brake') || lowerTitle.includes('abs')) subName = 'Brakes';
-            else if (lowerTitle.includes('air conditioning') || lowerTitle.includes('hvac') || lowerTitle.includes('heater') || lowerTitle.includes('refrigerant')) subName = 'HVAC';
-            else if (lowerTitle.includes('engine') || lowerTitle.includes('cylinder') || lowerTitle.includes('crankshaft') || lowerTitle.includes('camshaft') || lowerTitle.includes('valve') || lowerTitle.includes('piston') || lowerTitle.includes('block') || lowerTitle.includes('timing')) subName = 'Engine Mechanical';
-            else if (lowerTitle.includes('transmission') || lowerTitle.includes('clutch') || lowerTitle.includes('differential') || lowerTitle.includes('axle') || lowerTitle.includes('driveline') || lowerTitle.includes('transfer case')) subName = 'Transmission & Driveline';
-            else if (lowerTitle.includes('sensor') || lowerTitle.includes('module') || lowerTitle.includes('ignition') || lowerTitle.includes('spark') || lowerTitle.includes('battery') || lowerTitle.includes('alternator') || lowerTitle.includes('starter') || lowerTitle.includes('wire') || lowerTitle.includes('electrical') || lowerTitle.includes('relay') || lowerTitle.includes('fuse')) subName = 'Electrical & Sensors';
-            else if (lowerTitle.includes('fuel') || lowerTitle.includes('intake') || lowerTitle.includes('exhaust') || lowerTitle.includes('emission') || lowerTitle.includes('throttle')) subName = 'Fuel & Emissions';
-            else if (lowerTitle.includes('steering') || lowerTitle.includes('suspension') || lowerTitle.includes('wheel') || lowerTitle.includes('tire') || lowerTitle.includes('alignment') || lowerTitle.includes('strut') || lowerTitle.includes('shock')) subName = 'Steering & Suspension';
-            else if (lowerTitle.includes('coolant') || lowerTitle.includes('cooling') || lowerTitle.includes('radiator') || lowerTitle.includes('water pump') || lowerTitle.includes('thermostat')) subName = 'Cooling System';
-            else if (lowerTitle.includes('fluid') || lowerTitle.includes('oil') || lowerTitle.includes('lubricant') || lowerTitle.includes('capacity')) subName = 'Fluids & Maintenance';
-            else if (lowerTitle.includes('body') || lowerTitle.includes('door') || lowerTitle.includes('window') || lowerTitle.includes('mirror') || lowerTitle.includes('seat') || lowerTitle.includes('interior') || lowerTitle.includes('exterior') || lowerTitle.includes('bumper') || lowerTitle.includes('glass') || lowerTitle.includes('panel')) subName = 'Body & Interior';
-            else if (lowerTitle.includes('air bag') || lowerTitle.includes('restraint') || lowerTitle.includes('seat belt')) subName = 'Restraints & Safety';
-            else subName = 'General';
+            subName = inferSubCategoryFromTitle(safeTitle);
         }
     }
 
