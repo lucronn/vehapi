@@ -216,6 +216,12 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
       return;
     }
 
+    const memCached = this.dataSync.getArticleBodyFromCache(this.vehicleId, aid);
+    if (memCached) {
+      this.applyCanonicalBodyToView(memCached);
+      return;
+    }
+
     this.isLoading.set(true);
     this.error.set(null);
     this.aiUnavailableNotice.set(null);
@@ -354,6 +360,11 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
     this.sections.set(tocSections);
     this.isCached.set(true);
     this.isLoading.set(false);
+
+    const aid = this.internalArticleId();
+    if (this.vehicleId && aid) {
+      this.dataSync.cacheArticleBody(this.vehicleId, aid, canonical);
+    }
   }
 
   private setNormalizedFallbackTitle(aid: string): void {
@@ -382,6 +393,16 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
     this.sections.set(sections);
     this.isCached.set(true);
     this.isLoading.set(false);
+
+    const aid = this.internalArticleId();
+    if (this.vehicleId && aid && safeHtml) {
+      this.dataSync.cacheArticleBody(this.vehicleId, aid, {
+        safeHtml,
+        rawForTutorial: htmlString,
+        source: 'enhanced_cache'
+      });
+    }
+
     try {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch {
@@ -574,6 +595,13 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
       },
       rawHtml
     );
+    if (this.vehicleId && safeHtml) {
+      this.dataSync.cacheArticleBody(this.vehicleId, aid, {
+        safeHtml,
+        rawForTutorial: htmlString,
+        source: 'enhanced_cache'
+      });
+    }
     this.triggerAiRewrite(htmlString);
     this.sections.set(sections);
     this.isLoading.set(false);

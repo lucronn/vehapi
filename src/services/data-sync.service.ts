@@ -46,6 +46,10 @@ export class DataSyncService {
     /** In-memory normalization status cache — avoids repeated Supabase round-trips within a dashboard session. */
     private normalizationCache = new Map<string, { result: boolean; expiry: number }>();
     private static readonly NORMALIZATION_CACHE_TTL_MS = 30_000;
+    /** Vehicles whose full reference-data sync has completed (or was already complete). Overlay never re-shows for these. */
+    private eagerSyncCompleted = new Set<string>();
+    /** Session-scoped article body cache — repeat article views resolve synchronously (no loading spinner, no Supabase query). */
+    private articleBodyMemCache = new Map<string, CanonicalArticleBodyResult>();
 
     /** Mile intervals to prefetch into `maintenance_schedules` (each skipped if already present). */
     private readonly eagerMaintenanceIntervalsMiles = [7500, 15000, 30000, 45000, 60000, 100000];
@@ -204,17 +208,15 @@ export class DataSyncService {
         vehicleId: string,
         motorVehicleId?: string
     ): Promise<void> {
+        if (this.eagerSyncCompleted.has(vehicleId)) {
+            return;
+        }
+
         const key = `${contentSource}:${vehicleId}:${motorVehicleId ?? ''}`;
         if (this.eagerReferenceSyncInFlight.has(key)) {
             return;
         }
         this.eagerReferenceSyncInFlight.add(key);
-
-        this.isSyncing.set(true);
-        this.syncProgress.set({ current: 0, total: 100, message: 'Starting…' });
-
-        const setStep = (pct: number, message: string) =>
-            this.syncProgress.set({ current: pct, total: 100, message });
 
         try {
             const [{ data: vehicleRow }, { count: articleCount }] = await Promise.all([
@@ -232,6 +234,21 @@ export class DataSyncService {
             const catalogLikelyComplete = !!vehicleRow?.is_normalized && (articleCount ?? 0) >= 10;
             /** DB drift: normalized flag without rows — must re-ingest catalog (no Motor fallback in UI). */
             const needsCatalogRepair = !!vehicleRow?.is_normalized && (articleCount ?? 0) === 0;
+
+            if (catalogLikelyComplete && !needsCatalogRepair) {
+                this.eagerSyncCompleted.add(vehicleId);
+                this.normalizationCache.set(vehicleId, {
+                    result: true,
+                    expiry: Date.now() + DataSyncService.NORMALIZATION_CACHE_TTL_MS
+                });
+                return;
+            }
+
+            this.isSyncing.set(true);
+            this.syncProgress.set({ current: 0, total: 100, message: 'Starting…' });
+
+            const setStep = (pct: number, message: string) =>
+                this.syncProgress.set({ current: pct, total: 100, message });
 
             setStep(5, 'Article catalog…');
             if (!catalogLikelyComplete || needsCatalogRepair) {
@@ -298,6 +315,7 @@ export class DataSyncService {
             }
 
             setStep(100, 'Done');
+            this.eagerSyncCompleted.add(vehicleId);
         } catch (e) {
             this.logger.warn('[DataSync] eagerSyncVehicleReferenceData failed (non-fatal):', e);
         } finally {
@@ -855,6 +873,18 @@ export class DataSyncService {
     }
 
     /**
+     * Synchronous check for a previously-loaded article body.
+     * Returns the cached result instantly (no Supabase query) or null if not yet loaded.
+     */
+    getArticleBodyFromCache(vehicleId: string, articleId: string): CanonicalArticleBodyResult | null {
+        return this.articleBodyMemCache.get(`${vehicleId}:${articleId}`) ?? null;
+    }
+
+    cacheArticleBody(vehicleId: string, articleId: string, body: CanonicalArticleBodyResult): void {
+        this.articleBodyMemCache.set(`${vehicleId}:${articleId}`, body);
+    }
+
+    /**
      * Prefer Supabase structured / cached body over ad-hoc Motor HTML + rewrite.
      * Returns null if nothing canonical is available (caller uses Motor path).
      */
@@ -864,6 +894,10 @@ export class DataSyncService {
         contentSource: string,
         sanitizeHtml: (raw: string) => string
     ): Promise<CanonicalArticleBodyResult | null> {
+        const memKey = `${vehicleId}:${articleId}`;
+        const memCached = this.articleBodyMemCache.get(memKey);
+        if (memCached) return memCached;
+
         const [articleRow, ci] = await Promise.all([
             this.fetchArticleRowForViewer(vehicleId, articleId),
             this.fetchContentItemForArticle(vehicleId, articleId, contentSource)
@@ -873,7 +907,9 @@ export class DataSyncService {
         if (ec) {
             const safe = sanitizeHtml(ec);
             if (safe) {
-                return { safeHtml: safe, rawForTutorial: ec, source: 'enhanced_cache' };
+                const result: CanonicalArticleBodyResult = { safeHtml: safe, rawForTutorial: ec, source: 'enhanced_cache' };
+                this.articleBodyMemCache.set(memKey, result);
+                return result;
             }
         }
 
@@ -887,8 +923,6 @@ export class DataSyncService {
         const short = ci?.display_description?.trim();
         const enriched = Boolean(ci?.enriched_at || ci?.enrichment_source);
         const enrichmentSource = (ci?.enrichment_source || '').toLowerCase();
-        // Catalog-intel "display_description" is a teaser summary, not the full article body.
-        // Never use it as canonical content in the viewer.
         const isCatalogSummaryOnly =
             enrichmentSource.includes('catalog_intel') || enrichmentSource.includes('catalog-intel');
         const allowShortSummaryFallback = !isCatalogSummaryOnly;
@@ -903,7 +937,9 @@ export class DataSyncService {
         if (rawBody) {
             const safe = sanitizeHtml(rawBody);
             if (safe) {
-                return { safeHtml: safe, rawForTutorial: rawBody, source: 'content_item' };
+                const result: CanonicalArticleBodyResult = { safeHtml: safe, rawForTutorial: rawBody, source: 'content_item' };
+                this.articleBodyMemCache.set(memKey, result);
+                return result;
             }
         }
 
@@ -925,7 +961,16 @@ export class DataSyncService {
      */
     async persistArticleEnhancedHtml(vehicleId: string, originalId: string, html: string): Promise<void> {
         const trimmed = html?.trim();
-        if (!trimmed || this.clientWriteDisabled) return;
+        if (!trimmed) return;
+
+        const memKey = `${vehicleId}:${originalId}`;
+        this.articleBodyMemCache.set(memKey, {
+            safeHtml: trimmed,
+            rawForTutorial: trimmed,
+            source: 'enhanced_cache'
+        });
+
+        if (this.clientWriteDisabled) return;
         const { error } = await this.supabase.client
             .from('articles')
             .update({ enhanced_content: trimmed, updated_at: new Date().toISOString() })
