@@ -49,6 +49,18 @@ export class WindowManagerService {
         // Ensure windowId is available to the component
         const finalData = (data && typeof data === 'object') ? { ...data, windowId: id } : data;
 
+        const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
+        const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+        const desktop = this.isDesktop();
+
+        // On mobile/tablet we treat "windows" as full-screen modals to avoid
+        // off-screen drag states and broken sizing due to virtual keyboard/safe areas.
+        const w = desktop ? Math.min(900, Math.round(vw * 0.85)) : vw;
+        const h = desktop ? Math.min(700, Math.round(vh * 0.85)) : vh;
+        const cascade = desktop ? this.windows().length : 0;
+        const x = desktop ? (Math.round((vw - w) / 2) + cascade * 20) : 0;
+        const y = desktop ? (Math.round((vh - h) / 2) + cascade * 20) : 0;
+
         const newWindow: WindowInstance = {
             id,
             title: displayTitle,
@@ -56,9 +68,9 @@ export class WindowManagerService {
             data: finalData,
             zIndex: ++this.zIndexCounter,
             isMinimized: false,
-            isMaximized: false,
-            position: { x: 50 + (this.windows().length * 20), y: 50 + (this.windows().length * 20) },
-            size: { width: 800, height: 600 }
+            isMaximized: !desktop,
+            position: { x, y },
+            size: { width: w, height: h }
         };
 
         this.windows.update(windows => [...windows, newWindow]);
@@ -102,14 +114,44 @@ export class WindowManagerService {
     }
 
     updatePosition(id: string, x: number, y: number) {
+        const desktop = this.isDesktop();
+        if (!desktop) {
+            // Mobile: pinned fullscreen; ignore drag updates.
+            return;
+        }
+        const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
+        const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
         this.windows.update(windows => windows.map(w =>
-            w.id === id ? { ...w, position: { x, y } } : w
+            w.id === id
+                ? {
+                    ...w,
+                    position: {
+                        x: Math.max(0, Math.min(x, Math.max(0, vw - w.size.width))),
+                        y: Math.max(0, Math.min(y, Math.max(0, vh - w.size.height)))
+                    }
+                }
+                : w
         ));
     }
 
     updateSize(id: string, width: number, height: number) {
+        const desktop = this.isDesktop();
+        if (!desktop) {
+            // Mobile: fixed fullscreen sizing; ignore resize updates.
+            return;
+        }
+        const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
+        const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
         this.windows.update(windows => windows.map(w =>
-            w.id === id ? { ...w, size: { width, height } } : w
+            w.id === id
+                ? {
+                    ...w,
+                    size: {
+                        width: Math.max(300, Math.min(width, vw)),
+                        height: Math.max(200, Math.min(height, vh))
+                    }
+                }
+                : w
         ));
     }
 }

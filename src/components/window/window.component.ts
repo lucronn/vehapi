@@ -8,13 +8,14 @@ import { WindowInstance, WindowManagerService } from '../../services/window-mana
   standalone: true,
   imports: [CommonModule, LucideAngularModule],
   template: `
-    <div class="window-frame flex flex-col rounded-xl shadow-2xl overflow-hidden"
+    <div class="window-frame flex flex-col shadow-2xl overflow-hidden"
+         [class.rounded-xl]="!window.isMaximized"
          style="background:var(--bg-surface);border:1px solid var(--border)"
          [style.z-index]="window.zIndex"
-         [style.left.px]="window.position.x"
-         [style.top.px]="window.position.y"
-         [style.width.px]="window.size.width"
-         [style.height.px]="window.size.height"
+         [style.left.px]="window.isMaximized ? 0 : window.position.x"
+         [style.top.px]="window.isMaximized ? 0 : window.position.y"
+         [style.width]="window.isMaximized ? '100vw' : window.size.width + 'px'"
+         [style.height]="window.isMaximized ? '100dvh' : window.size.height + 'px'"
          (mousedown)="onWindowMouseDown()">
 
       <!-- Title Bar -->
@@ -44,10 +45,12 @@ import { WindowInstance, WindowManagerService } from '../../services/window-mana
       </div>
 
       <!-- Resize Handle -->
-      <div class="resize-handle absolute bottom-0 right-0 w-4 h-4 cursor-se-resize flex items-center justify-center"
-           (mousedown)="startResize($event)">
-        <div class="w-2 h-2 border-r-2 border-b-2 rounded-sm" style="border-color:var(--border)"></div>
-      </div>
+      @if (windowManager.isDesktop() && !window.isMaximized) {
+        <div class="resize-handle absolute bottom-0 right-0 w-4 h-4 cursor-se-resize flex items-center justify-center"
+             (mousedown)="startResize($event)">
+          <div class="w-2 h-2 border-r-2 border-b-2 rounded-sm" style="border-color:var(--border)"></div>
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -66,6 +69,16 @@ import { WindowInstance, WindowManagerService } from '../../services/window-mana
       min-width: 300px;
       min-height: 200px;
     }
+
+    @media (max-width: 767px) {
+      .window-title-bar {
+        cursor: default;
+      }
+      .window-frame {
+        min-width: 0;
+        min-height: 0;
+      }
+    }
   `]
 })
 export class WindowComponent {
@@ -75,7 +88,7 @@ export class WindowComponent {
   @Output() maximize = new EventEmitter<void>();
   @Output() focus = new EventEmitter<void>();
 
-  private windowManager = inject(WindowManagerService);
+  readonly windowManager = inject(WindowManagerService);
   private isDragging = false;
   private isResizing = false;
   private dragOffset = { x: 0, y: 0 };
@@ -89,6 +102,7 @@ export class WindowComponent {
   }
 
   startDrag(event: MouseEvent) {
+    if (!this.windowManager.isDesktop()) return;
     if (this.window.isMaximized) return;
     this.isDragging = true;
     this.dragOffset = {
@@ -99,6 +113,7 @@ export class WindowComponent {
   }
 
   startResize(event: MouseEvent) {
+    if (!this.windowManager.isDesktop()) return;
     if (this.window.isMaximized) return;
     this.isResizing = true;
     this.initialSize = { ...this.window.size };

@@ -12,6 +12,7 @@ import { HomeComponent } from './src/pages/home/home.component';
 import { VehicleDashboardComponent } from './src/pages/vehicle-dashboard/vehicle-dashboard.component';
 import { ArticleViewerComponent } from './src/pages/article-viewer/article-viewer.component';
 import { CreditsDashboardComponent } from './src/pages/credits-dashboard/credits-dashboard.component';
+import { KnowledgeSearchComponent } from './src/pages/knowledge-search/knowledge-search.component';
 import { NotFoundComponent } from './src/pages/not-found/not-found.component';
 
 bootstrapApplication(AppComponent, {
@@ -25,6 +26,7 @@ bootstrapApplication(AppComponent, {
       { path: 'account', component: CreditsDashboardComponent },
       { path: 'vehicle/:contentSource/:vehicleId', component: VehicleDashboardComponent },
       { path: 'vehicle/:contentSource/:vehicleId/article/:articleId', component: ArticleViewerComponent },
+      { path: 'vehicle/:contentSource/:vehicleId/knowledge', component: KnowledgeSearchComponent },
       { path: '**', component: NotFoundComponent }
     ], withHashLocation())
   ]

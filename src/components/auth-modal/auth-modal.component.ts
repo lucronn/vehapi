@@ -124,8 +124,9 @@ type AuthMode = 'signin' | 'signup' | 'reset';
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
       display: flex; align-items: center; justify-content: center;
-      padding: 1rem;
+      padding: calc(1rem + env(safe-area-inset-top, 0px)) 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
       animation: backdropIn 0.2s ease;
+      overflow: auto;
     }
     @keyframes backdropIn {
       from { opacity: 0; }
@@ -135,11 +136,14 @@ type AuthMode = 'signin' | 'signup' | 'reset';
       background: var(--bg-surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
-      padding: 2rem;
-      width: 100%; max-width: 420px;
+      padding: 1.25rem;
+      width: 100%;
+      max-width: 420px;
       position: relative;
       box-shadow: 0 24px 64px rgba(0,0,0,0.5);
       animation: modalIn 0.25s ease;
+      max-height: calc(100dvh - 2rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+      overflow: auto;
     }
     @keyframes modalIn {
       from { opacity: 0; transform: scale(0.95) translateY(-8px); }
@@ -230,6 +234,12 @@ type AuthMode = 'signin' | 'signup' | 'reset';
     .footer-sep { color: hsl(220,10%,40%); }
     .spin { animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (min-width: 640px) {
+      .modal-panel {
+        padding: 2rem;
+      }
+    }
   `]
 })
 export class AuthModalComponent {

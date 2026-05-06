@@ -20,6 +20,10 @@ export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'comp
     styles: [`:host { display: none; } @media (min-width: 768px) { :host { display: flex; width: 16rem; flex-direction: column; flex-shrink: 0; } } @media (min-width: 1280px) { :host { width: 18rem; } }`]
 })
 export class DashboardSidebarComponent {
+    @Input() contentSource: string | null = null;
+    @Input() vehicleId: string | null = null;
+    @Input() l2SearchEnabled = false;
+
     @Input({ required: true }) vehicleName!: string;
     @Input({ required: true }) activeSection!: DashboardSection;
     @Input() availableSections: SectionAvailability | null = null;

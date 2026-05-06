@@ -24,6 +24,14 @@
             <span class="text-xs font-bold tracking-[0.15em] uppercase">Overview</span>
         </button>
 
+        @if (l2SearchEnabled && contentSource && vehicleId) {
+        <a [routerLink]="['/vehicle', contentSource, vehicleId, 'knowledge']"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2 border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]">
+            <lucide-icon [img]="icons.Lightbulb" class="w-4 h-4"></lucide-icon>
+            <span class="text-xs font-bold tracking-[0.15em] uppercase">Knowledge</span>
+        </a>
+        }
+
         @if (availableSections?.hasDtcs) {
         <button (click)="onSectionClick('dtcs')"
             class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"

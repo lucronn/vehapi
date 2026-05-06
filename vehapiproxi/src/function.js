@@ -347,6 +347,14 @@ async function handleL2VehicleSearch(req, res, vehicleExternalId) {
     if (!vehicleExternalId || !query) {
         return res.status(400).json({ error: 'vehicle id and query are required' });
     }
+
+    const l2Enabled = String(process.env.ENABLE_L2_EMBEDDINGS || '').toLowerCase() === 'true';
+    if (!l2Enabled) {
+        return res.status(503).json({
+            error: 'Knowledge search is not enabled on the server (ENABLE_L2_EMBEDDINGS=false)'
+        });
+    }
+
     const userData = await getUserData(req.userId);
     const unlocks = userData.unlocks?.[vehicleExternalId] || [];
     const allowed = unlocks.includes('full') || unlocks.length > 0;
@@ -359,7 +367,15 @@ async function handleL2VehicleSearch(req, res, vehicleExternalId) {
     if (!result.success) {
         return res.status(503).json({ error: result.error || 'L2 search unavailable' });
     }
-    return res.json({ chunks: mapChunksToL2ApiResponse(result.chunks || []) });
+
+    const rows = result.chunks || [];
+    if (rows.length === 0) {
+        return res.status(503).json({
+            error: 'No embedded chunks found for this vehicle yet. Ingest may still be running (or L2 embeddings were never generated).'
+        });
+    }
+
+    return res.json({ chunks: mapChunksToL2ApiResponse(rows) });
 }
 
 /** Preferred: vehicle id in path (matches other vehicle-scoped APIs). */

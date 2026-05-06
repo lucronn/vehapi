@@ -33,7 +33,6 @@ import { MaintenanceSectionComponent } from './components/sections/maintenance-s
 import { PartsSectionComponent } from './components/sections/parts-section/parts-section.component';
 import { CommonIssuesSectionComponent } from './components/sections/common-issues-section/common-issues-section.component';
 import { SyncProgressOverlayComponent } from './components/layout/sync-progress-overlay/sync-progress-overlay.component';
-import { L2SearchPanelComponent } from './components/layout/l2-search-panel/l2-search-panel.component';
 import { environment } from '../../environments/environment';
 
 // Icons
@@ -91,7 +90,6 @@ const DASHBOARD_SECTION_LABEL: Record<DashboardSection, string | undefined> = {
     AuthModalComponent,
     SyncProgressOverlayComponent,
     CommonIssuesSectionComponent,
-    L2SearchPanelComponent
   ],
 })
 export class VehicleDashboardComponent {
@@ -295,6 +293,34 @@ export class VehicleDashboardComponent {
   orientationOptions = signal<OrientationOption[]>([]);
   pendingArticleId = signal<string | null>(null);
   selectedBrowseFilter = signal<string | null>(null); // For browse-all filter pills
+
+  // Browse-all UI state (collapse buckets + "show more" to avoid endless scroll)
+  private readonly browseExpanded = signal<Record<string, boolean>>({});
+  private readonly browseShowAll = signal<Record<string, boolean>>({});
+
+  private browseKey(parts: Array<string | null | undefined>): string {
+    return parts.filter(Boolean).join('::');
+  }
+
+  isBrowseExpanded(tabName: string, bucketName: string, childName?: string): boolean {
+    const key = this.browseKey([tabName, bucketName, childName]);
+    return this.browseExpanded()[key] !== false; // default expanded
+  }
+
+  toggleBrowseExpanded(tabName: string, bucketName: string, childName?: string): void {
+    const key = this.browseKey([tabName, bucketName, childName]);
+    this.browseExpanded.update((m) => ({ ...m, [key]: !(m[key] !== false) }));
+  }
+
+  isBrowseShowAll(tabName: string, bucketName: string, childName?: string): boolean {
+    const key = this.browseKey([tabName, bucketName, childName]);
+    return this.browseShowAll()[key] === true;
+  }
+
+  toggleBrowseShowAll(tabName: string, bucketName: string, childName?: string): void {
+    const key = this.browseKey([tabName, bucketName, childName]);
+    this.browseShowAll.update((m) => ({ ...m, [key]: !m[key] }));
+  }
 
   // Search state
   searchTerm = signal('');
