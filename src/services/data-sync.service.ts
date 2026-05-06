@@ -848,6 +848,102 @@ export class DataSyncService {
     }
 
     /**
+     * Motor article IDs that have a non-empty viewer body in Supabase (`articles` HTML/PDF/enhanced
+     * cache, or eligible `content_item` text). Used so specification shortcuts are not listed when
+     * opening them would show an empty viewer (and waste unlock credits).
+     */
+    async getMotorArticleIdsWithRenderableBodies(
+        vehicleId: string,
+        motorArticleIds: string[],
+        contentSource: string
+    ): Promise<Set<string>> {
+        const unique = [
+            ...new Set(motorArticleIds.filter((id): id is string => typeof id === 'string' && id.length > 0))
+        ];
+        const out = new Set<string>();
+        if (unique.length === 0) {
+            return out;
+        }
+
+        const chunkSize = 100;
+        for (let i = 0; i < unique.length; i += chunkSize) {
+            const chunk = unique.slice(i, i + chunkSize);
+            const { data: articleRows, error } = await this.supabase.client
+                .from('articles')
+                .select('original_id, enhanced_content, original_content')
+                .eq('vehicle_id', vehicleId)
+                .in('original_id', chunk);
+            if (error) {
+                this.logger.warn('[DataSync] getMotorArticleIdsWithRenderableBodies articles:', error.message);
+                continue;
+            }
+            for (const row of articleRows ?? []) {
+                const oid = String(row.original_id ?? '');
+                const ec = (row.enhanced_content as string | null)?.trim();
+                const oc = (row.original_content as string | null)?.trim();
+                if (ec || oc) {
+                    out.add(oid);
+                }
+            }
+        }
+
+        const stillNeeding = unique.filter((id) => !out.has(id));
+        if (stillNeeding.length === 0) {
+            return out;
+        }
+
+        const queryContentItems = async (source: string) => {
+            for (let j = 0; j < stillNeeding.length; j += chunkSize) {
+                const chunk = stillNeeding.slice(j, j + chunkSize);
+                const { data: ciRows, error: ciErr } = await this.supabase.client
+                    .from('content_item')
+                    .select(
+                        'motor_article_id, display_long_description, display_description, enrichment_source, enriched_at'
+                    )
+                    .eq('vehicle_external_id', vehicleId)
+                    .eq('content_source', source)
+                    .in('motor_article_id', chunk);
+                if (ciErr) {
+                    this.logger.warn('[DataSync] getMotorArticleIdsWithRenderableBodies content_item:', ciErr.message);
+                    continue;
+                }
+                for (const ci of ciRows ?? []) {
+                    const rec = ci as Record<string, unknown>;
+                    const id = String(rec['motor_article_id'] ?? '');
+                    if (id && this.contentItemHasRenderableSummary(rec)) {
+                        out.add(id);
+                    }
+                }
+            }
+        };
+
+        await queryContentItems(contentSource);
+        if (contentSource.toUpperCase() !== 'MOTOR') {
+            await queryContentItems('MOTOR');
+        }
+
+        return out;
+    }
+
+    /** Mirrors `tryApplyCanonicalArticleBody` eligibility for `content_item`-only bodies. */
+    private contentItemHasRenderableSummary(ci: Record<string, unknown>): boolean {
+        const long = String(ci['display_long_description'] ?? '').trim();
+        const short = String(ci['display_description'] ?? '').trim();
+        const enriched = Boolean(ci['enriched_at'] || ci['enrichment_source']);
+        const enrichmentSource = String(ci['enrichment_source'] ?? '').toLowerCase();
+        const isCatalogSummaryOnly =
+            enrichmentSource.includes('catalog_intel') || enrichmentSource.includes('catalog-intel');
+        const allowShortSummaryFallback = !isCatalogSummaryOnly;
+        if (long) {
+            return true;
+        }
+        if (allowShortSummaryFallback && enriched && short.length >= 40) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Fetch normalized `content_item` for this catalog article (structured display fields).
      */
     async fetchContentItemForArticle(

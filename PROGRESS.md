@@ -69,6 +69,8 @@
 
 ## Bugs & Known Issues
 
+- **Fixed 2026-05-06** — **Specs list: wrong article id + empty bodies wasting credits:** Normalized `loadSpecs` now uses `metadata.originalArticleId` as `Spec.id` (was specification row UUID, so the viewer queried the wrong `articles.original_id` and looked empty/broken). Specification shortcuts are only shown when Supabase has a renderable body for that Motor article (`articles` enhanced/original content, or eligible `content_item` text), so users do not pay to open empty spec articles.
+
 - **Fixed 2026-05-06** — **Mobile PDF viewer fullscreen + BMW clutch specs:** Added a Fullscreen button to PDF viewer (Fullscreen API w/ fallback to Open), and expanded specs catalog detection to include clutch-related pages (both catalog-to-Supabase spec upserts and pre-normalization spec list filtering).
 
 - **Fixed 2026-05-06** — **BMW DTCs not showing (2020 430i):** Expanded DTC bucket matching/availability keywords (fault/trouble/OBD + simplified bucket names like Powertrain/Chassis/Body/Network) so DTC lists render when catalogs don’t use “DTC” literal.

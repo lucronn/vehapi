@@ -182,31 +182,79 @@ export class VehicleDataService {
             switchMap((isNormalized) => {
                 if (isNormalized) {
                     this.logger.info(`[VehicleDataService] Loading specs from Supabase for ${vehicleId}`);
-                    return from(this.supabase.client
-                        .from('specifications')
-                        .select('*')
-                        .eq('vehicle_id', vehicleId)
+                    return from(
+                        this.supabase.client.from('specifications').select('*').eq('vehicle_id', vehicleId)
                     ).pipe(
-                        map(({ data: specsData }) => {
-                            const specs: Spec[] = (specsData || [])
-                                .filter(s => s.category !== 'Fluids')
-                                .map(s => ({
-                                    id: s.id,
-                                    bucket: s.category,
-                                    title: s.name,
-                                    value: s.display_text || s.value || '',
-                                    description: s.unit ? `${s.value} ${s.unit}` : undefined
-                                }));
-                            const fluids: Fluid[] = (specsData || [])
-                                .filter(s => s.category === 'Fluids')
-                                .map(s => ({
-                                    id: s.id,
-                                    bucket: s.category,
-                                    title: s.name,
-                                    capacity: s.value || '',
-                                    specification: s.metadata?.specification || s.display_text || ''
-                                }));
-                            return { specs, fluids };
+                        switchMap(({ data: specsData, error }) => {
+                            if (error) {
+                                this.logger.error('[VehicleDataService] Supabase specs fetch failed:', error);
+                                return of({ specs: [] as Spec[], fluids: [] as Fluid[] });
+                            }
+                            const rows = specsData || [];
+                            const specRows = rows.filter((s: { category?: string }) => s.category !== 'Fluids');
+                            const motorIds = [
+                                ...new Set(
+                                    specRows
+                                        .map((s: { metadata?: { originalArticleId?: string } }) =>
+                                            s.metadata?.originalArticleId
+                                        )
+                                        .filter((id): id is string => typeof id === 'string' && id.length > 0)
+                                )
+                            ];
+                            return from(
+                                this.dataSync.getMotorArticleIdsWithRenderableBodies(
+                                    vehicleId,
+                                    motorIds,
+                                    contentSource
+                                )
+                            ).pipe(
+                                map((renderable) => {
+                                    const specs: Spec[] = specRows
+                                        .filter((s: { metadata?: { originalArticleId?: string } }) => {
+                                            const oid = s.metadata?.originalArticleId;
+                                            return typeof oid === 'string' && renderable.has(oid);
+                                        })
+                                        .map(
+                                            (s: {
+                                                category: string;
+                                                name: string;
+                                                value?: string | null;
+                                                display_text?: string | null;
+                                                unit?: string | null;
+                                                metadata?: { originalArticleId?: string };
+                                            }) => {
+                                                const oid = String(s.metadata?.originalArticleId ?? '');
+                                                return {
+                                                    id: oid,
+                                                    bucket: s.category,
+                                                    title: s.name,
+                                                    value: s.display_text || s.value || '',
+                                                    description: s.unit ? `${s.value} ${s.unit}` : undefined
+                                                };
+                                            }
+                                        );
+                                    const fluids: Fluid[] = rows
+                                        .filter((s: { category?: string }) => s.category === 'Fluids')
+                                        .map(
+                                            (s: {
+                                                id: string;
+                                                category: string;
+                                                name: string;
+                                                value?: string | null;
+                                                display_text?: string | null;
+                                                metadata?: { specification?: string };
+                                            }) => ({
+                                                id: s.id,
+                                                bucket: s.category,
+                                                title: s.name,
+                                                capacity: s.value || '',
+                                                specification:
+                                                    s.metadata?.specification || s.display_text || ''
+                                            })
+                                        );
+                                    return { specs, fluids };
+                                })
+                            );
                         }),
                         catchError(err => {
                             this.logger.error('[VehicleDataService] Supabase specs fetch failed:', err);
