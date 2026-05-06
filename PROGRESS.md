@@ -69,6 +69,8 @@
 
 ## Bugs & Known Issues
 
+- **Fixed 2026-05-06** — **BMW DTCs not showing (2020 430i):** Expanded DTC bucket matching/availability keywords (fault/trouble/OBD + simplified bucket names like Powertrain/Chassis/Body/Network) so DTC lists render when catalogs don’t use “DTC” literal.
+
 - **Fixed 2026-05-06** — **Mobile UI/UX stability pass:** Window/modals are fullscreen on mobile (prevents off-screen/stuck windows); auth modal scrolls safely on small viewports; dashboard header no longer truncates vehicle name to just the year; Knowledge Search moved to its own route; Browse All list reduced spacing + adds collapsible buckets + “show more”; mobile PDF (TSBs) now renders inline in the viewer iframe.
 
 - **Fixed 2026-04-22** — **Test failures in `vehicle-data.service.spec.ts`, `category-tree.service.spec.ts`, `credits.service.spec.ts`**: Fixed `LoggerService` import path in `ai-rewrite.service.ts` that broke Vitest, mocked `DataSyncService` and `SupabaseService` with async responses, adjusted `category-tree.service` tests for the "General" group fallback, and updated `credits.service` tests to pass `vehicleName` and mock `logger.error` correctly. All 145 tests now pass.

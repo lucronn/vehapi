@@ -80,7 +80,10 @@ export class VehicleDataService {
             alwaysIncludeBuckets: [
                 'Diagnostic Trouble Codes', 'Diagnostic Codes', 'DTCs',
                 'Diagnostic Codes (DTC)',
-                'Powertrain (P-Codes)', 'Chassis (C-Codes)', 'Body (B-Codes)', 'Network (U-Codes)', 'Other Codes'
+                // Some catalogs use simplified or OEM-specific labels without the (P/C/B/U) suffixes.
+                'Powertrain (P-Codes)', 'Chassis (C-Codes)', 'Body (B-Codes)', 'Network (U-Codes)', 'Other Codes',
+                'Powertrain', 'Chassis', 'Body', 'Network',
+                'Fault Codes', 'Trouble Codes', 'OBD', 'OBD-II', 'OBD II'
             ],
             mapper: (a: any) => ({
                 id: a.original_id ?? a.id,
@@ -358,7 +361,7 @@ export class VehicleDataService {
                                 .eq('vehicle_id', vehicleId)
                             ).pipe(
                                 map(({ count }) => ({
-                                    hasDtcs: has(['dtc', 'diagnostic']),
+                                    hasDtcs: has(['dtc', 'diagnostic', 'fault', 'trouble code', 'obd']),
                                     hasTsbs: has(['tsb', 'bulletin']),
                                     hasDiagrams: has(['diagram', 'wiring']),
                                     hasProcedures: has(['procedure', 'labor', 'service procedures']),
