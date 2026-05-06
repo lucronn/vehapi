@@ -45,6 +45,9 @@ export interface L2SearchChunk {
 
 export interface L2SearchResponse {
   chunks: L2SearchChunk[];
+  /** Set when search succeeds but returns no rows, or on errors (see vehapiproxi handleL2VehicleSearch). */
+  code?: string;
+  hint?: string;
 }
 
 @Injectable({ providedIn: 'root' })

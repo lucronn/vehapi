@@ -69,6 +69,8 @@
 
 ## Bugs & Known Issues
 
+- **Fixed 2026-05-06** — **L2 knowledge search diagnostics:** Empty `content_chunk` results now return HTTP 200 with `code: L2_NO_CHUNKS` and a hint (was 503, looked like an outage). Real failures return structured `code` (`L2_DISABLED`, `L2_UNLOCK_REQUIRED`, `L2_EMBEDDING_CONFIG`, `L2_EMBEDDING_DIM_MISMATCH`, `L2_RPC_OR_SCHEMA`); the knowledge panel maps these to operator-facing messages.
+
 - **Fixed 2026-05-06** — **Specs list: wrong article id + empty bodies wasting credits:** Normalized `loadSpecs` now uses `metadata.originalArticleId` as `Spec.id` (was specification row UUID, so the viewer queried the wrong `articles.original_id` and looked empty/broken). Specification shortcuts are only shown when Supabase has a renderable body for that Motor article (`articles` enhanced/original content, or eligible `content_item` text), so users do not pay to open empty spec articles.
 
 - **Fixed 2026-05-06** — **Mobile PDF viewer fullscreen + BMW clutch specs:** Added a Fullscreen button to PDF viewer (Fullscreen API w/ fallback to Open), and expanded specs catalog detection to include clutch-related pages (both catalog-to-Supabase spec upserts and pre-normalization spec list filtering).

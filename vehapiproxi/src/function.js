@@ -351,7 +351,8 @@ async function handleL2VehicleSearch(req, res, vehicleExternalId) {
     const l2Enabled = String(process.env.ENABLE_L2_EMBEDDINGS || '').toLowerCase() === 'true';
     if (!l2Enabled) {
         return res.status(503).json({
-            error: 'Knowledge search is not enabled on the server (ENABLE_L2_EMBEDDINGS=false)'
+            error: 'Knowledge search is not enabled on the server (ENABLE_L2_EMBEDDINGS=false)',
+            code: 'L2_DISABLED'
         });
     }
 
@@ -360,18 +361,31 @@ async function handleL2VehicleSearch(req, res, vehicleExternalId) {
     const allowed = unlocks.includes('full') || unlocks.length > 0;
     if (!allowed) {
         return res.status(403).json({
-            error: 'Unlock at least one module for this vehicle before using search'
+            error: 'Unlock at least one module for this vehicle before using search',
+            code: 'L2_UNLOCK_REQUIRED'
         });
     }
     const result = await runL2VehicleChunkSearch({ vehicleExternalId, query, matchCount });
     if (!result.success) {
-        return res.status(503).json({ error: result.error || 'L2 search unavailable' });
+        const msg = result.error || 'L2 search unavailable';
+        let code = 'L2_SEARCH_FAILED';
+        if (/dimension|L2_EMBEDDING_DIMS/i.test(msg)) {
+            code = 'L2_EMBEDDING_DIM_MISMATCH';
+        } else if (/No NVIDIA|EMBEDDING_MODEL|API key|embeddings/i.test(msg)) {
+            code = 'L2_EMBEDDING_CONFIG';
+        } else if (/RPC|Supabase|match_content_chunks|42883|function public\.match_content_chunks/i.test(msg)) {
+            code = 'L2_RPC_OR_SCHEMA';
+        }
+        return res.status(503).json({ error: msg, code });
     }
 
     const rows = result.chunks || [];
     if (rows.length === 0) {
-        return res.status(503).json({
-            error: 'No embedded chunks found for this vehicle yet. Ingest may still be running (or L2 embeddings were never generated).'
+        // Distinct from service outage: search ran; this vehicle has no rows in content_chunk yet.
+        return res.status(200).json({
+            chunks: [],
+            code: 'L2_NO_CHUNKS',
+            hint: 'No vector chunks are indexed for this vehicle. Run the worker with ENABLE_L2_EMBEDDINGS=true (and EMBEDDING_MODEL) after articles are parsed, or ingest may still be in progress.'
         });
     }
 
