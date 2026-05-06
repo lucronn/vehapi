@@ -118,6 +118,12 @@
               </svg>
               Open
             </a>
+            <!-- Fullscreen (best-effort; falls back to Open) -->
+            <button type="button" (click)="maximizePdf()"
+              class="btn-ghost text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+              <lucide-icon [img]="icons.Maximize2" class="w-3.5 h-3.5"></lucide-icon>
+              Fullscreen
+            </button>
             <!-- Download -->
             <a [href]="pdfDataUri()" download="document.pdf"
               class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
@@ -134,14 +140,14 @@
         </div>
 
         <!-- Desktop: Inline iframe viewer -->
-        <div class="hidden md:block rounded-2xl overflow-hidden" style="border:1px solid var(--border);height:80vh">
+        <div #pdfContainerDesktop class="hidden md:block rounded-2xl overflow-hidden" style="border:1px solid var(--border);height:80vh">
           <iframe [src]="pdfDataUri()" class="w-full h-full" style="border:none;background:#fff"
             title="PDF Document Viewer">
           </iframe>
         </div>
 
         <!-- Mobile: Inline iframe viewer (keeps TSBs viewable in-app) -->
-        <div class="md:hidden rounded-2xl overflow-hidden" style="border:1px solid var(--border);height:75dvh">
+        <div #pdfContainerMobile class="md:hidden rounded-2xl overflow-hidden" style="border:1px solid var(--border);height:75dvh">
           <iframe [src]="pdfDataUri()" class="w-full h-full" style="border:none;background:#fff"
             title="PDF Document Viewer">
           </iframe>

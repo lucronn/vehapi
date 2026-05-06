@@ -565,7 +565,11 @@ export class DataSyncService {
             t.includes('specs') ||
             t.includes('torque') ||
             t.includes('alignment') ||
-            t.includes('tire')
+            t.includes('tire') ||
+            // BMW (and others) frequently file clutch info under drivetrain buckets without "spec" in the title.
+            t.includes('clutch') ||
+            b.includes('clutch') ||
+            p.includes('clutch')
         );
     }
 

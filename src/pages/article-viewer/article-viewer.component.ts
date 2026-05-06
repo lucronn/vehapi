@@ -1,5 +1,5 @@
 import { LoggerService } from '@/src/services/logger.service';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, Input, signal, ViewEncapsulation, OnInit, OnChanges, SimpleChanges, SecurityContext } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, Input, signal, ViewEncapsulation, OnInit, OnChanges, SimpleChanges, SecurityContext, ElementRef, ViewChild } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -9,7 +9,7 @@ import { map, switchMap, of, catchError, Subject, takeUntil, Observable } from '
 import { MotorApiService } from '../../services/motor-api.service';
 import { MotorHtmlProcessorService } from '../../services/motor-html-processor.service';
 import { AiRewriteService } from '../../services/ai-rewrite.service';
-import { LucideAngularModule, ArrowLeft, Maximize2, List, X, Sparkles, BookOpen, Lock, RefreshCw } from 'lucide-angular';
+import { LucideAngularModule, ArrowLeft, Maximize2, Minus, List, X, Sparkles, BookOpen, Lock, RefreshCw } from 'lucide-angular';
 import { CreditsModalComponent } from '../../components/credits-modal/credits-modal.component';
 import { ImageViewerModalComponent } from './components/image-viewer-modal/image-viewer-modal.component';
 import { TutorialComponent } from '../../components/tutorial/tutorial.component';
@@ -73,7 +73,10 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   private router = inject(Router);
   private pageTitle = inject(PageTitleService);
 
-  readonly icons = { ArrowLeft, Maximize2, List, X, Sparkles, BookOpen, Lock, RefreshCw };
+  readonly icons = { ArrowLeft, Maximize2, Minus, List, X, Sparkles, BookOpen, Lock, RefreshCw };
+
+  @ViewChild('pdfContainerMobile') pdfContainerMobile?: ElementRef<HTMLElement>;
+  @ViewChild('pdfContainerDesktop') pdfContainerDesktop?: ElementRef<HTMLElement>;
 
   constructor() {
     effect(() => {
@@ -96,6 +99,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   articleSubtitle = signal<string>('');
   isCached = signal<boolean>(false);
 
+  isContentCollapsed = signal(false);
   selectedImageUrl = signal<string | null>(null);
   pdfDataUri = signal<SafeResourceUrl | null>(null); // Set when article is a PDF
   isRetrying = signal(false); // Re-auth in progress
@@ -880,5 +884,30 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
 
   toggleMobileToc() {
     this.isMobileTocOpen.update(v => !v);
+  }
+
+  toggleContentCollapse() {
+    this.isContentCollapsed.update(v => !v);
+  }
+
+  async maximizePdf(): Promise<void> {
+    const container = (this.pdfContainerMobile?.nativeElement || this.pdfContainerDesktop?.nativeElement);
+    const el: any = container ?? null;
+    const canFullscreen =
+      typeof document !== 'undefined' &&
+      el &&
+      typeof el.requestFullscreen === 'function';
+    if (canFullscreen) {
+      try {
+        await el.requestFullscreen({ navigationUI: 'hide' });
+        return;
+      } catch {
+        // fall through to open-new-tab fallback
+      }
+    }
+    const uri = this.pdfDataUri();
+    if (uri && typeof window !== 'undefined') {
+      window.open(String(uri), '_blank', 'noopener');
+    }
   }
 }

@@ -262,7 +262,9 @@ export class VehicleDataService {
                             bucket.includes('specs') ||
                             title.includes('specifications') ||
                             title.includes('specs') ||
-                            title.includes('capacity');
+                            title.includes('capacity') ||
+                            title.includes('clutch') ||
+                            bucket.includes('clutch');
                     });
 
                     this.logger.info(`[VehicleDataService - V4] Found ${specArticles.length} matching articles.`);
