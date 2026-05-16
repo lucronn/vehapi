@@ -223,12 +223,14 @@ export class HomeComponent implements OnInit {
     if (!this.selectedYear()) return 'Year';
     if (!this.selectedMake()) return 'Make';
     if (!this.selectedModel()) return 'Model';
-    // Only show Engine step if there are actually engines available
-    // Check both the engines signal and the model's engines property
+    // Show Engine step only when there are 2+ engines to choose from.
+    // For single-engine models we auto-select in selectSuggestion(); for 0
+    // engines the model alone resolves the vehicle.
     const model = this.selectedModel();
-    const hasEngines = (model?.engines && model.engines.length > 0) || this.engines().length > 0;
-    if (hasEngines) return 'Engine';
-    // If no engines, we're done - return Model to prevent showing engine step
+    const modelEngineCount = model?.engines?.length ?? 0;
+    const signalEngineCount = this.engines().length;
+    const engineCount = Math.max(modelEngineCount, signalEngineCount);
+    if (engineCount >= 2) return 'Engine';
     return 'Model';
   });
 
@@ -404,19 +406,9 @@ export class HomeComponent implements OnInit {
             this.showSuggestions.set(true);
             return;
           }
-          // Check engines
-          if (matchedModel.engines && matchedModel.engines.length > 0) {
-            this.engines.set(matchedModel.engines);
-            this.searchInput.set(''); // Clear input to show engines
-            this.searchSubject.next('');
-            this.showSuggestions.set(true);
-          } else {
-            // Done - Select Vehicle
-            this.selectedVehicle.set({ vehicleId: matchedModel.id, displayName: matchedModel.model });
-            this.searchInput.set('');
-            this.searchSubject.next('');
-            this.showSuggestions.set(false);
-          }
+          this.searchInput.set('');
+          this.searchSubject.next('');
+          this.resolveEnginesOrAutoSelect(matchedModel);
         } else {
           // Make selected, passed string is likely a partial search term for model
           this.searchInput.set(remainingAfterMake);
@@ -621,31 +613,9 @@ export class HomeComponent implements OnInit {
             this.showSuggestions.set(true);
             return;
           }
-          // Check for engines
-          if (model.engines && model.engines.length > 0) {
-            this.engines.set(model.engines);
-            // Show suggestions immediately since engines are already in the model
-            this.showSuggestions.set(true);
-          } else {
-            // No engines, auto-select the model
-            this.selectedVehicle.set({ vehicleId: model.id, displayName: model.model });
-            this.showSuggestions.set(false);
-            // Auto-advance if on mobile since there is no continue button in wizard
-            if (this.isMobile()) {
-              this.submitSearch();
-            }
-          }
+          this.resolveEnginesOrAutoSelect(model);
         }).catch(() => {
-          if (model.engines && model.engines.length > 0) {
-            this.engines.set(model.engines);
-            this.showSuggestions.set(true);
-            return;
-          }
-          this.selectedVehicle.set({ vehicleId: model.id, displayName: model.model });
-          this.showSuggestions.set(false);
-          if (this.isMobile()) {
-            this.submitSearch();
-          }
+          this.resolveEnginesOrAutoSelect(model);
         });
         break;
       case 'Engine':
@@ -749,6 +719,32 @@ export class HomeComponent implements OnInit {
    * Resolve OEM model id to MOTOR engine ids during YMME selection.
    * Prevents a second "orientation" modal after navigation.
    */
+  /**
+   * After a model is picked, decide whether to render the engine step.
+   * Skipped entirely when the model has 0 or 1 engine — 86% of models have
+   * a single engine, and forcing a dropdown there is pure friction.
+   */
+  private resolveEnginesOrAutoSelect(model: Model): void {
+    const engines = model.engines || [];
+    if (engines.length >= 2) {
+      this.engines.set(engines);
+      this.showSuggestions.set(true);
+      return;
+    }
+    // 0 or 1 engine: resolve the vehicle now and skip the Engine step.
+    const onlyEngine = engines[0];
+    const vehicleId = onlyEngine?.id || model.id;
+    const displayName = onlyEngine
+      ? `${model.model} - ${onlyEngine.name}`
+      : model.model;
+    this.engines.set([]);
+    this.selectedVehicle.set({ vehicleId, displayName });
+    this.showSuggestions.set(false);
+    if (this.isMobile()) {
+      this.submitSearch();
+    }
+  }
+
   private async resolveMotorVehicleOptionsForModel(model: Model): Promise<boolean> {
     const source = this.currentContentSource();
     if (!source || source.toUpperCase() === 'MOTOR') {

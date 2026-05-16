@@ -5,6 +5,7 @@ import { LoggerService } from './logger.service';
 import { VehiclePersistenceService } from './vehicle-persistence.service';
 import { AiRewriteService } from './ai-rewrite.service';
 import { SupabaseService } from './supabase.service';
+import { ApiDataService } from './api-data.service';
 import { normalizeCategoryParams } from '../utils/categorize.util';
 import { improveCatalogArticleRow } from '../utils/catalog-intelligence.util';
 import {
@@ -29,6 +30,7 @@ export class DataSyncService {
     private motorApi = inject(MotorApiService);
     private aiRewrite = inject(AiRewriteService);
     private supabase = inject(SupabaseService);
+    private api = inject(ApiDataService);
     private vehiclePersistence = inject(VehiclePersistenceService);
 
     // Sync State
@@ -178,14 +180,14 @@ export class DataSyncService {
         const make = parts[1] || '';
         const model = parts.slice(2).join(' ') || '';
 
-        const { error } = await this.supabase.client.from('vehicles').upsert({
+        const { error } = await this.api.upsert('vehicles', {
             external_id: vehicleId,
             content_source: contentSource,
             year,
             make,
             model,
             updated_at: new Date().toISOString()
-        }, { onConflict: 'external_id' });
+        }, 'external_id');
         if (error) {
             if (this.isClientWriteDenied(error)) {
                 this.clientWriteDisabled = true;
@@ -456,9 +458,10 @@ export class DataSyncService {
             return;
         }
         try {
-            const { error } = await this.supabase.client.from('vehicle_metadata').upsert(
+            const { error } = await this.api.upsert(
+                'vehicle_metadata',
                 { path, data, updated_at: new Date().toISOString() },
-                { onConflict: 'path' }
+                'path'
             );
             if (error) {
                 if (this.isClientWriteDenied(error)) {
@@ -1212,12 +1215,12 @@ export class DataSyncService {
                 }
 
                 if (issues && issues.length > 0) {
-                    const { error } = await this.supabase.client.from('common_issues_cache').upsert({
+                    const { error } = await this.api.upsert('common_issues_cache', {
                         vehicle_id: vid,
                         source: cs,
                         issues,
                         updated_at: new Date().toISOString()
-                    }, { onConflict: 'vehicle_id' });
+                    }, 'vehicle_id');
                     
                     if (error) {
                         if (this.isClientWriteDenied(error)) {
@@ -1330,7 +1333,7 @@ export class DataSyncService {
                     dealer_price: p.dealerPrice ?? null,
                     updated_at: new Date().toISOString()
                 }));
-                await this.supabase.client.from('parts').upsert(partData, { onConflict: 'vehicle_id,part_number' });
+                await this.api.upsert('parts', partData, 'vehicle_id,part_number');
             }
         } catch (e: any) {
             if (this.isClientWriteDenied(e)) {

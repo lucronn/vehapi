@@ -1,43 +1,45 @@
+/**
+ * Database layer — Cloud SQL (PostgreSQL) via `pg`.
+ * Keeps identical exports to the former Supabase/PostgREST version so callers need no changes.
+ *
+ * Connection: see db.js (CLOUD_SQL_CONNECTION_NAME for Cloud Run, DATABASE_URL for local dev).
+ */
 import crypto from 'node:crypto';
 import logger from './logger.js';
+import { dbQuery, getPool, isDbConfigured } from './db.js';
 
-// Use the Supabase REST API directly via fetch - no SDK needed
-// This avoids any ESM/CJS module loading issues on Vercel serverless
-
+// ---------------------------------------------------------------------------
+// Legacy compat: callers that checked getSupabaseConfig() != null now check isDbConfigured()
+// ---------------------------------------------------------------------------
 export function getSupabaseConfig() {
-    const url = (process.env.SUPABASE_URL || '').trim();
-    const key = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
-    if (!url || !key) return null;
-    return { url, key };
+    return isDbConfigured() ? { configured: true } : null;
 }
 
-// Conflict keys for upsert; must match DB unique constraints.
-// Procedures: DB has UNIQUE(vehicle_id, external_id) — one row per Motor article id.
-const PROCEDURES_CONFLICT_COLUMNS = 'vehicle_id,external_id';
+// ---------------------------------------------------------------------------
+// Conflict keys for upsert — must match DB unique constraints
+// ---------------------------------------------------------------------------
 const UPSERT_CONFLICT_COLUMNS = {
-    procedures: PROCEDURES_CONFLICT_COLUMNS,
-    tsbs: 'vehicle_id,bulletin_number',
-    dtcs: 'vehicle_id,code',
-    specifications: 'vehicle_id,category,name',
-    spec_fact: 'vehicle_id,category,name',
-    parts: 'vehicle_id,part_number',
-    maintenance_schedules: 'vehicle_id,interval_value,action,item',
-    maintenance_task: 'vehicle_id,interval_value,action,item',
-    diagram_document: 'vehicle_id,source_article_id',
-    component_location_document: 'vehicle_id,source_article_id',
-    labor_operation: 'vehicle_id,source_article_id',
-    categories: 'name,type',
-    vehicle_metadata: 'path',
-    articles: 'vehicle_id,original_id',
-    content_item: 'vehicle_external_id,motor_article_id,content_source',
-    evidence_link: 'evidence_id,entity_type,entity_id'
+    procedures: ['vehicle_id', 'external_id'],
+    tsbs: ['vehicle_id', 'bulletin_number'],
+    dtcs: ['vehicle_id', 'code'],
+    specifications: ['vehicle_id', 'category', 'name'],
+    spec_fact: ['vehicle_id', 'category', 'name'],
+    parts: ['vehicle_id', 'part_number'],
+    maintenance_schedules: ['vehicle_id', 'interval_value', 'action', 'item'],
+    maintenance_task: ['vehicle_id', 'interval_value', 'action', 'item'],
+    diagram_document: ['vehicle_id', 'source_article_id'],
+    component_location_document: ['vehicle_id', 'source_article_id'],
+    labor_operation: ['vehicle_id', 'source_article_id'],
+    categories: ['name', 'type'],
+    vehicle_metadata: ['path'],
+    articles: ['vehicle_id', 'original_id'],
+    content_item: ['vehicle_external_id', 'motor_article_id', 'content_source'],
+    evidence_link: ['evidence_id', 'entity_type', 'entity_id'],
 };
 
-/**
- * PostgREST rejects unknown columns (PGRST204). Many projects only have a subset of `articles` columns.
- * Default: minimal keys. Full catalog row (subtitle, description, code, …) when ARTICLES_UPSERT_EXTENDED=true
- * and the DB matches `supabase_schema.sql` public.articles.
- */
+// ---------------------------------------------------------------------------
+// Row filtering / deduplication (unchanged logic from old version)
+// ---------------------------------------------------------------------------
 function articlesRowsForRest(rows) {
     const extended =
         String(process.env.ARTICLES_UPSERT_EXTENDED || 'true').toLowerCase() === 'true' ||
@@ -48,7 +50,7 @@ function articlesRowsForRest(rows) {
         'title',
         'content_source',
         'bucket',
-        'parent_bucket'
+        'parent_bucket',
     ]);
     const extendedOnly = new Set([
         'subtitle',
@@ -60,30 +62,21 @@ function articlesRowsForRest(rows) {
         'sort',
         'original_content',
         'enhanced_content',
-        'source'
+        'source',
     ]);
     const allowed = new Set(minimal);
     if (extended) {
-        for (const k of extendedOnly) {
-            allowed.add(k);
-        }
+        for (const k of extendedOnly) allowed.add(k);
     }
     return rows.map((row) => {
         const out = {};
         for (const k of Object.keys(row)) {
-            if (allowed.has(k)) {
-                out[k] = row[k];
-            }
+            if (allowed.has(k)) out[k] = row[k];
         }
         return out;
     });
 }
 
-/**
- * Motor articles/v2 can repeat the same article id (e.g. multiple buckets). A single upsert batch
- * must not contain duplicate conflict keys — Postgres 21000: "ON CONFLICT DO UPDATE command cannot
- * affect row a second time". Last row wins.
- */
 function dedupeArticlesByConflictKey(rows) {
     const map = new Map();
     for (const r of rows) {
@@ -114,14 +107,8 @@ function dedupeContentItemsByConflictKey(rows) {
     return out;
 }
 
-/**
- * Motor interval/frequency payloads can list the same maintenance line twice under different
- * stubs. Upsert batches must have at most one row per UNIQUE(vehicle_id, interval_value, action, item).
- * Postgres 21000 otherwise: "cannot affect row a second time".
- */
 function dedupeMaintenanceByConflictKey(rows) {
     const map = new Map();
-    /** @returns {unknown} whichever description is longer (more detail preserved) */
     const longerDescription = (a, b) => {
         const sa = String(a ?? '').trim().length;
         const sb = String(b ?? '').trim().length;
@@ -148,35 +135,24 @@ function dedupeMaintenanceByConflictKey(rows) {
             String(prev.updated_at || '') > String(r.updated_at || '')
                 ? prev.updated_at
                 : r.updated_at;
-
         const pa =
-            typeof prev.task_metadata === 'object' &&
-            prev.task_metadata !== null &&
-            !Array.isArray(prev.task_metadata)
+            typeof prev.task_metadata === 'object' && prev.task_metadata !== null && !Array.isArray(prev.task_metadata)
                 ? prev.task_metadata
                 : {};
         const ra =
             typeof r.task_metadata === 'object' && r.task_metadata !== null && !Array.isArray(r.task_metadata)
                 ? r.task_metadata
                 : {};
-        if (Object.keys({ ...pa, ...ra }).length) {
-            merged.task_metadata = { ...pa, ...ra };
-        }
+        if (Object.keys({ ...pa, ...ra }).length) merged.task_metadata = { ...pa, ...ra };
         const paj =
-            typeof prev.metadata_json === 'object' &&
-            prev.metadata_json !== null &&
-            !Array.isArray(prev.metadata_json)
+            typeof prev.metadata_json === 'object' && prev.metadata_json !== null && !Array.isArray(prev.metadata_json)
                 ? prev.metadata_json
                 : {};
         const raj =
-            typeof r.metadata_json === 'object' &&
-            r.metadata_json !== null &&
-            !Array.isArray(r.metadata_json)
+            typeof r.metadata_json === 'object' && r.metadata_json !== null && !Array.isArray(r.metadata_json)
                 ? r.metadata_json
                 : {};
-        if (Object.keys({ ...paj, ...raj }).length) {
-            merged.metadata_json = { ...paj, ...raj };
-        }
+        if (Object.keys({ ...paj, ...raj }).length) merged.metadata_json = { ...paj, ...raj };
         map.set(k, merged);
     }
     const out = [...map.values()];
@@ -189,75 +165,81 @@ function dedupeMaintenanceByConflictKey(rows) {
     return out;
 }
 
-/**
- * Ensures a vehicle record exists in the vehicles table.
- * Must be called before inserting into any table that references vehicles(external_id).
- * @param {string} vehicleId The Motor API vehicle ID (external_id)
- * @param {string} contentSource e.g. 'MOTOR'
- * @returns {{ success: boolean }}
- */
-export async function ensureVehicleExists(vehicleId, contentSource = 'MOTOR') {
-    const cfg = getSupabaseConfig();
-    if (!cfg || !vehicleId) return { success: false };
+// ---------------------------------------------------------------------------
+// Generic upsert builder
+// Columns whose values are plain JS Arrays are cast as ::vector (pgvector).
+// Everything else is passed as-is; pg handles JSONB serialization for objects.
+// ---------------------------------------------------------------------------
+function buildUpsertSql(table, rows, conflictCols, { returning = false } = {}) {
+    const cols = Object.keys(rows[0]);
+    const flatValues = [];
 
-    try {
-        const url = `${cfg.url}/rest/v1/vehicles?on_conflict=external_id`;
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': cfg.key,
-                'Authorization': `Bearer ${cfg.key}`,
-                'Prefer': 'return=minimal,resolution=merge-duplicates'
-            },
-            body: JSON.stringify({
-                external_id: vehicleId,
-                content_source: contentSource,
-                updated_at: new Date().toISOString()
-            })
+    const valueSets = rows.map((row) => {
+        const placeholders = cols.map((col) => {
+            const val = row[col];
+            // Plain arrays → pgvector; pg serializes JSONB objects natively
+            if (Array.isArray(val)) {
+                // Format as Postgres literal: [a,b,c]
+                flatValues.push(`[${val.join(',')}]`);
+                return `$${flatValues.length}::vector`;
+            }
+            // Serialize plain objects to JSON for JSONB columns
+            if (val !== null && typeof val === 'object') {
+                flatValues.push(JSON.stringify(val));
+            } else {
+                flatValues.push(val ?? null);
+            }
+            return `$${flatValues.length}`;
         });
+        return `(${placeholders.join(', ')})`;
+    });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            logger.error(`Failed to ensure vehicle ${vehicleId}: ${errorText}`);
-            return { success: false, error: errorText };
+    const colList = cols.map((c) => `"${c}"`).join(', ');
+    let sql = `INSERT INTO "${table}" (${colList}) VALUES ${valueSets.join(', ')}`;
+
+    if (conflictCols && conflictCols.length > 0) {
+        const conflictSet = new Set(conflictCols);
+        const conflictList = conflictCols.map((c) => `"${c}"`).join(', ');
+        const updateCols = cols.filter((c) => !conflictSet.has(c));
+        if (updateCols.length > 0) {
+            const setClause = updateCols.map((c) => `"${c}" = EXCLUDED."${c}"`).join(', ');
+            sql += ` ON CONFLICT (${conflictList}) DO UPDATE SET ${setClause}`;
+        } else {
+            sql += ` ON CONFLICT (${conflictList}) DO NOTHING`;
         }
+    }
+
+    if (returning) sql += ' RETURNING *';
+    return { sql, values: flatValues };
+}
+
+// ---------------------------------------------------------------------------
+// Public exports
+// ---------------------------------------------------------------------------
+
+export async function ensureVehicleExists(vehicleId, contentSource = 'MOTOR') {
+    if (!isDbConfigured() || !vehicleId) return { success: false };
+    try {
+        await dbQuery(
+            `INSERT INTO vehicles (external_id, content_source, updated_at)
+             VALUES ($1, $2, NOW())
+             ON CONFLICT (external_id) DO UPDATE SET updated_at = EXCLUDED.updated_at`,
+            [vehicleId, contentSource]
+        );
         return { success: true };
     } catch (err) {
-        logger.error(`Error ensuring vehicle ${vehicleId}:`, err);
+        logger.error(`Failed to ensure vehicle ${vehicleId}:`, err);
         return { success: false, error: err.message };
     }
 }
 
-/**
- * Marks a vehicle as normalized after its article catalog has been fully ingested.
- * @param {string} vehicleId The Motor API vehicle ID (external_id)
- */
 export async function markVehicleNormalized(vehicleId) {
-    const cfg = getSupabaseConfig();
-    if (!cfg || !vehicleId) return { success: false };
-
+    if (!isDbConfigured() || !vehicleId) return { success: false };
     try {
-        const url = `${cfg.url}/rest/v1/vehicles?external_id=eq.${encodeURIComponent(vehicleId)}`;
-        const response = await fetch(url, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': cfg.key,
-                'Authorization': `Bearer ${cfg.key}`,
-                'Prefer': 'return=minimal'
-            },
-            body: JSON.stringify({
-                is_normalized: true,
-                updated_at: new Date().toISOString()
-            })
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            logger.error(`Failed to mark vehicle ${vehicleId} as normalized: ${errorText}`);
-            return { success: false, error: errorText };
-        }
+        await dbQuery(
+            `UPDATE vehicles SET is_normalized = true, updated_at = NOW() WHERE external_id = $1`,
+            [vehicleId]
+        );
         logger.info(`✓ Vehicle ${vehicleId} marked as normalized`);
         return { success: true };
     } catch (err) {
@@ -266,128 +248,58 @@ export async function markVehicleNormalized(vehicleId) {
     }
 }
 
-/**
- * Checks for cached article content in the articles table by original_id.
- * Complements checkParsedArticle which checks normalized content tables.
- * @param {string} vehicleId
- * @param {string} articleId The Motor API article ID (original_id)
- * @returns {Object|null} The cached article row or null
- */
 export async function checkArticleContent(vehicleId, articleId) {
-    const cfg = getSupabaseConfig();
-    if (!cfg) return null;
-
+    if (!isDbConfigured()) return null;
     try {
-        const url = `${cfg.url}/rest/v1/articles?vehicle_id=eq.${encodeURIComponent(vehicleId)}&original_id=eq.${encodeURIComponent(articleId)}&select=*&limit=1`;
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'apikey': cfg.key,
-                'Authorization': `Bearer ${cfg.key}`,
-            },
-        });
-
-        if (!response.ok) return null;
-        const data = await response.json();
-        if (data && data.length > 0 && data[0].original_content) {
-            return data[0];
-        }
-        return null;
+        const { rows } = await dbQuery(
+            `SELECT * FROM articles WHERE vehicle_id = $1 AND original_id = $2 AND original_content IS NOT NULL LIMIT 1`,
+            [vehicleId, articleId]
+        );
+        return rows.length > 0 ? rows[0] : null;
     } catch {
         return null;
     }
 }
 
-/**
- * Gets article metadata for access control and worker schema routing.
- * Used by article access middleware to map bucket → module type and verify unlocks.
- * @param {string} vehicleId
- * @param {string} articleId The Motor API article ID (original_id)
- * @returns {{ bucket: string|null, parent_bucket: string|null, title?: string|null, code?: string|null, bulletin_number?: string|null, description?: string|null } | null}
- */
 export async function getArticleMetadata(vehicleId, articleId) {
-    const cfg = getSupabaseConfig();
-    if (!cfg) return null;
-
+    if (!isDbConfigured()) return null;
     try {
-        const url =
-            `${cfg.url}/rest/v1/articles?vehicle_id=eq.${encodeURIComponent(vehicleId)}` +
-            `&original_id=eq.${encodeURIComponent(articleId)}` +
-            '&select=bucket,parent_bucket,title,code,bulletin_number,description&limit=1';
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'apikey': cfg.key,
-                'Authorization': `Bearer ${cfg.key}`,
-            },
-        });
-
-        if (!response.ok) return null;
-        const data = await response.json();
-        if (data && data.length > 0) {
-            const r = data[0];
-            return {
-                bucket: r.bucket ?? null,
-                parent_bucket: r.parent_bucket ?? null,
-                title: r.title ?? null,
-                code: r.code ?? null,
-                bulletin_number: r.bulletin_number ?? null,
-                description: r.description ?? null
-            };
-        }
-        return null;
+        const { rows } = await dbQuery(
+            `SELECT bucket, parent_bucket, title, code, bulletin_number, description
+             FROM articles WHERE vehicle_id = $1 AND original_id = $2 LIMIT 1`,
+            [vehicleId, articleId]
+        );
+        if (rows.length === 0) return null;
+        const r = rows[0];
+        return {
+            bucket: r.bucket ?? null,
+            parent_bucket: r.parent_bucket ?? null,
+            title: r.title ?? null,
+            code: r.code ?? null,
+            bulletin_number: r.bulletin_number ?? null,
+            description: r.description ?? null,
+        };
     } catch {
         return null;
     }
 }
 
-/**
- * Get the normalized catalog/article row used to seed follow-on normalization documents.
- * @param {string} vehicleId
- * @param {string} articleId
- */
 export async function getArticleCatalogEntry(vehicleId, articleId) {
-    const cfg = getSupabaseConfig();
-    if (!cfg) return null;
-
+    if (!isDbConfigured()) return null;
     try {
-        const url =
-            `${cfg.url}/rest/v1/articles` +
-            `?vehicle_id=eq.${encodeURIComponent(vehicleId)}` +
-            `&original_id=eq.${encodeURIComponent(articleId)}` +
-            '&select=title,subtitle,description,thumbnail_href,bucket,parent_bucket,content_source&limit=1';
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                apikey: cfg.key,
-                Authorization: `Bearer ${cfg.key}`
-            }
-        });
-
-        if (!response.ok) return null;
-        const data = await response.json();
-        return Array.isArray(data) && data.length > 0 ? data[0] : null;
+        const { rows } = await dbQuery(
+            `SELECT title, subtitle, description, thumbnail_href, bucket, parent_bucket, content_source
+             FROM articles WHERE vehicle_id = $1 AND original_id = $2 LIMIT 1`,
+            [vehicleId, articleId]
+        );
+        return rows.length > 0 ? rows[0] : null;
     } catch {
         return null;
     }
 }
 
-/**
- * Persists normalized data to the specified Supabase table via REST API.
- * Uses UPSERT (merge-duplicates) so re-processed data overwrites stale rows
- * instead of creating duplicates.
- * @param {string} table The target table name (e.g., 'dtcs', 'tsbs', 'procedures')
- * @param {Object|Array} data The parsed data matching the table schema
- */
-/**
- * Append-only L0 evidence row (catalog snapshots, API captures).
- * @param {object} row evidence_ingest columns
- */
 export async function insertEvidenceIngest(row) {
-    const cfg = getSupabaseConfig();
-    if (!cfg) {
-        return { success: false, error: 'Supabase credentials not configured' };
-    }
+    if (!isDbConfigured()) return { success: false, error: 'DB not configured' };
     try {
         const payload = {
             fetched_at: row.fetched_at || new Date().toISOString(),
@@ -399,25 +311,24 @@ export async function insertEvidenceIngest(row) {
             sha256: row.sha256 ?? null,
             vehicle_external_id: row.vehicle_external_id ?? null,
             content_source: row.content_source ?? 'MOTOR',
-            source_label: row.source_label ?? null
+            source_label: row.source_label ?? null,
         };
-        const response = await fetch(`${cfg.url}/rest/v1/evidence_ingest`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                apikey: cfg.key,
-                Authorization: `Bearer ${cfg.key}`,
-                Prefer: 'return=representation'
-            },
-            body: JSON.stringify(payload)
+        const cols = Object.keys(payload);
+        const colList = cols.map((c) => `"${c}"`).join(', ');
+        const placeholders = cols.map((_, i) => {
+            const v = payload[cols[i]];
+            if (v !== null && typeof v === 'object' && !Array.isArray(v)) return `$${i + 1}::jsonb`;
+            return `$${i + 1}`;
         });
-        if (!response.ok) {
-            const errorText = await response.text();
-            logger.error(`evidence_ingest insert failed [${response.status}]: ${errorText}`);
-            return { success: false, error: errorText };
-        }
-        const rows = await response.json().catch(() => []);
-        return { success: true, id: Array.isArray(rows) && rows[0] ? rows[0].id : null };
+        const values = cols.map((c) => {
+            const v = payload[c];
+            return v !== null && typeof v === 'object' && !Array.isArray(v) ? JSON.stringify(v) : (v ?? null);
+        });
+        const { rows } = await dbQuery(
+            `INSERT INTO evidence_ingest (${colList}) VALUES (${placeholders.join(', ')}) RETURNING id`,
+            values
+        );
+        return { success: true, id: rows[0]?.id ?? null };
     } catch (err) {
         logger.error('insertEvidenceIngest error:', err);
         return { success: false, error: err.message };
@@ -425,56 +336,27 @@ export async function insertEvidenceIngest(row) {
 }
 
 export async function findEntityIdsByExternalId(table, vehicleId, externalId) {
-    const cfg = getSupabaseConfig();
-    if (!cfg || !table || !vehicleId || !externalId) return [];
+    if (!isDbConfigured() || !table || !vehicleId || !externalId) return [];
     try {
-        const url =
-            `${cfg.url}/rest/v1/${table}` +
-            `?vehicle_id=eq.${encodeURIComponent(vehicleId)}` +
-            `&external_id=eq.${encodeURIComponent(externalId)}` +
-            '&select=id';
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                apikey: cfg.key,
-                Authorization: `Bearer ${cfg.key}`
-            }
-        });
-        if (!response.ok) {
-            return [];
-        }
-        const rows = await response.json();
-        return Array.isArray(rows) ? rows.map((r) => r.id).filter(Boolean) : [];
+        const { rows } = await dbQuery(
+            `SELECT id FROM "${table}" WHERE vehicle_id = $1 AND external_id = $2`,
+            [vehicleId, externalId]
+        );
+        return rows.map((r) => r.id).filter(Boolean);
     } catch {
         return [];
     }
 }
 
-/**
- * Removes L1 procedure_step rows for one Motor article (before re-inserting fresh steps).
- */
 export async function deleteProcedureStepsForArticle(vehicleId, sourceArticleId) {
-    const cfg = getSupabaseConfig();
-    if (!cfg || !vehicleId || !sourceArticleId) {
+    if (!isDbConfigured() || !vehicleId || !sourceArticleId) {
         return { success: false, error: 'Missing vehicle_id or source_article_id' };
     }
     try {
-        const url =
-            `${cfg.url}/rest/v1/procedure_step` +
-            `?vehicle_id=eq.${encodeURIComponent(vehicleId)}` +
-            `&source_article_id=eq.${encodeURIComponent(sourceArticleId)}`;
-        const response = await fetch(url, {
-            method: 'DELETE',
-            headers: {
-                apikey: cfg.key,
-                Authorization: `Bearer ${cfg.key}`,
-                Prefer: 'return=minimal'
-            }
-        });
-        if (!response.ok) {
-            const errorText = await response.text();
-            return { success: false, error: errorText };
-        }
+        await dbQuery(
+            `DELETE FROM procedure_step WHERE vehicle_id = $1 AND source_article_id = $2`,
+            [vehicleId, sourceArticleId]
+        );
         return { success: true };
     } catch (err) {
         return { success: false, error: err.message };
@@ -482,27 +364,14 @@ export async function deleteProcedureStepsForArticle(vehicleId, sourceArticleId)
 }
 
 export async function deleteProcedureToolsForArticle(vehicleId, sourceArticleId) {
-    const cfg = getSupabaseConfig();
-    if (!cfg || !vehicleId || !sourceArticleId) {
+    if (!isDbConfigured() || !vehicleId || !sourceArticleId) {
         return { success: false, error: 'Missing vehicle_id or source_article_id' };
     }
     try {
-        const url =
-            `${cfg.url}/rest/v1/procedure_tool` +
-            `?vehicle_id=eq.${encodeURIComponent(vehicleId)}` +
-            `&source_article_id=eq.${encodeURIComponent(sourceArticleId)}`;
-        const response = await fetch(url, {
-            method: 'DELETE',
-            headers: {
-                apikey: cfg.key,
-                Authorization: `Bearer ${cfg.key}`,
-                Prefer: 'return=minimal'
-            }
-        });
-        if (!response.ok) {
-            const errorText = await response.text();
-            return { success: false, error: errorText };
-        }
+        await dbQuery(
+            `DELETE FROM procedure_tool WHERE vehicle_id = $1 AND source_article_id = $2`,
+            [vehicleId, sourceArticleId]
+        );
         return { success: true };
     } catch (err) {
         return { success: false, error: err.message };
@@ -510,27 +379,14 @@ export async function deleteProcedureToolsForArticle(vehicleId, sourceArticleId)
 }
 
 export async function deleteProcedurePartsForArticle(vehicleId, sourceArticleId) {
-    const cfg = getSupabaseConfig();
-    if (!cfg || !vehicleId || !sourceArticleId) {
+    if (!isDbConfigured() || !vehicleId || !sourceArticleId) {
         return { success: false, error: 'Missing vehicle_id or source_article_id' };
     }
     try {
-        const url =
-            `${cfg.url}/rest/v1/procedure_part` +
-            `?vehicle_id=eq.${encodeURIComponent(vehicleId)}` +
-            `&source_article_id=eq.${encodeURIComponent(sourceArticleId)}`;
-        const response = await fetch(url, {
-            method: 'DELETE',
-            headers: {
-                apikey: cfg.key,
-                Authorization: `Bearer ${cfg.key}`,
-                Prefer: 'return=minimal'
-            }
-        });
-        if (!response.ok) {
-            const errorText = await response.text();
-            return { success: false, error: errorText };
-        }
+        await dbQuery(
+            `DELETE FROM procedure_part WHERE vehicle_id = $1 AND source_article_id = $2`,
+            [vehicleId, sourceArticleId]
+        );
         return { success: true };
     } catch (err) {
         return { success: false, error: err.message };
@@ -538,221 +394,132 @@ export async function deleteProcedurePartsForArticle(vehicleId, sourceArticleId)
 }
 
 export async function insertEvidenceLinks(evidenceId, entityType, entityIds, extractorVersion = 'phase1-v1') {
-    const cfg = getSupabaseConfig();
-    if (!cfg || !evidenceId || !entityType || !Array.isArray(entityIds) || entityIds.length === 0) {
+    if (!isDbConfigured() || !evidenceId || !entityType || !Array.isArray(entityIds) || entityIds.length === 0) {
         return { success: false, error: 'Missing link args' };
     }
     try {
-        const payload = entityIds.map((id) => ({
-            evidence_id: evidenceId,
-            entity_type: entityType,
-            entity_id: id,
-            extractor_version: extractorVersion
-        }));
-
-        const response = await fetch(
-            `${cfg.url}/rest/v1/evidence_link?on_conflict=evidence_id,entity_type,entity_id`,
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    apikey: cfg.key,
-                    Authorization: `Bearer ${cfg.key}`,
-                    Prefer: 'return=minimal,resolution=ignore-duplicates'
-                },
-                body: JSON.stringify(payload)
-            }
+        // Batch insert: one row per entityId
+        const valueSets = entityIds.map((_, i) => {
+            const base = i * 4;
+            return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4})`;
+        });
+        const values = entityIds.flatMap((id) => [evidenceId, entityType, id, extractorVersion]);
+        await dbQuery(
+            `INSERT INTO evidence_link (evidence_id, entity_type, entity_id, extractor_version)
+             VALUES ${valueSets.join(', ')}
+             ON CONFLICT (evidence_id, entity_type, entity_id) DO NOTHING`,
+            values
         );
-        if (!response.ok) {
-            const errorText = await response.text();
-            return { success: false, error: errorText };
-        }
         return { success: true };
     } catch (err) {
         return { success: false, error: err.message };
     }
 }
 
-/**
- * Updates catalog enrichment fields on content_item for one vehicle/article/source row.
- */
 export async function updateContentItemEnrichment(vehicleExternalId, motorArticleId, contentSource, patch) {
-    const cfg = getSupabaseConfig();
-    if (!cfg) {
-        return { success: false, error: 'Supabase credentials not configured' };
-    }
+    if (!isDbConfigured()) return { success: false, error: 'DB not configured' };
     if (!vehicleExternalId || !motorArticleId || !contentSource) {
         return { success: false, error: 'Missing content_item key fields' };
     }
     try {
-        const queryBase =
-            `${cfg.url}/rest/v1/content_item` +
-            `?vehicle_external_id=eq.${encodeURIComponent(vehicleExternalId)}` +
-            `&motor_article_id=eq.${encodeURIComponent(motorArticleId)}`;
-        const requestBody = JSON.stringify({
-            ...patch,
-            updated_at: new Date().toISOString()
+        const patchWithTs = { ...patch, updated_at: new Date().toISOString() };
+        const patchCols = Object.keys(patchWithTs);
+        let idx = 1;
+        const setClauses = patchCols.map((c) => {
+            const v = patchWithTs[c];
+            const ph = v !== null && typeof v === 'object' && !Array.isArray(v)
+                ? `$${idx}::jsonb`
+                : `$${idx}`;
+            idx++;
+            return `"${c}" = ${ph}`;
         });
-        const tryPatch = async (sourceFilter) => {
-            const response = await fetch(`${queryBase}&${sourceFilter}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    apikey: cfg.key,
-                    Authorization: `Bearer ${cfg.key}`,
-                    Prefer: 'return=representation'
-                },
-                body: requestBody
-            });
-            const rows = response.ok ? await response.json().catch(() => []) : null;
-            return { response, rows };
-        };
-
-        let { response, rows } = await tryPatch(`content_source=eq.${encodeURIComponent(contentSource)}`);
-        if (!response.ok) {
-            const errorText = await response.text();
-            logger.error(`content_item enrichment update failed [${response.status}]: ${errorText}`);
-            return { success: false, error: errorText };
+        const patchValues = patchCols.map((c) => {
+            const v = patchWithTs[c];
+            return v !== null && typeof v === 'object' && !Array.isArray(v) ? JSON.stringify(v) : (v ?? null);
+        });
+        // Try exact match first, then case-insensitive
+        const baseParams = [...patchValues, vehicleExternalId, motorArticleId];
+        const exactResult = await dbQuery(
+            `UPDATE content_item SET ${setClauses.join(', ')}
+             WHERE vehicle_external_id = $${idx} AND motor_article_id = $${idx + 1} AND content_source = $${idx + 2}
+             RETURNING id`,
+            [...baseParams, contentSource]
+        );
+        if (exactResult.rows.length > 0) {
+            return { success: true, updated: exactResult.rows.length };
         }
-        if (!Array.isArray(rows) || rows.length === 0) {
-            ({ response, rows } = await tryPatch(`content_source=ilike.${encodeURIComponent(contentSource)}`));
-            if (!response.ok) {
-                const errorText = await response.text();
-                logger.error(`content_item enrichment fallback update failed [${response.status}]: ${errorText}`);
-                return { success: false, error: errorText };
-            }
-        }
-        if (!Array.isArray(rows) || rows.length === 0) {
+        const ilikeResult = await dbQuery(
+            `UPDATE content_item SET ${setClauses.join(', ')}
+             WHERE vehicle_external_id = $${idx} AND motor_article_id = $${idx + 1} AND lower(content_source) = lower($${idx + 2})
+             RETURNING id`,
+            [...baseParams, contentSource]
+        );
+        if (ilikeResult.rows.length === 0) {
             return { success: false, error: 'No matching row found for patch' };
         }
-        return { success: true, updated: rows?.length || 0 };
+        return { success: true, updated: ilikeResult.rows.length };
     } catch (err) {
         logger.error('updateContentItemEnrichment error:', err);
         return { success: false, error: err.message };
     }
 }
 
-/**
- * @returns {Promise<string | null>} content_item.id UUID or null
- */
 export async function fetchContentItemId(vehicleExternalId, motorArticleId, contentSource) {
-    const cfg = getSupabaseConfig();
-    if (!cfg || !vehicleExternalId || !motorArticleId || !contentSource) {
-        return null;
-    }
+    if (!isDbConfigured() || !vehicleExternalId || !motorArticleId || !contentSource) return null;
     try {
-        const queryBase =
-            `${cfg.url}/rest/v1/content_item` +
-            `?select=id` +
-            `&vehicle_external_id=eq.${encodeURIComponent(vehicleExternalId)}` +
-            `&motor_article_id=eq.${encodeURIComponent(motorArticleId)}` +
-            `&limit=1`;
-        const tryFetch = async (sourceFilter) => {
-            const response = await fetch(`${queryBase}&${sourceFilter}`, {
-                headers: {
-                    apikey: cfg.key,
-                    Authorization: `Bearer ${cfg.key}`,
-                    Accept: 'application/json'
-                }
-            });
-            if (!response.ok) {
-                return null;
-            }
-            const rows = await response.json();
-            const id = rows?.[0]?.id;
-            return typeof id === 'string' ? id : null;
-        };
-        return (
-            (await tryFetch(`content_source=eq.${encodeURIComponent(contentSource)}`)) ||
-            (await tryFetch(`content_source=ilike.${encodeURIComponent(contentSource)}`))
+        let { rows } = await dbQuery(
+            `SELECT id FROM content_item WHERE vehicle_external_id = $1 AND motor_article_id = $2 AND content_source = $3 LIMIT 1`,
+            [vehicleExternalId, motorArticleId, contentSource]
         );
+        if (rows.length === 0) {
+            ({ rows } = await dbQuery(
+                `SELECT id FROM content_item WHERE vehicle_external_id = $1 AND motor_article_id = $2 AND lower(content_source) = lower($3) LIMIT 1`,
+                [vehicleExternalId, motorArticleId, contentSource]
+            ));
+        }
+        const id = rows[0]?.id;
+        return typeof id === 'string' ? id : null;
     } catch {
         return null;
     }
 }
 
-/**
- * Delete all L2 chunks for a catalog item (before replace).
- */
 export async function deleteContentChunksForContentItem(contentItemId) {
-    const cfg = getSupabaseConfig();
-    if (!cfg || !contentItemId) {
+    if (!isDbConfigured() || !contentItemId) {
         return { success: false, error: 'Missing config or content_item id' };
     }
     try {
-        const url =
-            `${cfg.url}/rest/v1/content_chunk` +
-            `?content_item_id=eq.${encodeURIComponent(contentItemId)}`;
-        const response = await fetch(url, {
-            method: 'DELETE',
-            headers: {
-                apikey: cfg.key,
-                Authorization: `Bearer ${cfg.key}`,
-                Prefer: 'return=minimal'
-            }
-        });
-        if (!response.ok) {
-            const errorText = await response.text();
-            return { success: false, error: errorText };
-        }
+        await dbQuery(`DELETE FROM content_chunk WHERE content_item_id = $1`, [contentItemId]);
         return { success: true };
     } catch (err) {
         return { success: false, error: err.message };
     }
 }
 
-/**
- * Replace L2 chunks for one `content_item` (delete then insert).
- * @param {string} contentItemId
- * @param {Array<{ chunk_index: number, text_content: string, embedding: number[] }>} rows
- */
 export async function replaceContentChunksForContentItem(contentItemId, rows) {
     const del = await deleteContentChunksForContentItem(contentItemId);
-    if (!del.success) {
-        return del;
-    }
-    if (!rows || rows.length === 0) {
-        return { success: true };
-    }
+    if (!del.success) return del;
+    if (!rows || rows.length === 0) return { success: true };
     const payload = rows.map((r) => ({
         content_item_id: contentItemId,
         chunk_index: r.chunk_index,
         text_content: r.text_content,
-        embedding: r.embedding
+        embedding: r.embedding,
     }));
     return insertParsedData('content_chunk', payload);
 }
 
-/**
- * Vector similarity search over L2 chunks for one vehicle (RPC `match_content_chunks`).
- * @param {{ queryEmbedding: number[], vehicleExternalId: string, matchCount: number }} args
- */
 export async function matchContentChunksRpc({ queryEmbedding, vehicleExternalId, matchCount }) {
-    const cfg = getSupabaseConfig();
-    if (!cfg) {
-        return { success: false, error: 'Supabase not configured' };
-    }
+    if (!isDbConfigured()) return { success: false, error: 'DB not configured' };
     try {
-        const response = await fetch(`${cfg.url}/rest/v1/rpc/match_content_chunks`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                apikey: cfg.key,
-                Authorization: `Bearer ${cfg.key}`,
-                Prefer: 'return=representation'
-            },
-            body: JSON.stringify({
-                query_embedding: queryEmbedding,
-                vehicle_external_id_filter: vehicleExternalId,
-                match_count: matchCount
-            })
-        });
-        if (!response.ok) {
-            const t = await response.text();
-            return { success: false, error: t || `RPC ${response.status}` };
-        }
-        const rows = await response.json();
-        const chunks = (Array.isArray(rows) ? rows : []).map((r) => ({
+        const vecLiteral = `[${queryEmbedding.join(',')}]`;
+        const { rows } = await dbQuery(
+            `SELECT chunk_id, content_item_id, motor_article_id, canonical_silo_code,
+                    content_source, chunk_index, text_content, similarity
+             FROM match_content_chunks($1::vector, $2, $3)`,
+            [vecLiteral, vehicleExternalId, matchCount]
+        );
+        const chunks = rows.map((r) => ({
             chunkId: r.chunk_id,
             contentItemId: r.content_item_id,
             motorArticleId: r.motor_article_id,
@@ -760,7 +527,7 @@ export async function matchContentChunksRpc({ queryEmbedding, vehicleExternalId,
             contentSource: r.content_source,
             chunkIndex: r.chunk_index,
             text: r.text_content,
-            score: r.similarity
+            score: r.similarity,
         }));
         return { success: true, chunks };
     } catch (err) {
@@ -768,41 +535,18 @@ export async function matchContentChunksRpc({ queryEmbedding, vehicleExternalId,
     }
 }
 
-/**
- * Record PDF bytes from Motor article JSON (`body.pdf`) in `media_asset` for traceability / future diagram work.
- * Idempotent per (vehicle_external_id, motor_graphic_id) where graphic id is `pdf:{motorArticleId}`.
- *
- * @param {{ vehicleExternalId: string, contentSource: string, motorArticleId: string, pdfBuffer: Buffer }} args
- */
-export async function upsertMediaAssetPdfFromArticleBody({
-    vehicleExternalId,
-    contentSource,
-    motorArticleId,
-    pdfBuffer
-}) {
-    const cfg = getSupabaseConfig();
-    if (!cfg || !vehicleExternalId || !motorArticleId || !pdfBuffer || pdfBuffer.length === 0) {
+export async function upsertMediaAssetPdfFromArticleBody({ vehicleExternalId, contentSource, motorArticleId, pdfBuffer }) {
+    if (!isDbConfigured() || !vehicleExternalId || !motorArticleId || !pdfBuffer || pdfBuffer.length === 0) {
         return { success: false, error: 'Missing config or PDF bytes' };
     }
     const sha256 = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
     const motorGraphicId = `pdf:${motorArticleId}`;
     try {
-        const q =
-            `${cfg.url}/rest/v1/media_asset?vehicle_external_id=eq.${encodeURIComponent(vehicleExternalId)}` +
-            `&motor_graphic_id=eq.${encodeURIComponent(motorGraphicId)}&select=id&limit=1`;
-        const check = await fetch(q, {
-            headers: {
-                apikey: cfg.key,
-                Authorization: `Bearer ${cfg.key}`,
-                Accept: 'application/json'
-            }
-        });
-        if (check.ok) {
-            const rows = await check.json();
-            if (Array.isArray(rows) && rows.length > 0) {
-                return { success: true, skipped: true, id: rows[0].id };
-            }
-        }
+        const { rows: existing } = await dbQuery(
+            `SELECT id FROM media_asset WHERE vehicle_external_id = $1 AND motor_graphic_id = $2 LIMIT 1`,
+            [vehicleExternalId, motorGraphicId]
+        );
+        if (existing.length > 0) return { success: true, skipped: true, id: existing[0].id };
         return insertParsedData('media_asset', [
             {
                 vehicle_external_id: vehicleExternalId,
@@ -811,31 +555,14 @@ export async function upsertMediaAssetPdfFromArticleBody({
                 mime_type: 'application/pdf',
                 sha256,
                 source_label: 'article_body_pdf',
-                metadata_json: {
-                    byte_length: pdfBuffer.length,
-                    ingested_by: 'background_worker'
-                }
-            }
+                metadata_json: { byte_length: pdfBuffer.length, ingested_by: 'background_worker' },
+            },
         ]);
     } catch (err) {
         return { success: false, error: err.message || String(err) };
     }
 }
 
-/**
- * Record binary graphic bytes from `/api/source/:contentSource/graphic/:id`.
- * Idempotent per (vehicle_external_id, motor_graphic_id) when vehicle is known, otherwise per graphic id + source.
- *
- * @param {{
- *   vehicleExternalId?: string | null,
- *   contentSource: string,
- *   motorGraphicId: string,
- *   binaryBuffer: Buffer,
- *   mimeType?: string | null,
- *   sourceLabel?: string | null,
- *   metadataJson?: Record<string, unknown> | null
- * }} args
- */
 export async function upsertMediaAssetGraphicBinary({
     vehicleExternalId = null,
     contentSource,
@@ -843,38 +570,26 @@ export async function upsertMediaAssetGraphicBinary({
     binaryBuffer,
     mimeType = null,
     sourceLabel = 'graphic_api',
-    metadataJson = null
+    metadataJson = null,
 }) {
-    const cfg = getSupabaseConfig();
-    if (!cfg || !motorGraphicId || !binaryBuffer || binaryBuffer.length === 0) {
+    if (!isDbConfigured() || !motorGraphicId || !binaryBuffer || binaryBuffer.length === 0) {
         return { success: false, error: 'Missing config, graphic id, or binary bytes' };
     }
-
     const sha256 = crypto.createHash('sha256').update(binaryBuffer).digest('hex');
-    const conditions = [
-        `motor_graphic_id=eq.${encodeURIComponent(motorGraphicId)}`,
-        `content_source=eq.${encodeURIComponent(contentSource || 'MOTOR')}`,
-        'select=id',
-        'limit=1'
-    ];
-    if (vehicleExternalId) {
-        conditions.unshift(`vehicle_external_id=eq.${encodeURIComponent(vehicleExternalId)}`);
-    }
-
     try {
-        const check = await fetch(`${cfg.url}/rest/v1/media_asset?${conditions.join('&')}`, {
-            headers: {
-                apikey: cfg.key,
-                Authorization: `Bearer ${cfg.key}`,
-                Accept: 'application/json'
-            }
-        });
-        if (check.ok) {
-            const rows = await check.json();
-            if (Array.isArray(rows) && rows.length > 0) {
-                return { success: true, skipped: true, id: rows[0].id };
-            }
+        let existingQuery;
+        if (vehicleExternalId) {
+            existingQuery = await dbQuery(
+                `SELECT id FROM media_asset WHERE vehicle_external_id = $1 AND motor_graphic_id = $2 AND content_source = $3 LIMIT 1`,
+                [vehicleExternalId, motorGraphicId, contentSource || 'MOTOR']
+            );
+        } else {
+            existingQuery = await dbQuery(
+                `SELECT id FROM media_asset WHERE motor_graphic_id = $1 AND content_source = $2 LIMIT 1`,
+                [motorGraphicId, contentSource || 'MOTOR']
+            );
         }
+        if (existingQuery.rows.length > 0) return { success: true, skipped: true, id: existingQuery.rows[0].id };
 
         return insertParsedData('media_asset', [
             {
@@ -886,186 +601,86 @@ export async function upsertMediaAssetGraphicBinary({
                 source_label: sourceLabel,
                 metadata_json: {
                     byte_length: binaryBuffer.length,
-                    ...(metadataJson && typeof metadataJson === 'object' ? metadataJson : {})
-                }
-            }
+                    ...(metadataJson && typeof metadataJson === 'object' ? metadataJson : {}),
+                },
+            },
         ]);
     } catch (err) {
         return { success: false, error: err.message || String(err) };
     }
 }
 
-/**
- * @param {string} table
- * @param {Object|Array} data
- * @param {{ returnRepresentation?: boolean }} [options] If true and upsert, returns merged rows (ids for evidence_link).
- */
 export async function insertParsedData(table, data, options = {}) {
-    const cfg = getSupabaseConfig();
-    if (!cfg) {
-        logger.warn(`Skipping Supabase insert into ${table}: credentials not set.`);
-        return { success: false, error: 'Supabase credentials not configured' };
+    if (!isDbConfigured()) {
+        logger.warn(`Skipping DB insert into ${table}: DB not configured.`);
+        return { success: false, error: 'DB not configured' };
     }
 
     let rows = Array.isArray(data) ? data : [data];
-    if (rows.length === 0) {
-        return { success: true, rows: [] };
-    }
+    if (rows.length === 0) return { success: true, rows: [] };
 
     if (table === 'articles') {
         rows = articlesRowsForRest(rows);
         rows = dedupeArticlesByConflictKey(rows);
     }
-    if (table === 'content_item') {
-        rows = dedupeContentItemsByConflictKey(rows);
-    }
+    if (table === 'content_item') rows = dedupeContentItemsByConflictKey(rows);
     if (table === 'maintenance_schedules' || table === 'maintenance_task') {
         rows = dedupeMaintenanceByConflictKey(rows);
     }
+    if (rows.length === 0) return { success: true, rows: [] };
 
-    const onConflict = UPSERT_CONFLICT_COLUMNS[table];
-    const returnRepresentation = Boolean(options.returnRepresentation);
-    const prefer = onConflict
-        ? returnRepresentation
-            ? 'return=representation,resolution=merge-duplicates'
-            : 'return=minimal,resolution=merge-duplicates'
-        : returnRepresentation
-            ? 'return=representation'
-            : 'return=minimal';
+    const conflictCols = UPSERT_CONFLICT_COLUMNS[table] || null;
+    const returning = Boolean(options.returnRepresentation);
 
     try {
-        let url = `${cfg.url}/rest/v1/${table}`;
-        if (onConflict) {
-            url += `?on_conflict=${onConflict}`;
-        }
-
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': cfg.key,
-                'Authorization': `Bearer ${cfg.key}`,
-                'Prefer': prefer
-            },
-            body: JSON.stringify(rows)
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            logger.error(`Supabase REST error on table ${table} [${response.status}]: ${errorText}`);
-            return { success: false, error: errorText };
-        }
-
-        logger.info(`✓ Upserted ${rows.length} row(s) into Supabase table: ${table}`);
-        if (returnRepresentation) {
-            const body = await response.json().catch(() => []);
-            const out = Array.isArray(body) ? body : body ? [body] : [];
-            return { success: true, rows: out };
-        }
-        return { success: true };
+        const { sql, values } = buildUpsertSql(table, rows, conflictCols, { returning });
+        const result = await dbQuery(sql, values);
+        logger.info(`✓ Upserted ${rows.length} row(s) into table: ${table}`);
+        return returning ? { success: true, rows: result.rows } : { success: true };
     } catch (err) {
-        logger.error(`Unexpected error inserting into ${table}:`, err);
+        logger.error(`DB error on table ${table}:`, err);
         return { success: false, error: err.message };
     }
 }
 
-/**
- * Logs the AI processing task to monitor accuracy and failures.
- * Table ai_processing_logs has: source_file, category, status, error_message, tokens_used,
- * optional prompt_tokens / completion_tokens (migration 20260325), processed_at (no vehicle_id).
- * Worker sends source_file, category, status, error_message, tokens_used; we add processed_at here.
- */
 export async function logAiProcessing(logData) {
-    const cfg = getSupabaseConfig();
-    if (!cfg) return;
-
+    if (!isDbConfigured()) return;
     try {
-        const base = {
-            source_file: normalizeSourcePathForDedup(logData.source_file) || logData.source_file,
-            category: logData.category ?? null,
-            status: logData.status,
-            error_message: logData.error_message ?? null,
-            tokens_used: logData.tokens_used ?? null,
-            processed_at: new Date().toISOString()
-        };
-        const withTokens = {
-            ...base,
-            prompt_tokens: logData.prompt_tokens ?? null,
-            completion_tokens: logData.completion_tokens ?? null
-        };
-
-        let response = await fetch(`${cfg.url}/rest/v1/ai_processing_logs`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': cfg.key,
-                'Authorization': `Bearer ${cfg.key}`,
-                'Prefer': 'return=minimal'
-            },
-            body: JSON.stringify(withTokens)
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            const missingTokenCols = /prompt_tokens|completion_tokens|PGRST204/i.test(errorText);
-            if (missingTokenCols) {
-                response = await fetch(`${cfg.url}/rest/v1/ai_processing_logs`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'apikey': cfg.key,
-                        'Authorization': `Bearer ${cfg.key}`,
-                        'Prefer': 'return=minimal'
-                    },
-                    body: JSON.stringify(base)
-                });
-            }
-            if (!response.ok) {
-                const err2 = missingTokenCols ? await response.text() : errorText;
-                logger.error(`Failed to write to ai_processing_logs [${response.status}]: ${err2}`);
-            }
-        }
+        await dbQuery(
+            `INSERT INTO ai_processing_logs
+             (source_file, category, status, error_message, tokens_used, prompt_tokens, completion_tokens, processed_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
+            [
+                normalizeSourcePathForDedup(logData.source_file) || logData.source_file,
+                logData.category ?? null,
+                logData.status,
+                logData.error_message ?? null,
+                logData.tokens_used ?? null,
+                logData.prompt_tokens ?? null,
+                logData.completion_tokens ?? null,
+            ]
+        );
     } catch (err) {
-        logger.error(`Failed to write to ai_processing_logs:`, err);
+        logger.error('Failed to write to ai_processing_logs:', err);
     }
 }
 
-/**
- * Dead letter queue when procedure JSON fails Zod validation after self-correction retries.
- * Table: failed_extractions (run migration 20260325_failed_extractions_and_ai_log_tokens.sql).
- */
 export async function insertFailedExtraction(row) {
-    const cfg = getSupabaseConfig();
-    if (!cfg) {
-        return { success: false, error: 'Supabase not configured' };
-    }
+    if (!isDbConfigured()) return { success: false, error: 'DB not configured' };
     const article_id = row.article_id != null ? String(row.article_id) : '';
-    if (!article_id) {
-        return { success: false, error: 'article_id required' };
-    }
+    if (!article_id) return { success: false, error: 'article_id required' };
     try {
-        const payload = {
-            article_id,
-            raw_text: row.raw_text != null ? String(row.raw_text).slice(0, 120000) : null,
-            error_message: String(row.error_message || 'unknown').slice(0, 8000),
-            url_path: row.url_path != null ? String(row.url_path).slice(0, 4000) : null,
-            category: row.category != null ? String(row.category).slice(0, 128) : null
-        };
-        const response = await fetch(`${cfg.url}/rest/v1/failed_extractions`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                apikey: cfg.key,
-                Authorization: `Bearer ${cfg.key}`,
-                Prefer: 'return=minimal'
-            },
-            body: JSON.stringify(payload)
-        });
-        if (!response.ok) {
-            const errorText = await response.text();
-            logger.error(`failed_extractions insert [${response.status}]: ${errorText}`);
-            return { success: false, error: errorText };
-        }
+        await dbQuery(
+            `INSERT INTO failed_extractions (article_id, raw_text, error_message, url_path, category)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [
+                article_id,
+                row.raw_text != null ? String(row.raw_text).slice(0, 120000) : null,
+                String(row.error_message || 'unknown').slice(0, 8000),
+                row.url_path != null ? String(row.url_path).slice(0, 4000) : null,
+                row.category != null ? String(row.category).slice(0, 128) : null,
+            ]
+        );
         return { success: true };
     } catch (err) {
         logger.error('insertFailedExtraction error:', err);
@@ -1073,57 +688,34 @@ export async function insertFailedExtraction(row) {
     }
 }
 
-/**
- * Single-article URL paths may be /article/:id or /article/:id/html — use one canonical form for ai_processing_logs.
- */
 export function normalizeSourcePathForDedup(path) {
     if (!path || typeof path !== 'string') return path;
     return path.replace(/(\/article\/[^/?]+)\/html$/i, '$1');
 }
 
-/**
- * Checks for a cached article in normalized content tables by Motor article id.
- * Note: `specifications` has no external_id (natural key is vehicle+category+name); use `spec_fact.source_article_id`.
- */
 export async function checkParsedArticle(articleId) {
-    const cfg = getSupabaseConfig();
-    if (!cfg) {
-        logger.warn(`Skipping Supabase check for article ${articleId}: credentials not set.`);
+    if (!isDbConfigured()) {
+        logger.warn(`Skipping DB check for article ${articleId}: DB not configured.`);
         return null;
     }
 
-    const idEq = encodeURIComponent(articleId);
     const lookups = [
-        { table: 'procedures', filter: `external_id=eq.${idEq}` },
-        { table: 'tsbs', filter: `external_id=eq.${idEq}` },
-        { table: 'dtcs', filter: `external_id=eq.${idEq}` },
-        { table: 'spec_fact', filter: `source_article_id=eq.${idEq}` },
-        { table: 'diagram_document', filter: `source_article_id=eq.${idEq}` },
-        { table: 'component_location_document', filter: `source_article_id=eq.${idEq}` },
-        { table: 'labor_operation', filter: `source_article_id=eq.${idEq}` }
+        { table: 'procedures', col: 'external_id' },
+        { table: 'tsbs', col: 'external_id' },
+        { table: 'dtcs', col: 'external_id' },
+        { table: 'spec_fact', col: 'source_article_id' },
+        { table: 'diagram_document', col: 'source_article_id' },
+        { table: 'component_location_document', col: 'source_article_id' },
+        { table: 'labor_operation', col: 'source_article_id' },
     ];
 
     const results = await Promise.allSettled(
-        lookups.map(async ({ table, filter }) => {
-            const url = `${cfg.url}/rest/v1/${table}?${filter}&select=*&limit=1`;
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'apikey': cfg.key,
-                    'Authorization': `Bearer ${cfg.key}`,
-                },
-            });
-            if (!response.ok) {
-                const errorText = await response.text();
-                logger.error(`Supabase REST error checking article ${articleId} in ${table} [${response.status}]: ${errorText}`);
-                return null;
-            }
-            const data = await response.json();
-            if (data && data.length > 0) {
-                return { ...data[0], _table: table };
-            }
-            return null;
+        lookups.map(async ({ table, col }) => {
+            const { rows } = await dbQuery(
+                `SELECT * FROM "${table}" WHERE "${col}" = $1 LIMIT 1`,
+                [articleId]
+            );
+            return rows.length > 0 ? { ...rows[0], _table: table } : null;
         })
     );
 
@@ -1133,37 +725,20 @@ export async function checkParsedArticle(articleId) {
             return result.value;
         }
     }
-
     return null;
 }
 
-/**
- * Checks whether a given source path was already successfully parsed.
- * Used by the background worker to skip redundant (and rate-limited) AI calls.
- * @param {string} sourcePath The proxy request URL path
- * @returns {boolean}
- */
 export async function wasAlreadyParsed(sourcePath) {
-    const cfg = getSupabaseConfig();
-    if (!cfg) return false;
-
+    if (!isDbConfigured()) return false;
     const norm = normalizeSourcePathForDedup(sourcePath);
     const variants = [...new Set([sourcePath, norm].filter(Boolean))];
-
     try {
         for (const p of variants) {
-            const encoded = encodeURIComponent(p);
-            const url = `${cfg.url}/rest/v1/ai_processing_logs?source_file=eq.${encoded}&status=eq.COMPLETED&select=id&limit=1`;
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'apikey': cfg.key,
-                    'Authorization': `Bearer ${cfg.key}`,
-                },
-            });
-            if (!response.ok) continue;
-            const rows = await response.json();
-            if (rows && rows.length > 0) return true;
+            const { rows } = await dbQuery(
+                `SELECT id FROM ai_processing_logs WHERE source_file = $1 AND status = 'COMPLETED' LIMIT 1`,
+                [p]
+            );
+            if (rows.length > 0) return true;
         }
         return false;
     } catch {
@@ -1171,51 +746,21 @@ export async function wasAlreadyParsed(sourcePath) {
     }
 }
 
-/**
- * Align metadata keys with `metadataCacheMiddleware` (mounted at `/api`, so lookup path is `/years`, not `/api/years`).
- * @param {string} urlPath
- * @returns {string}
- */
 export function normalizeVehicleMetadataPath(urlPath) {
     if (!urlPath || typeof urlPath !== 'string') return urlPath;
     if (urlPath.startsWith('/api/')) return urlPath.slice(4);
     return urlPath;
 }
 
-/**
- * Upserts vehicle metadata into the vehicle_metadata table.
- * @param {string} path The request path (e.g., /years or /api/years — normalized to /years)
- * @param {Object} data The response JSON
- */
 export async function insertMetadata(path, data) {
-    const cfg = getSupabaseConfig();
-    if (!cfg) return { success: false };
-
+    if (!isDbConfigured()) return { success: false };
     path = normalizeVehicleMetadataPath(path);
-
     try {
-        const url = `${cfg.url}/rest/v1/vehicle_metadata?on_conflict=path`;
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': cfg.key,
-                'Authorization': `Bearer ${cfg.key}`,
-                'Prefer': 'return=minimal,resolution=merge-duplicates'
-            },
-            body: JSON.stringify({
-                path,
-                data,
-                updated_at: new Date().toISOString()
-            })
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            logger.error(`Failed to upsert metadata for ${path}: ${errorText}`);
-            return { success: false, error: errorText };
-        }
-
+        await dbQuery(
+            `INSERT INTO vehicle_metadata (path, data, updated_at) VALUES ($1, $2::jsonb, NOW())
+             ON CONFLICT (path) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
+            [path, JSON.stringify(data)]
+        );
         logger.info(`✓ Persisted vehicle metadata for: ${path}`);
         return { success: true };
     } catch (err) {
@@ -1224,53 +769,25 @@ export async function insertMetadata(path, data) {
     }
 }
 
-/**
- * @param {{ updated_at?: string | null }} row
- * @param {number} [maxAgeDays=90]
- * @returns {boolean}
- */
 export function isMetadataStale(row, maxAgeDays = 90) {
     if (!row?.updated_at) return true;
     const age = Date.now() - new Date(row.updated_at).getTime();
     return age > maxAgeDays * 24 * 60 * 60 * 1000;
 }
 
-/**
- * Retrieves vehicle metadata from the vehicle_metadata table.
- * Tries canonical path first (`/years`, `/year/...`), then legacy `/api/years` rows if present.
- * @param {string} path The request path (e.g., /years or /api/years before normalize)
- * @returns {{ data: unknown, updated_at: string | null }|null} Cached row or null if not found
- */
 export async function getMetadata(path) {
-    const cfg = getSupabaseConfig();
-    if (!cfg) return null;
-
+    if (!isDbConfigured()) return null;
     const canonical = normalizeVehicleMetadataPath(path);
     const pathsToTry = [canonical];
-    if (!canonical.startsWith('/api/')) {
-        pathsToTry.push(`/api${canonical}`);
-    }
+    if (!canonical.startsWith('/api/')) pathsToTry.push(`/api${canonical}`);
 
     for (const tryPath of pathsToTry) {
         try {
-            const url = `${cfg.url}/rest/v1/vehicle_metadata?path=eq.${encodeURIComponent(tryPath)}&select=data,updated_at`;
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'apikey': cfg.key,
-                    'Authorization': `Bearer ${cfg.key}`,
-                },
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                logger.error(`Supabase REST error getting metadata for ${tryPath} [${response.status}]: ${errorText}`);
-                continue;
-            }
-
-            const rows = await response.json();
-            if (rows && rows.length > 0) {
+            const { rows } = await dbQuery(
+                `SELECT data, updated_at FROM vehicle_metadata WHERE path = $1`,
+                [tryPath]
+            );
+            if (rows.length > 0) {
                 const payload = rows[0].data;
                 const updatedAt = rows[0].updated_at != null ? String(rows[0].updated_at) : null;
                 if (tryPath !== canonical) {
@@ -1287,113 +804,45 @@ export async function getMetadata(path) {
     }
     return null;
 }
-/**
- * Retrieves all cached articles for a specific vehicle from the articles table.
- * PostgREST defaults to a max row per request (often 1000); paginate so large catalogs
- * (e.g. 4000+ rows) are fully returned.
- * @param {string} vehicleId The vehicle ID
- * @returns {Array|null} Array of articles or null if error
- */
+
 export async function getVehicleArticles(vehicleId) {
-    const cfg = getSupabaseConfig();
-    if (!cfg) return null;
-
-    const pageSize = 1000;
-    let offset = 0;
-    const all = [];
-    const maxRows = 100000;
-
+    if (!isDbConfigured()) return null;
     try {
-        while (offset < maxRows) {
-            const url = `${cfg.url}/rest/v1/articles?vehicle_id=eq.${encodeURIComponent(vehicleId)}&select=original_id,title,subtitle,code,description,bucket,parent_bucket,thumbnail_href,bulletin_number,release_date,sort,content_source&limit=${pageSize}&offset=${offset}`;
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'apikey': cfg.key,
-                    'Authorization': `Bearer ${cfg.key}`,
-                },
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                logger.error(`Supabase REST error getting articles for ${vehicleId} [${response.status}]: ${errorText}`);
-                return null;
-            }
-
-            const rows = await response.json();
-            if (!rows || rows.length === 0) break;
-            all.push(...rows);
-            if (rows.length < pageSize) break;
-            offset += pageSize;
-        }
-
-        if (offset >= maxRows) {
-            logger.warn(`getVehicleArticles: hit maxRows=${maxRows} for ${vehicleId}`);
-        }
-        return all;
+        const { rows } = await dbQuery(
+            `SELECT original_id, title, subtitle, code, description, bucket, parent_bucket,
+                    thumbnail_href, bulletin_number, release_date, sort, content_source
+             FROM articles WHERE vehicle_id = $1`,
+            [vehicleId]
+        );
+        return rows;
     } catch (err) {
         logger.error(`Error retrieving articles for ${vehicleId}:`, err);
         return null;
     }
 }
 
-/**
- * Whether the vehicle row is marked normalized (catalog ingest complete).
- * @param {string} vehicleId `vehicles.external_id`
- * @returns {Promise<boolean|null>} true/false, or null if unknown / no row
- */
 export async function getVehicleIsNormalized(vehicleId) {
-    const cfg = getSupabaseConfig();
-    if (!cfg) return null;
-
+    if (!isDbConfigured()) return null;
     try {
-        const url = `${cfg.url}/rest/v1/vehicles?external_id=eq.${encodeURIComponent(vehicleId)}&select=is_normalized&limit=1`;
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'apikey': cfg.key,
-                'Authorization': `Bearer ${cfg.key}`,
-            },
-        });
-        if (!response.ok) return null;
-        const rows = await response.json();
-        if (!rows || rows.length === 0) return null;
+        const { rows } = await dbQuery(
+            `SELECT is_normalized FROM vehicles WHERE external_id = $1 LIMIT 1`,
+            [vehicleId]
+        );
+        if (rows.length === 0) return null;
         return !!rows[0].is_normalized;
     } catch {
         return null;
     }
 }
 
-/**
- * Gets a quick count of articles for a vehicle to determine if we should hit the cache.
- * @param {string} vehicleId 
- * @returns {number}
- */
 export async function getVehicleArticlesCount(vehicleId) {
-    const cfg = getSupabaseConfig();
-    if (!cfg) return 0;
-
+    if (!isDbConfigured()) return 0;
     try {
-        const url = `${cfg.url}/rest/v1/articles?vehicle_id=eq.${encodeURIComponent(vehicleId)}&select=count&limit=1`;
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'apikey': cfg.key,
-                'Authorization': `Bearer ${cfg.key}`,
-                'Prefer': 'count=exact'
-            },
-        });
-
-        if (!response.ok) return 0;
-        
-        // Supabase returns count in Content-Range header if using exact
-        const contentRange = response.headers.get('content-range');
-        if (contentRange) {
-            const count = parseInt(contentRange.split('/')[1], 10);
-            return isNaN(count) ? 0 : count;
-        }
-        return 0;
+        const { rows } = await dbQuery(
+            `SELECT COUNT(*)::int AS cnt FROM articles WHERE vehicle_id = $1`,
+            [vehicleId]
+        );
+        return rows[0]?.cnt ?? 0;
     } catch {
         return 0;
     }

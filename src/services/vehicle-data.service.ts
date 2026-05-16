@@ -3,7 +3,7 @@ import { Observable, from, of, forkJoin } from 'rxjs';
 import { map, switchMap, tap, catchError, timeout } from 'rxjs/operators';
 import { MotorApiService } from './motor-api.service';
 import { LoggerService } from './logger.service';
-import { SupabaseService } from './supabase.service';
+import { ApiDataService } from './api-data.service';
 import { DataSyncService } from './data-sync.service';
 import { VehiclePersistenceService } from './vehicle-persistence.service';
 import { ApiResponse, Dtc, Tsb, Procedure, WiringDiagram, ComponentLocation, Spec, Fluid, MaintenanceSchedule, FilterTab, ArticlesData } from '../models/motor.models';
@@ -56,7 +56,7 @@ interface SectionStrategy {
 export class VehicleDataService {
     private logger = inject(LoggerService);
     private motorApi = inject(MotorApiService);
-    private supabase = inject(SupabaseService);
+    private api = inject(ApiDataService);
     private dataSync = inject(DataSyncService);
     private vehiclePersistence = inject(VehiclePersistenceService);
 
@@ -183,7 +183,7 @@ export class VehicleDataService {
                 if (isNormalized) {
                     this.logger.info(`[VehicleDataService] Loading specs from Supabase for ${vehicleId}`);
                     return from(
-                        this.supabase.client.from('specifications').select('*').eq('vehicle_id', vehicleId)
+                        this.api.from('specifications').select('*').eq('vehicle_id', vehicleId)
                     ).pipe(
                         switchMap(({ data: specsData, error }) => {
                             if (error) {
@@ -391,7 +391,7 @@ export class VehicleDataService {
         return from(this.dataSync.checkNormalizationStatus(vehicleId)).pipe(
             switchMap((isNormalized) => {
                 if (isNormalized) {
-                    return from(this.supabase.client
+                    return from(this.api
                         .from('articles')
                         .select('bucket,parent_bucket')
                         .eq('vehicle_id', vehicleId)
@@ -405,7 +405,7 @@ export class VehicleDataService {
                             const has = (keywords: string[]) =>
                                 [...allBuckets].some(b => keywords.some(k => b.includes(k)));
 
-                            return from(this.supabase.client
+                            return from(this.api
                                 .from('parts')
                                 .select('id', { head: true, count: 'exact' })
                                 .eq('vehicle_id', vehicleId)
@@ -578,7 +578,7 @@ export class VehicleDataService {
 
         from(this.dataSync.checkNormalizationStatus(vehicleId)).pipe(
             switchMap((isNormalized) => {
-                return from(this.supabase.client.from('articles').select('*').eq('vehicle_id', vehicleId)).pipe(
+                return from(this.api.from('articles').select('*').eq('vehicle_id', vehicleId)).pipe(
                     map(({ data }) => {
                         if (!data || data.length === 0) {
                             return { isNormalized, mapped: null as any[] | null };
@@ -711,9 +711,9 @@ export class VehicleDataService {
             switchMap((isNormalized) => {
                 if (isNormalized) {
                     this.logger.info(`[VehicleDataService] Loading maintenance from Supabase for ${vehicleId}`);
-                    return from(this.supabase.client
+                    return from(this.api
                         .from('maintenance_task')
-                        .select('id, action, item, description, interval_value, frequency_code, metadata_json')
+                        .select('id,action,item,description,interval_value,frequency_code,metadata_json')
                         .eq('vehicle_id', vehicleId)
                         .eq('interval_value', interval)
                     ).pipe(
@@ -803,16 +803,11 @@ export class VehicleDataService {
         from(this.dataSync.checkNormalizationStatus(vehicleId)).pipe(
             switchMap((isNormalized) => {
                 if (isNormalized) {
-                    let query = this.supabase.client
+                    return from(this.api
                         .from('parts')
                         .select('*')
-                        .eq('vehicle_id', vehicleId);
-
-                    if (searchTerm) {
-                        query = query.ilike('description', `%${searchTerm}%`);
-                    }
-
-                    return from(query).pipe(
+                        .eq('vehicle_id', vehicleId)
+                    ).pipe(
                         map(({ data: partsData }) => {
                             if (!partsData || partsData.length === 0) {
                                 if (!searchTerm) {

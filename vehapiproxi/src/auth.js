@@ -2,46 +2,7 @@ import https from 'https';
 import { URL } from 'url';
 import { config } from './config.js';
 import logger from './logger.js';
-
-function getSupabaseConfig() {
-    const url = (process.env.SUPABASE_URL || '').trim();
-    const key = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
-    if (!url || !key) return null;
-    return { url, key };
-}
-
-async function fetchSupabase(endpoint, options = {}) {
-    const cfg = getSupabaseConfig();
-    if (!cfg) return null;
-
-    const headers = {
-        'Content-Type': 'application/json',
-        'apikey': cfg.key,
-        'Authorization': `Bearer ${cfg.key}`,
-        'Prefer': 'return=representation',
-        ...(options.headers || {})
-    };
-
-    try {
-        const response = await fetch(`${cfg.url}/rest/v1/${endpoint}`, {
-            ...options,
-            headers
-        });
-
-        if (!response.ok && response.status !== 406) {
-            let errorText = await response.text();
-            throw new Error(`Supabase API Error [${response.status}]: ${errorText}`);
-        }
-
-        if (response.status !== 204) {
-            return response.json();
-        }
-    } catch (err) {
-        logger.error(`Supabase Fetch Error on ${endpoint}:`, err);
-        return null; // Fail gracefully
-    }
-    return null;
-}
+import { dbQuery, isDbConfigured } from './db.js';
 
 const SESSION_DOC_ID = 'motor_proxy_v3'; // Bump version to invalidate old sessions
 
@@ -174,72 +135,70 @@ class AuthManager {
     }
 
     /**
-     * Load saved session cookies from Supabase
+     * Load saved session cookies from Cloud SQL
      */
     async loadSession() {
+        if (!isDbConfigured()) {
+            logger.info('DB not configured, skipping session load — will authenticate fresh');
+            return false;
+        }
         try {
-            const data = await fetchSupabase(`system_sessions?id=eq.${SESSION_DOC_ID}&select=*`);
-
-            if (!data || data.length === 0) {
-                logger.info('No saved session found in Supabase, will authenticate');
+            const { rows } = await dbQuery(
+                `SELECT data FROM system_sessions WHERE id = $1 LIMIT 1`,
+                [SESSION_DOC_ID]
+            );
+            if (rows.length === 0) {
+                logger.info('No saved session found in DB, will authenticate');
                 return false;
             }
-
-            const session = data[0].data; // We stored cookies inside 'data' JSONB col
+            const session = rows[0].data;
             this.cookies = session.cookies;
             this.lastAuthTime = session.timestamp;
-
             if (this.isSessionValid()) {
-                logger.info('✓ Loaded valid session from Supabase');
+                logger.info('✓ Loaded valid session from DB');
                 return true;
-            } else {
-                logger.info('Session expired, re-authenticating...');
-                return false;
             }
+            logger.info('Session expired, re-authenticating...');
+            return false;
         } catch (error) {
-            logger.error('Error loading session from Supabase:', error);
+            logger.error('Error loading session from DB:', error);
             return false;
         }
     }
 
     /**
-     * Save session cookies to Supabase
+     * Save session cookies to Cloud SQL
      */
     async saveSession() {
+        if (!isDbConfigured()) return;
         const session = {
             cookies: this.cookies,
             timestamp: this.lastAuthTime,
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
         };
-
         try {
-            // Upsert session
-            await fetchSupabase('system_sessions', {
-                method: 'POST',
-                headers: { 'Prefer': 'resolution=merge-duplicates' }, // Upsert
-                body: JSON.stringify({
-                    id: SESSION_DOC_ID,
-                    data: session,
-                    updated_at: new Date().toISOString()
-                })
-            });
-            logger.info('✓ Session saved to Supabase');
+            await dbQuery(
+                `INSERT INTO system_sessions (id, data, updated_at)
+                 VALUES ($1, $2::jsonb, NOW())
+                 ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
+                [SESSION_DOC_ID, JSON.stringify(session)]
+            );
+            logger.info('✓ Session saved to DB');
         } catch (e) {
-            logger.error('Could not save session to Supabase', e);
+            logger.error('Could not save session to DB', e);
         }
     }
 
     /**
-     * Delete session from Supabase (called when session is invalid)
+     * Delete session from Cloud SQL
      */
     async deleteSession() {
+        if (!isDbConfigured()) return;
         try {
-            await fetchSupabase(`system_sessions?id=eq.${SESSION_DOC_ID}`, {
-                method: 'DELETE'
-            });
-            logger.info('✓ Session deleted from Supabase');
+            await dbQuery(`DELETE FROM system_sessions WHERE id = $1`, [SESSION_DOC_ID]);
+            logger.info('✓ Session deleted from DB');
         } catch (e) {
-            logger.error('Could not delete session from Supabase', e);
+            logger.error('Could not delete session from DB', e);
         }
     }
 

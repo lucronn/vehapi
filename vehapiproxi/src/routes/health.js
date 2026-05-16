@@ -11,9 +11,9 @@ export function registerHealthEndpoint(app, authManager) {
             status: 'ok',
             sessionValid: authManager.isSessionValid(),
             lastAuth: authManager.lastAuthTime,
-            /** True if process.env exposes NVIDIA_API_KEY, NVAPI_KEY, or LLM_API_KEY (value never returned). */
+            /** True if GOOGLE_CLOUD_PROJECT is set (Vertex AI configured). */
             llmKeyConfigured: !!llmKeyEnv,
-            /** Which variable name is set — helps verify the correct Vercel project received env. */
+            /** Which variable name enabled AI — 'GOOGLE_CLOUD_PROJECT' when Vertex AI is configured. */
             llmKeyEnv
         });
     });

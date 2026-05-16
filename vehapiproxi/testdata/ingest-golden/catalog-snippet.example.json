@@ -1,0 +1,13 @@
+{
+  "body": {
+    "articleDetails": [
+      {
+        "id": "P123",
+        "title": "Sample procedure",
+        "code": null,
+        "thumbnailHref": null,
+        "contentSource": "MOTOR"
+      }
+    ]
+  }
+}

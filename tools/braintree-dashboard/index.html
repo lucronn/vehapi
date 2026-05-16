@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Braintree Payment Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.braintreegateway.com/web/dropin/1.42.0/js/dropin.min.js"></script>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; }
+        .braintree-card { background-color: #1e293b !important; border-color: #334155 !important; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-slate-800 rounded-xl shadow-2xl p-8 border border-slate-700">
+        <header class="mb-8 text-center">
+            <h1 class="text-2xl font-bold text-blue-400">Payment Dashboard</h1>
+            <p class="text-slate-400 text-sm mt-2">Braintree Production Integration Prototype</p>
+        </header>
+
+        <div id="dropin-container" class="mb-6 min-h-[100px] flex items-center justify-center">
+            <div id="loader" class="text-slate-500 text-sm italic">Initializing Braintree SDK...</div>
+        </div>
+
+        <button id="submit-button" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+            Initializing...
+        </button>
+
+        <div id="result-container" class="mt-8 hidden">
+            <h2 class="text-sm font-semibold text-slate-300 mb-2 uppercase tracking-wider">Payment Nonce Generated:</h2>
+            <div class="bg-black/50 rounded-lg p-4 border border-blue-500/30 overflow-x-auto">
+                <code id="nonce-display" class="text-emerald-400 font-mono text-xs break-all"></code>
+            </div>
+            <p class="text-xs text-slate-500 mt-2 italic">Ready for server-side processing.</p>
+        </div>
+
+        <div id="error-display" class="mt-4 p-4 bg-red-900/20 border border-red-500/30 rounded-lg text-red-400 text-sm hidden"></div>
+    </div>
+
+    <script>
+        const button = document.querySelector('#submit-button');
+        const resultContainer = document.querySelector('#result-container');
+        const nonceDisplay = document.querySelector('#nonce-display');
+        const errorDisplay = document.querySelector('#error-display');
+        const loader = document.querySelector('#loader');
+
+        // Production Client Authorization Fingerprint (JWT)
+        const authorization = 'eyJraWQiOiIyMDE4MDQyNjE2LXByb2R1Y3Rpb24iLCJpc3MiOiJodHRwczovL2FwaS5icmFpbnRyZWVnYXRld2F5LmNvbSIsImFsZyI6IkVTMjU2In0.eyJleHAiOjE3NzcyMzc3NTMsImp0aSI6ImYxMDhkNjJhLWNkMGQtNGYxNS1hZGNhLWFhMjBiNWFmNGUxZSIsInN1YiI6Im52NDhnaG44Y2huem40N3giLCJpc3MiOiJodHRwczovL2FwaS5icmFpbnRyZWVnYXRld2F5LmNvbSIsIm1lcmNoYW50Ijp7InB1YmxpY19pZCI6Im52NDhnaG44Y2huem40N3giLCJ2ZXJpZnlfY2FyZF9ieV9kZWZhdWx0IjpmYWxzZSwidmVyaWZ5X3dhbGxldF9ieV9kZWZhdWx0IjpmYWxzZX0sInJpZ2h0cyI6WyJtYW5hZ2VfdmF1bHQiXSwic2NvcGUiOlsiQnJhaW50cmVlOlZhdWx0IiwiQnJhaW50cmVlOkNsaWVudFNESyJdLCJvcHRpb25zIjp7InBheXBhbF9jbGllbnRfaWQiOiJBUmNfUV9zRFFlUjNMSGdHVmt1RXdUT2pBeXU0X1EzQXF3MkxmTHdvWlpPU2FUWFZFelE5WVRBU2JpVzdSRzA2TVhmTXp3ZGF3MHV5TF9taCJ9fQ.tzuj-VPeHexHAvJSK3El_CPPUUHsJHrgD2kO9zBXuDZaM5sPZPiZXmgS2Ft_LDlcq1kvQJv2NXSZKOcirQjggw';
+
+        function showError(title, err) {
+            console.error(title, err);
+            loader.classList.add('hidden');
+            errorDisplay.innerHTML = `
+                <div class="font-bold mb-1">${title}</div>
+                <div class="text-xs text-red-300/80 mb-2">${err.message || err}</div>
+                <div class="text-[10px] opacity-50 font-mono">Code: ${err.code || 'UNKNOWN'}</div>
+            `;
+            errorDisplay.classList.remove('hidden');
+            button.textContent = 'Setup Failed';
+        }
+
+        window.onload = function() {
+            if (typeof braintree === 'undefined' || !braintree.dropin) {
+                showError('SDK Load Error', 'The Braintree Drop-in SDK failed to load. Check your internet connection or script URL.');
+                return;
+            }
+
+            braintree.dropin.create({
+                authorization: authorization,
+                container: '#dropin-container',
+                paypal: {
+                    flow: 'vault'
+                }
+            }, function (dropinErr, instance) {
+                if (dropinErr) {
+                    showError('Braintree Drop-in Error', dropinErr);
+                    return;
+                }
+
+                loader.classList.add('hidden');
+                button.disabled = false;
+                button.textContent = 'Tokenize Payment Method';
+
+                button.addEventListener('click', function () {
+                    button.disabled = true;
+                    button.textContent = 'Generating Nonce...';
+                    errorDisplay.classList.add('hidden');
+
+                    instance.requestPaymentMethod(function (requestPaymentMethodErr, payload) {
+                        if (requestPaymentMethodErr) {
+                            showError('Tokenization Failed', requestPaymentMethodErr);
+                            button.disabled = false;
+                            button.textContent = 'Retry Tokenization';
+                            return;
+                        }
+
+                        nonceDisplay.textContent = payload.nonce;
+                        resultContainer.classList.remove('hidden');
+                        button.textContent = 'Success!';
+                        console.log('Payment Method Nonce:', payload.nonce);
+                    });
+                });
+            });
+        };
+    </script>
+</body>
+</html>

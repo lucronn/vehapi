@@ -1,23 +1,21 @@
 import express from 'express';
 import logger from '../logger.js';
 import { getNemotronApiKey } from '../nemotron_client.js';
+import { dbQuery, isDbConfigured } from '../db.js';
 
 const CONTEXT_TOKEN_CAP = 2000;
 
 async function buildVehicleContext(vehicleId) {
-    if (!vehicleId) return null;
-    // Supabase REST queries via native fetch (no SDK dependency)
+    if (!vehicleId || !isDbConfigured()) return null;
 
-    const headers = { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` };
-    const base = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
-    if (!base || !headers.apikey) return null;
-
-    async function query(table, select, limit = 20) {
-        const url = `${base}/rest/v1/${table}?vehicle_id=eq.${encodeURIComponent(vehicleId)}&select=${encodeURIComponent(select)}&limit=${limit}`;
+    async function query(table, cols, limit = 20) {
         try {
-            const res = await fetch(url, { headers: { ...headers, 'Content-Type': 'application/json' } });
-            if (!res.ok) return [];
-            return await res.json();
+            const colList = cols.split(',').map(c => `"${c.trim()}"`).join(', ');
+            const { rows } = await dbQuery(
+                `SELECT ${colList} FROM "${table}" WHERE vehicle_id = $1 LIMIT $2`,
+                [vehicleId, limit]
+            );
+            return rows;
         } catch { return []; }
     }
 
@@ -66,16 +64,14 @@ export function registerAiEndpoints(app, getAiFunctions) {
             return res.status(503).json({
                 error:
                     'AI rewriting unavailable — the AI module failed to load (see server logs). ' +
-                    'If you set NVIDIA_API_KEY on Vercel, redeploy after adding env vars; ensure deps are installed (e.g. zod).',
+                    'Ensure GOOGLE_CLOUD_PROJECT is set and the Cloud Run service account has Vertex AI access.',
                 code: 'AI_MODULE_LOAD_FAILED'
             });
         }
         if (!getNemotronApiKey()) {
             return res.status(503).json({
                 error:
-                    'AI rewriting unavailable — no NVIDIA / LLM API key in process.env. ' +
-                    'In Vercel: Project → Settings → Environment Variables → add NVIDIA_API_KEY or LLM_API_KEY for Production, then Redeploy. ' +
-                    'Uploading a local .env file to the repo does not set Vercel runtime env.',
+                    'AI rewriting unavailable — set GOOGLE_CLOUD_PROJECT and ensure the service account has the Vertex AI User role.',
                 code: 'MISSING_LLM_KEY'
             });
         }
@@ -108,7 +104,7 @@ export function registerAiEndpoints(app, getAiFunctions) {
         if (!getNemotronApiKey()) {
             return res.status(503).json({
                 error:
-                    'AI tutorial generation unavailable — set NVIDIA_API_KEY or LLM_API_KEY on the server (Vercel env + Redeploy).',
+                    'AI tutorial generation unavailable — set GOOGLE_CLOUD_PROJECT and ensure the service account has the Vertex AI User role.',
                 code: 'MISSING_LLM_KEY'
             });
         }
@@ -144,7 +140,7 @@ export function registerAiEndpoints(app, getAiFunctions) {
             if (!getNemotronApiKey()) {
                 return res.status(503).json({
                     error:
-                        'AI common issues unavailable — set NVIDIA_API_KEY or LLM_API_KEY on the server (Vercel env + Redeploy).',
+                        'AI common issues unavailable — set GOOGLE_CLOUD_PROJECT and ensure the service account has the Vertex AI User role.',
                     code: 'MISSING_LLM_KEY'
                 });
             }

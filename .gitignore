@@ -38,9 +38,25 @@ __pycache__/
 # Local environment files (backend)
 vehapiproxi/.env
 vehapiproxi/.env.local
+
+# Live Motor session cookies (multi-session seed)
+vehapiproxi/sessions.json
+
+# Unrelated local tooling (SIP/VoIP experiments, IDE configs)
+pjsua.conf
+dump_pinger.py
+.gemini/
+
+# Bulk ingest raw dumps (worker-ingest-vehicles-full.js; cwd is usually vehapiproxi)
+data/raw/
+vehapiproxi/data/raw/
 vehapiproxi/.env.vercel.prod.check
 vehapiproxi/.env*.local
 
 # Local dev / test artifacts (not for the repo)
 backups/
 test-results/
+
+# Bulk Motor ingest CLI L0 snapshots (see vehapiproxi npm run worker:ingest-full)
+data/raw/
+data/raw/

@@ -1,0 +1,12 @@
+node_modules
+.env
+.env.*
+*.log
+scripts
+testdata
+motor-ymme-full.csv
+ymme-export-full.log
+ymme-integrity-full.log
+ymme-runner.log
+api
+vercel.json

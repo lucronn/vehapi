@@ -196,19 +196,32 @@ export class MotorApiService {
     return this.getWithLogging<ApiResponse<VinDecodeData>>(url);
   }
 
+  /** DB-first; falls back to live Motor on any error (network, 404, etc.). */
+  private dbFirst<T>(dbUrl: string, liveUrl: string): Observable<ApiResponse<T>> {
+    return this.getWithLogging<ApiResponse<T>>(dbUrl).pipe(
+      catchError(() => this.getWithLogging<ApiResponse<T>>(liveUrl))
+    );
+  }
+
   getYears(): Observable<ApiResponse<number[]>> {
-    const url = `${this.baseUrl}/api/years`;
-    return this.getWithLogging<ApiResponse<number[]>>(url);
+    return this.dbFirst<number[]>(
+      `${this.baseUrl}/api/db/years`,
+      `${this.baseUrl}/api/years`
+    );
   }
 
   getMakes(year: number): Observable<ApiResponse<Make[]>> {
-    const url = `${this.baseUrl}/api/year/${year}/makes`;
-    return this.getWithLogging<ApiResponse<Make[]>>(url);
+    return this.dbFirst<Make[]>(
+      `${this.baseUrl}/api/db/year/${year}/makes`,
+      `${this.baseUrl}/api/year/${year}/makes`
+    );
   }
 
   getModels(year: number, make: string | number): Observable<ApiResponse<ModelsData>> {
-    const url = `${this.baseUrl}/api/year/${year}/make/${make}/models`;
-    return this.getWithLogging<ApiResponse<ModelsData>>(url);
+    return this.dbFirst<ModelsData>(
+      `${this.baseUrl}/api/db/year/${year}/make/${make}/models`,
+      `${this.baseUrl}/api/year/${year}/make/${make}/models`
+    );
   }
 
   getMotorVehicles(contentSource: string, vehicleId: string): Observable<ApiResponse<any[]>> {
@@ -258,17 +271,26 @@ export class MotorApiService {
       return of(this.articleCache.get(cacheKey)!);
     }
 
-    const url = `${this.baseUrl}/api/source/${route.source}/vehicle/${route.id}/articles/v2`;
+    const liveUrl = `${this.baseUrl}/api/source/${route.source}/vehicle/${route.id}/articles/v2`;
     const params: Record<string, string> = {};
     if (searchTerm) params.searchTerm = searchTerm;
     if (catalogSync) params.torqueCatalogSync = '1';
 
     const startTime = performance.now();
-    this.logRequest('GET', url, params);
+    this.logRequest('GET', liveUrl, params);
 
-    return this.getWithLogging<ApiResponse<ArticlesData>>(url, params).pipe(
+    // DB-first when no search term and not in catalog-sync mode: instant if
+    // the vehicle's catalog is already ingested, falls back to live otherwise.
+    const useDb = !searchTerm && !catalogSync;
+    const dbUrl = `${this.baseUrl}/api/db/articles`;
+    const primary$ = useDb
+      ? this.getWithLogging<ApiResponse<ArticlesData>>(dbUrl, { vehicleId: route.id }).pipe(
+          catchError(() => this.getWithLogging<ApiResponse<ArticlesData>>(liveUrl, params))
+        )
+      : this.getWithLogging<ApiResponse<ArticlesData>>(liveUrl, params);
+
+    return primary$.pipe(
       map(data => {
-        // Cache the successful response
         if (data.header.statusCode === 200 && !catalogSync) {
           this.articleCache.set(cacheKey, data);
           if (!environment.production) {

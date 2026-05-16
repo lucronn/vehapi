@@ -4,8 +4,8 @@ import { from, switchMap } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 /**
- * Attaches the Supabase Bearer token to outgoing API requests when the user is logged in.
- * Required for backend article access enforcement (vehapiproxi verifies unlocks).
+ * Attaches the Firebase ID token (Bearer) to outgoing API requests when the user is signed in.
+ * Required for backend article access enforcement (vehapiproxi verifies Firebase tokens).
  * Always attempts to get a token for API requests (handles auth-hydration race).
  */
 export const authHeaderInterceptor: HttpInterceptorFn = (req, next) => {
@@ -29,16 +29,14 @@ export const authHeaderInterceptor: HttpInterceptorFn = (req, next) => {
     }
   })();
 
-  const isCreditsEndpoint = path.startsWith('/api/credits/');
+  const isCreditsEndpoint        = path.startsWith('/api/credits/');
   const isArticleContentEndpoint = /^\/api\/source\/[^/]+\/vehicle\/[^/]+\/article\/[^/]+(?:\/html|\/metadata)?$/.test(path);
-  const isL2SearchEndpoint =
-    path === '/api/l2/search' ||
-    path.startsWith('/api/l2/') ||
-    /^\/api\/vehicle\/[^/]+\/l2\/search$/.test(path);
-
+  const isL2SearchEndpoint       = path === '/api/l2/search' || path.startsWith('/api/l2/') || /^\/api\/vehicle\/[^/]+\/l2\/search$/.test(path);
   const isMotorInformationEndpoint = path.startsWith('/api/motor-information/');
+  const isTutorialEndpoint       = path.startsWith('/api/ai/');
+  const isDataWriteEndpoint      = path.startsWith('/api/data/') && req.method !== 'GET';
 
-  if (!isCreditsEndpoint && !isArticleContentEndpoint && !isL2SearchEndpoint && !isMotorInformationEndpoint) {
+  if (!isCreditsEndpoint && !isArticleContentEndpoint && !isL2SearchEndpoint && !isMotorInformationEndpoint && !isTutorialEndpoint && !isDataWriteEndpoint) {
     return next(req);
   }
 

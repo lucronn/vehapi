@@ -10,8 +10,8 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import logger from './logger.js';
 import { getNemotronClient } from './nemotron_client.js';
 
-/** Override via env; confirm ID in NVIDIA NIM / build catalog. */
-const NEMOTRON_VISION_MODEL = (process.env.NEMOTRON_VISION_MODEL || 'nvidia/nemotron-nano-12b-v2-vl').trim();
+/** Override via VERTEX_VISION_MODEL or legacy NEMOTRON_VISION_MODEL. */
+const NEMOTRON_VISION_MODEL = (process.env.VERTEX_VISION_MODEL || process.env.NEMOTRON_VISION_MODEL || 'google/gemini-2.0-flash-001').trim();
 
 const MAX_RETRIES = 3;
 
@@ -47,7 +47,7 @@ export async function callNemotronMultimodal(userContentParts, options = {}) {
     const { schema = null, model = null, maxTokens = 8192 } = options;
     const openai = getNemotronClient();
     if (!openai) {
-        throw new Error('Nemotron unavailable — set NVIDIA_API_KEY, NVAPI_KEY, or LLM_API_KEY');
+        throw new Error('Vertex AI unavailable — set GOOGLE_CLOUD_PROJECT');
     }
 
     let content = userContentParts;

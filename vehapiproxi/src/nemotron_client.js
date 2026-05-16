@@ -1,65 +1,94 @@
 /**
- * Shared Nemotron / NVIDIA NIM OpenAI-compatible client.
- * Supports Torque env names (NVIDIA_API_KEY, NEMOTRON_BASE_URL, NEMOTRON_MODEL) and
- * selfdevai-style aliases (LLM_API_KEY, LLM_URL, LLM_MODEL).
+ * Vertex AI (Gemini) clients.
+ *
+ * Two surfaces:
+ *  1. getNemotronClient() — OpenAI-compat endpoint (streaming free-text, rewrite, tutorials)
+ *  2. getGeminiClient()  — native @google/genai SDK (structured JSON, constrained generation, thinking)
+ *
+ * Auth: Application Default Credentials via google-auth-library (Cloud Run ADC, or
+ * GOOGLE_APPLICATION_CREDENTIALS locally).
  */
 import OpenAI from 'openai';
+import { GoogleAuth } from 'google-auth-library';
+import { GoogleGenAI } from '@google/genai';
 
-/** OpenAI SDK base URL (no /chat/completions). */
-export function resolveNemotronBaseUrl() {
-    const explicit = (process.env.NEMOTRON_BASE_URL || '').trim();
-    if (explicit) {
-        return explicit.replace(/\/+$/, '');
-    }
-    const llmUrl = (process.env.LLM_URL || '').trim();
-    if (llmUrl) {
-        try {
-            const u = new URL(llmUrl);
-            let path = u.pathname.replace(/\/chat\/completions\/?$/i, '');
-            if (path === '' || path === '/') {
-                path = '/v1';
-            }
-            return `${u.origin}${path}`.replace(/\/+$/, '');
-        } catch {
-            // fall through to default
-        }
-    }
-    return 'https://integrate.api.nvidia.com/v1';
+const PROJECT_ID = (process.env.GOOGLE_CLOUD_PROJECT || '').trim();
+const LOCATION = (process.env.VERTEX_LOCATION || 'us-central1').trim();
+
+function buildBaseUrl() {
+    if (!PROJECT_ID) return null;
+    return `https://${LOCATION}-aiplatform.googleapis.com/v1beta1/projects/${PROJECT_ID}/locations/${LOCATION}/endpoints/openapi`;
 }
 
+const VERTEX_BASE_URL = buildBaseUrl();
+
+const _auth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
+
+/** Custom fetch that injects a fresh Bearer token on every request. google-auth-library caches and auto-refreshes. */
+async function vertexFetch(url, init = {}) {
+    const token = await _auth.getAccessToken();
+    const headers = new Headers(init.headers || {});
+    headers.set('Authorization', `Bearer ${token}`);
+    return globalThis.fetch(url, { ...init, headers });
+}
+
+export function resolveNemotronBaseUrl() {
+    return VERTEX_BASE_URL;
+}
+
+/** Returns a truthy sentinel when Vertex AI is configured (GOOGLE_CLOUD_PROJECT is set). */
 export function getNemotronApiKey() {
-    return (process.env.NVIDIA_API_KEY || process.env.NVAPI_KEY || process.env.LLM_API_KEY || '').trim();
+    return PROJECT_ID ? 'vertex-adc' : '';
+}
+
+/** Returns the env var name that enabled AI — used by /health for diagnostics. */
+export function getLlmKeyEnvSource() {
+    return PROJECT_ID ? 'GOOGLE_CLOUD_PROJECT' : null;
 }
 
 /**
- * Which env var name is providing the key (for diagnostics only; never the secret value).
- * @returns {'NVIDIA_API_KEY'|'NVAPI_KEY'|'LLM_API_KEY'|null}
+ * Structured parse model (constrained JSON generation).
+ * Higher quality than text model; override via VERTEX_PARSE_MODEL.
  */
-export function getLlmKeyEnvSource() {
-    if ((process.env.NVIDIA_API_KEY || '').trim()) return 'NVIDIA_API_KEY';
-    if ((process.env.NVAPI_KEY || '').trim()) return 'NVAPI_KEY';
-    if ((process.env.LLM_API_KEY || '').trim()) return 'LLM_API_KEY';
-    return null;
+export function getParseModel() {
+    return (
+        process.env.VERTEX_PARSE_MODEL ||
+        'gemini-2.5-flash-lite'
+    ).trim();
 }
 
-/** Text/chat model (rewrite, parse, tutorials, thinking stream). */
+/** Text/chat model for free-form generation (rewrite, tutorials, common-issues). */
 export function getNemotronTextModel() {
-    return (process.env.NEMOTRON_MODEL || process.env.LLM_MODEL || 'nvidia/nemotron-3-super-120b-a12b').trim();
+    return (
+        process.env.VERTEX_TEXT_MODEL ||
+        process.env.NEMOTRON_MODEL ||
+        'gemini-2.5-flash-lite'
+    ).trim();
 }
 
 let _openaiClient = null;
 
+/** OpenAI-compat client for streaming free-text calls. Returns null if PROJECT_ID unset. */
 export function getNemotronClient() {
-    if (_openaiClient) {
-        return _openaiClient;
-    }
-    const apiKey = getNemotronApiKey();
-    if (!apiKey) {
-        return null;
-    }
+    if (_openaiClient) return _openaiClient;
+    if (!VERTEX_BASE_URL) return null;
     _openaiClient = new OpenAI({
-        apiKey,
-        baseURL: resolveNemotronBaseUrl()
+        apiKey: 'unused',
+        baseURL: VERTEX_BASE_URL,
+        fetch: vertexFetch,
     });
     return _openaiClient;
+}
+
+let _geminiClient = null;
+
+/**
+ * Native @google/genai client for structured JSON generation with responseSchema.
+ * Use for all structured parse calls — constrained generation prevents malformed JSON entirely.
+ */
+export function getGeminiClient() {
+    if (_geminiClient) return _geminiClient;
+    if (!PROJECT_ID) return null;
+    _geminiClient = new GoogleGenAI({ vertexai: true, project: PROJECT_ID, location: LOCATION });
+    return _geminiClient;
 }

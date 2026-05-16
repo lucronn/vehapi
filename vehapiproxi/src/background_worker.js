@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import logger from './logger.js';
 import { parseWithAI } from './ai_parser.js';
+import { dbQuery } from './db.js';
 import {
     insertParsedData,
     logAiProcessing,
@@ -19,7 +20,7 @@ import {
     upsertMediaAssetPdfFromArticleBody,
     getArticleCatalogEntry
 } from './supabase.js';
-import { inferKindAndSiloFromHeuristics } from './catalog_intelligence.js';
+import { inferKindAndSiloFromHeuristics, classifySchemaWithAI } from './catalog_intelligence.js';
 import { buildMinimalContentItemFromParse } from './content_item_mapper.js';
 import { extractTextFromPdfBase64 } from './pdf_native_text.js';
 import { ingestL2ContentChunksIfEnabled } from './l2_rag_ingest.js';
@@ -29,6 +30,54 @@ import {
     looksLikeObdDtcCode
 } from './article-access.js';
 import { ingestArticlesCatalogFromMotorJson } from './ingest/ingest_articles_catalog.js';
+import { ingestArticleToRagCorpus, isRagConfigured } from './rag_engine.js';
+
+// ---------------------------------------------------------------------------
+// Vehicle context resolution — year/make/model/engine for AI prompt grounding
+// ---------------------------------------------------------------------------
+const _vehicleCtxCache = new Map();
+
+/**
+ * Resolves year/make/model/engine for a Motor vehicleId.
+ * Parses composite IDs (year:make:model:engine) directly; for numeric IDs does a
+ * JSONB text scan of vehicle_metadata engine paths. Cached in memory (vehicles don't change).
+ */
+async function resolveVehicleContext(vehicleIdStr) {
+    if (!vehicleIdStr) return null;
+    if (_vehicleCtxCache.has(vehicleIdStr)) return _vehicleCtxCache.get(vehicleIdStr);
+
+    // Composite format: "2013:Ford:Explorer" or "2013:Ford:Explorer:3.5L V6"
+    const parts = vehicleIdStr.split(':');
+    if (parts.length >= 3 && /^\d{4}$/.test(parts[0])) {
+        const ctx = { year: parts[0], make: parts[1], model: parts[2], engine: parts[3] || null };
+        _vehicleCtxCache.set(vehicleIdStr, ctx);
+        return ctx;
+    }
+
+    // Numeric Motor vehicle ID — scan vehicle_metadata engine paths for this ID
+    try {
+        const { rows } = await dbQuery(
+            `SELECT path FROM vehicle_metadata
+             WHERE path LIKE '/year/%/make/%/model/%/engines'
+               AND data::text LIKE $1
+             LIMIT 1`,
+            [`%"vehicleId":${vehicleIdStr}%`]
+        );
+        if (rows.length > 0) {
+            const m = rows[0].path.match(/^\/year\/(\d+)\/make\/([^/]+)\/model\/([^/]+)/);
+            if (m) {
+                const ctx = { year: m[1], make: m[2], model: m[3], engine: null };
+                _vehicleCtxCache.set(vehicleIdStr, ctx);
+                return ctx;
+            }
+        }
+    } catch {
+        /* best-effort — don't fail the parse if context lookup fails */
+    }
+
+    _vehicleCtxCache.set(vehicleIdStr, null);
+    return null;
+}
 
 const ENABLE_NEMOTRON_PDF_VISION_FALLBACK =
     String(process.env.ENABLE_NEMOTRON_PDF_VISION_FALLBACK || '').toLowerCase() === 'true';
@@ -83,11 +132,17 @@ async function extractTextFromHtmlImages(html, taskId) {
     const imgs = $('img[src]').toArray().slice(0, HTML_IMAGE_OCR_MAX);
     if (!imgs.length) return html;
 
-    let mod;
-    try { mod = await import('./nemotron_multimodal.js'); }
-    catch (err) {
-        logger.warn(`[${taskId}] HTML image OCR: multimodal module unavailable: ${err?.message}`);
-        return html;
+    // Load OCR backends — prefer Cloud Vision (purpose-built OCR), fall back to Gemini vision
+    const { extractTextFromImageWithVision, isVisionConfigured } = await import('./cloud_vision.js');
+    const useCloudVision = isVisionConfigured();
+
+    let geminiMod = null;
+    if (!useCloudVision) {
+        try { geminiMod = await import('./nemotron_multimodal.js'); }
+        catch (err) {
+            logger.warn(`[${taskId}] HTML image OCR: both Cloud Vision and Gemini unavailable: ${err?.message}`);
+            return html;
+        }
     }
 
     let augmented = 0;
@@ -98,11 +153,28 @@ async function extractTextFromHtmlImages(html, taskId) {
         if (!isProcessable) continue;
 
         try {
-            const text = await mod.extractTextFromImageDataUri(src, {
-                instruction: 'Transcribe all readable text from this automotive service image. Preserve line breaks and formatting. Return only text.'
-            });
+            let text = '';
+            let ocrSource = 'unknown';
+
+            if (useCloudVision) {
+                // Cloud Vision: DOCUMENT_TEXT_DETECTION — best for dense text, tables, labels
+                const result = await extractTextFromImageWithVision(src);
+                if (result.success && result.text) {
+                    text = result.text;
+                    ocrSource = 'cloud-vision';
+                }
+            }
+
+            // Fallback: Gemini vision (understands context better, good for ambiguous images)
+            if (!text && geminiMod) {
+                text = await geminiMod.extractTextFromImageDataUri(src, {
+                    instruction: 'Transcribe all readable text from this automotive service image. Preserve line breaks and formatting. Return only text.'
+                });
+                if (text) ocrSource = 'gemini-vision';
+            }
+
             if (text && text.trim().length > 10) {
-                $(img).after(`<div class="torque-ocr-text" data-source="html-image-ocr">${text.trim()}</div>`);
+                $(img).after(`<div class="torque-ocr-text" data-source="${ocrSource}">${text.trim()}</div>`);
                 augmented++;
             }
         } catch (err) {
@@ -442,9 +514,25 @@ async function resolveArticleSchema(urlPath, fallbackSchema) {
         metadata.bucket
     );
     const heuristicSchema = siloCodeToTargetSchema(h.canonical_silo_code);
-    if (!heuristicSchema || h.confidence === 'low') {
+
+    // AI fallback: when heuristics give low confidence or 'other', ask Gemini to classify
+    if (!heuristicSchema || h.confidence === 'low' || h.canonical_silo_code === 'other') {
+        const aiResult = await classifySchemaWithAI(
+            metadata.title,
+            metadata.parent_bucket,
+            metadata.bucket,
+            '' // no excerpt at this stage — title + buckets are usually sufficient
+        ).catch(() => null);
+        if (aiResult) {
+            const aiSchema = siloCodeToTargetSchema(aiResult.canonical_silo_code);
+            if (aiSchema && aiSchema !== 'procedures') {
+                logger.info(`[schema-routing] AI classified article ${articleId} as ${aiResult.canonical_silo_code} (was low-confidence heuristic: ${h.canonical_silo_code})`);
+                return aiSchema;
+            }
+        }
         return fromBucket || fallbackSchema;
     }
+
     if (heuristicSchema === 'procedures') {
         return fromBucket || fallbackSchema;
     }
@@ -847,8 +935,10 @@ export async function processTaskImmediate(taskId, targetSchema, urlPath, rawDat
             catch (err) { logger.warn(`[${taskId}] HTML image OCR pre-parse failed: ${err?.message}`); }
         }
 
+        const vehicleContext = await resolveVehicleContext(vehicleIdStr).catch(() => null);
         const { parsed: parsedData, usage: parseUsage } = await parseWithAI(rawData, targetSchema, {
-            urlPath
+            urlPath,
+            vehicleContext
         });
 
         if (parseUsage) {
@@ -904,9 +994,53 @@ export async function processTaskImmediate(taskId, targetSchema, urlPath, rawDat
                             logger.warn(`[${taskId}] media_asset (PDF) failed: ${maErr.message}`);
                         }
                     }
-                    let pdfText = await extractTextFromPdfBase64(pdfBase64, { maxPages: 40 });
+                    // PDF extraction priority chain (first success wins):
+                    //  1. Document AI Layout Parser — best for structured/text PDFs (tables, lists)
+                    //  2. Cloud Vision DOCUMENT_TEXT_DETECTION — best for scanned/image PDFs (separate account)
+                    //  3. pdfjs-dist native text — fast, zero-cost, works for text-layer PDFs
+                    //  4. Gemini vision fallback — last resort for image-only PDFs
+                    let pdfText = '';
+                    let pdfSource = 'unknown';
 
-                    // Only invoke vision fallback for sparse/non-text PDFs and only when explicitly enabled.
+                    // 1. Document AI
+                    try {
+                        const { parsePdfWithDocumentAI, isDocumentAiConfigured } = await import('./document_ai.js');
+                        if (isDocumentAiConfigured()) {
+                            const daiResult = await parsePdfWithDocumentAI(pdfBuf);
+                            if (daiResult.success && daiResult.markdown && daiResult.markdown.trim().length >= MIN_NATIVE_PDF_TEXT_LENGTH) {
+                                pdfText = daiResult.markdown;
+                                pdfSource = 'document-ai';
+                                logger.info(`[${taskId}] Document AI PDF: ${pdfText.length} chars`);
+                            }
+                        }
+                    } catch (daiErr) {
+                        logger.warn(`[${taskId}] Document AI PDF failed: ${daiErr.message}`);
+                    }
+
+                    // 2. Cloud Vision (separate GCP account — CLOUD_VISION_API_KEY)
+                    if (!pdfText) {
+                        try {
+                            const { extractTextFromPdfWithVision, isVisionConfigured } = await import('./cloud_vision.js');
+                            if (isVisionConfigured()) {
+                                const vResult = await extractTextFromPdfWithVision(pdfBuf);
+                                if (vResult.success && vResult.text && vResult.text.trim().length >= MIN_NATIVE_PDF_TEXT_LENGTH) {
+                                    pdfText = vResult.text;
+                                    pdfSource = 'cloud-vision';
+                                    logger.info(`[${taskId}] Cloud Vision PDF: ${pdfText.length} chars`);
+                                }
+                            }
+                        } catch (cvErr) {
+                            logger.warn(`[${taskId}] Cloud Vision PDF failed: ${cvErr.message}`);
+                        }
+                    }
+
+                    // 3. pdfjs-dist native text layer
+                    if (!pdfText) {
+                        pdfText = await extractTextFromPdfBase64(pdfBase64, { maxPages: 40 });
+                        if (pdfText) pdfSource = 'native-pdf';
+                    }
+
+                    // 4. Gemini vision fallback (image-only PDFs, explicit opt-in)
                     if (
                         (!pdfText || pdfText.trim().length < MIN_NATIVE_PDF_TEXT_LENGTH) &&
                         ENABLE_NEMOTRON_PDF_VISION_FALLBACK
@@ -917,18 +1051,17 @@ export async function processTaskImmediate(taskId, targetSchema, urlPath, rawDat
                                     'Transcribe all readable text from this automotive service PDF page. ' +
                                     'Preserve line breaks. Return only text.'
                             });
-                            if (visionText && visionText.trim().length > pdfText.trim().length) {
+                            if (visionText && visionText.trim().length > (pdfText || '').trim().length) {
                                 pdfText = visionText.trim();
+                                pdfSource = 'gemini-vision';
                             }
                         } catch (visionErr) {
-                            logger.warn(
-                                `[${taskId}] Nemotron PDF fallback failed for ${urlPath}: ${visionErr.message}`
-                            );
+                            logger.warn(`[${taskId}] Gemini vision PDF fallback failed: ${visionErr.message}`);
                         }
                     }
 
                     if (pdfText && pdfText.length >= 20) {
-                        htmlContent = `<pre class="torque-native-pdf-text" data-source="native-pdf-or-vision-text">${htmlEscape(pdfText)}</pre>`;
+                        htmlContent = `<pre class="torque-native-pdf-text" data-source="${pdfSource}">${htmlEscape(pdfText)}</pre>`;
                     }
                 }
             } catch {
@@ -970,6 +1103,20 @@ export async function processTaskImmediate(taskId, targetSchema, urlPath, rawDat
                     htmlContent,
                     parsedData
                 });
+
+                // RAG corpus ingestion (fire-and-forget; failure never blocks the parse)
+                if (isRagConfigured()) {
+                    const articleMeta = await getArticleCatalogEntry(vehicleIdStr, externalIdStr).catch(() => null);
+                    ingestArticleToRagCorpus({
+                        vehicleId: vehicleIdStr,
+                        articleId: externalIdStr,
+                        targetSchema,
+                        title: articleMeta?.title || externalIdStr,
+                        htmlContent,
+                        parsedData,
+                        vehicleContext
+                    }).catch(err => logger.warn(`[${taskId}] RAG corpus ingest failed: ${err.message}`));
+                }
             }
 
             // Traceability link: evidence_ingest -> normalized entity rows.

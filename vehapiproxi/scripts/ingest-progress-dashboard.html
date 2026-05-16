@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Motor ingest progress</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; }
+    @media (prefers-color-scheme: light) { .card { border-color: #e2e8f0; } }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100 antialiased pb-24">
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-10 px-4 py-3">
+    <div class="mx-auto flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 class="text-lg font-semibold text-emerald-400">Motor bulk ingest · progress</h1>
+        <p class="mt-1 text-xs text-slate-500">
+          Reads <code class="rounded bg-slate-800 px-1 py-0.5 text-emerald-200/90">data/raw/MOTOR/&lt;sanitized-engine&gt;/ingest_tracker.json</code> per vehicle.
+          Served only from this machine (<code class="text-slate-400">127.0.0.1</code>).
+        </p>
+      </div>
+      <div class="flex flex-wrap items-center gap-3 text-sm">
+        <label class="flex cursor-pointer items-center gap-2 text-slate-400">
+          <input id="live" type="checkbox" checked class="accent-emerald-500" />
+          Auto-refresh
+        </label>
+        <span id="pulse" class="hidden h-2 w-2 animate-pulse rounded-full bg-emerald-500"></span>
+        <span id="stamp" class="text-xs text-slate-500 tabular-nums">—</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-7xl px-4 py-6">
+    <section class="card mb-6 grid gap-3 rounded-xl border border-slate-800 bg-slate-900/50 p-4 sm:grid-cols-5">
+      <div>
+        <p class="text-xs uppercase tracking-wide text-slate-500">Vehicles tracked</p>
+        <p id="tot-vehicles" class="mt-1 text-2xl font-semibold tabular-nums text-white">—</p>
+      </div>
+      <div>
+        <p class="text-xs uppercase tracking-wide text-slate-500">Scopes complete</p>
+        <p id="tot-scopes-done" class="mt-1 text-2xl font-semibold tabular-nums text-emerald-400">—</p>
+      </div>
+      <div>
+        <p class="text-xs uppercase tracking-wide text-slate-500">Scopes failed</p>
+        <p id="tot-scopes-fail" class="mt-1 text-2xl font-semibold tabular-nums text-rose-400">—</p>
+      </div>
+      <div>
+        <p class="text-xs uppercase tracking-wide text-slate-500">Articles normalized</p>
+        <p id="tot-art-norm" class="mt-1 text-2xl font-semibold tabular-nums text-sky-400">—</p>
+      </div>
+      <div>
+        <p class="text-xs uppercase tracking-wide text-slate-500">Articles (tracked)</p>
+        <p id="tot-art-all" class="mt-1 text-2xl font-semibold tabular-nums text-slate-200">—</p>
+      </div>
+    </section>
+
+    <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <input
+        id="filter"
+        type="search"
+        placeholder="Filter by vehicle id or folder…"
+        class="w-full max-w-xl rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm outline-none placeholder:text-slate-600 focus:border-emerald-600"
+      />
+      <p id="raw-path" class="truncate text-xs text-slate-500" title="">—</p>
+    </div>
+
+    <div class="overflow-x-auto rounded-xl border border-slate-800">
+      <table class="min-w-full text-left text-sm">
+        <thead class="sticky top-[52px] z-[1] border-b border-slate-800 bg-slate-900/95 text-xs uppercase tracking-wide text-slate-500">
+          <tr>
+            <th class="whitespace-nowrap px-4 py-3 font-medium">Vehicle</th>
+            <th class="whitespace-nowrap px-4 py-3 font-medium">Folder</th>
+            <th class="whitespace-nowrap px-4 py-3 font-medium">Updated</th>
+            <th class="whitespace-nowrap px-4 py-3 font-medium">Catalog</th>
+            <th class="whitespace-nowrap px-4 py-3 font-medium">Scopes</th>
+            <th class="whitespace-nowrap px-4 py-3 font-medium">Corpus</th>
+            <th class="px-4 py-3 font-medium">Status</th>
+          </tr>
+        </thead>
+        <tbody id="rows" class="divide-y divide-slate-800"></tbody>
+      </table>
+    </div>
+
+    <p id="empty" class="mt-16 hidden text-center text-slate-500">No trackers found. Run <code class="rounded bg-slate-800 px-2 py-0.5">npm run worker:ingest-full</code> first.</p>
+  </main>
+
+  <!-- Detail drawer -->
+  <div id="drawer-mask" class="fixed inset-0 z-40 hidden bg-black/60 backdrop-blur-sm" aria-hidden="true"></div>
+  <aside
+    id="drawer"
+    class="fixed inset-y-0 right-0 z-50 hidden w-full max-w-lg translate-x-full border-l border-slate-800 bg-slate-950 shadow-2xl transition-transform duration-200 [&.open]:translate-x-0"
+  >
+    <div class="flex items-center justify-between border-b border-slate-800 px-4 py-3">
+      <h2 id="drawer-title" class="truncate text-sm font-semibold text-white">Vehicle</h2>
+      <button id="drawer-close" type="button" class="rounded-lg px-3 py-1 text-slate-400 hover:bg-slate-800 hover:text-white">Close</button>
+    </div>
+    <pre id="drawer-pre" class="h-[calc(100%-52px)] overflow-auto p-4 text-xs leading-relaxed text-slate-300"></pre>
+  </aside>
+
+  <script>
+    const REFRESH_MS = 6000;
+
+    const elRows = document.getElementById('rows');
+    const elEmpty = document.getElementById('empty');
+    const elStamp = document.getElementById('stamp');
+    const elRaw = document.getElementById('raw-path');
+    const elPulse = document.getElementById('pulse');
+    const chkLive = document.getElementById('live');
+    const inpFilter = document.getElementById('filter');
+    const drawer = document.getElementById('drawer');
+    const drawerMask = document.getElementById('drawer-mask');
+    const drawerPre = document.getElementById('drawer-pre');
+    const drawerTitle = document.getElementById('drawer-title');
+    const drawerClose = document.getElementById('drawer-close');
+
+    /** @type {any[] | null} */
+    let lastVehicles = null;
+
+    function badge(text, variant) {
+      const v = variant === 'ok' ? 'bg-emerald-500/15 text-emerald-300 ring-emerald-500/30'
+        : variant === 'warn' ? 'bg-amber-500/15 text-amber-200 ring-amber-500/30'
+        : variant === 'bad' ? 'bg-rose-500/15 text-rose-300 ring-rose-500/30'
+        : 'bg-slate-500/15 text-slate-300 ring-slate-500/25';
+      return `<span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${v}">${text}</span>`;
+    }
+
+    function scopePct(r) {
+      const t = r.scopesRollup?.total ?? 0;
+      const c = r.scopesRollup?.complete ?? 0;
+      if (!t) return '—';
+      return `${Math.round((100 * c) / t)}%`;
+    }
+
+    function corpusLabel(r) {
+      const counts = r.articleCounts || {};
+      const n = counts.normalized ?? 0;
+      const tot = Object.values(counts).reduce((a, b) => a + (typeof b === 'number' ? b : 0), 0);
+      if (!tot) return '—';
+      return `${n} / ${tot}`;
+    }
+
+    function rowBadges(r) {
+      const sr = r.scopesRollup;
+      const cf = sr?.catalog || '—';
+      if (sr?.failed > 0) return badge(`${sr.failed} scope fail`, 'bad');
+      if ((sr?.inProgress || 0) + (sr?.pending || 0) > 0) return badge('In progress', 'warn');
+      if (sr?.total && sr.complete === sr.total && cf === 'complete') return badge('Surface OK', 'ok');
+      return badge('Mixed', 'warn');
+    }
+
+    function fmtTime(iso) {
+      if (!iso) return '—';
+      try {
+        const d = new Date(iso);
+        return d.toLocaleString();
+      } catch {
+        return String(iso);
+      }
+    }
+
+    function renderTable(vehicles) {
+      lastVehicles = vehicles;
+      const q = (inpFilter.value || '').trim().toLowerCase();
+      elRows.innerHTML = '';
+      let shown = 0;
+      for (const r of vehicles) {
+        const hay = `${r.vehicle_id} ${r.safeDir} ${r.content_source}`.toLowerCase();
+        if (q && !hay.includes(q)) continue;
+        shown++;
+        const tr = document.createElement('tr');
+        tr.className = 'cursor-pointer hover:bg-slate-800/80';
+        tr.innerHTML = `
+          <td class="whitespace-nowrap px-4 py-2.5 font-mono text-emerald-200/90">${escapeHtml(r.vehicle_id || '')}</td>
+          <td class="whitespace-nowrap px-4 py-2.5 font-mono text-xs text-slate-500">${escapeHtml(r.safeDir)}</td>
+          <td class="whitespace-nowrap px-4 py-2.5 tabular-nums text-slate-400">${escapeHtml(fmtTime(r.updated_at))}</td>
+          <td class="whitespace-nowrap px-4 py-2.5">${badge(r.scopesRollup?.catalog ?? '—', r.scopesRollup?.catalog === 'complete' ? 'ok' : r.scopesRollup?.catalog === 'failed' ? 'bad' : 'warn')}</td>
+          <td class="whitespace-nowrap px-4 py-2.5 font-mono tabular-nums text-slate-300">
+            ${r.scopesRollup?.complete ?? 0}/${r.scopesRollup?.total ?? 0} (${scopePct(r)})
+          </td>
+          <td class="whitespace-nowrap px-4 py-2.5 font-mono tabular-nums text-slate-300">${escapeHtml(corpusLabel(r))}</td>
+          <td class="px-4 py-2.5">${rowBadges(r)}</td>
+        `;
+        tr.addEventListener('click', () => openDrawer(r.safeDir));
+        elRows.appendChild(tr);
+      }
+      elEmpty.classList.toggle('hidden', shown !== 0 || vehicles.length === 0);
+    }
+
+    function escapeHtml(s) {
+      return String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function setTotals(d) {
+      document.getElementById('tot-vehicles').textContent = String(d.summary?.vehicleCount ?? 0);
+      document.getElementById('tot-scopes-done').textContent = String(d.summary?.scopeCompleteSum ?? 0);
+      document.getElementById('tot-scopes-fail').textContent = String(d.summary?.scopeFailedSum ?? 0);
+      document.getElementById('tot-art-norm').textContent = String(d.summary?.articleNormalizedSum ?? 0);
+      document.getElementById('tot-art-all').textContent = String(d.summary?.articleTrackedSum ?? 0);
+    }
+
+    async function load() {
+      elPulse.classList.remove('hidden');
+      try {
+        const res = await fetch(`/api/summary?_=${Date.now()}`, { cache: 'no-store' });
+        if (!res.ok) throw new Error(String(res.status));
+        const data = await res.json();
+        elRaw.textContent = data.rawRoot || '';
+        elRaw.title = data.rawRoot || '';
+        elStamp.textContent = data.generatedAt ? `Updated ${fmtTime(data.generatedAt)}` : '';
+        setTotals(data);
+        renderTable(data.vehicles || []);
+      } catch (e) {
+        console.error(e);
+        elStamp.textContent = 'Load failed · is the server running?';
+      }
+      elPulse.classList.add('hidden');
+    }
+
+    async function openDrawer(safeDir) {
+      drawerPre.textContent = 'Loading…';
+      drawerTitle.textContent = safeDir;
+      drawerMask.classList.remove('hidden');
+      drawer.classList.remove('hidden');
+      requestAnimationFrame(() => drawer.classList.add('open'));
+      try {
+        const res = await fetch(`/api/trackers/${encodeURIComponent(safeDir)}`);
+        const txt = await res.text();
+        if (!res.ok) {
+          drawerPre.textContent = txt || res.statusText;
+          return;
+        }
+        drawerPre.textContent = JSON.stringify(JSON.parse(txt), null, 2);
+      } catch (e) {
+        drawerPre.textContent = String(/** @type {Error} */ (e).message || e);
+      }
+    }
+
+    function closeDrawer() {
+      drawer.classList.remove('open');
+      drawerMask.classList.add('hidden');
+      setTimeout(() => drawer.classList.add('hidden'), 200);
+    }
+
+    drawerClose.addEventListener('click', closeDrawer);
+    drawerMask.addEventListener('click', closeDrawer);
+    inpFilter.addEventListener('input', () => {
+      if (lastVehicles) renderTable(lastVehicles);
+    });
+
+    let iv = /** @type {ReturnType<typeof setInterval> | null} */ (null);
+    function armTimer() {
+      if (iv) clearInterval(iv);
+      iv = null;
+      if (chkLive.checked) iv = setInterval(load, REFRESH_MS);
+    }
+
+    chkLive.addEventListener('change', armTimer);
+
+    load().then(() => {});
+    armTimer();
+  </script>
+</body>
+</html>

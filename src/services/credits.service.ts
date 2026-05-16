@@ -119,7 +119,7 @@ export class CreditsService {
                 if (token) {
                     headers = headers.set('Authorization', `Bearer ${token}`);
                 }
-                headers = headers.set('x-user-id', user.id);
+                headers = headers.set('x-user-id', user.uid);
             } catch (e) {
                 this.logger.error('Failed to get ID token', e);
             }

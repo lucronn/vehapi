@@ -73,7 +73,13 @@ This **lazy-by-usage** pattern **phases Motor out** of routine use: the more the
 
 - `src/services/data-sync.service.ts` — eager reference sync, catalog upserts, per-article sync.
 - `src/services/vehicle-data.service.ts` — for `vehicles.is_normalized`, section lists (`loadSectionData`), specs (`loadSpecs`), availability (`getAvailableSections`), maintenance (`loadMaintenanceSchedules`), and parts (`loadParts`) **do not** use Motor for display when Supabase is empty; background lazy/eager ingest fills gaps.
-- `vehapiproxi/src/background_worker.js` — server-side parse and normalized inserts.
+- `vehapiproxi/src/background_worker.js` — server-side parse and normalized inserts; `ingestMotorProxyPayloadAwait` awaits one proxy payload (same pipeline as async enqueue).
+- `vehapiproxi/src/ingest/ingest_articles_catalog.js` — shared `articles/v2` catalog → `articles` + `content_item` + `markVehicleNormalized`, with optional post-upsert count verification.
+- `vehapiproxi/src/ingest/reference_data_supabase.js` — server-side fluids → `specifications`, parts → `parts`, maintenance intervals/frequency → `maintenance_schedules` + `maintenance_task` (aligned with Angular flatten helpers).
+- `vehapiproxi/scripts/ingest-progress-dashboard.mjs` (+ `vehapiproxi/scripts/ingest-progress-dashboard.html`) — local (**127.0.0.1** by default) table + detail drawer over all **`ingest_tracker.json`** rows under **`data/raw/MOTOR/`**: **`npm run ingest:dashboard`**. Flags: **`--raw-dir=`**, **`--port=`**, **`INGEST_DASHBOARD_RAW`**.
+- `vehapiproxi/scripts/worker-ingest-vehicles-full.js` — bulk CLI: CSV (distinct `engine_id`). **Default surface ingest:** catalog (`articles/v2` + `torqueCatalogSync=1`) → `articles`/`content_item` list metadata, fluids/parts/maintenance → Supabase; **`--with-articles`** opt-in for per-article JSON + full normalization (individual corpus **`article_*.json`**). Explicit surface: **`npm run worker:ingest-surface`** / **`--metadata-only`** / **`WORKER_INGEST_METADATA_ONLY=1`**. **Continuous:** **`--continuous`** / **`WORKER_INGEST_CONTINUOUS=1`** ( **`--loop-gap-ms`**, **`SIGINT`** ); **`npm run worker:ingest-loop`**. On Motor session churn the worker waits then polls **`GET /auth/status`** until **`sessionValid`**, **`POST /auth/start`**, **`POST /auth/reset`** on **`error`** (**`WORKER_INGEST_AUTH_WAIT_MS`**, **`--auth-wait-ms`**). L0 snapshots (`articles_v2.json`, scopes, `ingest_tracker.json`) under gitignored **`data/raw/MOTOR/<id>/`**; **`--dry-run`** skips Supabase. From **`vehapiproxi/`**: `npm run worker:ingest-full`.
+- `vehapiproxi/src/ingest/verification-matrix.md` — pragmatic ingest checks for operators.
+- `npm run verify:ingest-golden` (in `vehapiproxi/`) — smoke on `testdata/ingest-golden/` fixtures (catalog id dedupe + tracker shape).
 
 ---
 
@@ -92,4 +98,5 @@ This **lazy-by-usage** pattern **phases Motor out** of routine use: the more the
 
 - **2026-03-25** — Initial version: codifies Supabase-first reads, first-touch catalog ingest, lazy per-article normalization, and Motor as ingest/index only.
 - **2026-03-25** — `VehicleDataService` aligned: no Motor display fallback for normalized vehicles on section lists, maintenance, or parts; implementation status table added.
-- **2026-03-26** — **Article body** section: structured canonical vs HTML rewrite; article viewer + `DataSyncService` prefer `content_item` / `articles.enhanced_content` before `/api/rewrite`; persist enhanced HTML after rewrite.
+- **2026-04-30** — Bulk ingest CLI + modules: `worker-ingest-vehicles-full.js`, `ingest/ingest_articles_catalog.js`, `ingest/reference_data_supabase.js`, `ingest/verification-matrix.md`; L0 artifacts under `data/raw/` (gitignored).
+- **2026-05-01** — Documented default **surface** ingest vs opt-in **`--with-articles`** corpus; `worker:ingest-surface`, `--metadata-only` / `--surface-only`; **`--continuous`**, **`worker:ingest-loop`**, and proxy re-auth polling (`/auth/status`, `/auth/start`, `/auth/reset`); **`ingest:dashboard`** local progress UI (`ingest-progress-dashboard.*`).

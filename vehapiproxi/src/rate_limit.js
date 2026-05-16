@@ -3,21 +3,21 @@ import jwt from 'jsonwebtoken';
 
 /**
  * Per-IP limiter for GET article HTML/content paths under `/api/source/.../article/...`.
- * When `SUPABASE_JWT_SECRET` is set and `Authorization: Bearer <valid JWT>` is present,
- * the key is per user (`sub`); otherwise per `req.ip`.
+ * When a Bearer JWT is present, key is per user (`sub` claim); otherwise per `req.ip`.
+ * Token signature is NOT verified here — this is rate-limit keying only; auth is done by
+ * secureAuthMiddleware which verifies Firebase ID tokens.
  * Skipped when `x-vehapi-verify: 1` (evidence-link verify script).
  */
 function articleRateLimitKey(req) {
-    const secret = process.env.SUPABASE_JWT_SECRET;
     const auth = req.headers.authorization;
-    if (secret && typeof auth === 'string' && auth.startsWith('Bearer ')) {
+    if (typeof auth === 'string' && auth.startsWith('Bearer ')) {
         try {
-            const decoded = jwt.verify(auth.slice(7), secret);
+            const decoded = jwt.decode(auth.slice(7));
             if (decoded?.sub) {
                 return `user:${decoded.sub}`;
             }
         } catch {
-            /* invalid/expired token — fall back to IP */
+            /* malformed token — fall back to IP */
         }
     }
     return req.ip || 'unknown';

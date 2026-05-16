@@ -14,6 +14,7 @@ import { ArticleViewerComponent } from './src/pages/article-viewer/article-viewe
 import { CreditsDashboardComponent } from './src/pages/credits-dashboard/credits-dashboard.component';
 import { KnowledgeSearchComponent } from './src/pages/knowledge-search/knowledge-search.component';
 import { NotFoundComponent } from './src/pages/not-found/not-found.component';
+import { VehicleBrowseComponent } from './src/pages/vehicle-browse/vehicle-browse.component';
 
 bootstrapApplication(AppComponent, {
   providers: [
@@ -27,6 +28,7 @@ bootstrapApplication(AppComponent, {
       { path: 'vehicle/:contentSource/:vehicleId', component: VehicleDashboardComponent },
       { path: 'vehicle/:contentSource/:vehicleId/article/:articleId', component: ArticleViewerComponent },
       { path: 'vehicle/:contentSource/:vehicleId/knowledge', component: KnowledgeSearchComponent },
+      { path: 'browse', component: VehicleBrowseComponent },
       { path: '**', component: NotFoundComponent }
     ], withHashLocation())
   ]

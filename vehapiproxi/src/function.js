@@ -28,11 +28,17 @@ import {
     getVehicleIsNormalized
 } from './supabase.js';
 import jwt from 'jsonwebtoken';
+import admin from 'firebase-admin';
 import { registerHealthEndpoint } from './routes/health.js';
 import { registerAuthEndpoints } from './routes/auth.js';
+import { registerChekChartYmmeRoutes } from './routes/chek-chart-ymme.js';
+import { registerIngestEndpoint } from './routes/ingest.js';
 import { registerCreditsEndpoints } from './routes/credits-endpoints.js';
 import { registerAiEndpoints } from './routes/ai-endpoints.js';
 import { registerDebugEndpoints } from './routes/debug.js';
+import tutorialRouter from './routes/tutorial.js';
+import dataApiRouter from './routes/data-api.js';
+import dbEndpointsRouter from './routes/db-endpoints.js';
 import { registerMakeIdResolutionEndpoints } from './routes/make-id-resolution.js';
 import { registerOrientationEndpoints } from './routes/orientations.js';
 import { registerArticleMetadataEndpoint } from './routes/article-metadata.js';
@@ -138,6 +144,13 @@ const swaggerDocument = require('./swagger.json');
 
 // Validate configuration (non-blocking)
 validateConfig();
+
+// Firebase Admin — uses Application Default Credentials on Cloud Run; no explicit init needed.
+if (!admin.apps.length) {
+    admin.initializeApp({
+        projectId: (process.env.FIREBASE_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || '').trim() || undefined,
+    });
+}
 
 const app = express();
 app.set('trust proxy', 1);
@@ -280,31 +293,14 @@ registerOrientationEndpoints(app, authMiddleware, config, logger);
 
 // --- CREDIT SYSTEM ENDPOINTS ---
 
-// Verify Supabase JWT (access_token) by calling the Supabase auth endpoint.
-// This is required because Supabase issues ES256 (asymmetric) tokens for user sessions,
-// which cannot be verified locally using just the HS256 string secret.
-async function verifySupabaseJwt(token) {
-    const url = process.env.SUPABASE_URL;
-    const apiKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!url) {
-        logger.warn('SUPABASE_URL not set; cannot verify Supabase JWT');
-        return null;
-    }
+// Verify Firebase ID token using firebase-admin.
+// On Cloud Run, Application Default Credentials (ADC) are used automatically.
+async function verifyFirebaseToken(token) {
     try {
-        const response = await fetch(`${url}/auth/v1/user`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                apikey: apiKey
-            }
-        });
-        if (!response.ok) {
-            logger.warn('JWT verification via Supabase API failed: ' + await response.text());
-            return null;
-        }
-        const user = await response.json();
-        return { sub: user.id, email: user.email }; // minimal decoded format
+        const decoded = await admin.auth().verifyIdToken(token);
+        return { sub: decoded.uid, email: decoded.email ?? null };
     } catch (err) {
-        logger.warn('JWT verification error: ' + err.message);
+        logger.warn('Firebase token verification failed: ' + err.message);
         return null;
     }
 }
@@ -318,18 +314,18 @@ const secureAuthMiddleware = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         if (req.headers['x-user-id']) {
-            logger.warn('x-user-id header rejected; use Bearer token (Supabase session).');
+            logger.warn('x-user-id header rejected; use Bearer token (Firebase ID token).');
         }
         return res.status(401).json({ error: 'Authorization header with Bearer token required' });
     }
 
     const token = authHeader.split('Bearer ')[1];
-    const decoded = await verifySupabaseJwt(token);
+    const decoded = await verifyFirebaseToken(token);
     if (!decoded) {
         return res.status(401).json({ error: 'Invalid or expired authentication token' });
     }
 
-    req.userId = decoded.sub; // Supabase user id
+    req.userId = decoded.sub; // Firebase UID
     req.user = decoded;
     req.isVerified = true;
     return next();
@@ -425,6 +421,19 @@ registerArticleMetadataEndpoint(app, secureAuthMiddleware, logger);
 
 // --- AI ENDPOINTS ---
 registerAiEndpoints(app, getAiFunctions);
+
+// Tutorial chatbot — POST /api/ai/vehicle/:vehicleId/tutorial (requires Firebase auth)
+app.use('/api/ai', secureAuthMiddleware, tutorialRouter);
+
+// Cloud SQL-backed read endpoints (YMME + article catalog from our DB)
+app.use('/api/db', dbEndpointsRouter);
+
+// Data API — GET /api/data/:table (public reads), POST /api/data/:table (auth required)
+app.use('/api/data', express.json({ limit: '2mb' }), (req, res, next) => {
+    // Only POST/PUT/PATCH require auth; GET is public (vehicle data is not user-private)
+    if (req.method === 'GET') return next();
+    return secureAuthMiddleware(req, res, next);
+}, dataApiRouter);
 
 // Motor Information API — YMME helpers (base vehicle id, engines); requires Supabase JWT
 registerMotorInformationYmmeRoutes(app, secureAuthMiddleware, logger);
@@ -719,7 +728,7 @@ const articleAccessMiddleware = async (req, res, next) => {
     }
 
     const token = authHeader.split('Bearer ')[1];
-    const decoded = await verifySupabaseJwt(token);
+    const decoded = await verifyFirebaseToken(token);
     if (!decoded) {
         return res.status(401).json({ error: 'Invalid or expired authentication token' });
     }
@@ -823,6 +832,18 @@ const articleContentCacheMiddleware = async (req, res, next) => {
 };
 
 app.use('/api', articleContentCacheMiddleware);
+
+// Chek-Chart YMME: api.motor.com fallback for /api/years, /api/year/:year/makes, /api/year/:year/make/:make/models
+// Activates only when MOTOR_FLUIDS_PUBLIC_KEY + MOTOR_FLUIDS_PRIVATE_KEY are set. Cloud SQL cache still takes priority.
+registerChekChartYmmeRoutes(app, logger);
+// Ingest endpoint — raw body for binary/PDF/image, json for structured, text for plaintext
+app.use('/api/ingest', (req, res, next) => {
+    const ct = req.headers['content-type'] || '';
+    if (ct.includes('application/json')) return express.json({ limit: '50mb' })(req, res, next);
+    if (ct.includes('text/')) return express.text({ limit: '10mb', type: 'text/*' })(req, res, next);
+    return express.raw({ limit: '50mb', type: '*/*' })(req, res, next);
+});
+registerIngestEndpoint(app, secureAuthMiddleware, logger);
 
 // Fluids: optional direct `api.motor.com` RecommendedFluids when MOTOR_INFORMATION_* env + baseVehicleId + engineId query params
 registerMotorInformationFluidsIntercept(app, logger);

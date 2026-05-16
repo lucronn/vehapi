@@ -4,7 +4,7 @@
 import { embedTextsBatch } from './embedding_client.js';
 import { matchContentChunksRpc } from './supabase.js';
 
-const EXPECTED_DIMS = Number.parseInt(process.env.L2_EMBEDDING_DIMS || '1024', 10);
+const EXPECTED_DIMS = Number.parseInt(process.env.L2_EMBEDDING_DIMS || '768', 10);
 
 /**
  * Raw row from `matchContentChunksRpc` (internal camelCase).

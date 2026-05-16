@@ -30,7 +30,13 @@
         "verify:evidence-links:local": "node scripts/verify-evidence-links-one-article.js --local",
         "test:article-rate-limit": "node scripts/test-article-rate-limit.js",
         "sync:catalog": "node scripts/sync-catalog-vehicle.js",
-        "seed:ymme": "node scripts/seed-ymme.js"
+        "seed:ymme": "node scripts/seed-ymme.js",
+        "check:ymme-integrity": "node scripts/check-ymme-integrity.js",
+        "verify:ingest-golden": "node scripts/verify-ingest-golden.js",
+        "ingest:dashboard": "node scripts/ingest-progress-dashboard.mjs",
+        "worker:ingest-full": "node scripts/worker-ingest-vehicles-full.js",
+        "worker:ingest-surface": "node scripts/worker-ingest-vehicles-full.js --metadata-only",
+        "worker:ingest-loop": "node scripts/worker-ingest-vehicles-full.js --continuous --resume --metadata-only"
     },
     "keywords": [
         "proxy",
@@ -40,7 +46,8 @@
     "author": "",
     "license": "MIT",
     "dependencies": {
-        "@supabase/supabase-js": "^2.97.0",
+        "@google-cloud/documentai": "^9.6.1",
+        "@google/genai": "latest",
         "canvas": "^3.1.0",
         "cheerio": "^1.2.0",
         "cookie": "^0.6.0",
@@ -48,6 +55,8 @@
         "dotenv": "^16.6.1",
         "express": "^4.18.2",
         "express-rate-limit": "^7.5.1",
+        "firebase-admin": "^13.9.0",
+        "google-auth-library": "^9.0.0",
         "http-proxy-middleware": "^2.0.6",
         "jsonwebtoken": "^9.0.2",
         "node-fetch": "^3.3.2",

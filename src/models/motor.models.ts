@@ -42,6 +42,7 @@ export interface Model {
   model: string;
   id: string;
   engines?: Engine[];
+  engineCount?: number;  // Populated by Cloud SQL endpoint to drive engine-step auto-skip
 }
 
 export interface Engine {

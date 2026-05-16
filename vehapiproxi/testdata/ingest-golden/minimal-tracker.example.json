@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "vehicle_external_id": "100306638",
+  "content_source": "MOTOR",
+  "catalog": {
+    "state": "complete",
+    "raw_article_details_count": 1200,
+    "deduped_article_count": 1180,
+    "verified_articles_row_count": 1180
+  },
+  "reference": {
+    "fluids": { "state": "complete", "rows_upserted": 12 },
+    "parts": { "state": "complete", "rows_upserted": 400 },
+    "maintenance_intervals": {
+      "7500": { "state": "complete" },
+      "15000": { "state": "complete" }
+    },
+    "maintenance_frequency": {
+      "F": { "state": "complete" },
+      "N": { "state": "complete" },
+      "R": { "state": "complete" }
+    }
+  },
+  "corpus": {
+    "enabled": false,
+    "state": "pending",
+    "articles": {}
+  }
+}
