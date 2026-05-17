@@ -106,18 +106,18 @@
 
         <div class="relative z-20 max-w-sm mx-auto space-y-4 animate-fade-in-up sticky top-[30vh]">
             <div
-                class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-2 ring-1 ring-white/20">
-                <lucide-icon [img]="icons.Lock" class="w-6 h-6 text-white"></lucide-icon>
+                class="w-12 h-12 rounded-full bg-surface-soft flex items-center justify-center mx-auto mb-2 ring-1 ring-white/20">
+                <lucide-icon [img]="icons.Lock" class="w-6 h-6 text-ink"></lucide-icon>
             </div>
 
-            <h3 class="text-xl font-bold text-white">Unlock Common Issues</h3>
+            <h3 class="text-xl font-bold text-ink">Unlock Common Issues</h3>
             <p class="text-sm text-gray-300">
                 Known problems, symptoms, and diagnostic solutions.
             </p>
 
             <div class="pt-2">
                 <button (click)="unlockSection()" [disabled]="isUnlocking()"
-                    class="w-full btn-primary py-3 font-semibold shadow-lg shadow-cyan-500/20 relative overflow-hidden group">
+                    class="w-full btn-primary py-3 font-semibold shadow-lg shadow-none relative overflow-hidden group">
 
                     @if (isUnlocking()) {
                     <span class="flex items-center justify-center gap-2">
@@ -128,7 +128,7 @@
                     <span class="flex items-center justify-center gap-2">
                         <lucide-icon [img]="icons.Sparkles" class="w-4 h-4"></lucide-icon>
                         <span>Unlock Now</span>
-                        <span class="bg-white/20 px-1.5 py-0.5 rounded text-[10px] font-mono ml-1">
+                        <span class="bg-[var(--hairline)] px-1.5 py-0.5 rounded text-[10px] font-mono ml-1">
                             {{ creditsService.COSTS.COMMON_ISSUES }} CR
                         </span>
                     </span>

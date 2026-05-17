@@ -10,20 +10,20 @@ import { TutorialStep } from '../../models/motor.models';
   template: `
     <div class="glass-card overflow-hidden shadow-2xl animate-fade-in">
       <!-- High-Tech Progress Header -->
-      <div class="bg-white/5 px-8 py-6 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div class="bg-surface-soft px-8 py-6 border-b border-hairline flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div class="flex items-center gap-4">
-            <div class="w-10 h-10 rounded-xl bg-[hsl(var(--accent-cyan)/0.1)] flex items-center justify-center text-[hsl(var(--accent-cyan))]">
+            <div class="w-10 h-10 rounded-xl bg-accent-soft flex items-center justify-center text-[var(--accent)]">
                 <lucide-icon [img]="icons.Wrench" class="w-5 h-5"></lucide-icon>
             </div>
             <div>
                 <p class="text-[9px] uppercase tracking-[0.3em] font-black text-[hsl(var(--text-muted))]">Vector Step</p>
-                <h3 class="text-xs font-black text-white uppercase tracking-widest">Active Resolution {{ currentStepIndex() + 1 }} / {{ steps().length }}</h3>
+                <h3 class="text-xs font-black text-ink uppercase tracking-widest">Active Resolution {{ currentStepIndex() + 1 }} / {{ steps().length }}</h3>
             </div>
         </div>
         
-        <div class="flex-1 max-w-md h-1.5 bg-white/5 rounded-full overflow-hidden relative">
-            <div class="absolute inset-0 bg-gradient-to-r from-[hsl(var(--accent-cyan))] to-[hsl(var(--accent-violet))] opacity-20"></div>
-            <div class="h-full bg-gradient-to-r from-[hsl(var(--accent-cyan))] to-[hsl(var(--accent-violet))] transition-all duration-700 ease-out relative z-10" [style.width.%]="progress()">
+        <div class="flex-1 max-w-md h-1.5 bg-surface-soft rounded-full overflow-hidden relative">
+            <div class="absolute inset-0 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-deep)] opacity-20"></div>
+            <div class="h-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent-deep)] transition-all duration-700 ease-out relative z-10" [style.width.%]="progress()">
                 <div class="absolute top-0 right-0 w-4 h-full bg-white/40 blur-sm"></div>
             </div>
         </div>
@@ -33,7 +33,7 @@ import { TutorialStep } from '../../models/motor.models';
       <div class="p-8 md:p-12 min-h-[400px]">
         
         <!-- Animated Title -->
-        <h2 class="text-3xl font-black text-white tracking-tighter mb-10 leading-none">{{ currentStep()?.title }}</h2>
+        <h2 class="text-3xl font-black text-ink tracking-tighter mb-10 leading-none">{{ currentStep()?.title }}</h2>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
             <!-- Left Column: Instructional Data -->
@@ -46,22 +46,22 @@ import { TutorialStep } from '../../models/motor.models';
                             <lucide-icon [img]="icons.AlertTriangle" class="w-4 h-4"></lucide-icon>
                             Critical Safety Protocol
                         </div>
-                        <p class="text-white/80 text-sm leading-relaxed font-medium">{{ currentStep()?.warning }}</p>
+                        <p class="text-muted text-sm leading-relaxed font-medium">{{ currentStep()?.warning }}</p>
                     </div>
                 </div>
 
                 <!-- Step Execution -->
-                <div class="motor-prose text-lg text-white/70 leading-relaxed font-medium" 
+                <div class="motor-prose text-lg text-muted leading-relaxed font-medium" 
                      [innerHTML]="currentStep()?.content"></div>
                 
                 <!-- Required Equipment -->
-                <div *ngIf="currentStep()?.tool" class="bg-white/5 border border-white/10 p-6 rounded-2xl flex items-start gap-4">
-                    <div class="w-10 h-10 rounded-xl bg-[hsl(var(--accent-cyan)/0.1)] flex items-center justify-center text-[hsl(var(--accent-cyan))] flex-shrink-0">
+                <div *ngIf="currentStep()?.tool" class="bg-surface-soft border border-hairline p-6 rounded-2xl flex items-start gap-4">
+                    <div class="w-10 h-10 rounded-xl bg-accent-soft flex items-center justify-center text-[var(--accent)] flex-shrink-0">
                         <lucide-icon [img]="icons.Wrench" class="w-5 h-5"></lucide-icon>
                     </div>
                     <div>
                         <p class="text-[9px] uppercase tracking-[0.3em] text-[hsl(var(--text-muted))] font-black mb-1">Equipment Required</p>
-                        <p class="text-white font-bold">{{ currentStep()?.tool }}</p>
+                        <p class="text-ink font-bold">{{ currentStep()?.tool }}</p>
                     </div>
                 </div>
             </div>
@@ -70,18 +70,18 @@ import { TutorialStep } from '../../models/motor.models';
             <div class="lg:col-span-5 space-y-6">
                 @if (currentStep()?.mediaPlaceholder) {
                 <div class="glass-card p-2 group overflow-hidden">
-                    <div class="rounded-xl overflow-hidden border border-white/5 bg-black/40" [innerHTML]="currentStep()?.mediaPlaceholder"></div>
+                    <div class="rounded-xl overflow-hidden border border-hairline bg-black/40" [innerHTML]="currentStep()?.mediaPlaceholder"></div>
                     <div class="mt-4 px-4 py-2 flex items-center justify-between">
                         <span class="text-[9px] uppercase tracking-widest font-black text-[hsl(var(--text-muted))]">Reference Diagram</span>
                         <div class="flex gap-1">
-                            <div class="w-1 h-1 rounded-full bg-[hsl(var(--accent-cyan))]"></div>
+                            <div class="w-1 h-1 rounded-full bg-[var(--accent)]"></div>
                             <div class="w-1 h-1 rounded-full bg-white/20"></div>
                             <div class="w-1 h-1 rounded-full bg-white/20"></div>
                         </div>
                     </div>
                 </div>
                 } @else {
-                    <div class="h-full flex flex-col items-center justify-center p-12 border-2 border-dashed border-white/5 rounded-3xl opacity-20 grayscale">
+                    <div class="h-full flex flex-col items-center justify-center p-12 border-2 border-dashed border-hairline rounded-3xl opacity-20 grayscale">
                         <lucide-icon [img]="icons.Wrench" class="w-20 h-20 mb-6"></lucide-icon>
                         <p class="text-center text-xs uppercase tracking-[0.2em] font-black">No visual data for this step</p>
                     </div>
@@ -91,11 +91,11 @@ import { TutorialStep } from '../../models/motor.models';
       </div>
 
       <!-- Navigation Matrix -->
-      <div class="bg-white/5 px-10 py-8 border-t border-white/5 flex items-center justify-between">
+      <div class="bg-surface-soft px-10 py-8 border-t border-hairline flex items-center justify-between">
         <button 
           (click)="prev()" 
           [disabled]="currentStepIndex() === 0"
-          class="flex items-center gap-3 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all disabled:opacity-20 disabled:cursor-not-allowed hover:bg-white/5">
+          class="flex items-center gap-3 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all disabled:opacity-20 disabled:cursor-not-allowed hover:bg-surface-soft">
           <lucide-icon [img]="icons.ChevronLeft" class="w-4 h-4"></lucide-icon>
           Previous State
         </button>
@@ -103,8 +103,8 @@ import { TutorialStep } from '../../models/motor.models';
         <button 
           (click)="next()" 
           class="relative group active:scale-95 transition-all">
-          <div class="absolute -inset-1 bg-gradient-to-r from-[hsl(var(--accent-cyan))] to-[hsl(var(--accent-violet))] rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-500"></div>
-          <div class="relative flex items-center gap-3 px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] bg-[hsl(var(--bg-deep))] text-white border border-white/10 group-hover:border-[hsl(var(--accent-cyan)/0.5)] transition-all">
+          <div class="absolute -inset-1 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-deep)] rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-500"></div>
+          <div class="relative flex items-center gap-3 px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] bg-accent text-accent-ink border border-hairline group-hover:border-accent-deep transition-all">
             {{ currentStepIndex() === steps().length - 1 ? 'End Protocol' : 'Next Operation' }}
             <lucide-icon [img]="icons.ChevronRight" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></lucide-icon>
           </div>

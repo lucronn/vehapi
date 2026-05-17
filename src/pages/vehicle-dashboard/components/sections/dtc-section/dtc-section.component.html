@@ -14,7 +14,7 @@
 
         @for (dtc of displayedDtcs(); track trackByCode($index, dtc)) {
         <div (click)="viewDtc(dtc)"
-            class="card p-5 flex flex-col transition-all group animate-fade-in-up cursor-pointer hover:bg-white/5"
+            class="card p-5 flex flex-col transition-all group animate-fade-in-up cursor-pointer hover:bg-[var(--bg-hover)]"
             [style.animation-delay]="$index * 50 + 'ms'">
             <div class="space-y-3">
                 <div class="flex items-center justify-between">
@@ -46,9 +46,9 @@
 
     <!-- Unlock banner when section locked (titles above are clickable; article viewer shows lock) -->
     @if (!creditsService.hasAccess(vehicleId, 'dtcs')) {
-    <div class="mt-6 p-4 rounded-xl bg-white/[0.04] border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <div class="mt-6 p-4 rounded-xl bg-surface-soft border border-hairline flex flex-col sm:flex-row items-center justify-between gap-4">
         <div class="flex items-center gap-3">
-            <lucide-icon [img]="icons.Lock" class="w-5 h-5 text-torque-muted"></lucide-icon>
+            <lucide-icon [img]="icons.Lock" class="w-5 h-5 text-faint"></lucide-icon>
             <div>
                 <p class="text-sm font-medium">Unlock full section ({{ creditsService.COSTS.DTC }} CR) or individual articles (100 CR each)</p>
                 @if (creditsService.balance() < creditsService.COSTS.DTC) {

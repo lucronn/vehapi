@@ -11,7 +11,7 @@ import { animate, style, transition, trigger } from '@angular/animations';
     template: `
     <div
       *ngIf="dataSync.isSyncing()"
-      class="fixed bottom-4 right-4 z-50 w-80 p-4 rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-700/60 space-y-3"
+      class="fixed bottom-4 right-4 z-50 w-80 p-4 rounded-2xl glass-card shadow-xl space-y-3"
       @fadeInOut
     >
       <div class="flex items-center gap-3">

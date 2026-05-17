@@ -20,26 +20,13 @@ module.exports = {
                 accent:       'var(--accent)',
                 'accent-soft':'var(--accent-soft)',
                 danger:       'var(--danger)',
-                // Legacy "torque-*" aliases so any un-migrated class keeps
-                // compiling during the redesign rollout.
-                torque: {
-                    bg:                 'var(--paper)',
-                    card:               'var(--surface)',
-                    dark:               'var(--surface)',
-                    cyan:               'var(--accent)',
-                    violet:             'var(--accent)',
-                    purple:             'var(--accent)',
-                    'text-secondary':   'var(--muted)',
-                    'text-muted':       'var(--faint)',
-                    secondary:          'var(--muted)',
-                    muted:              'var(--faint)',
-                },
+                'accent-ink': 'var(--accent-ink)',
             },
             fontFamily: {
-                display: ['"Fraunces"', 'ui-serif', 'Georgia', 'serif'],
-                heading: ['"Fraunces"', 'ui-serif', 'Georgia', 'serif'],
-                sans:    ['"Geist"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-                mono:    ['"Geist Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+                display: ['"Literata"', 'ui-serif', 'Georgia', 'serif'],
+                heading: ['"Literata"', 'ui-serif', 'Georgia', 'serif'],
+                sans:    ['"Figtree"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                mono:    ['"IBM Plex Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
             },
             letterSpacing: {
                 tightest: '-0.04em',

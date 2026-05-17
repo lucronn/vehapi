@@ -13,7 +13,7 @@
 
         @for (diagram of displayedDiagrams(); track trackById($index, diagram)) {
         <div (click)="viewDiagram(diagram)"
-            class="card block transition-all group animate-fade-in-up overflow-hidden cursor-pointer hover:bg-white/5"
+            class="card block transition-all group animate-fade-in-up overflow-hidden cursor-pointer hover:bg-[var(--bg-hover)]"
             [style.animation-delay]="$index * 50 + 'ms'">
             <div class="flex flex-col h-full">
                 <!-- Thumbnail -->
@@ -60,9 +60,9 @@
 
     <!-- Unlock banner when section locked -->
     @if (!creditsService.hasAccess(vehicleId, 'diagrams')) {
-    <div class="mt-6 p-4 rounded-xl bg-white/[0.04] border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <div class="mt-6 p-4 rounded-xl bg-surface-soft border border-hairline flex flex-col sm:flex-row items-center justify-between gap-4">
         <div class="flex items-center gap-3">
-            <lucide-icon [img]="icons.Lock" class="w-5 h-5 text-torque-muted"></lucide-icon>
+            <lucide-icon [img]="icons.Lock" class="w-5 h-5 text-faint"></lucide-icon>
             <div>
                 <p class="text-sm font-medium">Unlock full section ({{ creditsService.COSTS.DIAGRAMS }} CR) or individual articles (100 CR each)</p>
                 @if (creditsService.balance() < creditsService.COSTS.DIAGRAMS) {

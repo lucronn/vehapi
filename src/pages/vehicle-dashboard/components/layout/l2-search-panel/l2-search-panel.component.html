@@ -1,7 +1,7 @@
-<div class="glass-card overflow-hidden mt-4 border border-white/10">
-  <div class="px-4 py-3 border-b border-white/5 bg-white/[0.03]">
-    <h3 class="text-[10px] font-mono uppercase tracking-[0.2em] text-torque-cyan">Knowledge search (L2)</h3>
-    <p class="text-xs text-torque-muted mt-1">Semantic search over embedded article text. You must be signed in, have unlocked a module for this vehicle, and the server must run L2 ingest (<span class="font-mono text-[10px]">ENABLE_L2_EMBEDDINGS</span> + embeddings model).</p>
+<div class="glass-card overflow-hidden mt-4 border border-hairline">
+  <div class="px-4 py-3 border-b border-hairline bg-[var(--bg-hover)]">
+    <h3 class="text-[10px] font-mono uppercase tracking-[0.2em] text-accent">Knowledge search (L2)</h3>
+    <p class="text-xs text-faint mt-1">Semantic search over embedded article text. You must be signed in, have unlocked a module for this vehicle, and the server must run L2 ingest (<span class="font-mono text-[10px]">ENABLE_L2_EMBEDDINGS</span> + embeddings model).</p>
   </div>
   <div class="p-4 space-y-3">
     <div class="flex flex-col sm:flex-row gap-2">
@@ -9,7 +9,7 @@
         type="search"
         [(ngModel)]="query"
         (keydown.enter)="search()"
-        class="flex-1 rounded-lg bg-black/30 border border-white/10 px-3 py-2.5 text-sm text-white placeholder:text-white/35 min-h-[44px]"
+        class="field-input flex-1"
         placeholder="e.g. torque spec, fluid capacity…"
         [attr.aria-label]="'Semantic search query'" />
       <button
@@ -24,24 +24,24 @@
       <p class="text-xs text-red-400">{{ error() }}</p>
     }
     @if (emptyHint()) {
-      <p class="text-xs text-torque-muted leading-relaxed">{{ emptyHint() }}</p>
+      <p class="text-xs text-faint leading-relaxed">{{ emptyHint() }}</p>
     }
     @if (hasSearched() && !loading() && results().length === 0 && !error() && !emptyHint()) {
-      <p class="text-xs text-torque-muted">No chunks matched your query.</p>
+      <p class="text-xs text-faint">No chunks matched your query.</p>
     }
     <ul class="space-y-3 max-h-72 overflow-y-auto overscroll-contain">
       @for (c of results(); track c.citation.chunk_id) {
-        <li class="text-xs border-b border-white/5 pb-3 last:border-0">
+        <li class="text-xs border-b border-hairline pb-3 last:border-0">
           <a
             [routerLink]="['/vehicle', contentSource(), vehicleId(), 'article', c.citation.motor_article_id]"
             [queryParams]="{ moduleType: moduleTypeForSilo(c.citation.canonical_silo_code) }"
-            class="text-torque-cyan hover:underline font-medium break-all">
+            class="text-accent hover:underline font-medium break-all">
             {{ c.citation.motor_article_id }}
           </a>
           @if (c.score != null) {
-            <span class="text-[10px] text-torque-muted ml-2 font-mono">score {{ c.score | number : '1.2-3' }}</span>
+            <span class="text-[10px] text-faint ml-2 font-mono">score {{ c.score | number : '1.2-3' }}</span>
           }
-          <p class="text-white/70 mt-1.5 leading-relaxed line-clamp-4">{{ c.text }}</p>
+          <p class="text-muted mt-1.5 leading-relaxed line-clamp-4">{{ c.text }}</p>
         </li>
       }
     </ul>

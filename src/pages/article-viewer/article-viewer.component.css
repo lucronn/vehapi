@@ -3,7 +3,7 @@
 .article-content {
   font-size: 0.9375rem;
   line-height: 1.7;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--text-secondary);
   max-width: 100%;
 }
 
@@ -14,7 +14,7 @@
 .article-content h4,
 .article-content h5,
 .article-content h6 {
-  color: white;
+  color: var(--text-primary);
   font-weight: 600;
   margin-top: 1.5rem;
   margin-bottom: 1rem;
@@ -25,7 +25,7 @@
 .article-content .enhanced-h1 {
   font-size: 1.375rem;
   font-weight: 700;
-  background: linear-gradient(135deg, white, hsl(var(--accent-cyan)));
+  background: linear-gradient(135deg, var(--ink), var(--accent));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -43,7 +43,7 @@
 .article-content h3,
 .article-content .enhanced-h3 {
   font-size: 1rem;
-  color: hsl(var(--accent-cyan));
+  color: var(--accent);
 }
 
 .article-content h4,
@@ -116,8 +116,8 @@
 }
 
 .article-content .callout-note {
-  border-color: hsla(var(--accent-cyan-raw), 0.3);
-  background: hsla(var(--accent-cyan-raw), 0.05);
+  border-color: color-mix(in srgb, var(--accent)  0.3);
+  background: color-mix(in srgb, var(--accent)  0.05);
 }
 
 .article-content .callout-note strong,
@@ -163,7 +163,7 @@
   top: 0;
   width: 2rem;
   height: 2rem;
-  background: linear-gradient(135deg, hsl(var(--accent-cyan)), hsl(var(--accent-violet)));
+  background: linear-gradient(135deg, var(--accent), var(--accent-deep));
   color: black;
   font-weight: 700;
   border-radius: 0.5rem;
@@ -183,7 +183,7 @@
   content: '▸';
   position: absolute;
   left: -1.5rem;
-  color: hsl(var(--accent-cyan));
+  color: var(--accent);
   font-weight: bold;
   font-size: 1.125rem;
 }
@@ -191,7 +191,7 @@
 /* Strong/Bold */
 .article-content strong,
 .article-content b {
-  color: white;
+  color: var(--text-primary);
   font-weight: 600;
 }
 
@@ -395,7 +395,7 @@
 
 .article-content img:hover,
 .article-content .article-image:hover {
-  border-color: hsl(var(--accent-cyan));
+  border-color: var(--accent);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
   transform: scale(1.01);
 }
@@ -415,14 +415,14 @@
 
 /* Links */
 .article-content a {
-  color: hsl(var(--accent-cyan));
+  color: var(--accent);
   text-decoration: underline;
   text-underline-offset: 2px;
   transition: color 0.2s;
 }
 
 .article-content a:hover {
-  color: hsl(var(--accent-violet));
+  color: var(--accent-deep);
 }
 
 /* Code */
@@ -458,7 +458,7 @@
 
 /* Blockquotes */
 .article-content blockquote {
-  border-left: 3px solid hsl(var(--accent-cyan));
+  border-left: 3px solid var(--accent);
   padding-left: 1.5rem;
   margin: 1.5rem 0;
   color: rgba(255, 255, 255, 0.7);
@@ -585,7 +585,7 @@
 
   .article-content table tr:hover {
     background: rgba(255, 255, 255, 0.05) !important;
-    border-color: hsl(var(--accent-cyan) / 0.3) !important;
+    border-color: color-mix(in srgb, var(--accent) 30%, transparent) !important;
     transform: translateY(-1px) !important;
   }
 
@@ -606,7 +606,7 @@
     font-size: 0.75rem !important;
     text-transform: uppercase !important;
     letter-spacing: 0.05em !important;
-    color: hsl(var(--accent-cyan)) !important;
+    color: var(--accent) !important;
     opacity: 0.9 !important;
     display: block !important;
   }
@@ -665,7 +665,7 @@ aside nav button::before {
   transform: translateY(-50%);
   width: 2px;
   height: 0;
-  background: hsl(var(--accent-cyan));
+  background: var(--accent);
   transition: height 0.2s ease;
   border-radius: 2px;
 }

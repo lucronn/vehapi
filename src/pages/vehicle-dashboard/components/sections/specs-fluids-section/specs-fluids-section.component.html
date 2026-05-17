@@ -13,7 +13,7 @@
         <div class="space-y-6 mb-8">
             <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-lg flex items-center justify-center"
-                    style="background:rgba(0,212,255,0.1);color:hsl(191,97%,50%)">
+                    class="icon-chip">
                     <lucide-icon [img]="icons.Gauge" class="w-4 h-4"></lucide-icon>
                 </div>
                 <h3 class="text-xs uppercase font-bold tracking-wide" style="color:var(--text-muted)">Specifications
@@ -23,7 +23,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 @for (spec of displayedSpecs(); track trackByTitle($index, spec)) {
                 <div (click)="viewArticle(spec)"
-                    class="card flex justify-between items-center px-4 py-4 transition-all group cursor-pointer hover:bg-white/5"
+                    class="card flex justify-between items-center px-4 py-4 transition-all group cursor-pointer hover:bg-[var(--bg-hover)]"
                     [style.animation-delay]="$index * 50 + 'ms'">
                     <div class="flex items-center gap-3 min-w-0 flex-1">
                         <lucide-icon [img]="icons.FileText" class="w-4 h-4 flex-shrink-0"
@@ -44,7 +44,7 @@
         <div class="space-y-6">
             <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-lg flex items-center justify-center"
-                    style="background:rgba(0,212,255,0.1);color:hsl(191,97%,50%)">
+                    class="icon-chip">
                     <lucide-icon [img]="icons.Droplets" class="w-4 h-4"></lucide-icon>
                 </div>
                 <h3 class="text-xs uppercase font-bold tracking-wide" style="color:var(--text-muted)">Fluids &
@@ -54,7 +54,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 @for (fluid of displayedFluids(); track trackByTitle($index, fluid)) {
                 <div (click)="viewArticle(fluid)"
-                    class="card flex justify-between items-center px-4 py-4 transition-all group cursor-pointer hover:bg-white/5"
+                    class="card flex justify-between items-center px-4 py-4 transition-all group cursor-pointer hover:bg-[var(--bg-hover)]"
                     [style.animation-delay]="$index * 50 + 'ms'">
                     <div class="flex items-center gap-3 min-w-0 flex-1">
                         <lucide-icon [img]="icons.FileText" class="w-4 h-4 flex-shrink-0"
@@ -84,9 +84,9 @@
 
     <!-- Unlock banner when section locked -->
     @if (!creditsService.hasAccess(vehicleId, 'specs')) {
-    <div class="mt-6 p-4 rounded-xl bg-white/[0.04] border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <div class="mt-6 p-4 rounded-xl bg-surface-soft border border-hairline flex flex-col sm:flex-row items-center justify-between gap-4">
         <div class="flex items-center gap-3">
-            <lucide-icon [img]="icons.Lock" class="w-5 h-5 text-torque-muted"></lucide-icon>
+            <lucide-icon [img]="icons.Lock" class="w-5 h-5 text-faint"></lucide-icon>
             <div>
                 <p class="text-sm font-medium">Unlock full section ({{ creditsService.COSTS.SPECS }} CR) or individual articles (100 CR each)</p>
                 @if (creditsService.balance() < creditsService.COSTS.SPECS) {

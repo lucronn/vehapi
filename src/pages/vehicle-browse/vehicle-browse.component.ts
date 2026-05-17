@@ -107,7 +107,7 @@ interface BrowseResponse {
     }
     .back {
       display: inline-block;
-      font-family: 'Geist Mono', monospace;
+      font-family: 'IBM Plex Mono', monospace;
       font-size: 0.625rem;
       text-transform: uppercase;
       letter-spacing: 0.18em;
@@ -188,7 +188,7 @@ interface BrowseResponse {
     .card.normalized { box-shadow: inset 3px 0 0 var(--accent); }
     .ymm { color: var(--faint); }
     .model {
-      font-family: 'Fraunces', serif;
+      font-family: 'Literata', serif;
       font-variation-settings: 'opsz' 32;
       font-weight: 450;
       font-size: 1.05rem;
@@ -199,7 +199,7 @@ interface BrowseResponse {
     .meta {
       margin-top: auto;
       padding-top: 0.5rem;
-      font-family: 'Geist Mono', monospace;
+      font-family: 'IBM Plex Mono', monospace;
       font-size: 0.625rem;
       letter-spacing: 0.18em;
       text-transform: uppercase;

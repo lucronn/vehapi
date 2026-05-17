@@ -137,7 +137,7 @@ export class CommonIssuesSectionComponent implements OnInit {
                 const articleId = resolvedMap[id];
                 if (articleId) {
                     const href = `#/vehicle/${this.contentSource}/${this.vehicleId}/article/${encodeURIComponent(articleId)}`;
-                    return `<li class="text-[hsl(var(--accent-primary))]"><a href="${href}" class="text-cyan-400 hover:text-cyan-300 underline">${id}</a></li>`;
+                    return `<li class="text-[hsl(var(--accent-primary))]"><a href="${href}" class="text-accent hover:text-accent-deep underline">${id}</a></li>`;
                 }
                 return `<li class="text-[hsl(var(--accent-primary))]">${id}</li>`;
             }).join('');

@@ -5,11 +5,11 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div class="flex items-center gap-3">
                 <div class="w-9 h-9 rounded-lg flex items-center justify-center"
-                    style="background:rgba(0,212,255,0.1);color:hsl(191,97%,50%)">
+                    class="icon-chip">
                     <lucide-icon [img]="icons.Gauge" class="w-4 h-4"></lucide-icon>
                 </div>
                 <div>
-                    <p class="text-xs font-mono uppercase tracking-[0.15em]" style="color:hsl(191,97%,50%)">Service
+                    <p class="text-xs font-mono uppercase tracking-[0.15em]" class="text-accent">Service
                         Interval</p>
                     <h3 class="text-base font-bold" style="color:var(--text-primary)">Select Mileage</h3>
                 </div>
@@ -101,18 +101,18 @@
 
             <div class="relative z-20 max-w-sm mx-auto space-y-4 animate-fade-in-up">
                 <div
-                    class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-2 ring-1 ring-white/20">
-                    <lucide-icon [img]="icons.Lock" class="w-6 h-6 text-white"></lucide-icon>
+                    class="w-12 h-12 rounded-full bg-surface-soft flex items-center justify-center mx-auto mb-2 ring-1 ring-white/20">
+                    <lucide-icon [img]="icons.Lock" class="w-6 h-6 text-ink"></lucide-icon>
                 </div>
 
-                <h3 class="text-xl font-bold text-white">Unlock Maintenance</h3>
+                <h3 class="text-xl font-bold text-ink">Unlock Maintenance</h3>
                 <p class="text-sm text-gray-300">
                     Factory service intervals and required actions.
                 </p>
 
                 <div class="pt-2">
                     <button (click)="unlockSection()" [disabled]="isUnlocking()"
-                        class="w-full btn-primary py-3 font-semibold shadow-lg shadow-cyan-500/20 relative overflow-hidden group">
+                        class="w-full btn-primary py-3 font-semibold shadow-lg shadow-none relative overflow-hidden group">
 
                         @if (isUnlocking()) {
                         <span class="flex items-center justify-center gap-2">
@@ -124,7 +124,7 @@
                         <span class="flex items-center justify-center gap-2">
                             <lucide-icon [img]="icons.Sparkles" class="w-4 h-4"></lucide-icon>
                             <span>Unlock Now</span>
-                            <span class="bg-white/20 px-1.5 py-0.5 rounded text-[10px] font-mono ml-1">
+                            <span class="bg-[var(--hairline)] px-1.5 py-0.5 rounded text-[10px] font-mono ml-1">
                                 {{ creditsService.COSTS.MAINTENANCE }} CR
                             </span>
                         </span>

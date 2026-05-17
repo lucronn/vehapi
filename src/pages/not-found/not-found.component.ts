@@ -21,7 +21,7 @@ import { RouterModule } from '@angular/router';
       </p>
       <a
         routerLink="/"
-        class="mt-8 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg px-6 py-3 text-base font-medium text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+        class="mt-8 btn-primary min-h-[44px]"
         style="background: var(--accent-purple); outline-color: var(--accent-purple)"
       >
         Go Home

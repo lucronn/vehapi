@@ -84,7 +84,7 @@ export class MotorHtmlProcessorService {
         if (contentSource && vehicleId) {
           if (docLinkId) {
             const linkText = docLinkText.trim() || 'View Article';
-            return `<a href="#/vehicle/${contentSource}/${vehicleId}/article/${docLinkId}" class="text-cyan-400 hover:text-cyan-300 underline">${linkText}</a>`;
+            return `<a href="#/vehicle/${contentSource}/${vehicleId}/article/${docLinkId}" class="text-accent hover:text-accent-deep underline">${linkText}</a>`;
           }
           return match;
         } else {

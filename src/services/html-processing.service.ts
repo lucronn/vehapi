@@ -59,7 +59,7 @@ export class HtmlProcessingService {
       html = html.replace(/<mtr-doc-link\s+id=["']?([^"'>\s]+)["']?[^>]*>([^<]*)<\/mtr-doc-link>/gi, (match, id, text) => {
         const linkText = text.trim() || 'View Article';
         // Use relative hash route (Angular uses hash location strategy)
-        return `<a href="#/vehicle/${contentSource}/${vehicleId}/article/${id}" class="text-cyan-400 hover:text-cyan-300 underline">${linkText}</a>`;
+        return `<a href="#/vehicle/${contentSource}/${vehicleId}/article/${id}" class="text-accent hover:text-accent-deep underline">${linkText}</a>`;
       });
     } else {
       // If no context, just remove the custom tag and keep the text

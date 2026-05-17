@@ -22,10 +22,10 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 @for (procedure of group.items; track trackById($index, procedure)) {
                 <div (click)="viewProcedure(procedure)"
-                    class="card p-4 transition-all group cursor-pointer hover:bg-white/5">
+                    class="card p-4 transition-all group cursor-pointer hover:bg-[var(--bg-hover)]">
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                            style="background:rgba(0,212,255,0.1);color:hsl(191,97%,50%)">
+                            class="icon-chip">
                             <lucide-icon [img]="icons.Wrench" class="w-4 h-4"></lucide-icon>
                         </div>
                         <div class="flex-1 min-w-0">
@@ -56,9 +56,9 @@
 
     <!-- Unlock banner when section locked -->
     @if (!creditsService.hasAccess(vehicleId, 'procedures')) {
-    <div class="mt-6 p-4 rounded-xl bg-white/[0.04] border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <div class="mt-6 p-4 rounded-xl bg-surface-soft border border-hairline flex flex-col sm:flex-row items-center justify-between gap-4">
         <div class="flex items-center gap-3">
-            <lucide-icon [img]="icons.Lock" class="w-5 h-5 text-torque-muted"></lucide-icon>
+            <lucide-icon [img]="icons.Lock" class="w-5 h-5 text-faint"></lucide-icon>
             <div>
                 <p class="text-sm font-medium">Unlock full section ({{ creditsService.COSTS.PROCEDURES }} CR) or individual articles (100 CR each)</p>
                 @if (creditsService.balance() < creditsService.COSTS.PROCEDURES) {

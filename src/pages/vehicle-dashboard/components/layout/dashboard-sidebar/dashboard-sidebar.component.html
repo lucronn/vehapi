@@ -1,15 +1,15 @@
-<aside class="w-64 xl:w-72 bg-torque-dark border-r border-white/5 flex flex-col h-full overflow-hidden flex-shrink-0"
+<aside class="w-64 xl:w-72 bg-surface border-r border-hairline flex flex-col h-full overflow-hidden flex-shrink-0"
   style="background:var(--bg-secondary)">
     <!-- Header -->
-    <div class="h-14 border-b border-white/5 flex flex-col justify-center px-4 shrink-0"
+    <div class="h-14 border-b border-hairline flex flex-col justify-center px-4 shrink-0"
       style="background:var(--bg-secondary)">
         <div class="flex items-center justify-between gap-2">
-            <h2 class="text-sm font-bold text-white truncate min-w-0">{{ vehicleName }}</h2>
+            <h2 class="text-sm font-bold text-ink truncate min-w-0">{{ vehicleName }}</h2>
             <a routerLink="/" class="btn-glass p-1.5 rounded-lg flex-shrink-0" title="Home" aria-label="Home">
                 <lucide-icon [img]="icons.House" class="w-4 h-4"></lucide-icon>
             </a>
         </div>
-        <p class="text-[10px] text-torque-muted uppercase tracking-wider">Dashboard</p>
+        <p class="text-[10px] text-faint uppercase tracking-wider">Dashboard</p>
     </div>
 
     <!-- Section Navigation -->
@@ -17,8 +17,8 @@
         <button (click)="onSectionClick('overview')"
             class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
             [ngClass]="{
-                'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': activeSection === 'overview',
-                'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': activeSection !== 'overview'
+                'border-accent bg-gradient-to-r from-accent/10 to-transparent text-ink': activeSection === 'overview',
+                'border-transparent text-faint hover:text-ink hover:bg-[var(--bg-hover)]': activeSection !== 'overview'
             }">
             <lucide-icon [img]="icons.House" class="w-4 h-4"></lucide-icon>
             <span class="text-xs font-bold tracking-[0.15em] uppercase">Overview</span>
@@ -26,7 +26,7 @@
 
         @if (l2SearchEnabled && contentSource && vehicleId) {
         <a [routerLink]="['/vehicle', contentSource, vehicleId, 'knowledge']"
-            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2 border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]">
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2 border-transparent text-faint hover:text-ink hover:bg-[var(--bg-hover)]">
             <lucide-icon [img]="icons.Lightbulb" class="w-4 h-4"></lucide-icon>
             <span class="text-xs font-bold tracking-[0.15em] uppercase">Knowledge</span>
         </a>
@@ -36,8 +36,8 @@
         <button (click)="onSectionClick('dtcs')"
             class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
             [ngClass]="{
-                'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': activeSection === 'dtcs',
-                'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': activeSection !== 'dtcs'
+                'border-accent bg-gradient-to-r from-accent/10 to-transparent text-ink': activeSection === 'dtcs',
+                'border-transparent text-faint hover:text-ink hover:bg-[var(--bg-hover)]': activeSection !== 'dtcs'
             }">
             <lucide-icon [img]="icons.TriangleAlert" class="w-4 h-4"></lucide-icon>
             <span class="text-xs font-bold tracking-[0.15em] uppercase">Trouble Codes</span>
@@ -47,8 +47,8 @@
         <button (click)="onSectionClick('tsbs')"
             class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
             [ngClass]="{
-                'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': activeSection === 'tsbs',
-                'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': activeSection !== 'tsbs'
+                'border-accent bg-gradient-to-r from-accent/10 to-transparent text-ink': activeSection === 'tsbs',
+                'border-transparent text-faint hover:text-ink hover:bg-[var(--bg-hover)]': activeSection !== 'tsbs'
             }">
             <lucide-icon [img]="icons.FileText" class="w-4 h-4"></lucide-icon>
             <span class="text-xs font-bold tracking-[0.15em] uppercase">Bulletins</span>
@@ -58,8 +58,8 @@
         <button (click)="onSectionClick('procedures')"
             class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
             [ngClass]="{
-                'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': activeSection === 'procedures',
-                'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': activeSection !== 'procedures'
+                'border-accent bg-gradient-to-r from-accent/10 to-transparent text-ink': activeSection === 'procedures',
+                'border-transparent text-faint hover:text-ink hover:bg-[var(--bg-hover)]': activeSection !== 'procedures'
             }">
             <lucide-icon [img]="icons.Wrench" class="w-4 h-4"></lucide-icon>
             <span class="text-xs font-bold tracking-[0.15em] uppercase">Procedures</span>
@@ -69,8 +69,8 @@
         <button (click)="onSectionClick('diagrams')"
             class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
             [ngClass]="{
-                'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': activeSection === 'diagrams',
-                'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': activeSection !== 'diagrams'
+                'border-accent bg-gradient-to-r from-accent/10 to-transparent text-ink': activeSection === 'diagrams',
+                'border-transparent text-faint hover:text-ink hover:bg-[var(--bg-hover)]': activeSection !== 'diagrams'
             }">
             <lucide-icon [img]="icons.Package" class="w-4 h-4"></lucide-icon>
             <span class="text-xs font-bold tracking-[0.15em] uppercase">Diagrams</span>
@@ -80,8 +80,8 @@
         <button (click)="onSectionClick('specs')"
             class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
             [ngClass]="{
-                'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': activeSection === 'specs',
-                'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': activeSection !== 'specs'
+                'border-accent bg-gradient-to-r from-accent/10 to-transparent text-ink': activeSection === 'specs',
+                'border-transparent text-faint hover:text-ink hover:bg-[var(--bg-hover)]': activeSection !== 'specs'
             }">
             <lucide-icon [img]="icons.FileText" class="w-4 h-4"></lucide-icon>
             <span class="text-xs font-bold tracking-[0.15em] uppercase">Specs &amp; Fluids</span>
@@ -91,8 +91,8 @@
         <button (click)="onSectionClick('component-locations')"
             class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
             [ngClass]="{
-                'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': activeSection === 'component-locations',
-                'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': activeSection !== 'component-locations'
+                'border-accent bg-gradient-to-r from-accent/10 to-transparent text-ink': activeSection === 'component-locations',
+                'border-transparent text-faint hover:text-ink hover:bg-[var(--bg-hover)]': activeSection !== 'component-locations'
             }">
             <lucide-icon [img]="icons.Package" class="w-4 h-4"></lucide-icon>
             <span class="text-xs font-bold tracking-[0.15em] uppercase">Locations</span>
@@ -102,8 +102,8 @@
         <button (click)="onSectionClick('maintenance')"
             class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
             [ngClass]="{
-                'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': activeSection === 'maintenance',
-                'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': activeSection !== 'maintenance'
+                'border-accent bg-gradient-to-r from-accent/10 to-transparent text-ink': activeSection === 'maintenance',
+                'border-transparent text-faint hover:text-ink hover:bg-[var(--bg-hover)]': activeSection !== 'maintenance'
             }">
             <lucide-icon [img]="icons.Calendar" class="w-4 h-4"></lucide-icon>
             <span class="text-xs font-bold tracking-[0.15em] uppercase">Maintenance</span>
@@ -113,8 +113,8 @@
         <button (click)="onSectionClick('parts')"
             class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
             [ngClass]="{
-                'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': activeSection === 'parts',
-                'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': activeSection !== 'parts'
+                'border-accent bg-gradient-to-r from-accent/10 to-transparent text-ink': activeSection === 'parts',
+                'border-transparent text-faint hover:text-ink hover:bg-[var(--bg-hover)]': activeSection !== 'parts'
             }">
             <lucide-icon [img]="icons.Package" class="w-4 h-4"></lucide-icon>
             <span class="text-xs font-bold tracking-[0.15em] uppercase">Parts</span>
@@ -124,8 +124,8 @@
         <button (click)="onSectionClick('common-issues')"
             class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
             [ngClass]="{
-                'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': activeSection === 'common-issues',
-                'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': activeSection !== 'common-issues'
+                'border-accent bg-gradient-to-r from-accent/10 to-transparent text-ink': activeSection === 'common-issues',
+                'border-transparent text-faint hover:text-ink hover:bg-[var(--bg-hover)]': activeSection !== 'common-issues'
             }">
             <lucide-icon [img]="icons.Lightbulb" class="w-4 h-4"></lucide-icon>
             <span class="text-xs font-bold tracking-[0.15em] uppercase">Common Issues</span>
@@ -134,8 +134,8 @@
         <button (click)="onSectionClick('browse-all')"
             class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border-l-2"
             [ngClass]="{
-                'border-torque-cyan bg-gradient-to-r from-torque-cyan/10 to-transparent text-white': activeSection === 'browse-all',
-                'border-transparent text-torque-muted hover:text-white hover:bg-white/[0.03]': activeSection !== 'browse-all'
+                'border-accent bg-gradient-to-r from-accent/10 to-transparent text-ink': activeSection === 'browse-all',
+                'border-transparent text-faint hover:text-ink hover:bg-[var(--bg-hover)]': activeSection !== 'browse-all'
             }">
             <lucide-icon [img]="icons.Package" class="w-4 h-4"></lucide-icon>
             <span class="text-xs font-bold tracking-[0.15em] uppercase">Browse All</span>
@@ -144,35 +144,35 @@
     </nav>
 
     <!-- Footer -->
-    <div class="p-4 border-t border-white/5 space-y-3 shrink-0">
+    <div class="p-4 border-t border-hairline space-y-3 shrink-0">
 
         <!-- Account link -->
         <a routerLink="/credits"
             class="w-full flex items-center gap-2 px-3 py-2 rounded-xl
-           text-[hsl(215,20%,65%)] hover:text-white hover:bg-white/[0.03] transition-colors text-xs font-semibold border border-transparent hover:border-white/5">
-            <lucide-icon [img]="icons.CreditCard" class="w-4 h-4 text-torque-cyan"></lucide-icon>
+           text-faint hover:text-ink hover:bg-[var(--bg-hover)] transition-colors text-xs font-semibold border border-transparent hover:border-hairline">
+            <lucide-icon [img]="icons.CreditCard" class="w-4 h-4 text-accent"></lucide-icon>
             Account
         </a>
 
         <!-- Auth Section -->
         @if (authService.isLoggedIn()) {
         <div class="flex items-center gap-2">
-            <div class="w-7 h-7 rounded-full bg-[hsl(217,91%,55%)] flex items-center justify-center flex-shrink-0">
-                <lucide-icon [img]="icons.User" class="w-3.5 h-3.5 text-white"></lucide-icon>
+            <div class="w-7 h-7 rounded-full bg-accent flex items-center justify-center flex-shrink-0">
+                <lucide-icon [img]="icons.User" class="w-3.5 h-3.5 text-ink"></lucide-icon>
             </div>
             <div class="flex-1 min-w-0">
-                <p class="text-[10px] font-semibold text-white truncate">{{ authService.user()?.email }}</p>
-                <p class="text-[9px] font-mono text-torque-muted">Signed In</p>
+                <p class="text-[10px] font-semibold text-ink truncate">{{ authService.user()?.email }}</p>
+                <p class="text-[9px] font-mono text-faint">Signed In</p>
             </div>
             <button (click)="signOut()" title="Sign Out" aria-label="Sign out"
-                class="p-1.5 rounded-lg text-torque-muted hover:text-red-400 hover:bg-red-400/10 transition-colors focus-visible:ring-2 focus-visible:ring-torque-cyan/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(230,35%,9%)]">
+                class="p-1.5 rounded-lg text-faint hover:text-red-400 hover:bg-red-400/10 transition-colors focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-paper">
                 <lucide-icon [img]="icons.LogOut" class="w-3.5 h-3.5"></lucide-icon>
             </button>
         </div>
         } @else {
         <button (click)="onOpenAuthClick()" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl
-                       bg-[hsl(217,91%,55%)]/10 border border-[hsl(217,91%,55%)]/20
-                       text-[hsl(217,91%,70%)] hover:bg-[hsl(217,91%,55%)]/20
+                       bg-accent/10 border border-accent/30
+                       text-accent hover:bg-accent/20
                        transition-colors text-xs font-semibold">
             <lucide-icon [img]="icons.LogIn" class="w-4 h-4"></lucide-icon>
             Sign In / Create Account

@@ -52,7 +52,7 @@ describe('MotorHtmlProcessorService', () => {
 
     test('should process mtr-doc-link tags with context', () => {
       const input = '<mtr-doc-link id="123">Click Here</mtr-doc-link>';
-      const expected = `<a href="#/vehicle/source1/vehicle1/article/123" class="text-cyan-400 hover:text-cyan-300 underline">Click Here</a>`;
+      const expected = `<a href="#/vehicle/source1/vehicle1/article/123" class="text-accent hover:text-accent-deep underline">Click Here</a>`;
       const result = service.processHtmlContent(input, 'source1', 'vehicle1');
       expect(result).toBe(expected);
     });

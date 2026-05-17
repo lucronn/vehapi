@@ -12,7 +12,7 @@ import { WindowManagerService } from '../../services/window-manager.service';
   standalone: true,
   imports: [CommonModule, RouterLink, LucideAngularModule, AuthModalComponent],
   template: `
-    <div class="p-5 sm:p-6 text-white">
+    <div class="p-5 sm:p-6 text-ink">
       @if (showAuthModal()) {
         <app-auth-modal [startMode]="authModalStartMode()" (close)="showAuthModal.set(false)" />
       } @else {
@@ -20,7 +20,7 @@ import { WindowManagerService } from '../../services/window-manager.service';
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-lg font-bold">Get Credits</h2>
           @if (windowId) {
-            <button (click)="closeModal()" class="p-2 rounded-lg hover:bg-white/10 transition-colors" aria-label="Close">
+            <button (click)="closeModal()" class="p-2 rounded-lg hover:bg-surface-soft transition-colors" aria-label="Close">
               <lucide-icon [img]="icons.X" class="w-5 h-5"></lucide-icon>
             </button>
           }
@@ -28,13 +28,13 @@ import { WindowManagerService } from '../../services/window-manager.service';
 
         @if (!authService.user()) {
           <div class="space-y-4">
-            <p class="text-sm text-gray-400">Sign in to purchase credits.</p>
+            <p class="text-sm text-faint">Sign in to purchase credits.</p>
             <div class="flex gap-2">
-              <button (click)="openAuthModal('signin')" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] rounded-xl bg-white/[0.06] border border-white/10 text-sm font-medium">
+              <button (click)="openAuthModal('signin')" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] rounded-xl bg-[var(--bg-hover)] border border-hairline text-sm font-medium">
                 <lucide-icon [img]="icons.LogIn" class="w-4 h-4"></lucide-icon>
                 Sign in
               </button>
-              <button (click)="openAuthModal('signup')" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] rounded-xl bg-torque-cyan/20 border border-torque-cyan/40 text-torque-cyan text-sm font-medium">
+              <button (click)="openAuthModal('signup')" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] rounded-xl bg-accent-soft border border-accent/40 text-accent text-sm font-medium">
                 <lucide-icon [img]="icons.UserPlus" class="w-4 h-4"></lucide-icon>
                 Create account
               </button>
@@ -42,16 +42,16 @@ import { WindowManagerService } from '../../services/window-manager.service';
           </div>
         } @else {
           <!-- Balance + Refresh -->
-          <div class="flex items-center justify-between gap-4 mb-6 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+          <div class="flex items-center justify-between gap-4 mb-6 p-4 rounded-xl bg-[var(--bg-hover)] border border-hairline">
             <div class="flex items-center gap-3">
-              <lucide-icon [img]="icons.CreditCard" class="w-5 h-5 text-torque-cyan"></lucide-icon>
+              <lucide-icon [img]="icons.CreditCard" class="w-5 h-5 text-accent"></lucide-icon>
               <div>
-                <p class="text-xs text-gray-400">Balance</p>
+                <p class="text-xs text-faint">Balance</p>
                 <p class="text-xl font-mono font-bold">{{ creditsService.balance() }} credits</p>
               </div>
             </div>
             <button (click)="refresh()" [disabled]="creditsService.isLoading()"
-              class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-white/10 disabled:opacity-50 transition-colors">
+              class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-surface-soft disabled:opacity-50 transition-colors">
               <lucide-icon [img]="icons.RefreshCw" class="w-4 h-4" [class.animate-spin]="creditsService.isLoading()"></lucide-icon>
               Refresh
             </button>
@@ -80,17 +80,17 @@ import { WindowManagerService } from '../../services/window-manager.service';
                 <button
                   (click)="purchase(pack.credits)"
                   [disabled]="creditsService.isLoading()"
-                  class="flex flex-col items-center justify-center py-4 px-3 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.08] hover:border-torque-cyan/40 transition-all min-h-[80px] disabled:opacity-50">
-                  <p class="text-[10px] text-gray-500 uppercase tracking-wider">{{ pack.label }}</p>
-                  <p class="text-lg font-mono font-bold text-torque-cyan">{{ pack.credits | number }}</p>
-                  <p class="text-xs text-gray-500">\${{ pack.price }}</p>
+                  class="flex flex-col items-center justify-center py-4 px-3 rounded-xl bg-surface-soft hover:bg-[var(--bg-hover)] border border-hairline hover:border-accent/40 transition-all min-h-[80px] disabled:opacity-50">
+                  <p class="text-[10px] text-faint uppercase tracking-wider">{{ pack.label }}</p>
+                  <p class="text-lg font-mono font-bold text-accent">{{ pack.credits | number }}</p>
+                  <p class="text-xs text-faint">\${{ pack.price }}</p>
                 </button>
               }
             </div>
           </div>
 
-          <p class="text-xs text-gray-500 mt-4">
-            <a [routerLink]="['/credits']" class="text-torque-cyan hover:underline">Full account & history</a>
+          <p class="text-xs text-faint mt-4">
+            <a [routerLink]="['/credits']" class="text-accent hover:underline">Full account & history</a>
           </p>
         }
       }
