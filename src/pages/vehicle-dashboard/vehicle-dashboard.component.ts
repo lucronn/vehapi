@@ -294,32 +294,28 @@ export class VehicleDashboardComponent {
   pendingArticleId = signal<string | null>(null);
   selectedBrowseFilter = signal<string | null>(null); // For browse-all filter pills
 
-  // Browse-all UI state (collapse buckets + "show more" to avoid endless scroll)
-  private readonly browseExpanded = signal<Record<string, boolean>>({});
+  // Browse-all UI state — single per-bucket "show all overflow" toggle.
+  // Buckets always show a preview of N articles; clicking "+ N more" reveals the rest.
   private readonly browseShowAll = signal<Record<string, boolean>>({});
+  readonly BROWSE_PREVIEW_COUNT = 5;
 
-  private browseKey(parts: Array<string | null | undefined>): string {
-    return parts.filter(Boolean).join('::');
+  isBucketExpanded(bucketKey: string): boolean {
+    return this.browseShowAll()[bucketKey] === true;
   }
 
-  isBrowseExpanded(tabName: string, bucketName: string, childName?: string): boolean {
-    const key = this.browseKey([tabName, bucketName, childName]);
-    return this.browseExpanded()[key] !== false; // default expanded
+  /** Display label for an article. DTC entries often arrive with `title=""` and
+   *  the code (e.g. "P0420") in `code` — fall back through what's populated. */
+  articleLabel(article: Article): string {
+    const t = (article.title || '').trim();
+    if (t) return t;
+    const code = (article.code || '').trim();
+    const desc = (article.description || '').trim();
+    if (code && desc) return `${code} — ${desc}`;
+    return code || desc || article.id || 'Untitled article';
   }
 
-  toggleBrowseExpanded(tabName: string, bucketName: string, childName?: string): void {
-    const key = this.browseKey([tabName, bucketName, childName]);
-    this.browseExpanded.update((m) => ({ ...m, [key]: !(m[key] !== false) }));
-  }
-
-  isBrowseShowAll(tabName: string, bucketName: string, childName?: string): boolean {
-    const key = this.browseKey([tabName, bucketName, childName]);
-    return this.browseShowAll()[key] === true;
-  }
-
-  toggleBrowseShowAll(tabName: string, bucketName: string, childName?: string): void {
-    const key = this.browseKey([tabName, bucketName, childName]);
-    this.browseShowAll.update((m) => ({ ...m, [key]: !m[key] }));
+  toggleBucketExpanded(bucketKey: string): void {
+    this.browseShowAll.update((m) => ({ ...m, [bucketKey]: !m[bucketKey] }));
   }
 
   // Search state
@@ -367,13 +363,37 @@ export class VehicleDashboardComponent {
     return results;
   });
 
-  // Filtered tabs for browse-all section
-  filteredBrowseTabs = computed(() => {
+  // Flat list of buckets across all (or the selected) filter tab(s). Each bucket
+  // carries its tab name (for the colored chip) + its articles, with any
+  // sub-bucket articles flattened in so the user never has to drill deeper than
+  // bucket → article. Sorted by tab, then by bucket name.
+  browseBuckets = computed<Array<{
+    key: string;
+    bucketName: string;
+    bucketLabel: string;
+    tabName: string;
+    articles: Article[];
+  }>>(() => {
     const selectedFilter = this.selectedBrowseFilter();
-    const allTabs = this.searchResultsState.filterTabsAndTheirFullBuckets();
-
-    if (!selectedFilter) return allTabs;
-    return allTabs.filter(tab => tab.filterTab === selectedFilter);
+    const tabs = this.searchResultsState.filterTabsAndTheirFullBuckets();
+    const matching = selectedFilter ? tabs.filter(t => t.filterTab === selectedFilter) : tabs;
+    const out: Array<{ key: string; bucketName: string; bucketLabel: string; tabName: string; articles: Article[] }> = [];
+    for (const tab of matching) {
+      for (const bucket of tab.buckets || []) {
+        // Flatten: include the bucket's own articles + any child-bucket articles.
+        const flat = [...(bucket.articles || [])];
+        for (const child of (bucket.children || [])) flat.push(...(child.articles || []));
+        if (!flat.length) continue;
+        out.push({
+          key: `${tab.filterTab}::${bucket.bucketName}`,
+          bucketName: bucket.bucketName,
+          bucketLabel: bucket.bucketNameOverride || bucket.bucketName,
+          tabName: tab.filterTab,
+          articles: flat,
+        });
+      }
+    }
+    return out;
   });
 
   // Section navigation

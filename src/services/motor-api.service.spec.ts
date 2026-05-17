@@ -88,7 +88,7 @@ describe('MotorApiService Integration Methods', () => {
     const res = await new Promise(resolve => service.getYears().subscribe(resolve));
     expect(mockGet).toHaveBeenCalled();
     const args = mockGet.mock.calls[0];
-    expect(args[0]).toContain('/api/years');
+    expect(args[0]).toContain('/api/db/years');
     expect(res).toEqual({ data: 'test' });
   });
 
@@ -96,7 +96,7 @@ describe('MotorApiService Integration Methods', () => {
     const res = await new Promise(resolve => service.getMakes(2020).subscribe(resolve));
     expect(mockGet).toHaveBeenCalled();
     const args = mockGet.mock.calls[0];
-    expect(args[0]).toContain('/api/year/2020/makes');
+    expect(args[0]).toContain('/api/db/year/2020/makes');
     expect(res).toEqual({ data: 'test' });
   });
 
@@ -104,7 +104,7 @@ describe('MotorApiService Integration Methods', () => {
     const res = await new Promise(resolve => service.getModels(2020, 'FORD').subscribe(resolve));
     expect(mockGet).toHaveBeenCalled();
     const args = mockGet.mock.calls[0];
-    expect(args[0]).toContain('/api/year/2020/make/FORD/models');
+    expect(args[0]).toContain('/api/db/year/2020/make/FORD/models');
     expect(res).toEqual({ data: 'test' });
   });
 
@@ -145,7 +145,7 @@ describe('MotorApiService Integration Methods', () => {
   });
 
   test('error handling via getWithLogging', async () => {
-    mockGet.mockImplementationOnce(() => throwError(() => new Error('API Error')));
+    mockGet.mockImplementation(() => throwError(() => new Error('API Error')));
 
     let errRes: any;
     try {

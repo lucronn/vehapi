@@ -3,94 +3,105 @@
 @tailwind utilities;
 
 /* ============================================================
-   TORQUE.AI Design System — Gunmetal & Cyan
-   Default: Dark  |  Toggle: Light
+   vehapi · Calm Minimalist System
+   Paper + ink + sage. Default: light (bone). Toggle: dark (basalt).
+
+   The legacy token names (--bg, --bg-surface, --text-primary, --primary,
+   --border, --accent) are preserved so existing component CSS picks up
+   the new palette automatically; the new semantic tokens (--paper, --ink,
+   --accent, --hairline) drive everything authored from here on.
    ============================================================ */
 
-:root {
-  /* Dark theme is default */
-  --bg: hsl(230, 35%, 7%);
-  --bg-secondary: hsl(230, 35%, 9%);
-  --bg-surface: hsl(230, 35%, 12%);
-  --bg-muted: hsl(230, 35%, 15%);
-  --bg-hover: rgba(255, 255, 255, 0.04);
-  --bg-active: rgba(255, 255, 255, 0.06);
+:root,
+[data-theme='light'] {
+  /* Editorial paper palette — warmer & deeper than bone. Reads "old monograph"
+     rather than "tech startup minimalism". Three surface tones (paper, surface,
+     surface-soft) layer to give the page depth without ever using a shadow. */
+  --paper:        #EFE7D5;  /* warm linen ground */
+  --paper-edge:   #E5DCC7;
+  --surface:      #FAF4E5;  /* slightly raised card */
+  --surface-soft: #F4ECDA;
+  --ink:          #1F1A12;  /* deep umber */
+  --ink-soft:     #2D281E;
+  --muted:        #5C5446;
+  --faint:        #968B77;
+  --hairline:     rgba(31, 26, 18, 0.14);
+  --hairline-soft:rgba(31, 26, 18, 0.07);
 
-  --border: rgba(255, 255, 255, 0.06);
-  --border-muted: rgba(255, 255, 255, 0.04);
+  /* Accent: terracotta. Warm clay — eloquent, considered, recognizably hand-mixed
+     (no neon, no SaaS-purple). Pairs with linen the way ochre pairs with cream
+     in a Wabi-sabi tea room. */
+  --accent:        #A8522D;
+  --accent-deep:   #7E3A1D;
+  --accent-soft:   rgba(168, 82, 45, 0.12);
+  --accent-ink:    #FAF4E5;
+  --danger:        #A0301E;
+  --danger-soft:   rgba(160, 48, 30, 0.10);
 
-  --text-primary: #ffffff;
-  --text-secondary: hsl(215, 20%, 65%);
-  --text-muted: hsl(215, 16%, 47%);
-  --text-inverse: hsl(230, 35%, 7%);
+  /* Subtle paper-grain noise overlay applied at the html level (see body::before).
+     Just enough to break flat color and give the surface tactile depth. */
 
-  --primary: hsl(191, 97%, 50%);
-  --primary-hover: hsl(191, 97%, 60%);
-  --primary-subtle: rgba(0, 212, 255, 0.08);
-  --primary-text: #ffffff;
+  /* Legacy aliases (driven by the same tokens above) */
+  --bg:            var(--paper);
+  --bg-secondary:  var(--paper-edge);
+  --bg-surface:    var(--surface);
+  --bg-muted:      var(--surface-soft);
+  --bg-hover:      rgba(27, 25, 22, 0.04);
+  --bg-active:     rgba(27, 25, 22, 0.07);
+  --border:        var(--hairline);
+  --border-muted:  var(--hairline-soft);
+  --text-primary:  var(--ink);
+  --text-secondary:var(--muted);
+  --text-muted:    var(--faint);
+  --text-inverse:  var(--paper);
+  --primary:       var(--accent);
+  --primary-hover: var(--accent-deep);
+  --primary-subtle:var(--accent-soft);
+  --primary-text:  var(--accent-ink);
 
-  --accent: hsl(263, 83%, 58%);
+  --status-error:    var(--danger);
+  --status-error-bg: var(--danger-soft);
+  --status-warning:    #B8893B;
+  --status-warning-bg: rgba(184, 137, 59, 0.12);
+  --status-success:    #5B7A4B;
+  --status-success-bg: rgba(91, 122, 75, 0.12);
+  --status-info:       var(--accent);
+  --status-info-bg:    var(--accent-soft);
 
-  --status-error: #f87171;
-  --status-error-bg: rgba(239, 68, 68, 0.1);
-  --status-warning: #fbbf24;
-  --status-warning-bg: rgba(245, 158, 11, 0.1);
-  --status-success: #34d399;
-  --status-success-bg: rgba(16, 185, 129, 0.1);
-  --status-info: #60a5fa;
-  --status-info-bg: rgba(59, 130, 246, 0.1);
+  --shadow-sm: 0 1px 0 rgba(27,25,22,0.04);
+  --shadow:    0 1px 2px rgba(27,25,22,0.05);
+  --shadow-md: 0 8px 24px -16px rgba(27,25,22,0.12);
+  --shadow-lg: 0 24px 48px -28px rgba(27,25,22,0.18);
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  /* Calmer radii — magazine, not card-game */
+  --radius:    0.5rem;
+  --radius-sm: 0.375rem;
+  --radius-lg: 0.875rem;
 
-  --radius: 1rem;
-  --radius-sm: 0.75rem;
-  --radius-lg: 1.25rem;
-
-  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-top:    env(safe-area-inset-top, 0px);
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-area-left: env(safe-area-inset-left, 0px);
-  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-left:   env(safe-area-inset-left, 0px);
+  --safe-area-right:  env(safe-area-inset-right, 0px);
 }
 
-[data-theme="light"] {
-  --bg: #ffffff;
-  --bg-secondary: #f8f9fb;
-  --bg-surface: #ffffff;
-  --bg-muted: #f1f3f5;
-  --bg-hover: #eceef0;
-  --bg-active: #e4e6e8;
+[data-theme='dark'] {
+  --paper:        #16110A;  /* dark espresso */
+  --paper-edge:   #1C160E;
+  --surface:      #1E1812;
+  --surface-soft: #261F16;
+  --ink:          #F1E9D5;
+  --ink-soft:     #E0D7C0;
+  --muted:        #B7AC95;
+  --faint:        #847A66;
+  --hairline:     rgba(241, 233, 213, 0.12);
+  --hairline-soft:rgba(241, 233, 213, 0.06);
 
-  --border: #e2e5e9;
-  --border-muted: #eceef0;
-
-  --text-primary: #111827;
-  --text-secondary: #4b5563;
-  --text-muted: #9ca3af;
-  --text-inverse: #ffffff;
-
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --primary-subtle: #eff6ff;
-  --primary-text: #ffffff;
-
-  --accent: #7c3aed;
-
-  --status-error: #ef4444;
-  --status-error-bg: #fef2f2;
-  --status-warning: #f59e0b;
-  --status-warning-bg: #fffbeb;
-  --status-success: #10b981;
-  --status-success-bg: #ecfdf5;
-  --status-info: #3b82f6;
-  --status-info-bg: #eff6ff;
-
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --accent:        #E5836C;  /* terracotta brightens on espresso */
+  --accent-deep:   #F4A28A;
+  --accent-soft:   rgba(229, 131, 108, 0.16);
+  --accent-ink:    #16110A;
+  --danger:        #E66150;
+  --danger-soft:   rgba(230, 97, 80, 0.16);
 }
 
 /* ============================================================
@@ -104,22 +115,41 @@
   }
 
   body {
-    background-color: var(--bg);
-    color: var(--text-primary);
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: 'Geist', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-feature-settings: 'ss01', 'cv11';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     min-height: 100vh;
     min-height: 100dvh;
-    /* iOS dynamic viewport height */
     width: 100%;
     overflow-x: hidden;
     overscroll-behavior-y: none;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
     -webkit-overflow-scrolling: touch;
-    /* iOS momentum scrolling */
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: background-color 0.4s ease, color 0.4s ease;
+    position: relative;
+  }
+
+  /* Paper grain — a single SVG turbulence at very low opacity. Breaks the
+     flatness without ever announcing itself; you only notice it if you cover
+     half the screen with paper and compare. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.45;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.12  0 0 0 0 0.10  0 0 0 0 0.07  0 0 0 0.08 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  [data-theme='dark'] body::before {
+    mix-blend-mode: screen;
+    opacity: 0.30;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.95  0 0 0 0 0.91  0 0 0 0 0.83  0 0 0 0.04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
   }
 
   h1,
@@ -208,72 +238,132 @@
         @apply app-btn bg-transparent text-slate-200 hover:bg-slate-800/60 border border-slate-800/60;
     }
 
-  /* ---- Glass Card ---- */
-  .glass-card {
-    background: hsla(230, 35%, 12%, 0.6);
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+  /* ---- Surface (was: Glass Card) ----
+     The new system replaces shine-sweep glass cards with flat, hairline-bordered
+     paper surfaces. Same class name so existing markup picks up the new look. */
+  .glass-card,
+  .card,
+  .surface {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius);
     position: relative;
-    overflow: hidden;
-    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    transition: border-color 0.25s ease, background-color 0.25s ease;
   }
 
-  .glass-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    border-color: rgba(255, 255, 255, 0.08);
+  .glass-card:hover,
+  .card:hover,
+  .surface:hover {
+    border-color: rgba(27, 25, 22, 0.18);
   }
 
-  /* Shine sweep on hover */
-  .glass-card::before {
+  [data-theme='dark'] .glass-card:hover,
+  [data-theme='dark'] .card:hover,
+  [data-theme='dark'] .surface:hover {
+    border-color: rgba(242, 237, 226, 0.18);
+  }
+
+  /* Eyebrow label — small caps mono, for section labels & metadata. */
+  .eyebrow {
+    font-family: 'Geist Mono', ui-monospace, SFMono-Regular, monospace;
+    font-size: 0.625rem;          /* 10px */
+    line-height: 1;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+
+  /* Hairline divider — replaces border-b utility for major section breaks. */
+  .hairline {
+    border-color: var(--hairline);
+  }
+  .hairline-soft {
+    border-color: var(--hairline-soft);
+  }
+
+  /* Display & body type ramp. Use these instead of arbitrary text- utilities
+     so the system stays consistent across pages. */
+  .display-xl {
+    font-family: 'Fraunces', ui-serif, Georgia, serif;
+    font-variation-settings: 'opsz' 144, 'SOFT' 50;
+    font-weight: 350;
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+  }
+  .display-lg {
+    font-family: 'Fraunces', ui-serif, Georgia, serif;
+    font-variation-settings: 'opsz' 96, 'SOFT' 50;
+    font-weight: 400;
+    font-size: clamp(1.875rem, 3.5vw, 2.625rem);
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+  }
+  .display-md {
+    font-family: 'Fraunces', ui-serif, Georgia, serif;
+    font-variation-settings: 'opsz' 32;
+    font-weight: 450;
+    font-size: 1.5rem;
+    line-height: 1.15;
+    letter-spacing: -0.018em;
+  }
+
+  /* Italic editorial caption — for captions, asides, "since 2026" style */
+  .editorial {
+    font-family: 'Fraunces', ui-serif, Georgia, serif;
+    font-style: italic;
+    font-variation-settings: 'opsz' 14, 'SOFT' 100;
+    font-weight: 350;
+    color: var(--muted);
+  }
+
+  /* Step numeral — large, italic, alone in a column. Editorial chapter mark. */
+  .step-numeral {
+    font-family: 'Fraunces', ui-serif, Georgia, serif;
+    font-variation-settings: 'opsz' 144, 'SOFT' 100;
+    font-style: italic;
+    font-weight: 300;
+    font-size: 5rem;
+    line-height: 0.85;
+    color: var(--accent);
+    letter-spacing: -0.04em;
+  }
+
+  /* Drop cap — first character of a paragraph, magazine-style. */
+  .drop-cap::first-letter {
+    font-family: 'Fraunces', ui-serif, Georgia, serif;
+    font-variation-settings: 'opsz' 144, 'SOFT' 50;
+    font-weight: 400;
+    font-size: 4.5rem;
+    line-height: 0.8;
+    float: left;
+    margin: 0.4rem 0.6rem 0 -0.05em;
+    color: var(--accent);
+  }
+
+  /* Decorative rule with caption: ── label ── */
+  .rule-with-label {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .rule-with-label::before,
+  .rule-with-label::after {
     content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 50%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.03), transparent);
-    transform: skewX(-15deg);
-    transition: left 0.6s ease;
-    pointer-events: none;
-    z-index: 1;
+    flex: 1;
+    height: 1px;
+    background: var(--hairline);
   }
 
-  .glass-card:hover::before {
-    left: 200%;
-  }
-
-  /* Light mode glass card */
-  [data-theme="light"] .glass-card {
-    background: rgba(255, 255, 255, 0.8);
-    border-color: var(--border);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-  }
-
-  [data-theme="light"] .glass-card:hover {
-    box-shadow: var(--shadow-md);
-    border-color: var(--primary);
-  }
-
-  /* Legacy card support */
-  .card {
-    background: hsla(230, 35%, 12%, 0.6);
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: var(--radius);
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-  }
-
-  .card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    border-color: rgba(255, 255, 255, 0.08);
+  /* Editorial number list — used for the YMME wizard steps */
+  .ordinal {
+    font-family: 'Fraunces', ui-serif, Georgia, serif;
+    font-variation-settings: 'opsz' 14;
+    font-style: italic;
+    font-weight: 400;
+    color: var(--accent);
+    font-size: 0.875rem;
+    margin-right: 0.4rem;
   }
 
   .card::before {
@@ -510,15 +600,18 @@
   }
 
   .section-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    line-height: 1.2;
+    font-family: 'Fraunces', ui-serif, Georgia, serif;
+    font-variation-settings: 'opsz' 96, 'SOFT' 50;
+    font-weight: 400;
+    font-size: 2rem;
+    color: var(--ink);
+    line-height: 1.08;
+    letter-spacing: -0.025em;
   }
 
   @media (min-width: 768px) {
     .section-title {
-      font-size: 1.75rem;
+      font-size: 2.5rem;
     }
   }
 

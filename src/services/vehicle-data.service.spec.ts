@@ -24,8 +24,15 @@ vi.mock('@angular/core', () => ({
         if (token && token.name === 'DataSyncService') {
             return { checkNormalizationStatus: vi.fn(() => Promise.resolve(false)) };
         }
-        if (token && token.name === 'SupabaseService') {
-            return { client: { from: vi.fn(() => ({ select: vi.fn(() => ({ eq: vi.fn(() => Promise.resolve({ data: [] })) })) })) } };
+        if (token && token.name === 'ApiDataService') {
+            const emptyQuery = () => Promise.resolve({ data: [], count: null, error: null });
+            return {
+                from: () => ({
+                    select: () => ({
+                        eq: () => emptyQuery(),
+                    }),
+                }),
+            };
         }
         if (token && token.name === 'LoggerService') {
             return { info: vi.fn(), warn: vi.fn(), error: vi.fn() };

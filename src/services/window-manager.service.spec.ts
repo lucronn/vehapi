@@ -56,6 +56,7 @@ describe('WindowManagerService', () => {
         const listeners: Record<string, Function[]> = {};
         const mockWindow = {
             innerWidth: 1024,
+            innerHeight: 800,
             matchMedia: mockMatchMedia,
             addEventListener: (type: string, fn: Function) => { (listeners[type] ??= []).push(fn); },
             removeEventListener: (type: string, fn: Function) => { listeners[type] = (listeners[type] || []).filter(f => f !== fn); },
@@ -101,8 +102,15 @@ describe('WindowManagerService', () => {
         expect(win.zIndex).toBe(1001);
         expect(win.isMinimized).toBe(false);
         expect(win.isMaximized).toBe(false);
-        expect(win.position).toEqual({ x: 50, y: 50 });
-        expect(win.size).toEqual({ width: 800, height: 600 });
+        const vw = 1024;
+        const vh = 800;
+        const w = Math.min(900, Math.round(vw * 0.85));
+        const h = Math.min(700, Math.round(vh * 0.85));
+        expect(win.position).toEqual({
+            x: Math.round((vw - w) / 2),
+            y: Math.round((vh - h) / 2),
+        });
+        expect(win.size).toEqual({ width: w, height: h });
     });
 
     test('should truncate long titles', () => {
@@ -175,7 +183,11 @@ describe('WindowManagerService', () => {
         service.updatePosition(id, 100, 200);
 
         const win = service.windows()[0];
-        expect(win.position).toEqual({ x: 100, y: 200 });
+        const maxY = Math.max(0, 800 - win.size.height);
+        expect(win.position).toEqual({
+            x: Math.min(100, Math.max(0, 1024 - win.size.width)),
+            y: Math.min(200, maxY),
+        });
     });
 
     test('should update size', () => {

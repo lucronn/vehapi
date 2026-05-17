@@ -30,6 +30,10 @@ import dotenv from 'dotenv';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
+import { ProxyAgent, Agent as UndiciAgent } from 'undici';
+import { SocksClient } from 'socks';
+import tls from 'node:tls';
+import net from 'node:net';
 import { dbQuery, isDbConfigured } from '../src/db.js';
 import { ingestArticlesCatalogFromMotorJson } from '../src/ingest/ingest_articles_catalog.js';
 import { authManager } from '../src/auth.js';
@@ -50,6 +54,48 @@ const MAX_VEHICLES   = Number(arg('max') || 0) || Infinity;
 const DRY_RUN        = Boolean(arg('dry-run'));
 const FORCE          = Boolean(arg('force'));
 const SESSIONS_PATH  = arg('sessions') || path.join(__dirname, '..', 'sessions.json');
+const USE_PROXIES    = !arg('no-proxies');
+// Aggregate from multiple free sources — single sources often return <10
+// proxies; the seed needs dozens of survivors. URLs return plain text or simple
+// host:port lists.
+const PROXY_SOURCES = [
+    // ProxyScrape API (HTTP + SOCKS)
+    'https://api.proxyscrape.com/v3/free-proxy-list/get?request=getproxies&protocol=http&proxy_format=ipport&format=text',
+    'https://api.proxyscrape.com/v3/free-proxy-list/get?request=getproxies&protocol=socks4&proxy_format=ipport&format=text',
+    'https://api.proxyscrape.com/v3/free-proxy-list/get?request=getproxies&protocol=socks5&proxy_format=ipport&format=text',
+    // GitHub aggregators — these refresh hourly, big lists, fairly reliable
+    'https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt',
+    'https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/socks4.txt',
+    'https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/socks5.txt',
+    'https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/http.txt',
+    'https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/socks4.txt',
+    'https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/socks5.txt',
+    'https://raw.githubusercontent.com/clarketm/proxy-list/master/proxy-list-raw.txt',
+    'https://raw.githubusercontent.com/sunny9577/proxy-scraper/master/proxies.txt',
+    'https://raw.githubusercontent.com/MuRongPIG/Proxy-Master/main/http.txt',
+    'https://raw.githubusercontent.com/MuRongPIG/Proxy-Master/main/socks5.txt',
+    'https://raw.githubusercontent.com/proxifly/free-proxy-list/main/proxies/all/data.txt',
+    'https://raw.githubusercontent.com/zloi-user/hideip.me/main/http.txt',
+    'https://raw.githubusercontent.com/zloi-user/hideip.me/main/https.txt',
+    'https://raw.githubusercontent.com/zloi-user/hideip.me/main/socks4.txt',
+    'https://raw.githubusercontent.com/zloi-user/hideip.me/main/socks5.txt',
+    'https://raw.githubusercontent.com/Anonym0usWork1221/Free-Proxies/main/proxy_files/http_proxies.txt',
+    'https://raw.githubusercontent.com/Anonym0usWork1221/Free-Proxies/main/proxy_files/socks4_proxies.txt',
+    'https://raw.githubusercontent.com/Anonym0usWork1221/Free-Proxies/main/proxy_files/socks5_proxies.txt',
+    'https://raw.githubusercontent.com/ErcinDedeoglu/proxies/main/proxies/http.txt',
+    'https://raw.githubusercontent.com/ErcinDedeoglu/proxies/main/proxies/socks4.txt',
+    'https://raw.githubusercontent.com/ErcinDedeoglu/proxies/main/proxies/socks5.txt',
+    'https://raw.githubusercontent.com/roosterkid/openproxylist/main/HTTPS_RAW.txt',
+    'https://raw.githubusercontent.com/roosterkid/openproxylist/main/SOCKS4_RAW.txt',
+    'https://raw.githubusercontent.com/roosterkid/openproxylist/main/SOCKS5_RAW.txt',
+    'https://raw.githubusercontent.com/officialputuid/KangProxy/KangProxy/http/http.txt',
+    'https://raw.githubusercontent.com/officialputuid/KangProxy/KangProxy/socks4/socks4.txt',
+    'https://raw.githubusercontent.com/officialputuid/KangProxy/KangProxy/socks5/socks5.txt',
+    'https://raw.githubusercontent.com/saisuiu/Lionkings-Http-Proxys-Proxies/main/free.txt',
+    // Geonode API (different format — pure JSON, requires parsing)
+    'https://proxylist.geonode.com/api/proxy-list?limit=500&page=1&sort_by=lastChecked&sort_type=desc',
+];
+const PROXY_LIST_URL = arg('proxy-list');  // optional override (single URL)
 
 if (!isDbConfigured()) { console.error('✗ DATABASE_URL not set'); process.exit(1); }
 
@@ -71,15 +117,199 @@ const sessions = (() => {
         windowCalls: 0,   // calls in current 6-min window
         cooldownUntil: 0, // ms timestamp
         reauths: 0,
+        proxy: null,      // current ProxyAgent (rotated on ban)
+        proxyRotations: 0,
     }));
 })();
 
-const CONCURRENCY = Number(arg('concurrency') || sessions.length);
+const CONCURRENCY = Number(arg('concurrency') || sessions.length * 4);
 console.log(`✓ Cloud SQL connected`);
 console.log(`✓ Loaded ${sessions.length} session(s): ${sessions.map(s => s.name).join(', ')}`);
-console.log(`  years=${YEARS_FILTER || 'all'} concurrency=${CONCURRENCY} delay=${DELAY_MS}ms max=${MAX_VEHICLES === Infinity ? 'unlimited' : MAX_VEHICLES} dry=${DRY_RUN} force=${FORCE}\n`);
+console.log(`  years=${YEARS_FILTER || 'all'} concurrency=${CONCURRENCY} delay=${DELAY_MS}ms max=${MAX_VEHICLES === Infinity ? 'unlimited' : MAX_VEHICLES} dry=${DRY_RUN} force=${FORCE} proxies=${USE_PROXIES}\n`);
+
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+// ─── Proxy pool ──────────────────────────────────────────────────────────────
+// Free HTTP proxies from proxyscrape. We validate each by calling a cheap
+// public-facing Motor endpoint; only proxies that get a non-403 response from
+// Motor are kept. Each session is assigned its own proxy and rotates when its
+// proxy gets banned.
+const proxyPool = []; // { url, agent, dead }
+const PROXY_PROBE_URL = 'https://sites.motor.com/m1/'; // returns 200 even without auth
+const PROXY_PROBE_TIMEOUT_MS = 6000;
+
+async function fetchProxyList() {
+    const sources = PROXY_LIST_URL ? [PROXY_LIST_URL] : PROXY_SOURCES;
+    // Each candidate is { hostPort, protocol } so we can dispatch the right
+    // Undici agent. HTTP-only sources tag everything 'http'; SOCKS sources tag
+    // 'socks5' (treating socks4 ≈ socks5 client-side is good enough for probing).
+    const all = new Map(); // key=hostPort:proto → {hostPort, protocol}
+    const addEntry = (hostPort, protocol) => {
+        const key = `${hostPort}|${protocol}`;
+        if (!all.has(key)) all.set(key, { hostPort, protocol });
+    };
+    await Promise.all(sources.map(async (url) => {
+        try {
+            const res = await fetch(url, { signal: AbortSignal.timeout(15_000) });
+            const ctype = res.headers.get('content-type') || '';
+            // Geonode JSON
+            if (url.includes('geonode.com') || ctype.includes('json')) {
+                const json = await res.json();
+                for (const p of json.data || []) {
+                    const hp = `${p.ip}:${p.port}`;
+                    const protos = (p.protocols || []).map(x => x.toLowerCase());
+                    if (protos.includes('http') || protos.includes('https')) addEntry(hp, 'http');
+                    if (protos.includes('socks5')) addEntry(hp, 'socks5');
+                    if (protos.includes('socks4')) addEntry(hp, 'socks4');
+                }
+                return;
+            }
+            const text = await res.text();
+            // Infer protocol from source URL
+            const proto = /socks5/i.test(url) ? 'socks5'
+                : /socks4/i.test(url) ? 'socks4'
+                : 'http';
+            for (const tok of text.split(/\s+/)) {
+                let clean = tok.trim();
+                if (!clean) continue;
+                // Strip scheme prefix if present (some sources prepend http:// or socks5://)
+                const m = clean.match(/^(https?|socks[45]):\/\/(.+)$/i);
+                let candidateProto = proto;
+                if (m) { candidateProto = m[1].toLowerCase().replace(/^https$/, 'http'); clean = m[2]; }
+                if (/^[\d.]+:\d+$/.test(clean)) addEntry(clean, candidateProto);
+            }
+        } catch (e) {
+            console.warn(`  ⚠ source ${url.slice(0,60)}… failed: ${e.message}`);
+        }
+    }));
+    return [...all.values()];
+}
+
+function makeAgent({ hostPort, protocol }) {
+    if (protocol === 'http' || protocol === 'https') {
+        return new ProxyAgent({ uri: `http://${hostPort}`, requestTls: { rejectUnauthorized: false } });
+    }
+    // SOCKS4/5: build an Undici Agent whose connect() routes the socket
+    // through the SOCKS proxy. Works for HTTPS by layering TLS on top.
+    const [pHost, pPort] = hostPort.split(':');
+    const socksType = protocol === 'socks4' ? 4 : 5;
+    return new UndiciAgent({
+        connect: async (opts, callback) => {
+            try {
+                const dstHost = opts.hostname || opts.host;
+                const dstPort = Number(opts.port) || (opts.protocol === 'https:' ? 443 : 80);
+                const { socket } = await SocksClient.createConnection({
+                    proxy: { host: pHost, port: Number(pPort), type: socksType },
+                    command: 'connect',
+                    destination: { host: dstHost, port: dstPort },
+                    timeout: PROXY_PROBE_TIMEOUT_MS,
+                });
+                if (opts.protocol === 'https:') {
+                    const tlsSock = tls.connect({
+                        socket,
+                        servername: dstHost,
+                        rejectUnauthorized: false,
+                        ALPNProtocols: ['http/1.1'],
+                    });
+                    tlsSock.once('secureConnect', () => callback(null, tlsSock));
+                    tlsSock.once('error', callback);
+                } else {
+                    callback(null, socket);
+                }
+            } catch (e) { callback(e); }
+        },
+    });
+}
+
+async function validateProxy(candidate) {
+    const { hostPort, protocol } = typeof candidate === 'string'
+        ? { hostPort: candidate, protocol: 'http' }
+        : candidate;
+    const url = `${protocol}://${hostPort}`;
+    let agent;
+    try { agent = makeAgent({ hostPort, protocol }); }
+    catch { return null; }
+    try {
+        const res = await fetch(PROXY_PROBE_URL, {
+            dispatcher: agent,
+            signal: AbortSignal.timeout(PROXY_PROBE_TIMEOUT_MS),
+            headers: { 'User-Agent': 'Mozilla/5.0' },
+            redirect: 'manual',
+        });
+        if (res.status === 200 || res.status === 302 || res.status === 301) {
+            return { url, agent, dead: false };
+        }
+    } catch { /* timeout / refused / refused-by-motor */ }
+    return null;
+}
+
+const PROXY_CANDIDATE_CAP = Number(arg('proxy-candidates') || 2000);
+const PROXY_TARGET        = Number(arg('proxy-target')     || 100);
+async function refillPool(target = 30) {
+    if (proxyPool.filter(p => !p.dead).length >= target) return;
+    const all = await fetchProxyList();
+    // Priority order: proxyscrape API candidates first (best hit rate), then
+    // the curated GitHub repos, then everything else random.
+    const score = (c) => {
+        if (c.protocol === 'http') return 0;        // prefer http (works with both ProxyAgent + Undici)
+        if (c.protocol === 'socks5') return 1;
+        return 2;
+    };
+    const candidates = all.sort((a, b) => score(a) - score(b))
+        .slice(0, PROXY_CANDIDATE_CAP);
+    if (!candidates.length) return;
+    const protoBreakdown = candidates.reduce((acc, c) => { acc[c.protocol] = (acc[c.protocol]||0)+1; return acc; }, {});
+    console.log(`\n  → validating ${candidates.length} of ${all.length} candidates  (by protocol: ${JSON.stringify(protoBreakdown)})`);
+    const BATCH = 200;
+    for (let i = 0; i < candidates.length && proxyPool.filter(p => !p.dead).length < target; i += BATCH) {
+        const batch = candidates.slice(i, i + BATCH);
+        const results = await Promise.all(batch.map(validateProxy));
+        let added = 0;
+        for (const r of results) if (r) { proxyPool.push(r); added++; }
+        console.log(`  → batch ${i/BATCH+1} (${batch[0]?.protocol}): +${added} live (total: ${proxyPool.filter(p=>!p.dead).length})`);
+    }
+    const live = proxyPool.filter(p => !p.dead).length;
+    console.log(`  → proxy pool: ${live} live (of ${proxyPool.length} survived validation)\n`);
+}
+
+function leaseProxy() {
+    if (!USE_PROXIES) return null;
+    const live = proxyPool.filter(p => !p.dead);
+    if (!live.length) return null;
+    return live[Math.floor(Math.random() * live.length)];
+}
+
+function retireProxy(proxy) {
+    if (proxy) proxy.dead = true;
+}
+
+const PROXY_REFILL_INTERVAL_MS = Number(arg('proxy-refill-min') || 5) * 60_000;
+if (USE_PROXIES) {
+    console.log('=== Building proxy pool ===');
+    await refillPool(PROXY_TARGET);
+    if (!proxyPool.filter(p => !p.dead).length) {
+        console.warn('  ⚠ no live proxies — falling back to direct connection');
+    }
+    // Proactive background refill: free proxies die constantly, so top the
+    // pool back up every few minutes whether we asked or not. Also evicts
+    // dead entries so proxyPool[] doesn't grow unboundedly.
+    setInterval(async () => {
+        // Garbage-collect dead entries before checking target
+        const dead = proxyPool.filter(p => p.dead);
+        for (const d of dead) {
+            const i = proxyPool.indexOf(d);
+            if (i >= 0) proxyPool.splice(i, 1);
+        }
+        const liveBefore = proxyPool.length;
+        try { await refillPool(PROXY_TARGET); } catch (e) {
+            console.warn(`\n  ⚠ scheduled refill failed: ${e.message}`);
+        }
+        const liveAfter = proxyPool.filter(p => !p.dead).length;
+        console.log(`\n  ⟳ scheduled refill: ${liveBefore} → ${liveAfter} live (gc'd ${dead.length} dead)\n`);
+    }, PROXY_REFILL_INTERVAL_MS).unref();
+    console.log(`  ⟳ scheduled refills every ${PROXY_REFILL_INTERVAL_MS/60_000}min\n`);
+}
 
 // Roll the per-session 6-min window forward
 function rollWindow(session) {
@@ -91,9 +321,25 @@ function rollWindow(session) {
 }
 
 // Try to re-auth a session in place (only ebsco-primary supports this).
-// Returns true on success.
+// Returns true on success. Guards:
+//   - min 60s between reauth attempts (no tight loop)
+//   - if the newly-minted session also gets 401/403, give up — IP is blocked,
+//     reauth can't help. Mark dead and let the other sessions continue.
+const REAUTH_MIN_INTERVAL_MS = 60_000;
 async function reauthSession(session) {
     if (session.name !== 'ebsco-primary') return false;
+    const now = Date.now();
+    if (session.lastReauthAt && now - session.lastReauthAt < REAUTH_MIN_INTERVAL_MS) {
+        // Too soon — fresh auth from <60s ago is also failing. IP likely blocked.
+        if (!session._reauthSpammed) {
+            console.warn(`\n  ⏸  ${session.name} reauth on cooldown (fresh session also failing — IP likely blocked); pausing 5min`);
+            session._reauthSpammed = true;
+        }
+        await sleep(5 * 60_000);
+        session._reauthSpammed = false;
+        return false;
+    }
+    session.lastReauthAt = now;
     try {
         await authManager.invalidateSession();
         const cookie = await authManager.getCookieHeader();
@@ -103,6 +349,7 @@ async function reauthSession(session) {
             session.windowStart = Date.now();
             session.windowCalls = 0;
             session.reauths++;
+            session._postReauthAttempt = true;  // mark next call to detect loop
             console.log(`\n  ↻ ${session.name} re-authed (reauth #${session.reauths})`);
             return true;
         }
@@ -128,8 +375,17 @@ async function m1Fetch(urlPath, session, attempt = 0) {
         await sleep(session.cooldownUntil - Date.now());
     }
 
+    // Lease a proxy if we don't have one for this session
+    if (USE_PROXIES && !session.proxy) {
+        session.proxy = leaseProxy();
+        if (session.proxy) {
+            session.proxyRotations++;
+            console.log(`\n  🔀 ${session.name} → proxy ${session.proxy.url} (rotation #${session.proxyRotations})`);
+        }
+    }
+
     const url = `${M1_BASE}${urlPath}`;
-    const res = await fetch(url, {
+    const fetchOpts = {
         headers: {
             Accept: 'application/json',
             'Accept-Language': 'en-US,en;q=0.9',
@@ -140,9 +396,39 @@ async function m1Fetch(urlPath, session, attempt = 0) {
             Cookie: session.cookie,
         },
         redirect: 'manual',
-    });
+        signal: AbortSignal.timeout(20_000),
+    };
+    if (session.proxy) fetchOpts.dispatcher = session.proxy.agent;
+
+    let res;
+    try {
+        res = await fetch(url, fetchOpts);
+    } catch (e) {
+        // Proxy timeout / network failure: retire proxy, retry with a new one
+        if (session.proxy && attempt < 8) {
+            console.warn(`\n  ✗ proxy ${session.proxy.url} failed (${e.message}) — retiring`);
+            retireProxy(session.proxy);
+            session.proxy = null;
+            if (proxyPool.filter(p => !p.dead).length < 5) await refillPool();
+            return m1Fetch(urlPath, session, attempt + 1);
+        }
+        throw e;
+    }
     session.calls++;
     session.windowCalls++;
+
+    // Proxy IP banned by Motor: rotate to a fresh proxy and retry — same
+    // session cookie, different exit IP. This is the whole point of the pool.
+    if ((res.status === 401 || res.status === 403 || res.status === 429) && session.proxy) {
+        console.warn(`\n  🔀 ${session.name}: ${res.status} via proxy ${session.proxy.url} — rotating`);
+        retireProxy(session.proxy);
+        session.proxy = null;
+        if (proxyPool.filter(p => !p.dead).length < 5) await refillPool();
+        if (attempt < 10 && leaseProxy()) {
+            return m1Fetch(urlPath, session, attempt + 1);
+        }
+        // Pool exhausted: fall through to original handling below
+    }
 
     // 429 = quota hit. Use x-rate-limit-reset if present, else wait full period.
     if (res.status === 429) {
@@ -166,6 +452,14 @@ async function m1Fetch(urlPath, session, attempt = 0) {
     // 401/403 = session expired. Try re-auth (ebsco-primary only).
     if (res.status === 401 || res.status === 403) {
         session.errors++;
+        // If we *just* re-authed and the brand-new session also returns 401/403,
+        // the IP is blocked — reauth can't help. Mark dead immediately.
+        if (session._postReauthAttempt) {
+            session._postReauthAttempt = false;
+            session.dead = true;
+            console.warn(`\n  ✗ ${session.name} disabled — fresh session also rejected (IP block suspected)`);
+            return { status: res.status, json: null, sessionDead: true };
+        }
         if (await reauthSession(session)) {
             return m1Fetch(urlPath, session, attempt + 1);
         }
@@ -189,6 +483,8 @@ async function m1Fetch(urlPath, session, attempt = 0) {
         return m1Fetch(urlPath, session, attempt + 1);
     }
 
+    // Successful response: clear the post-reauth tripwire.
+    session._postReauthAttempt = false;
     const text = await res.text();
     let json = null;
     try { json = JSON.parse(text); } catch {}

@@ -184,7 +184,7 @@
             class="flex items-center gap-3 px-4 py-3 transition-all group hover:bg-white/[0.03] border-b border-white/[0.03]">
             <lucide-icon [img]="icons.FileText" class="w-4 h-4 flex-shrink-0 text-torque-muted"></lucide-icon>
             <div class="flex-1 min-w-0">
-              <span class="text-sm font-medium text-white/80 group-hover:text-white block truncate">{{ article.title }}</span>
+              <span class="text-sm font-medium text-white/80 group-hover:text-white block truncate">{{ articleLabel(article) }}</span>
               @if (article.bucket) {
               <span class="text-[10px] text-torque-muted font-mono uppercase tracking-wider">{{ article.bucket }}</span>
               }
@@ -212,7 +212,8 @@
       (close)="closeOrientationModal()"></app-orientation-selector-modal>
     }
 
-    <!-- Section Content -->
+    <!-- Section Content (hidden while user is searching — the search dropdown above takes over) -->
+    @if (!searchTerm() || searchTerm().length < 2) {
     <div class="max-w-[1600px] xl:max-w-[1800px] mx-auto space-y-8">
       @switch (activeSection()) {
       @case ('overview') {
@@ -429,138 +430,88 @@
       }
       @case ('browse-all') {
       <div class="space-y-6 animate-fade-in-up">
-        <div class="pb-4 border-b border-white/5 flex items-center justify-between">
+        <div class="pb-4 border-b border-white/5 flex items-end justify-between gap-3 flex-wrap">
           <div>
             <h2 class="section-title">All Data</h2>
+            <p class="text-xs text-torque-muted mt-1 font-mono">
+              {{ browseBuckets().length }} categor{{ browseBuckets().length === 1 ? 'y' : 'ies' }} ·
+              {{ searchResultsState.articleDetails().length }} article{{ searchResultsState.articleDetails().length === 1 ? '' : 's' }}
+            </p>
           </div>
         </div>
 
-        <!-- Filter Tabs -->
+        <!-- Filter pills (single navigation source) -->
         <div class="flex flex-wrap gap-2 pb-4 border-b border-white/5">
           <button (click)="setBrowseFilter(null)"
             class="px-4 py-2 rounded-xl text-xs font-mono font-semibold tracking-wider transition-all border"
             [ngClass]="{
               'bg-[hsl(191,97%,50%)]/10 border-[hsl(191,97%,50%)]/30 text-torque-cyan': selectedBrowseFilter() === null,
-              'bg-white/[0.03] border-white/5 text-torque-secondary': selectedBrowseFilter() !== null
+              'bg-white/[0.03] border-white/5 text-torque-secondary hover:bg-white/[0.05]': selectedBrowseFilter() !== null
             }">
-            All <span class="opacity-50 ml-1">({{ searchResultsState.filterTabsAndTheirFullBuckets().length }})</span>
+            All <span class="opacity-50 ml-1">({{ searchResultsState.articleDetails().length }})</span>
           </button>
           @for (tab of searchResultsState.filterTabsAndTheirFullBuckets(); track tab.filterTab) {
           <button (click)="setBrowseFilter(tab.filterTab)"
             class="px-4 py-2 rounded-xl text-xs font-mono font-semibold tracking-wider transition-all border"
             [ngClass]="{
               'bg-[hsl(191,97%,50%)]/10 border-[hsl(191,97%,50%)]/30 text-torque-cyan': selectedBrowseFilter() === tab.filterTab,
-              'bg-white/[0.03] border-white/5 text-torque-secondary': selectedBrowseFilter() !== tab.filterTab
+              'bg-white/[0.03] border-white/5 text-torque-secondary hover:bg-white/[0.05]': selectedBrowseFilter() !== tab.filterTab
             }">
             {{ tab.filterTab }} <span class="opacity-50 ml-1">({{ tab.articlesCount }})</span>
           </button>
           }
         </div>
 
-        <!-- Filtered Tabs Content -->
-        <div class="space-y-4">
-          @for (tab of filteredBrowseTabs(); track tab.filterTab) {
-          <div class="glass-card p-4">
-            <div class="flex items-center gap-3 mb-4">
-              <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-[hsl(191,97%,50%)]/10">
-                <lucide-icon [img]="icons.Package" class="w-4 h-4 text-torque-cyan"></lucide-icon>
-              </div>
-              <h3 class="text-lg font-heading font-bold text-white">{{ tab.filterTab }}</h3>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              @for (bucket of tab.buckets; track bucket.bucketName) {
-              <div class="rounded-xl border border-white/5 bg-white/[0.02] overflow-hidden">
-                <button type="button"
-                  (click)="toggleBrowseExpanded(tab.filterTab, bucket.bucketName)"
-                  class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left">
-                  <div class="min-w-0">
-                    <div class="text-[10px] font-mono font-semibold uppercase tracking-[0.15em] text-torque-muted truncate">
-                      {{ bucket.bucketNameOverride || bucket.bucketName }}
-                    </div>
-                    <div class="text-[10px] text-torque-muted mt-0.5">
-                      {{ bucket.articles.length }} item(s)@if (bucket.children?.length) { · {{ bucket.children.length }} sub-bucket(s) }
-                    </div>
-                  </div>
-                  <span class="text-[10px] font-mono px-2 py-1 rounded-lg border border-white/10 text-white/70">
-                    @if (isBrowseExpanded(tab.filterTab, bucket.bucketName)) { Hide } @else { Show }
-                  </span>
-                </button>
-
-                @if (isBrowseExpanded(tab.filterTab, bucket.bucketName)) {
-                  <div class="px-3 pb-3">
-                    @if (bucket.articles.length > 0) {
-                      <ul class="space-y-1">
-                        @for (article of (isBrowseShowAll(tab.filterTab, bucket.bucketName) ? bucket.articles : bucket.articles.slice(0, 12)); track article.id) {
-                        <li>
-                          <a href="javascript:void(0)" (click)="onArticleClick($event, article)"
-                            class="block text-sm py-1 text-torque-secondary hover:text-white transition-colors cursor-pointer truncate">
-                            {{ article.title }}
-                          </a>
-                        </li>
-                        }
-                      </ul>
-                      @if (bucket.articles.length > 12) {
-                        <button type="button"
-                          (click)="toggleBrowseShowAll(tab.filterTab, bucket.bucketName)"
-                          class="mt-2 text-xs font-semibold px-3 py-2 rounded-lg border border-white/10 hover:bg-white/[0.03] transition-colors text-white/80">
-                          @if (isBrowseShowAll(tab.filterTab, bucket.bucketName)) { Show less } @else { Show all ({{ bucket.articles.length }}) }
-                        </button>
-                      }
-                    }
-
-                    @if (bucket.children && bucket.children.length > 0) {
-                      <div class="mt-3 space-y-2">
-                        @for (child of bucket.children; track child.bucketName) {
-                        <div class="rounded-xl border border-white/5 bg-black/10 overflow-hidden">
-                          <button type="button"
-                            (click)="toggleBrowseExpanded(tab.filterTab, bucket.bucketName, child.bucketName)"
-                            class="w-full flex items-center justify-between gap-3 px-3 py-2 text-left">
-                            <div class="text-[10px] font-mono font-semibold text-torque-muted tracking-wider truncate">
-                              {{ child.bucketNameOverride || child.bucketName }}
-                              <span class="opacity-60 ml-1">({{ child.articles.length }})</span>
-                            </div>
-                            <span class="text-[10px] font-mono px-2 py-1 rounded-lg border border-white/10 text-white/70">
-                              @if (isBrowseExpanded(tab.filterTab, bucket.bucketName, child.bucketName)) { Hide } @else { Show }
-                            </span>
-                          </button>
-                          @if (isBrowseExpanded(tab.filterTab, bucket.bucketName, child.bucketName)) {
-                            <div class="px-3 pb-3">
-                              <ul class="space-y-0.5">
-                                @for (art of (isBrowseShowAll(tab.filterTab, bucket.bucketName, child.bucketName) ? child.articles : child.articles.slice(0, 10)); track art.id) {
-                                <li>
-                                  <a href="javascript:void(0)" (click)="onArticleClick($event, art)"
-                                    class="block text-xs py-1 text-torque-secondary hover:text-white transition-colors cursor-pointer truncate">
-                                    {{ art.title }}
-                                  </a>
-                                </li>
-                                }
-                              </ul>
-                              @if (child.articles.length > 10) {
-                                <button type="button"
-                                  (click)="toggleBrowseShowAll(tab.filterTab, bucket.bucketName, child.bucketName)"
-                                  class="mt-2 text-xs font-semibold px-3 py-2 rounded-lg border border-white/10 hover:bg-white/[0.03] transition-colors text-white/80">
-                                  @if (isBrowseShowAll(tab.filterTab, bucket.bucketName, child.bucketName)) { Show less } @else { Show all ({{ child.articles.length }}) }
-                                </button>
-                              }
-                            </div>
-                          }
-                        </div>
-                        }
-                      </div>
-                    }
-                  </div>
+        <!-- Bucket grid: every bucket shows a preview; "+N more" reveals overflow.
+             No section card wrapper — the active pill above is the only nav. -->
+        @if (browseBuckets().length > 0) {
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          @for (bucket of browseBuckets(); track bucket.key) {
+          <div class="glass-card p-4 flex flex-col gap-3">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <h3 class="text-sm font-heading font-semibold text-white truncate">{{ bucket.bucketLabel }}</h3>
+                @if (selectedBrowseFilter() === null) {
+                <span class="text-[9px] font-mono uppercase tracking-[0.15em] text-torque-muted">{{ bucket.tabName }}</span>
                 }
               </div>
-              }
+              <span class="shrink-0 text-[10px] font-mono px-2 py-1 rounded-lg border border-white/10 text-white/70">
+                {{ bucket.articles.length }}
+              </span>
             </div>
+            <ul class="space-y-1">
+              @for (article of (isBucketExpanded(bucket.key) ? bucket.articles : bucket.articles.slice(0, BROWSE_PREVIEW_COUNT)); track article.id) {
+              <li>
+                <a href="javascript:void(0)" (click)="onArticleClick($event, article)"
+                  class="block text-sm py-1 text-torque-secondary hover:text-torque-cyan transition-colors cursor-pointer truncate">
+                  {{ articleLabel(article) }}
+                </a>
+              </li>
+              }
+            </ul>
+            @if (bucket.articles.length > BROWSE_PREVIEW_COUNT) {
+            <button type="button" (click)="toggleBucketExpanded(bucket.key)"
+              class="text-xs font-mono text-torque-muted hover:text-torque-cyan transition-colors text-left">
+              @if (isBucketExpanded(bucket.key)) {
+                — Show less
+              } @else {
+                + {{ bucket.articles.length - BROWSE_PREVIEW_COUNT }} more
+              }
+            </button>
+            }
           </div>
           }
         </div>
+        } @else {
+          <div class="glass-card p-8 text-center text-sm text-torque-muted">
+            No articles in this category.
+          </div>
+        }
       </div>
       }
       }
     </div>
+    }
   </main>
 
   <!-- Mobile Bottom Tab Bar (shows available sections; all tabs during load) -->

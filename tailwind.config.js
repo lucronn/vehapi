@@ -1,73 +1,63 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-    darkMode: ["class"],
+    darkMode: ['class', '[data-theme="dark"]'],
     content: [
-        "./src/**/*.{html,ts,tsx}",
-        "./index.html"
+        './src/**/*.{html,ts,tsx}',
+        './index.html',
     ],
     theme: {
         extend: {
             colors: {
+                // Calm palette: warm bone paper + warm ink + sage accent. All
+                // values are CSS vars so [data-theme="dark"] flips the whole
+                // system without touching component classes.
+                paper:        'var(--paper)',
+                surface:      'var(--surface)',
+                ink:          'var(--ink)',
+                muted:        'var(--muted)',
+                faint:        'var(--faint)',
+                hairline:     'var(--hairline)',
+                accent:       'var(--accent)',
+                'accent-soft':'var(--accent-soft)',
+                danger:       'var(--danger)',
+                // Legacy "torque-*" aliases so any un-migrated class keeps
+                // compiling during the redesign rollout.
                 torque: {
-                    bg: 'hsl(230, 35%, 7%)',
-                    card: 'hsl(230, 35%, 12%)',
-                    dark: 'hsl(230, 35%, 9%)',
-                    cyan: 'hsl(191, 97%, 50%)',
-                    violet: 'hsl(263, 83%, 58%)',
-                    purple: 'hsl(263, 83%, 58%)',
-                    'text-secondary': 'hsl(215, 20%, 65%)',
-                    'text-muted': 'hsl(215, 16%, 47%)',
-                }
+                    bg:                 'var(--paper)',
+                    card:               'var(--surface)',
+                    dark:               'var(--surface)',
+                    cyan:               'var(--accent)',
+                    violet:             'var(--accent)',
+                    purple:             'var(--accent)',
+                    'text-secondary':   'var(--muted)',
+                    'text-muted':       'var(--faint)',
+                    secondary:          'var(--muted)',
+                    muted:              'var(--faint)',
+                },
             },
             fontFamily: {
-                heading: ['Outfit', 'sans-serif'],
-                sans: ['Inter', 'sans-serif'],
-                mono: ['JetBrains Mono', 'monospace'],
+                display: ['"Fraunces"', 'ui-serif', 'Georgia', 'serif'],
+                heading: ['"Fraunces"', 'ui-serif', 'Georgia', 'serif'],
+                sans:    ['"Geist"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                mono:    ['"Geist Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+            },
+            letterSpacing: {
+                tightest: '-0.04em',
+                eyebrow:  '0.18em',
             },
             keyframes: {
-                'fade-in': {
-                    from: { opacity: '0' },
-                    to: { opacity: '1' },
-                },
-                'fade-in-up': {
-                    from: { opacity: '0', transform: 'translateY(20px)' },
-                    to: { opacity: '1', transform: 'translateY(0)' },
-                },
-                'slide-in': {
-                    from: { transform: 'translateY(10px)', opacity: '0' },
-                    to: { transform: 'translateY(0)', opacity: '1' },
-                },
-                'scan': {
-                    '0%': { transform: 'translateY(-100%)' },
-                    '100%': { transform: 'translateY(100vh)' },
-                },
-                'mesh-drift': {
-                    '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
-                    '25%': { transform: 'translate(5%, -3%) scale(1.05)' },
-                    '50%': { transform: 'translate(-3%, 5%) scale(0.95)' },
-                    '75%': { transform: 'translate(3%, 2%) scale(1.02)' },
-                },
-                'glow-pulse': {
-                    '0%, 100%': { opacity: '0.4' },
-                    '50%': { opacity: '0.8' },
-                },
-                'shine-sweep': {
-                    '0%': { transform: 'translateX(-100%) skewX(-15deg)' },
-                    '100%': { transform: 'translateX(200%) skewX(-15deg)' },
-                },
+                'fade-in':    { from: { opacity: '0' }, to: { opacity: '1' } },
+                'fade-in-up': { from: { opacity: '0', transform: 'translateY(12px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
+                'rise':       { from: { opacity: '0', transform: 'translateY(8px)' },  to: { opacity: '1', transform: 'translateY(0)' } },
             },
             animation: {
-                'fade-in': 'fade-in 0.5s ease-out forwards',
-                'fade-in-up': 'fade-in-up 0.6s ease-out forwards',
-                'slide-in': 'slide-in 0.3s ease-out',
-                'scan': 'scan 8s linear infinite',
-                'mesh-drift': 'mesh-drift 60s ease-in-out infinite',
-                'glow-pulse': 'glow-pulse 4s ease-in-out infinite',
-                'shine-sweep': 'shine-sweep 0.6s ease-out',
+                'fade-in':    'fade-in 0.6s ease-out forwards',
+                'fade-in-up': 'fade-in-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+                'rise':       'rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards',
             },
-        }
+        },
     },
     plugins: [
         require('@tailwindcss/typography'),
     ],
-}
+};

@@ -33,6 +33,11 @@ export class ThemeService {
     private getInitialTheme(): Theme {
         const stored = localStorage.getItem(this.STORAGE_KEY) as Theme | null;
         if (stored === 'light' || stored === 'dark') return stored;
-        return 'dark';
+        // Calm-paper redesign defaults to light. Users can flip to dark
+        // (basalt) via the toggle; preference persists in localStorage.
+        if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
+            return 'dark';
+        }
+        return 'light';
     }
 }

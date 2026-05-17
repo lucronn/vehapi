@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { getMotorProxyBaseUrl } from '../../utils/motor-api.constants';
 import { ApiResponse } from '../../models/motor.models';
@@ -25,82 +25,208 @@ interface BrowseResponse {
 @Component({
   selector: 'app-vehicle-browse',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="browse">
-      <header>
-        <h1>Vehicle Catalog</h1>
+      <a routerLink="/" class="back">← Back</a>
+
+      <header class="head">
+        <p class="eyebrow">Catalog</p>
+        <h1 class="display-lg">Vehicles</h1>
         <p class="sub">
-          Browsing <strong>{{ totalNormalized() }}</strong> vehicles with ingested article catalogs in Cloud SQL.
+          {{ totalNormalized().toLocaleString() }} vehicles indexed.
+          @if (returned()) { Showing {{ returned() }}. }
         </p>
       </header>
 
       <div class="filters">
-        <input
-          type="search"
-          placeholder="Search make, model, or year:make:model…"
-          [(ngModel)]="q"
-          (ngModelChange)="onQueryChange()"
-          autofocus
-        />
-        <select [(ngModel)]="yearFilter" (change)="load()">
-          <option value="">All years</option>
-          <option *ngFor="let y of years()" [value]="y">{{ y }}</option>
-        </select>
-        <select [(ngModel)]="makeFilter" (change)="load()">
-          <option value="">All makes</option>
-          <option *ngFor="let m of makes()" [value]="m">{{ m }}</option>
-        </select>
+        <label class="search">
+          <span class="eyebrow">Search</span>
+          <input type="search" placeholder="make · model · year"
+            [(ngModel)]="q" (ngModelChange)="onQueryChange()" autofocus />
+        </label>
+        <label class="select">
+          <span class="eyebrow">Year</span>
+          <select [(ngModel)]="yearFilter" (change)="load()">
+            <option value="">All</option>
+            <option *ngFor="let y of years()" [value]="y">{{ y }}</option>
+          </select>
+        </label>
+        <label class="select">
+          <span class="eyebrow">Make</span>
+          <select [(ngModel)]="makeFilter" (change)="load()">
+            <option value="">All</option>
+            <option *ngFor="let m of makes()" [value]="m">{{ m }}</option>
+          </select>
+        </label>
       </div>
 
-      <div *ngIf="loading()" class="status">Loading…</div>
-      <div *ngIf="error()" class="status error">{{ error() }}</div>
+      @if (loading()) { <p class="status">Loading…</p> }
+      @if (error()) { <p class="status status-error">{{ error() }}</p> }
 
-      <div class="grid" *ngIf="!loading() && vehicles().length">
-        <button
-          *ngFor="let v of vehicles(); trackBy: trackId"
-          class="card"
-          [class.normalized]="v.is_normalized"
-          (click)="open(v)"
-        >
-          <div class="ymm">{{ v.year }} {{ v.make }}</div>
-          <div class="model">{{ v.model }}</div>
-          <div class="meta">
-            <span class="dot" [class.on]="v.is_normalized"></span>
-            {{ v.is_normalized ? 'Catalog ingested' : 'Catalog not ingested' }}
-          </div>
-        </button>
-      </div>
+      @if (!loading() && vehicles().length) {
+      <ul class="grid">
+        @for (v of vehicles(); track v.external_id) {
+        <li>
+          <button class="card" [class.normalized]="v.is_normalized" (click)="open(v)">
+            <span class="ymm eyebrow">{{ v.year }} · {{ v.make }}</span>
+            <span class="model">{{ v.model }}</span>
+            <span class="meta">
+              @if (v.is_normalized) {
+                <span class="dot dot-on"></span> Indexed
+              } @else {
+                <span class="dot"></span> Pending
+              }
+            </span>
+          </button>
+        </li>
+        }
+      </ul>
+      }
 
-      <div *ngIf="!loading() && !vehicles().length && !error()" class="status">
-        No vehicles match these filters.
-      </div>
+      @if (!loading() && !vehicles().length && !error()) {
+      <p class="status">Nothing matches these filters.</p>
+      }
 
-      <p class="footer" *ngIf="returned() === 1000">
-        Showing first 1000 results — narrow your filters to see more.
-      </p>
+      @if (returned() === 1000) {
+      <p class="footer eyebrow">Showing first 1,000 — narrow filters to see more</p>
+      }
     </div>
   `,
   styles: [`
-    .browse { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
-    header h1 { margin: 0 0 0.25rem; }
-    header .sub { color: var(--muted, #888); margin: 0 0 1.5rem; }
-    .filters { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
-    .filters input { flex: 1 1 280px; padding: 0.55rem 0.75rem; border-radius: 6px; border: 1px solid var(--border, #ccc); font-size: 0.95rem; }
-    .filters select { padding: 0.55rem 0.75rem; border-radius: 6px; border: 1px solid var(--border, #ccc); background: var(--bg, #fff); }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem; }
-    .card { text-align: left; padding: 0.85rem 1rem; border: 1px solid var(--border, #ddd); border-radius: 8px; background: var(--bg, #fff); cursor: pointer; transition: border-color .15s, transform .15s; font: inherit; color: inherit; }
-    .card:hover { border-color: var(--accent, #3b82f6); transform: translateY(-1px); }
-    .card.normalized { border-left: 3px solid #22c55e; }
-    .ymm { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted, #888); }
-    .model { font-size: 1rem; margin: 0.15rem 0 0.4rem; }
-    .meta { font-size: 0.78rem; color: var(--muted, #888); display: flex; align-items: center; gap: 0.4rem; }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; display: inline-block; }
-    .dot.on { background: #22c55e; }
-    .status { padding: 2rem; text-align: center; color: var(--muted, #888); }
-    .status.error { color: #ef4444; }
-    .footer { margin-top: 1.5rem; text-align: center; color: var(--muted, #888); font-size: 0.85rem; }
+    :host {
+      display: block;
+      min-height: 100vh;
+      color: var(--ink);
+    }
+    .browse {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 5rem;
+    }
+    .back {
+      display: inline-block;
+      font-family: 'Geist Mono', monospace;
+      font-size: 0.625rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--muted);
+      text-decoration: none;
+      margin-bottom: 3rem;
+    }
+    .back:hover { color: var(--ink); }
+    .head {
+      padding-bottom: 2.5rem;
+      margin-bottom: 2.5rem;
+      border-bottom: 1px solid var(--hairline);
+    }
+    .head .eyebrow { margin-bottom: 0.75rem; display: block; }
+    .head h1 { margin: 0 0 1rem; color: var(--ink); }
+    .head .sub {
+      font-size: 0.875rem;
+      color: var(--muted);
+      max-width: 32rem;
+    }
+    .filters {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+      margin-bottom: 2.5rem;
+    }
+    @media (min-width: 720px) {
+      .filters { grid-template-columns: 2fr 1fr 1fr; }
+    }
+    .filters label { display: flex; flex-direction: column; gap: 0.5rem; }
+    .filters input,
+    .filters select {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--hairline);
+      padding: 0.5rem 0;
+      font: inherit;
+      font-size: 1rem;
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.2s ease;
+      font-family: inherit;
+      appearance: none;
+      cursor: text;
+    }
+    .filters select { cursor: pointer; }
+    .filters input:focus,
+    .filters select:focus {
+      border-color: var(--accent);
+    }
+    .filters input::placeholder { color: var(--faint); }
+
+    .grid {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1px;
+      background: var(--hairline);
+      border: 1px solid var(--hairline);
+    }
+    .card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      width: 100%;
+      text-align: left;
+      padding: 1.25rem 1.25rem 1.25rem 1.25rem;
+      background: var(--surface);
+      border: none;
+      cursor: pointer;
+      font: inherit;
+      color: var(--ink);
+      transition: background-color 0.2s ease;
+    }
+    .card:hover { background: var(--paper-edge); }
+    .card.normalized { box-shadow: inset 3px 0 0 var(--accent); }
+    .ymm { color: var(--faint); }
+    .model {
+      font-family: 'Fraunces', serif;
+      font-variation-settings: 'opsz' 32;
+      font-weight: 450;
+      font-size: 1.05rem;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+      color: var(--ink);
+    }
+    .meta {
+      margin-top: auto;
+      padding-top: 0.5rem;
+      font-family: 'Geist Mono', monospace;
+      font-size: 0.625rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--faint);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--hairline);
+      display: inline-block;
+    }
+    .dot-on { background: var(--accent); }
+    .status {
+      padding: 3rem 1rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .status-error { color: var(--danger); }
+    .footer {
+      margin-top: 2rem;
+      text-align: center;
+    }
   `]
 })
 export class VehicleBrowseComponent implements OnInit {

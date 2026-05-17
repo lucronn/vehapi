@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 
 <head>
   <meta charset="utf-8" />
@@ -7,7 +7,7 @@
   <base href="/" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="description" content="TORQUE.AI — AI-powered vehicle intelligence. Access repair procedures, DTCs, TSBs, wiring diagrams, specifications, and maintenance schedules for any vehicle." />
-  <meta name="theme-color" content="#0a0a0f" />
+  <meta name="theme-color" content="#EFE7D5" />
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
@@ -24,7 +24,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..600,30..100&family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&display=swap"
     rel="stylesheet">
 
   <script>
@@ -63,7 +63,9 @@
     // Theme init — prevent FOUC
     (function () {
       var t = localStorage.getItem('torque-theme');
-      if (!t) t = 'dark';
+      if (!t) {
+        t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
       document.documentElement.setAttribute('data-theme', t);
       if (t === 'dark') {
         document.documentElement.classList.add('dark');
@@ -76,7 +78,7 @@
   </script>
 </head>
 
-<body class="antialiased bg-[#0a0a0f] text-white min-h-screen" style="background-color: #0a0a0f;">
+<body class="antialiased min-h-screen" style="background-color: var(--paper, #EFE7D5); color: var(--ink, #1F1A12);">
   <!-- Eruda: opt-in via ?eruda or #/path?eruda (dev only; not loaded by default) -->
   <script>
     (function () {

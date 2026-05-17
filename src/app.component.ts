@@ -3,20 +3,20 @@ import { RouterOutlet } from '@angular/router';
 import { AuthLoadingComponent } from './components/auth-loading/auth-loading.component';
 import { ThemeService } from './services/theme.service';
 import { WindowContainerComponent } from './components/window-container/window-container.component';
+import { AmbientBackgroundComponent } from './components/ambient-background/ambient-background.component';
 
 @Component({
   selector: 'app-root',
   template: `
     <app-auth-loading></app-auth-loading>
-    <div class="mesh-gradient"></div>
-    <div class="scanline-overlay"></div>
-    <main class="min-h-screen relative z-10" style="color:var(--text-primary)">
+    <app-ambient-background></app-ambient-background>
+    <main class="min-h-screen relative z-10" style="color:var(--ink)">
       <router-outlet></router-outlet>
     </main>
     <app-window-container></app-window-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, AuthLoadingComponent, WindowContainerComponent],
+  imports: [RouterOutlet, AuthLoadingComponent, WindowContainerComponent, AmbientBackgroundComponent],
 })
 export class AppComponent {
   private themeService = inject(ThemeService);
