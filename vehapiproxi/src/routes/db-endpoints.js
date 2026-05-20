@@ -12,6 +12,7 @@
 import { Router } from 'express';
 import { dbQuery } from '../db.js';
 import logger from '../logger.js';
+import { resolveAssociatedVehicleIds } from '../supabase.js';
 
 const router = Router();
 
@@ -99,16 +100,15 @@ router.get('/year/:year/make/:make/models', async (req, res) => {
 router.get('/articles', async (req, res) => {
     const vehicleId = String(req.query.vehicleId || '').trim();
     if (!vehicleId) return res.status(400).json({ error: 'vehicleId required' });
-    // articles.vehicle_id is stored URL-encoded in some rows, raw in others
-    const encoded = encodeURIComponent(vehicleId);
     try {
+        const ids = await resolveAssociatedVehicleIds(vehicleId);
         const { rows } = await dbQuery(
             `SELECT original_id, title, subtitle, description, bucket, parent_bucket,
                     thumbnail_href, bulletin_number, release_date, sort, content_source
              FROM articles
-             WHERE vehicle_id IN ($1, $2)
+             WHERE vehicle_id = ANY($1)
              ORDER BY parent_bucket NULLS LAST, bucket NULLS LAST, sort, title`,
-            [vehicleId, encoded]
+            [ids]
         );
         if (!rows.length) {
             return res.status(404).json({

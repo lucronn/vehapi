@@ -217,6 +217,30 @@ function buildUpsertSql(table, rows, conflictCols, { returning = false } = {}) {
 // Public exports
 // ---------------------------------------------------------------------------
 
+export async function resolveAssociatedVehicleIds(vehicleId) {
+    if (!isDbConfigured() || !vehicleId) return [vehicleId || ''];
+    try {
+        const encoded = encodeURIComponent(vehicleId);
+        // Find any external_id that exactly matches, or ends with :vehicleId, or ends with %3AvehicleId
+        const { rows } = await dbQuery(
+            `SELECT external_id 
+             FROM vehicles 
+             WHERE external_id = $1 
+                OR external_id = $2
+                OR right(external_id, length($1) + 1) = ':' || $1
+                OR right(lower(external_id), length($1) + 3) = '%3a' || $1`,
+            [vehicleId, encoded]
+        );
+        const ids = new Set(rows.map(r => r.external_id));
+        ids.add(vehicleId);
+        ids.add(encoded);
+        return Array.from(ids);
+    } catch (err) {
+        logger.error(`Error resolving associated vehicle IDs for ${vehicleId}:`, err);
+        return [vehicleId, encodeURIComponent(vehicleId)];
+    }
+}
+
 export async function ensureVehicleExists(vehicleId, contentSource = 'MOTOR') {
     if (!isDbConfigured() || !vehicleId) return { success: false };
     try {
@@ -251,9 +275,10 @@ export async function markVehicleNormalized(vehicleId) {
 export async function checkArticleContent(vehicleId, articleId) {
     if (!isDbConfigured()) return null;
     try {
+        const ids = await resolveAssociatedVehicleIds(vehicleId);
         const { rows } = await dbQuery(
-            `SELECT * FROM articles WHERE vehicle_id = $1 AND original_id = $2 AND original_content IS NOT NULL LIMIT 1`,
-            [vehicleId, articleId]
+            `SELECT * FROM articles WHERE vehicle_id = ANY($1) AND original_id = $2 AND original_content IS NOT NULL LIMIT 1`,
+            [ids, articleId]
         );
         return rows.length > 0 ? rows[0] : null;
     } catch {
@@ -264,10 +289,11 @@ export async function checkArticleContent(vehicleId, articleId) {
 export async function getArticleMetadata(vehicleId, articleId) {
     if (!isDbConfigured()) return null;
     try {
+        const ids = await resolveAssociatedVehicleIds(vehicleId);
         const { rows } = await dbQuery(
             `SELECT bucket, parent_bucket, title, code, bulletin_number, description
-             FROM articles WHERE vehicle_id = $1 AND original_id = $2 LIMIT 1`,
-            [vehicleId, articleId]
+             FROM articles WHERE vehicle_id = ANY($1) AND original_id = $2 LIMIT 1`,
+            [ids, articleId]
         );
         if (rows.length === 0) return null;
         const r = rows[0];
@@ -287,10 +313,11 @@ export async function getArticleMetadata(vehicleId, articleId) {
 export async function getArticleCatalogEntry(vehicleId, articleId) {
     if (!isDbConfigured()) return null;
     try {
+        const ids = await resolveAssociatedVehicleIds(vehicleId);
         const { rows } = await dbQuery(
             `SELECT title, subtitle, description, thumbnail_href, bucket, parent_bucket, content_source
-             FROM articles WHERE vehicle_id = $1 AND original_id = $2 LIMIT 1`,
-            [vehicleId, articleId]
+             FROM articles WHERE vehicle_id = ANY($1) AND original_id = $2 LIMIT 1`,
+            [ids, articleId]
         );
         return rows.length > 0 ? rows[0] : null;
     } catch {
@@ -808,11 +835,12 @@ export async function getMetadata(path) {
 export async function getVehicleArticles(vehicleId) {
     if (!isDbConfigured()) return null;
     try {
+        const ids = await resolveAssociatedVehicleIds(vehicleId);
         const { rows } = await dbQuery(
             `SELECT original_id, title, subtitle, code, description, bucket, parent_bucket,
                     thumbnail_href, bulletin_number, release_date, sort, content_source
-             FROM articles WHERE vehicle_id = $1`,
-            [vehicleId]
+             FROM articles WHERE vehicle_id = ANY($1)`,
+            [ids]
         );
         return rows;
     } catch (err) {
@@ -824,12 +852,13 @@ export async function getVehicleArticles(vehicleId) {
 export async function getVehicleIsNormalized(vehicleId) {
     if (!isDbConfigured()) return null;
     try {
+        const ids = await resolveAssociatedVehicleIds(vehicleId);
         const { rows } = await dbQuery(
-            `SELECT is_normalized FROM vehicles WHERE external_id = $1 LIMIT 1`,
-            [vehicleId]
+            `SELECT is_normalized FROM vehicles WHERE external_id = ANY($1)`,
+            [ids]
         );
         if (rows.length === 0) return null;
-        return !!rows[0].is_normalized;
+        return rows.some(r => !!r.is_normalized);
     } catch {
         return null;
     }
@@ -838,9 +867,10 @@ export async function getVehicleIsNormalized(vehicleId) {
 export async function getVehicleArticlesCount(vehicleId) {
     if (!isDbConfigured()) return 0;
     try {
+        const ids = await resolveAssociatedVehicleIds(vehicleId);
         const { rows } = await dbQuery(
-            `SELECT COUNT(*)::int AS cnt FROM articles WHERE vehicle_id = $1`,
-            [vehicleId]
+            `SELECT COUNT(*)::int AS cnt FROM articles WHERE vehicle_id = ANY($1)`,
+            [ids]
         );
         return rows[0]?.cnt ?? 0;
     } catch {
