@@ -76,13 +76,6 @@
         @if (isLoading()) { <span class="animate-spin inline-block">◌</span> }
         @else { Continue }
       </button>
-
-      <button type="button" (click)="enterDemoMode()"
-        [disabled]="isLoading()"
-        class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-accent/20 to-purple-500/20 border border-accent/30 hover:from-accent/30 hover:to-purple-500/30 text-accent font-bold transition-all shadow-md">
-        <lucide-icon [img]="icons.Sparkles" class="w-4 h-4"></lucide-icon>
-        Access Demo Mode
-      </button>
     </section>
     }
   </main>

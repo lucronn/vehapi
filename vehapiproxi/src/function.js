@@ -12,7 +12,7 @@ import logger, { logBuffer, logRequest, logResponse } from './logger.js';
 import swaggerUi from 'swagger-ui-express';
 import { createRequire } from 'module';
 import { createCheckoutSession, createBillingPortalSession, handleWebhook, verifyAndFulfillSession } from './stripe.js';
-import { getUserData, unlockModule, getTransactions, setDemoUserId } from './credits.js';
+import { getUserData, unlockModule, getTransactions } from './credits.js';
 import { mapChunksToL2ApiResponse, runL2VehicleChunkSearch } from './l2_retrieval.js';
 import { 
     insertParsedData, 
@@ -329,12 +329,13 @@ const secureAuthMiddleware = async (req, res, next) => {
     req.user = decoded;
     req.isVerified = true;
 
-    if (decoded.email === 'demo@torque.com') {
-        setDemoUserId(decoded.sub);
-    }
-
     return next();
 };
+
+// --- PUBLIC CONFIG ENDPOINT (no auth required) ---
+app.get('/api/app-config', (_req, res) => {
+    res.json({ demoMode: config.demoMode });
+});
 
 // --- CREDIT SYSTEM ENDPOINTS ---
 registerCreditsEndpoints(app, secureAuthMiddleware);

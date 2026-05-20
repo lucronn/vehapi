@@ -10,14 +10,13 @@ import { VehiclePersistenceService } from '../../services/vehicle-persistence.se
 import { DataSyncService } from '../../services/data-sync.service';
 import { LogoComponent } from '../../components/logo/logo.component';
 import { Make, Model, Engine, PersistedVehicle } from '../../models/motor.models';
-import { LucideAngularModule, Search, X, ArrowRight, ArrowUpRight, ArrowLeft, Sparkles } from 'lucide-angular';
+import { LucideAngularModule, Search, X, ArrowRight, ArrowUpRight, ArrowLeft } from 'lucide-angular';
 import { ThemeToggleComponent } from '../../components/theme-toggle/theme-toggle.component';
 import { PageTitleService } from '../../services/page-title.service';
 import { LoggerService } from '../../services/logger.service';
 import { CommandPaletteService, type CommandPaletteItem } from '../../services/command-palette.service';
 import { FocusDepthDirective } from '../../directives/focus-depth.directive';
 import { normalizeYearList } from '../../utils/year-list';
-import { AuthService } from '../../services/auth.service';
 
 type Suggestion =
   | { type: 'Decade'; value: number; display: string }
@@ -36,7 +35,7 @@ type YearPickerMode = 'decade' | 'year';
   imports: [CommonModule, FormsModule, LogoComponent, RouterModule, LucideAngularModule, ThemeToggleComponent, FocusDepthDirective],
 })
 export class HomeComponent implements OnInit {
-  readonly icons = { Search, X, ArrowRight, ArrowUpRight, ArrowLeft, Sparkles };
+  readonly icons = { Search, X, ArrowRight, ArrowUpRight, ArrowLeft };
   private motorApi = inject(MotorApiService);
   private persistence = inject(VehiclePersistenceService);
   private dataSync = inject(DataSyncService);
@@ -46,7 +45,6 @@ export class HomeComponent implements OnInit {
   private pageTitle = inject(PageTitleService);
   private logger = inject(LoggerService);
   private commandPalette = inject(CommandPaletteService);
-  protected authService = inject(AuthService);
   private motorVehicleMappingInFlight = false;
 
   constructor() { }
@@ -485,20 +483,6 @@ export class HomeComponent implements OnInit {
     this.closeYmmeWizard();
   }
 
-  async enterDemoMode(): Promise<void> {
-    try {
-      this.isLoading.set(true);
-      await this.authService.signInDemoMode();
-      if (typeof window !== 'undefined') {
-        window.location.reload();
-      }
-    } catch (err) {
-      this.logger.error('Failed to enter demo mode', err);
-      this.errorMessage.set('Failed to sign in to Demo Mode. Please try again.');
-    } finally {
-      this.isLoading.set(false);
-    }
-  }
 
   expandWizardList(event?: Event): void {
     event?.preventDefault();

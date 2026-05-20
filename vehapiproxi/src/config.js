@@ -32,7 +32,10 @@ export const config = {
         ebscoLogin: 'https://search.ebscohost.com/login.aspx',
         motorBase: 'https://sites.motor.com'
     },
-    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+
+    // Demo mode — set DEMO_MODE=true in .env to enable for ALL users
+    demoMode: String(process.env.DEMO_MODE || '').toLowerCase() === 'true',
 };
 
 // Validate required configuration

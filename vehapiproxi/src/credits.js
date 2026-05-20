@@ -1,20 +1,10 @@
 import logger from './logger.js';
 import { dbQuery, isDbConfigured } from './db.js';
+import { config } from './config.js';
 
 // Simple in-memory cache
 const userCache = new Map();
 const CACHE_TTL_MS = 60 * 1000; // 1 minute cache
-
-let demoUserId = null;
-
-export function setDemoUserId(id) {
-    demoUserId = id;
-    logger.info(`Global demo user ID registered: ${id}`);
-}
-
-export function getDemoUserId() {
-    return demoUserId;
-}
 
 /**
  * Get user data or create if not exists.
@@ -25,7 +15,7 @@ export async function getUserData(userId, options = {}) {
     try {
         const skipCache = options.skipCache === true;
 
-        if (demoUserId && userId === demoUserId) {
+        if (config.demoMode) {
             try {
                 const { rows } = await dbQuery(`SELECT * FROM users WHERE id = $1 LIMIT 1`, [userId]);
                 if (rows.length === 0) {
@@ -46,7 +36,6 @@ export async function getUserData(userId, options = {}) {
 
             const { rows } = await dbQuery(`SELECT * FROM users WHERE id = $1 LIMIT 1`, [userId]);
             const demoResult = rows[0] || { id: userId, credits: 100000, unlocks: {} };
-            // Ensure runtime returns 100,000
             demoResult.credits = 100000;
             userCache.set(userId, { data: demoResult, timestamp: Date.now() });
             return demoResult;
@@ -130,7 +119,7 @@ export async function getTransactions(userId, limit = 50) {
  */
 export async function unlockModule(userId, vehicleId, vehicleName, moduleType, cost) {
     try {
-        if (demoUserId && userId === demoUserId) {
+        if (config.demoMode) {
             const userData = await getUserData(userId);
             const currentUnlocks = userData.unlocks?.[vehicleId] || [];
             if (currentUnlocks.includes(moduleType) || currentUnlocks.includes('full')) {
@@ -150,11 +139,7 @@ export async function unlockModule(userId, vehicleId, vehicleName, moduleType, c
                 logger.warn('Failed to update demo user unlocks in DB:', dbErr.message);
             }
 
-            const demoResult = {
-                id: userId,
-                credits: 100000,
-                unlocks: newUnlocks
-            };
+            const demoResult = { id: userId, credits: 100000, unlocks: newUnlocks };
             userCache.set(userId, { data: demoResult, timestamp: Date.now() });
             return demoResult;
         }
@@ -196,7 +181,7 @@ export async function unlockModule(userId, vehicleId, vehicleName, moduleType, c
  */
 export async function addCredits(userId, amount, { stripeSessionId, stripePaymentIntent, usdCents } = {}) {
     try {
-        if (demoUserId && userId === demoUserId) {
+        if (config.demoMode) {
             return getUserData(userId);
         }
 

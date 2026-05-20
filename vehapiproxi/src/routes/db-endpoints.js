@@ -202,4 +202,29 @@ router.get('/vehicles', async (req, res) => {
     }
 });
 
+// GET /api/db/normalization?vehicleId=16774
+// Returns whether any composite engine variant of this vehicleId is marked
+// is_normalized in Cloud SQL. Used by the frontend to decide whether to load
+// articles from the DB or fall through to the live Motor API.
+router.get('/normalization', async (req, res) => {
+    const vehicleId = String(req.query.vehicleId || '').trim();
+    if (!vehicleId) return res.status(400).json({ error: 'vehicleId required' });
+    try {
+        const ids = await resolveAssociatedVehicleIds(vehicleId);
+        const { rows } = await dbQuery(
+            `SELECT external_id, is_normalized FROM vehicles WHERE external_id = ANY($1)`,
+            [ids]
+        );
+        const normalized = rows.some(r => !!r.is_normalized);
+        res.json({
+            header: { status: 'OK', statusCode: 200, dataSource: 'cloudsql' },
+            body: { vehicleId, normalized, vehicleIds: rows.map(r => r.external_id) },
+        });
+    } catch (e) {
+        logger.error('[db/normalization]', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 export default router;
+

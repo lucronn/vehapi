@@ -8,6 +8,7 @@ import { SupabaseService } from './supabase.service';
 import { ApiDataService } from './api-data.service';
 import { normalizeCategoryParams } from '../utils/categorize.util';
 import { improveCatalogArticleRow } from '../utils/catalog-intelligence.util';
+import { getMotorProxyBaseUrl } from '../utils/motor-api.constants';
 import {
     flattenMaintenanceFrequencyResponseBody,
     flattenMaintenanceIntervalResponseBody
@@ -131,44 +132,27 @@ export class DataSyncService {
             return cached.result;
         }
 
-        const encoded = encodeURIComponent(vehicleId);
-        const { data: vehicleRows, error } = await this.supabase.client
-            .from('vehicles')
-            .select('external_id, is_normalized')
-            .or(`external_id.eq."${vehicleId}",external_id.eq."${encoded}",external_id.like."%:${vehicleId}",external_id.like."%3A${vehicleId}"`);
-
-        if (!error && vehicleRows && vehicleRows.length > 0) {
-            const result = vehicleRows.some((row: any) => !!row.is_normalized);
-            this.normalizationCache.set(vehicleId, {
-                result,
-                expiry: Date.now() + DataSyncService.NORMALIZATION_CACHE_TTL_MS
-            });
-            return result;
-        }
-
-        this.logger.warn(`[DataSync] is_normalized read failed or missing for ${vehicleId}, falling back to articles count:`, error);
-
-        // Resolve matching vehicle IDs to query articles count
-        const matchedIds = new Set<string>();
-        matchedIds.add(vehicleId);
-        matchedIds.add(encoded);
-        if (vehicleRows) {
-            for (const r of vehicleRows) {
-                if (r.external_id) matchedIds.add(r.external_id);
+        // Query Cloud SQL via backend — the only source of truth for normalized vehicles.
+        // Supabase PostgREST is the legacy/wrong DB; all data lives in Cloud SQL.
+        try {
+            const base = getMotorProxyBaseUrl();
+            const url = `${base}/api/db/normalization?vehicleId=${encodeURIComponent(vehicleId)}`;
+            const resp = await fetch(url);
+            if (resp.ok) {
+                const json = await resp.json();
+                const result: boolean = !!json?.body?.normalized;
+                this.normalizationCache.set(vehicleId, {
+                    result,
+                    expiry: Date.now() + DataSyncService.NORMALIZATION_CACHE_TTL_MS
+                });
+                return result;
             }
+        } catch (err) {
+            this.logger.warn('[DataSync] checkNormalizationStatus fetch failed:', err);
         }
 
-        const { count } = await this.supabase.client
-            .from('articles')
-            .select('*', { count: 'exact', head: true })
-            .in('vehicle_id', Array.from(matchedIds));
-
-        const result = (count ?? 0) > 0;
-        this.normalizationCache.set(vehicleId, {
-            result,
-            expiry: Date.now() + DataSyncService.NORMALIZATION_CACHE_TTL_MS
-        });
-        return result;
+        // Default: not normalized — fall through to live Motor API.
+        return false;
     }
 
     invalidateNormalizationCache(vehicleId: string): void {

@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { AuthLoadingComponent } from './components/auth-loading/auth-loading.component';
 import { ThemeService } from './services/theme.service';
@@ -6,12 +6,21 @@ import { WindowContainerComponent } from './components/window-container/window-c
 import { AmbientBackgroundComponent } from './components/ambient-background/ambient-background.component';
 import { CommandPaletteComponent } from './components/command-palette/command-palette.component';
 import { FocusDepthBackdropComponent } from './components/focus-depth-backdrop/focus-depth-backdrop.component';
+import { AppConfigService } from './services/app-config.service';
 
 @Component({
   selector: 'app-root',
   template: `
     <app-auth-loading></app-auth-loading>
     <app-ambient-background></app-ambient-background>
+
+    @if (appConfig.demoMode()) {
+      <div class="demo-mode-banner" role="status" aria-label="Demo Mode active">
+        <span class="demo-mode-dot"></span>
+        Demo Mode
+      </div>
+    }
+
     <main class="min-h-screen relative z-10" style="color:var(--ink)">
       <app-focus-depth-backdrop></app-focus-depth-backdrop>
       <router-outlet></router-outlet>
@@ -22,8 +31,13 @@ import { FocusDepthBackdropComponent } from './components/focus-depth-backdrop/f
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, AuthLoadingComponent, WindowContainerComponent, AmbientBackgroundComponent, FocusDepthBackdropComponent, CommandPaletteComponent],
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   private themeService = inject(ThemeService);
+  readonly appConfig = inject(AppConfigService);
+
+  ngOnInit(): void {
+    this.appConfig.load();
+  }
 
   constructor() {
     // Silence AbortError spam in the console. 

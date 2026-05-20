@@ -2160,3 +2160,41 @@ body.focus-depth-active .cmd-backdrop {
 ::-webkit-scrollbar-thumb:hover {
   background: color-mix(in srgb, var(--ink) 28%, transparent);
 }
+
+/* ============================================================
+   Demo Mode Banner
+   ============================================================ */
+.demo-mode-banner {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #fbbf24;
+  background: color-mix(in srgb, #fbbf24 12%, #0a0a0a);
+  border: 1px solid color-mix(in srgb, #fbbf24 35%, transparent);
+  box-shadow: 0 2px 12px color-mix(in srgb, #fbbf24 20%, transparent);
+  pointer-events: none;
+  user-select: none;
+}
+
+.demo-mode-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fbbf24;
+  animation: demo-pulse 2s ease-in-out infinite;
+}
+
+@keyframes demo-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.75); }
+}
