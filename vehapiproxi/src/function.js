@@ -186,8 +186,11 @@ function shouldAllowLocalhostOrigins() {
 
 function buildAllowedOrigins() {
     const origins = new Set([
-        'https://vehapi.web.app',
-        'https://vehapi.firebaseapp.com',
+        'https://vehapi-torque.web.app',
+        'https://vehapi-torque.firebaseapp.com',
+        'https://ferox-torque.web.app',
+        'https://ferox-torque.firebaseapp.com',
+        'https://vehapi-torque-proxy.web.app',
     ]);
     if (shouldAllowLocalhostOrigins()) {
         origins.add('http://localhost:3000');
