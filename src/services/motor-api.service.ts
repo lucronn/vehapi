@@ -200,6 +200,13 @@ export class MotorApiService {
   /** DB-first; falls back to live Motor on any error (network, 404, etc.). */
   private dbFirst<T>(dbUrl: string, liveUrl: string): Observable<ApiResponse<T>> {
     return this.getWithLogging<ApiResponse<T>>(dbUrl).pipe(
+      switchMap((res) => {
+        // Fall back to live if DB returned a non-success status (e.g. 404 = not yet ingested)
+        if (res?.header?.statusCode !== 200) {
+          return this.getWithLogging<ApiResponse<T>>(liveUrl);
+        }
+        return of(res);
+      }),
       catchError(() => this.getWithLogging<ApiResponse<T>>(liveUrl))
     );
   }

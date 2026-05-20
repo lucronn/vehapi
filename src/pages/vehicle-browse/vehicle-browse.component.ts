@@ -289,8 +289,20 @@ export class VehicleBrowseComponent implements OnInit {
     }
   }
 
-  open(v: BrowseVehicle) {
-    // Vehicle dashboard uses contentSource + vehicleId; route via the external_id we have.
+  async open(v: BrowseVehicle) {
+    // Resolve year:Make:Model external_id → Motor composite baseVehicleId:engineId
+    // so the vehicle dashboard can look up articles from the DB.
+    try {
+      const r = await firstValueFrom(
+        this.http.get<any>(`${this.base}/api/db/vehicle-motor-id?externalId=${encodeURIComponent(v.external_id)}`)
+      );
+      const motorId = r?.body?.motorVehicleId;
+      if (motorId) {
+        this.router.navigate(['vehicle', 'MOTOR', motorId]);
+        return;
+      }
+    } catch { /* fall through */ }
+    // Fallback: navigate with external_id (DB resolver will still find articles via resolveAssociatedVehicleIds)
     this.router.navigate(['vehicle', 'MOTOR', v.external_id]);
   }
 

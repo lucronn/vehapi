@@ -8,7 +8,9 @@
  *   GET /api/db/year/:year/make/:make/models      (engines nested)
  *   GET /api/db/articles?vehicleId=240542:15305   (grouped by parent_bucket → bucket)
  *   GET /api/db/vehicles?q=&year=&make=&limit=    (search/browse ingested vehicles)
+ *   GET /api/db/vehicle-motor-id?externalId=2011:Subaru:Tribeca  (resolve year:Make:Model → Motor composite ID)
  */
+
 import { Router } from 'express';
 import { dbQuery } from '../db.js';
 import logger from '../logger.js';
@@ -61,6 +63,8 @@ router.get('/year/:year/makes', async (req, res) => {
 // GET /api/db/year/:year/make/:make/models
 // Returns M1 models with engines nested. Sourced from vehicle_metadata cache
 // (which holds the full M1 response we pulled during seeding).
+// NOTE: Only serves data when models have Motor numeric IDs (e.g. 685, 685:11883).
+// Chek-Chart cached data (year:Model IDs) is rejected to force fallback to live Motor.
 router.get('/year/:year/make/:make/models', async (req, res) => {
     const year = Number(req.params.year);
     const make = req.params.make;
@@ -78,6 +82,26 @@ router.get('/year/:year/make/:make/models', async (req, res) => {
             });
         }
         const models = unwrapBody(rows[0].data?.body);
+        if (!models.length) {
+            return res.status(404).json({
+                header: { status: 'NOT_FOUND', statusCode: 404, dataSource: 'cloudsql' },
+                error: `Empty model list for ${year} ${make}`,
+            });
+        }
+
+        // Validate that model IDs are Motor numeric format.
+        // Chek-Chart YMME data stores IDs as "year:ModelName" (e.g. "2022:HR-V") which is
+        // incompatible with the article DB. Reject such data to force live Motor fallback.
+        const firstId = String(models[0]?.id || '');
+        const isMotorNumericId = /^\d+(:\d+)?$/.test(firstId);
+        if (!isMotorNumericId) {
+            logger.warn(`[db/models] Cached models for ${year} ${make} have non-numeric IDs (${firstId}) — falling back to live`);
+            return res.status(404).json({
+                header: { status: 'NOT_FOUND', statusCode: 404, dataSource: 'cloudsql' },
+                error: `Cached models for ${year} ${make} use non-Motor IDs — use live API`,
+            });
+        }
+
         // Annotate each model with engineCount so the frontend can decide
         // whether to render the engine dropdown.
         const annotated = models.map(m => ({
@@ -226,5 +250,43 @@ router.get('/normalization', async (req, res) => {
     }
 });
 
-export default router;
+// GET /api/db/vehicle-motor-id?externalId=2011:Subaru:Tribeca
+// Resolves a year:Make:Model external_id → Motor composite baseVehicleId:engineId
+// by finding which articles.vehicle_id belongs to this vehicle via resolveAssociatedVehicleIds.
+router.get('/vehicle-motor-id', async (req, res) => {
+    const externalId = String(req.query.externalId || '').trim();
+    if (!externalId) return res.status(400).json({ error: 'externalId required' });
+    try {
+        const ids = await resolveAssociatedVehicleIds(externalId);
+        const { rows } = await dbQuery(
+            `SELECT vehicle_id, COUNT(*) AS article_count
+             FROM articles
+             WHERE vehicle_id = ANY($1)
+             GROUP BY vehicle_id
+             ORDER BY article_count DESC
+             LIMIT 10`,
+            [ids]
+        );
+        if (!rows.length) {
+            return res.status(404).json({
+                header: { status: 'NOT_FOUND', statusCode: 404, dataSource: 'cloudsql' },
+                body: { externalId, motorVehicleId: null },
+            });
+        }
+        const motorVehicleId = decodeURIComponent(rows[0].vehicle_id);
+        res.json({
+            header: { status: 'OK', statusCode: 200, dataSource: 'cloudsql' },
+            body: {
+                externalId,
+                motorVehicleId,
+                allIds: rows.map(r => decodeURIComponent(r.vehicle_id)),
+                articleCount: Number(rows[0].article_count),
+            },
+        });
+    } catch (e) {
+        logger.error('[db/vehicle-motor-id]', e);
+        res.status(500).json({ error: e.message });
+    }
+});
 
+export default router;

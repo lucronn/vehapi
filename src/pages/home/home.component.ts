@@ -432,7 +432,11 @@ export class HomeComponent implements OnInit {
       }
       return filtered.map(e => ({
         type: 'Engine',
-        value: { vehicleId: e.id, displayName: `${this.selectedModel()?.model || 'Vehicle'} - ${e.name || 'Unknown Engine'}` },
+        value: {
+          // Composite vehicleId: baseVehicleId:engineId — matches articles.vehicle_id format
+          vehicleId: `${this.selectedModel()?.id}:${e.id}`,
+          displayName: `${this.selectedModel()?.model || 'Vehicle'} - ${e.name || 'Unknown Engine'}`
+        },
         display: e.name || 'Unknown Engine'
       }));
     }
@@ -993,7 +997,11 @@ export class HomeComponent implements OnInit {
       return;
     }
     const onlyEngine = engines[0];
-    const vehicleId = onlyEngine?.id || model.id;
+    // Build composite vehicleId: baseVehicleId:engineId — matches articles.vehicle_id DB format.
+    // For models with no engines (e.g. from DB cache), fall back to bare model.id.
+    const vehicleId = onlyEngine
+      ? `${model.id}:${onlyEngine.id}`
+      : String(model.id);
     const displayName = onlyEngine
       ? `${model.model} - ${onlyEngine.name}`
       : model.model;

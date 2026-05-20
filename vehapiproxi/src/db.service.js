@@ -213,8 +213,11 @@ export async function resolveAssociatedVehicleIds(vehicleId) {
     if (!isDbConfigured() || !vehicleId) return [vehicleId || ''];
     try {
         const encoded = encodeURIComponent(vehicleId);
-        // Find any external_id that exactly matches, or ends with :vehicleId, or ends with %3AvehicleId
-        const { rows } = await dbQuery(
+        // Always include both the raw and URL-encoded forms
+        const ids = new Set([vehicleId, encoded]);
+
+        // 1. Search vehicles.external_id (year:Make:Model format)
+        const { rows: vRows } = await dbQuery(
             `SELECT external_id 
              FROM vehicles 
              WHERE external_id = $1 
@@ -223,9 +226,31 @@ export async function resolveAssociatedVehicleIds(vehicleId) {
                 OR right(lower(external_id), length($1) + 3) = '%3a' || $1`,
             [vehicleId, encoded]
         );
-        const ids = new Set(rows.map(r => r.external_id));
-        ids.add(vehicleId);
-        ids.add(encoded);
+        for (const r of vRows) ids.add(r.external_id);
+
+        // 2. If vehicleId looks like a Motor numeric ID (pure digits or "digits:digits"),
+        //    also search articles.vehicle_id directly (stored as URL-encoded "baseId%3AengineId").
+        //    This bridges the gap: articles use Motor composite IDs, vehicles use year:Make:Model.
+        const isNumeric = /^\d+$/.test(vehicleId);
+        const isComposite = /^\d+:\d+$/.test(vehicleId);
+        if (isNumeric || isComposite) {
+            // encoded form is what's stored in articles.vehicle_id
+            ids.add(encoded);
+            // Also search for any article whose vehicle_id ends with %3A<vehicleId>
+            // e.g. vehicleId=15305 matches article vehicle_id=124019%3A15305
+            const { rows: aRows } = await dbQuery(
+                `SELECT DISTINCT vehicle_id
+                 FROM articles
+                 WHERE vehicle_id = $1
+                    OR vehicle_id = $2
+                    OR right(vehicle_id, length($2) + 3) = '%3A' || $2
+                    OR right(vehicle_id, length($2) + 3) = '%3a' || $2
+                 LIMIT 100`,
+                [encoded, vehicleId]
+            );
+            for (const r of aRows) ids.add(r.vehicle_id);
+        }
+
         return Array.from(ids);
     } catch (err) {
         logger.error(`Error resolving associated vehicle IDs for ${vehicleId}:`, err);
