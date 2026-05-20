@@ -9,7 +9,7 @@ import {
     markVehicleNormalized,
     insertEvidenceIngest,
     getSupabaseConfig
-} from '../supabase.js';
+} from '../db.service.js';
 import { dbQuery } from '../db.js';
 import {
     buildArticlesTableRowFromMotorCatalogArticle,

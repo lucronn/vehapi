@@ -18,7 +18,7 @@ import logger from './logger.js';
 import { getGeminiClient, getParseModel, getNemotronClient, getNemotronTextModel } from './nemotron_client.js';
 import { htmlToMarkdownForLlm, extractArticleHtmlFromMotorPayload } from './html_preprocess.js';
 import { ArticleExtractionSchema, formatZodError } from './ai_parser_schemas.js';
-import { insertFailedExtraction } from './supabase.js';
+import { insertFailedExtraction } from './db.service.js';
 
 const STRUCTURED_CONCURRENCY = Math.max(
     1,

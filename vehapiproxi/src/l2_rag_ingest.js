@@ -13,7 +13,7 @@ import { embedTextsBatch } from './embedding_client.js';
 import {
     fetchContentItemId,
     replaceContentChunksForContentItem
-} from './supabase.js';
+} from './db.service.js';
 
 const EXPECTED_DIMS = Number.parseInt(process.env.L2_EMBEDDING_DIMS || '768', 10);
 const BATCH = Math.max(1, Number.parseInt(process.env.L2_EMBED_BATCH_SIZE || '200', 10));

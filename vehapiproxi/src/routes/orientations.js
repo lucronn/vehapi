@@ -15,7 +15,7 @@ export function registerOrientationEndpoints(app, authMiddleware, config, logger
                 // Supabase-first: articles table has subtitle/description
                 let orientations = [];
                 try {
-                    const { getVehicleArticles } = await import('../supabase.js');
+                    const { getVehicleArticles } = await import('../db.service.js');
                     const articles = await getVehicleArticles(vehicleId);
                     if (articles && articles.length > 0) {
                         orientations = articles

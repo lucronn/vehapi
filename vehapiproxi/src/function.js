@@ -26,7 +26,7 @@ import {
     getVehicleArticles,
     getVehicleArticlesCount,
     getVehicleIsNormalized
-} from './supabase.js';
+} from './db.service.js';
 import jwt from 'jsonwebtoken';
 import admin from 'firebase-admin';
 import { registerHealthEndpoint } from './routes/health.js';
@@ -177,15 +177,18 @@ function normalizeOriginHeader(origin) {
     return typeof v === 'string' ? v.trim() : '';
 }
 
-/** Localhost dev origins — never allow on Vercel (`VERCEL=1`) or when `NODE_ENV=production`. */
+/** Localhost dev origins — only allowed outside Cloud Run/production. */
 function shouldAllowLocalhostOrigins() {
-    if (process.env.VERCEL === '1') return false;
+    if (process.env.GOOGLE_CLOUD_RUN === '1') return false;
     if (process.env.NODE_ENV === 'production') return false;
     return true;
 }
 
 function buildAllowedOrigins() {
-    const origins = new Set(['https://vehapi.vercel.app', 'https://vehapiproxi.vercel.app']);
+    const origins = new Set([
+        'https://vehapi.web.app',
+        'https://vehapi.firebaseapp.com',
+    ]);
     if (shouldAllowLocalhostOrigins()) {
         origins.add('http://localhost:3000');
         origins.add('http://127.0.0.1:3000');
@@ -194,14 +197,6 @@ function buildAllowedOrigins() {
     if (extra) {
         for (const part of extra.split(/[\s,]+/).map((s) => s.trim()).filter(Boolean)) {
             origins.add(part);
-        }
-    }
-    // Vercel sets VERCEL_URL (hostname only) per deployment — allows preview URLs without manual env.
-    const vercelUrl = process.env.VERCEL_URL;
-    if (vercelUrl) {
-        const host = String(vercelUrl).replace(/^https?:\/\//i, '').split('/')[0];
-        if (host) {
-            origins.add(`https://${host}`);
         }
     }
     return origins;
@@ -444,10 +439,10 @@ app.use('/api/data', express.json({ limit: '2mb' }), (req, res, next) => {
 // Motor Information API — YMME helpers (base vehicle id, engines); requires Supabase JWT
 registerMotorInformationYmmeRoutes(app, secureAuthMiddleware, logger);
 
-/** In-memory observability for Motor catch-all vs Supabase cache hits (phase-out tracking). */
-const proxyStats = { motorHits: 0, supabaseHits: 0 };
+/** In-memory observability for Motor catch-all vs Cloud SQL cache hits. */
+const proxyStats = { motorHits: 0, dbHits: 0 };
 
-/** Short-lived cache for vehicle normalization eligibility (avoids repeated Supabase queries within a serverless instance). */
+/** Short-lived cache for vehicle normalization eligibility. */
 const vehicleCatalogCache = new Map();
 const VEHICLE_CATALOG_CACHE_TTL_MS = 60_000;
 
@@ -492,15 +487,15 @@ function recordProxyStat(kind) {
     if (kind === 'motor') {
         proxyStats.motorHits++;
     } else {
-        proxyStats.supabaseHits++;
+        proxyStats.dbHits++;
     }
-    const total = proxyStats.motorHits + proxyStats.supabaseHits;
+    const total = proxyStats.motorHits + proxyStats.dbHits;
     if (total % 100 === 0 && total > 0) {
         logger.info('[ProxyStats]', proxyStats);
     }
 }
 
-/** In-memory YMME metadata — avoids Supabase round-trip for stable paths like /years, /makes, /models. */
+/** In-memory YMME metadata cache — avoids repeated DB round-trips for stable paths. */
 const metadataMemCache = new Map();
 const METADATA_MEM_CACHE_TTL_MS = 300_000;
 
@@ -518,7 +513,7 @@ function setMetadataMemCache(path, data) {
     }
 }
 
-/** In-memory article content — avoids repeated Supabase lookups for hot articles (back button, multiple users). */
+/** In-memory article content — avoids repeated DB lookups for hot articles (back button, multiple users). */
 const articleContentMemCache = new Map();
 const ARTICLE_CONTENT_MEM_CACHE_TTL_MS = 120_000;
 
@@ -569,7 +564,7 @@ const metadataCacheMiddleware = async (req, res, next) => {
     if (isMetadata && req.method === 'GET') {
         const memHit = getMetadataFromMemCache(path);
         if (memHit) {
-            recordProxyStat('supabase');
+            recordProxyStat('db');
             res.setHeader('x-data-source', 'memory');
             res.setHeader('x-cache-hit', 'true');
             return res.json(memHit);
@@ -579,9 +574,9 @@ const metadataCacheMiddleware = async (req, res, next) => {
             if (cachedRow && cachedRow.data != null) {
                 const stale = isMetadataStale(cachedRow, METADATA_STALENESS_DAYS);
                 logger.info(`Serving metadata from cache: ${path}${stale ? ' (stale — background refresh queued)' : ''}`);
-                recordProxyStat('supabase');
+                recordProxyStat('db');
                 setMetadataMemCache(path, cachedRow.data);
-                res.setHeader('x-data-source', 'supabase');
+                res.setHeader('x-data-source', 'cloudsql');
                 res.setHeader('x-cache-hit', 'true');
                 if (stale) {
                     res.setHeader('x-data-stale', 'true');
@@ -632,11 +627,11 @@ const articlesCacheMiddleware = async (req, res, next) => {
                 }
 
                 const minRows = parseInt(process.env.ARTICLE_CATALOG_MIN_ROWS ?? '10', 10);
-                const serveFromSupabase =
+                const serveFromCloudSql =
                     isNormalized === true &&
                     count >= minRows;
 
-                if (!serveFromSupabase) {
+                if (!serveFromCloudSql) {
                     if (count > 0 || isNormalized != null) {
                         logger.info(
                             `Articles cache bypass for ${vehicleId}: count=${count}, is_normalized=${isNormalized} (need both normalized flag and count>=${minRows})`
@@ -645,11 +640,11 @@ const articlesCacheMiddleware = async (req, res, next) => {
                     return next();
                 }
 
-                logger.info(`✓ Serving ${count} cached articles for ${vehicleId} from Supabase (normalized catalog).`);
+                logger.info(`✓ Serving ${count} cached articles for ${vehicleId} from Cloud SQL (normalized catalog).`);
                 const articles = await getVehicleArticles(vehicleId);
                     
                 if (articles && articles.length > 0) {
-                        // We need to transform these Supabase rows back into the shape Motor API returns
+                        // We need to transform these Cloud SQL rows back into the shape Motor API returns
                         // or at least what our normalizeMotorResponse expects.
                         const articleDetails = articles.map(a => ({
                             id: a.original_id,
@@ -674,8 +669,8 @@ const articlesCacheMiddleware = async (req, res, next) => {
                             }
                         };
                         
-                        recordProxyStat('supabase');
-                        res.setHeader('x-data-source', 'supabase');
+                        recordProxyStat('db');
+                        res.setHeader('x-data-source', 'cloudsql');
                         res.setHeader('x-cache-hit', 'true');
                         return res.json(motorShape);
                 }
@@ -758,7 +753,7 @@ const articleAccessMiddleware = async (req, res, next) => {
     }
 
     if (!moduleType) {
-        logger.warn(`Article ${articleId} (vehicle ${vehicleId}): no bucket metadata in Supabase; denying category-level access`);
+        logger.warn(`Article ${articleId} (vehicle ${vehicleId}): no bucket metadata in Cloud SQL; denying category-level access`);
         return res.status(403).json({ error: 'Article access cannot be verified' });
     }
 
@@ -791,7 +786,7 @@ const articleContentCacheMiddleware = async (req, res, next) => {
 
         const memPayload = getArticleContentFromMemCache(vehicleId, articleId);
         if (memPayload) {
-            recordProxyStat('supabase');
+            recordProxyStat('db');
             res.setHeader('x-data-source', 'memory');
             res.setHeader('x-cache-hit', 'true');
             return res.json(memPayload);
@@ -809,8 +804,8 @@ const articleContentCacheMiddleware = async (req, res, next) => {
                         body: { html, title: cached.title, id: articleId }
                     };
                     setArticleContentMemCache(vehicleId, articleId, payload);
-                    recordProxyStat('supabase');
-                    res.setHeader('x-data-source', 'supabase');
+                    recordProxyStat('db');
+                    res.setHeader('x-data-source', 'cloudsql');
                     res.setHeader('x-cache-hit', 'true');
                     return res.json(payload);
                 }
@@ -825,8 +820,8 @@ const articleContentCacheMiddleware = async (req, res, next) => {
                     body: { html: articleRow.original_content, title: articleRow.title, id: articleId }
                 };
                 setArticleContentMemCache(vehicleId, articleId, payload);
-                recordProxyStat('supabase');
-                res.setHeader('x-data-source', 'supabase');
+                recordProxyStat('db');
+                res.setHeader('x-data-source', 'cloudsql');
                 res.setHeader('x-cache-hit', 'true');
                 return res.json(payload);
             }
@@ -854,29 +849,29 @@ registerIngestEndpoint(app, secureAuthMiddleware, logger);
 // Fluids: optional direct `api.motor.com` RecommendedFluids when MOTOR_INFORMATION_* env + baseVehicleId + engineId query params
 registerMotorInformationFluidsIntercept(app, logger);
 
-// Canary: log when Motor catch-all is used for paths that should be Supabase-backed for normalized vehicles (no blocking).
+// Canary: log when Motor catch-all is used for paths that should be Cloud SQL-backed.
 app.use('/', (req, res, next) => {
     const path = req.path || (typeof req.url === 'string' ? req.url.split('?')[0] : '');
 
-    const supabaseCoveredPatterns = [
+    const dbCoveredPatterns = [
         /^\/api\/source\/[^/]+\/vehicle\/[^/]+\/articles\/v2$/,
         /^\/api\/source\/[^/]+\/vehicle\/[^/]+\/article\/[^/]+\/html$/,
         /^\/api\/source\/[^/]+\/vehicle\/[^/]+\/article\/[^/]+$/
     ];
 
-    const isSupabaseCovered = supabaseCoveredPatterns.some((p) => p.test(path));
+    const isDbCovered = dbCoveredPatterns.some((p) => p.test(path));
 
-    if (isSupabaseCovered) {
+    if (isDbCovered) {
         const isForcedIngest =
             req.headers['x-torque-catalog-sync'] === '1' ||
             req.query?.torqueCatalogSync === '1' ||
             req.query?.torqueCatalogSync === 'true';
         if (!isForcedIngest) {
             logger.warn(
-                `[ProxyCanary] Request to Motor for Supabase-covered path: ${req.method} ${path}` +
+                `[ProxyCanary] Request to Motor for DB-covered path: ${req.method} ${path}` +
                     (isMotorProxyAllowlisted(path) ? ' (allowlisted route pattern)' : '')
             );
-            res.setHeader('x-torque-proxy-canary', 'supabase-covered-path');
+            res.setHeader('x-torque-proxy-canary', 'db-covered-path');
         }
     }
 
@@ -1139,10 +1134,10 @@ app.use('/', authMiddleware, createProxyMiddleware({
                 }
                 // =================================================================
 
-                // Enqueue for background AI parsing and caching to Supabase
+                // Enqueue for background AI parsing and caching to Cloud SQL
                 enqueueBackgroundParse(req, responseBuffer);
 
-                // Warm in-memory metadata cache from Motor responses so the next request skips Supabase entirely
+                // Warm in-memory metadata cache from Motor responses so the next request skips Cloud SQL entirely
                 if (isMetadata && proxyRes.statusCode >= 200 && proxyRes.statusCode < 300) {
                     try {
                         setMetadataMemCache(req.path, JSON.parse(normalizedData));

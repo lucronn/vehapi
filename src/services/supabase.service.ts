@@ -1,26 +1,48 @@
 /**
- * SupabaseService — data-only client (auth removed; handled by FirebaseService).
+ * SupabaseService — NO-OP STUB.
  *
- * This client is retained for legacy write operations in data-sync.service.ts
- * that have not yet been migrated to ApiDataService. These writes target the
- * old Supabase project and are effectively no-ops — all new data goes to
- * Cloud SQL via vehapiproxi. Phase 2 migration will remove this service entirely.
+ * The old Supabase project is decommissioned. All data is in Cloud SQL,
+ * accessed via the vehapiproxi backend. This stub satisfies the
+ * SupabaseClient type so existing callers in data-sync.service.ts continue
+ * to compile, but every call is a silent no-op returning empty results.
+ *
+ * TODO: Remove this file and all callers in a follow-up refactor.
  */
 import { Injectable } from '@angular/core';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { environment } from '../environments/environment';
 
-// Minimal Supabase config — used only for legacy data writes in data-sync.service
-// Auth is handled by FirebaseService. Remove when data-sync migration is complete.
-const LEGACY_SUPABASE_URL  = 'https://jzwhcoivwzumqrfscnlw.supabase.co';
-const LEGACY_SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6d2hjb2l2d3p1bXFyZnNjbmx3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1ODcxOTAsImV4cCI6MjA4NzE2MzE5MH0.B43gsM5l0bQNxtMOPUbPu8lrl87QBGPgrTPm66fdewI';
+/** Minimal fluent builder that mimics the Supabase JS client API surface. */
+function makeNoOpBuilder(): any {
+    const noop: any = new Proxy(
+        async () => ({ data: null, error: null, count: 0 }),
+        {
+            get(_target, _prop) {
+                return noop;
+            },
+            apply() {
+                return Promise.resolve({ data: null, error: null, count: 0 });
+            }
+        }
+    );
+    return noop;
+}
+
+/** No-op Supabase client stub — all methods return empty/null results immediately. */
+const NO_OP_CLIENT: any = new Proxy(
+    {},
+    {
+        get(_target, prop) {
+            if (prop === 'from' || prop === 'rpc' || prop === 'storage') {
+                return () => makeNoOpBuilder();
+            }
+            return () => Promise.resolve({ data: null, error: null, count: 0 });
+        }
+    }
+);
 
 @Injectable({ providedIn: 'root' })
 export class SupabaseService {
-    private _client: SupabaseClient = createClient(LEGACY_SUPABASE_URL, LEGACY_SUPABASE_KEY);
-
-    /** Supabase JS client — for legacy data writes only. Do not use for auth. */
-    get client(): SupabaseClient {
-        return this._client;
+    /** No-op client stub — all queries silently return empty results. */
+    get client(): any {
+        return NO_OP_CLIENT;
     }
 }

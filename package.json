@@ -28,7 +28,6 @@
     "@angular/platform-browser": "^19.1.5",
     "@angular/router": "^19.1.5",
     "@google/genai": "latest",
-    "@supabase/supabase-js": "^2.49.1",
     "@types/three": "^0.184.1",
     "cheerio": "^1.2.0",
     "cookie": "^0.6.0",

@@ -3,7 +3,7 @@
  * flushes when a threshold is reached or on explicit flush().
  * Reduces HTTP overhead during bulk ingest (e.g. --with-articles).
  */
-import { insertParsedData } from './supabase.js';
+import { insertParsedData } from './db.service.js';
 import logger from './logger.js';
 
 const DEFAULT_THRESHOLD = 50;

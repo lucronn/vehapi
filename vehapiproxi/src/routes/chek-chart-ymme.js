@@ -4,7 +4,7 @@
  * On cache miss: calls Motor DaaS YMME, saves result to Cloud SQL.
  */
 import { getDaasConfig, fetchDaasYears, fetchDaasMakes, fetchDaasModels } from '../motor_daas_api.js';
-import { insertMetadata } from '../supabase.js';
+import { insertMetadata } from '../db.service.js';
 
 export function registerChekChartYmmeRoutes(app, logger) {
     const cfg = getDaasConfig();

@@ -3,7 +3,7 @@
  * maintenance → maintenance_schedules + maintenance_task (ported from Angular DataSyncService
  * + maintenance-response.util.ts). Uses service-role REST via insertParsedData.
  */
-import { insertParsedData } from '../supabase.js';
+import { insertParsedData } from '../db.service.js';
 import logger from '../logger.js';
 
 // --- Ported from src/utils/maintenance-response.util.ts ---

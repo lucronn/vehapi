@@ -24,7 +24,7 @@ async function resolveNumericMake(year, makeId, basePath, config, req, logger) {
     let makesList = null;
 
     try {
-        const { getMetadata } = await import('../supabase.js');
+        const { getMetadata } = await import('../db.service.js');
         const cached = await getMetadata(makesPath);
         if (cached?.data) {
             const body = cached.data.body ?? cached.data;
@@ -73,7 +73,7 @@ async function resolveNumericMake(year, makeId, basePath, config, req, logger) {
     let modelsStatus = 200;
 
     try {
-        const { getMetadata } = await import('../supabase.js');
+        const { getMetadata } = await import('../db.service.js');
         const cached = await getMetadata(modelsMetadataPath);
         if (cached?.data) {
             modelsData = cached.data;

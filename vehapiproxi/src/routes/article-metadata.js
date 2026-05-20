@@ -1,4 +1,4 @@
-import { getArticleMetadata } from '../supabase.js';
+import { getArticleMetadata } from '../db.service.js';
 import { resolveModuleTypeFromCatalogMetadata } from '../article-access.js';
 
 export function registerArticleMetadataEndpoint(app, secureAuthMiddleware, logger) {

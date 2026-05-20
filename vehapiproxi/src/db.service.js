@@ -1,19 +1,11 @@
 /**
- * Database layer — Cloud SQL (PostgreSQL) via `pg`.
- * Keeps identical exports to the former Supabase/PostgREST version so callers need no changes.
+ * Database service — Cloud SQL (PostgreSQL) via `pg`.
  *
  * Connection: see db.js (CLOUD_SQL_CONNECTION_NAME for Cloud Run, DATABASE_URL for local dev).
  */
 import crypto from 'node:crypto';
 import logger from './logger.js';
 import { dbQuery, getPool, isDbConfigured } from './db.js';
-
-// ---------------------------------------------------------------------------
-// Legacy compat: callers that checked getSupabaseConfig() != null now check isDbConfigured()
-// ---------------------------------------------------------------------------
-export function getSupabaseConfig() {
-    return isDbConfigured() ? { configured: true } : null;
-}
 
 // ---------------------------------------------------------------------------
 // Conflict keys for upsert — must match DB unique constraints

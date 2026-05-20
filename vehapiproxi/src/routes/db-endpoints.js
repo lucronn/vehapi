@@ -12,7 +12,7 @@
 import { Router } from 'express';
 import { dbQuery } from '../db.js';
 import logger from '../logger.js';
-import { resolveAssociatedVehicleIds } from '../supabase.js';
+import { resolveAssociatedVehicleIds } from '../db.service.js';
 
 const router = Router();
 

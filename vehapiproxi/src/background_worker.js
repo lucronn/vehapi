@@ -19,7 +19,7 @@ import {
     deleteProcedurePartsForArticle,
     upsertMediaAssetPdfFromArticleBody,
     getArticleCatalogEntry
-} from './supabase.js';
+} from './db.service.js';
 import { inferKindAndSiloFromHeuristics, classifySchemaWithAI } from './catalog_intelligence.js';
 import { buildMinimalContentItemFromParse } from './content_item_mapper.js';
 import { extractTextFromPdfBase64 } from './pdf_native_text.js';

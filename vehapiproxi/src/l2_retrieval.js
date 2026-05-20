@@ -2,7 +2,7 @@
  * L2 RAG query path: embed user text + pgvector RPC (match_content_chunks).
  */
 import { embedTextsBatch } from './embedding_client.js';
-import { matchContentChunksRpc } from './supabase.js';
+import { matchContentChunksRpc } from './db.service.js';
 
 const EXPECTED_DIMS = Number.parseInt(process.env.L2_EMBEDDING_DIMS || '768', 10);
 

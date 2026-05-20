@@ -3,7 +3,7 @@ import { AuthService } from './auth.service';
 
 /**
  * Provides a stable User ID for the application.
- * - If the user is authenticated via Supabase, returns their Supabase UUID.
+ * - If the user is authenticated via Firebase, returns their Firebase UID.
  * - Otherwise, returns an anonymous local ID stored in localStorage as fallback.
  */
 @Injectable({
@@ -13,10 +13,10 @@ export class UserIdService {
     private authService = inject(AuthService);
     private readonly STORAGE_KEY = 'torque_user_id';
 
-    /** Returns the currently active user ID (Supabase UUID or anonymous local ID). */
+    /** Returns the currently active user ID (Firebase UID or anonymous local ID). */
     readonly userId = computed(() => {
-        const supabaseId = this.authService.userId();
-        if (supabaseId) return supabaseId;
+        const authUserId = this.authService.userId();
+        if (authUserId) return authUserId;
         return this.getOrCreateAnonymousId();
     });
 
