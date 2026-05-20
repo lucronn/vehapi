@@ -2,6 +2,7 @@ import { Component, signal, inject, output, input, effect, HostListener } from '
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
+import { FocusDepthDirective } from '../../directives/focus-depth.directive';
 import { LucideAngularModule, Mail, Lock, Eye, EyeOff, X, Chrome, UserCheck, Loader } from 'lucide-angular';
 
 type AuthMode = 'signin' | 'signup' | 'reset';
@@ -9,10 +10,10 @@ type AuthMode = 'signin' | 'signup' | 'reset';
 @Component({
     selector: 'app-auth-modal',
     standalone: true,
-    imports: [CommonModule, FormsModule, LucideAngularModule],
+    imports: [CommonModule, FormsModule, LucideAngularModule, FocusDepthDirective],
     template: `
-    <div class="modal-backdrop" (click)="onBackdropClick($event)">
-      <div class="modal-panel" (click)="$event.stopPropagation()">
+    <div class="modal-backdrop modal-backdrop-blur" appFocusDepth (click)="onBackdropClick($event)">
+      <div class="modal-panel modal-panel-shadow" (click)="$event.stopPropagation()">
 
         <!-- Close Button -->
         <button class="modal-close" (click)="close.emit()">
@@ -120,9 +121,6 @@ type AuthMode = 'signin' | 'signup' | 'reset';
     styles: [`
     .modal-backdrop {
       position: fixed; inset: 0; z-index: 1000;
-      background: rgba(0,0,0,0.6);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
       display: flex; align-items: center; justify-content: center;
       padding: calc(1rem + env(safe-area-inset-top, 0px)) 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
       animation: backdropIn 0.2s ease;
@@ -140,7 +138,6 @@ type AuthMode = 'signin' | 'signup' | 'reset';
       width: 100%;
       max-width: 420px;
       position: relative;
-      box-shadow: 0 24px 64px rgba(0,0,0,0.5);
       animation: modalIn 0.25s ease;
       max-height: calc(100dvh - 2rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
       overflow: auto;

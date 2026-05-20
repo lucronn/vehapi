@@ -30,6 +30,7 @@ const { mockMotorApi, mockSearchResultsState, mockVehicleData, mockWindowManager
 vi.mock('@angular/core', () => ({
   Injectable: () => (target: any) => target,
   Component: () => (target: any) => target,
+  Directive: () => () => {},
   Input: () => (target: any, key: string) => {},
   Output: () => (target: any, key: string) => {},
   HostListener: () => (target: any, key: string) => {},

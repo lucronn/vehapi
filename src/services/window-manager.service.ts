@@ -21,6 +21,8 @@ export interface WindowInstance {
 export class WindowManagerService {
     windows = signal<WindowInstance[]>([]);
     private zIndexCounter = 1000;
+    private openWindowIds: string[] = [];
+    private isProgrammaticBack = false;
 
     // Responsive state
     isDesktop = signal<boolean>(typeof window !== 'undefined' ? window.innerWidth >= 768 : true);
@@ -38,6 +40,22 @@ export class WindowManagerService {
                     takeUntilDestroyed()
                 )
                 .subscribe(isDesktop => this.isDesktop.set(isDesktop));
+
+            // Listen to browser popstate to intercept Back button / swipe gesture
+            fromEvent<PopStateEvent>(window, 'popstate')
+                .pipe(takeUntilDestroyed())
+                .subscribe(() => {
+                    if (this.isProgrammaticBack) {
+                        this.isProgrammaticBack = false;
+                        return;
+                    }
+                    if (this.openWindowIds.length > 0) {
+                        const topId = this.openWindowIds.pop();
+                        if (topId) {
+                            this.closeWindow(topId, true);
+                        }
+                    }
+                });
         }
     }
 
@@ -74,6 +92,12 @@ export class WindowManagerService {
         };
 
         this.windows.update(windows => [...windows, newWindow]);
+
+        if (typeof window !== 'undefined') {
+            this.openWindowIds.push(id);
+            window.history.pushState({ modalWindowId: id }, '');
+        }
+
         return id;
     }
 
@@ -84,8 +108,19 @@ export class WindowManagerService {
         ));
     }
 
-    closeWindow(id: string) {
+    closeWindow(id: string, isFromPopstate = false) {
         this.windows.update(windows => windows.filter(w => w.id !== id));
+
+        if (typeof window !== 'undefined') {
+            const index = this.openWindowIds.indexOf(id);
+            if (index !== -1) {
+                this.openWindowIds.splice(index, 1);
+                if (!isFromPopstate) {
+                    this.isProgrammaticBack = true;
+                    window.history.back();
+                }
+            }
+        }
     }
 
     minimizeWindow(id: string) {

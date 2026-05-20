@@ -159,23 +159,14 @@ export class CommonIssuesSectionComponent implements OnInit {
             </div>
         `;
 
-        if (this.windowManager.isDesktop()) {
-            this.windowManager.openWindow(
-                `Issue: ${issueTitle}`,
-                ArticleViewerComponent,
-                {
-                    articleTitleInput: issueTitle,
-                    htmlContentInput: htmlContent
-                }
-            );
-        } else {
-            this.router.navigate(['/vehicle', this.contentSource, this.vehicleId, 'article', 'issue-' + encodeURIComponent(issueTitle)], {
-                state: {
-                    title: issueTitle,
-                    content: htmlContent
-                }
-            });
-        }
+        this.windowManager.openWindow(
+            `Issue: ${issueTitle}`,
+            ArticleViewerComponent,
+            {
+                articleTitleInput: issueTitle,
+                htmlContentInput: htmlContent
+            }
+        );
     }
 
     getSeverityColor(severity: string): string {
@@ -185,6 +176,21 @@ export class CommonIssuesSectionComponent implements OnInit {
             'Low': 'text-green-500'
         };
         return colors[severity] || 'text-[hsl(var(--text-muted))]';
+    }
+
+    getSeverityClasses(severity: string): string {
+        const s = severity ? severity.toLowerCase() : '';
+        const base = 'px-2.5 py-1 rounded-md text-[10px] font-bold uppercase whitespace-nowrap border ';
+        if (s === 'low') {
+            return base + 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+        } else if (s === 'medium') {
+            return base + 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+        } else if (s === 'high') {
+            return base + 'bg-red-500/10 text-red-400 border-red-500/20';
+        } else if (s === 'critical') {
+            return base + 'bg-red-600/20 text-red-400 border-red-600/30 font-extrabold animate-pulse';
+        }
+        return base + 'bg-surface-soft text-faint border-hairline';
     }
 
     trackByTitle(index: number, issue: CommonIssue): string {

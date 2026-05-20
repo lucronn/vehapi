@@ -60,6 +60,46 @@ export class VehicleDataService {
     private dataSync = inject(DataSyncService);
     private vehiclePersistence = inject(VehiclePersistenceService);
 
+    /** Per-vehicle cache of the raw `articles` rows — populated once per dashboard
+     *  visit by {@link prefetchSectionsForVehicle} so each section's
+     *  {@link loadSectionData} call hits memory instead of round-tripping Supabase. */
+    private articlesCache = new Map<string, any[]>();
+    private articlesCacheInFlight = new Map<string, Promise<any[]>>();
+
+    private async getCachedArticles(vehicleId: string): Promise<any[]> {
+        const cached = this.articlesCache.get(vehicleId);
+        if (cached) return cached;
+        const inflight = this.articlesCacheInFlight.get(vehicleId);
+        if (inflight) return inflight;
+        const promise = (async () => {
+            const { data } = await this.api.from('articles').select('*').eq('vehicle_id', vehicleId);
+            const rows = data || [];
+            this.articlesCache.set(vehicleId, rows);
+            return rows;
+        })().finally(() => this.articlesCacheInFlight.delete(vehicleId));
+        this.articlesCacheInFlight.set(vehicleId, promise);
+        return promise;
+    }
+
+    /** Invalidate the in-memory articles cache (e.g. after a fresh ingest). */
+    invalidateArticlesCache(vehicleId: string): void {
+        this.articlesCache.delete(vehicleId);
+        this.articlesCacheInFlight.delete(vehicleId);
+    }
+
+    /**
+     * Warm the per-vehicle articles cache so every section's first render is
+     * served from memory. Called by the dashboard right after eager sync.
+     * Idempotent — a duplicate call while a fetch is in flight reuses the same
+     * promise.
+     */
+    prefetchSectionsForVehicle(vehicleId: string): void {
+        if (!vehicleId) return;
+        void this.getCachedArticles(vehicleId).catch((err) =>
+            this.logger.warn('[VehicleData] Section prefetch failed (non-fatal):', err)
+        );
+    }
+
     /** When home wizard + dashboard cached Motor Information YMME, use `api.motor.com` fluids. */
     private motorInformationForFluids(
         contentSource: string,
@@ -578,8 +618,8 @@ export class VehicleDataService {
 
         from(this.dataSync.checkNormalizationStatus(vehicleId)).pipe(
             switchMap((isNormalized) => {
-                return from(this.api.from('articles').select('*').eq('vehicle_id', vehicleId)).pipe(
-                    map(({ data }) => {
+                return from(this.getCachedArticles(vehicleId)).pipe(
+                    map((data) => {
                         if (!data || data.length === 0) {
                             return { isNormalized, mapped: null as any[] | null };
                         }

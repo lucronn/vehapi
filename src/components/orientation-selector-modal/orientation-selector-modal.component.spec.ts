@@ -1,5 +1,10 @@
 vi.mock('@angular/core', () => ({
   Component: () => (target: any) => target,
+  Directive: () => () => {},
+  Injectable: () => () => {},
+  inject: () => ({ activate: () => {}, deactivate: () => {} }),
+  OnInit: class {},
+  OnDestroy: class {},
   EventEmitter: class {
     private listeners: any[] = [];
     emit(value?: any) {

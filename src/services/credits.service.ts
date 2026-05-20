@@ -52,17 +52,17 @@ export class CreditsService {
 
     // Constants
     readonly COSTS = {
-        SPECS: 5,
-        FLUIDS: 5,
-        MAINTENANCE: 5,
-        DTC: 5,
-        TSB: 5,
-        PROCEDURES: 10,
-        DIAGRAMS: 10,
-        PARTS: 10,
-        COMMON_ISSUES: 5,
-        FULL_ACCESS: 25,
-        ARTICLE: 100,
+        SPECS: 300,
+        FLUIDS: 300,
+        MAINTENANCE: 300,
+        DTC: 300,
+        TSB: 300,
+        PROCEDURES: 300,
+        DIAGRAMS: 300,
+        PARTS: 300,
+        COMMON_ISSUES: 300,
+        FULL_ACCESS: 1000,
+        ARTICLE: 150,
     };
 
     /** Cost for a module type (e.g. 'dtcs' -> COSTS.DTC) */

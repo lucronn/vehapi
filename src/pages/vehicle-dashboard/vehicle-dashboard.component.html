@@ -24,6 +24,9 @@
       </h1>
     </div>
     <div class="flex items-center gap-1 flex-shrink-0">
+      <button type="button" class="btn-glass p-2 rounded-lg md:hidden" (click)="openCommandPalette()" aria-label="Commands">
+        <span class="font-mono text-[10px] font-semibold">⌘K</span>
+      </button>
       <a routerLink="/" class="btn-glass p-2 rounded-lg" aria-label="Home">
         <lucide-icon [img]="icons.House" class="w-5 h-5"></lucide-icon>
       </a>
@@ -58,12 +61,12 @@
         Overview
       </button>
       @if (l2SearchEnabled) {
-      <a [routerLink]="['/vehicle', contentSource(), vehicleId(), 'knowledge']"
-        (click)="isMobileMenuOpen.set(false)"
-        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-muted hover:bg-surface-soft">
+      <button (click)="setSection('knowledge')"
+        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
+        [ngClass]="activeSection() === 'knowledge' ? 'bg-surface-soft text-accent' : 'text-muted'">
         <lucide-icon [img]="icons.Lightbulb" class="w-4.5 h-4.5"></lucide-icon>
         Knowledge Search
-      </a>
+      </button>
       }
       @if (availableSections()?.hasDtcs) {
       <button (click)="setSection('dtcs')"
@@ -135,12 +138,6 @@
         <lucide-icon [img]="icons.Lightbulb" class="w-4.5 h-4.5"></lucide-icon>
         Common Issues &amp; AI
       </button>
-      <button (click)="setSection('browse-all')"
-        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
-        [ngClass]="activeSection() === 'browse-all' ? 'bg-surface-soft text-accent' : 'text-muted'">
-        <lucide-icon [img]="icons.Package" class="w-4.5 h-4.5"></lucide-icon>
-        Browse All Data
-      </button>
 
     </div>
     </div>
@@ -148,7 +145,14 @@
   }
 
   <!-- Main Content Area -->
-  <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 relative pb-20 md:pb-8 z-10">
+  <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 relative pb-28 md:pb-8 z-10">
+
+    <app-workshop-command-bar
+      class="hidden md:block"
+      [vehicleName]="vehicleName()"
+      [activeSection]="activeSection()"
+      (openCommands)="openCommandPalette()">
+    </app-workshop-command-bar>
 
     <!-- Decorative blur -->
     <div
@@ -218,8 +222,21 @@
       @switch (activeSection()) {
       @case ('overview') {
       <div class="space-y-6 animate-fade-in-up">
-        <div class="pb-4 border-b border-hairline">
-          <h2 class="section-title">Overview</h2>
+        <div class="workshop-hub">
+          <p class="text-[10px] font-mono uppercase tracking-[0.2em] text-faint mb-2">Workshop</p>
+          <h2 class="workshop-hub-title mb-3">{{ vehicleName() || 'Your vehicle' }}</h2>
+          <p class="text-sm text-muted mb-4 max-w-xl">
+            Jump to any section with <kbd class="font-mono text-[10px] px-1 py-0.5 rounded border border-hairline">⌘K</kbd>
+            or pick a lane below.
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" class="btn-primary text-sm px-4 py-2 rounded-lg" (click)="openCommandPalette()">
+              Open command palette
+            </button>
+            <button type="button" class="btn-glass text-sm px-4 py-2 rounded-lg md:hidden" (click)="toggleMobileMenu()">
+              All sections
+            </button>
+          </div>
         </div>
 
         <!-- Quick Access Section Cards -->
@@ -315,27 +332,6 @@
           }
         </div>
         }
-
-        @if (availableSections()?.hasSpecs) {
-        <app-specs-fluids-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"
-          [motorVehicleId]="motorVehicleId()" [vehicleName]="vehicleName()">
-        </app-specs-fluids-section>
-        }
-
-        <!-- Browse All Link -->
-        <button (click)="setSection('browse-all')"
-          class="w-full glass-card p-4 flex items-center justify-between group hover:border-accent/30 transition-all">
-          <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg flex items-center justify-center bg-accent-soft">
-              <lucide-icon [img]="icons.Package" class="w-4.5 h-4.5 text-accent"></lucide-icon>
-            </div>
-            <div>
-              <p class="text-sm font-semibold text-ink group-hover:text-accent transition-colors">Browse All Data</p>
-              <p class="text-xs text-faint">View the complete reference catalog</p>
-            </div>
-          </div>
-          <lucide-icon [img]="icons.Package" class="w-4 h-4 text-faint group-hover:text-accent transition-colors"></lucide-icon>
-        </button>
       </div>
       }
       @case ('dtcs') {
@@ -503,40 +499,31 @@
         }
       </div>
       }
+      @case ('knowledge') {
+      <div class="space-y-6 animate-fade-in-up">
+        <div class="pb-4 border-b border-hairline">
+          <h2 class="section-title">Knowledge Search</h2>
+          <p class="text-sm mt-1" style="color:var(--text-muted)">
+            Interactive AI diagnostics and semantic search grounded on database service data.
+          </p>
+        </div>
+        <app-diy-chat-section [contentSource]="contentSource()" [vehicleId]="vehicleId()"></app-diy-chat-section>
+      </div>
+      }
       }
     </div>
     }
   </main>
 
-  <!-- Mobile Bottom Tab Bar (shows available sections; all tabs during load) -->
-  <nav class="bottom-tabs md:hidden">
-    <button (click)="setSection('overview')" class="bottom-tab" [class.active]="activeSection() === 'overview'">
-      <lucide-icon [img]="icons.House" class="w-5 h-5"></lucide-icon>
-      <span>Overview</span>
-    </button>
-    @if (!availableSections() || availableSections()?.hasDtcs) {
-    <button (click)="setSection('dtcs')" class="bottom-tab" [class.active]="activeSection() === 'dtcs'">
-      <lucide-icon [img]="icons.TriangleAlert" class="w-5 h-5"></lucide-icon>
-      <span>Codes</span>
-    </button>
-    }
-    @if (!availableSections() || availableSections()?.hasTsbs) {
-    <button (click)="setSection('tsbs')" class="bottom-tab" [class.active]="activeSection() === 'tsbs'">
-      <lucide-icon [img]="icons.FileText" class="w-5 h-5"></lucide-icon>
-      <span>TSBs</span>
-    </button>
-    }
-    @if (!availableSections() || availableSections()?.hasProcedures) {
-    <button (click)="setSection('procedures')" class="bottom-tab" [class.active]="activeSection() === 'procedures'">
-      <lucide-icon [img]="icons.Wrench" class="w-5 h-5"></lucide-icon>
-      <span>Service</span>
-    </button>
-    }
-    <button (click)="setSection('browse-all')" class="bottom-tab" [class.active]="activeSection() === 'browse-all'">
-      <lucide-icon [img]="icons.Package" class="w-5 h-5"></lucide-icon>
-      <span>All</span>
-    </button>
-  </nav>
+  <app-workshop-dock
+    class="md:hidden"
+    [activeSection]="activeSection()"
+    [showDtcs]="dockShowDtcs()"
+    [showService]="dockShowService()"
+    [serviceSection]="dockServiceSection()"
+    (sectionChange)="setSection($event)"
+    (openCommands)="openCommandPalette()">
+  </app-workshop-dock>
 
   <!-- Global Auth Modal (desktop & mobile) -->
   @if (showAuthModal()) {

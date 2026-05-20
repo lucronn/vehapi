@@ -14,6 +14,7 @@ import { LucideAngularModule, Search } from 'lucide-angular';
           class="w-4 h-4 flex-shrink-0" style="color:var(--text-muted)">
         </lucide-icon>
         <input type="text"
+          data-dashboard-search
           placeholder="Search articles, codes, procedures..."
           (input)="onSearchChange($event)"
           [value]="searchTerm"

@@ -1,0 +1,174 @@
+<!-- Sub-Navigation Matrix -->
+<div class="flex items-center justify-between border-b border-hairline pb-4 mb-6">
+  <div class="flex gap-2">
+    <button (click)="activeSubTab.set('chat')"
+            class="px-4 py-2.5 rounded-xl text-xs font-mono uppercase tracking-wider transition-all min-h-[44px] flex items-center gap-2"
+            [style.background]="activeSubTab() === 'chat' ? 'var(--accent-soft)' : 'transparent'"
+            [style.color]="activeSubTab() === 'chat' ? 'var(--accent)' : 'var(--muted)'"
+            [style.border]="activeSubTab() === 'chat' ? '1px solid var(--accent)' : '1px solid transparent'">
+      <lucide-icon [img]="icons.MessageSquare" class="w-4 h-4"></lucide-icon>
+      <span>AI Advisor</span>
+    </button>
+    <button (click)="activeSubTab.set('search')"
+            class="px-4 py-2.5 rounded-xl text-xs font-mono uppercase tracking-wider transition-all min-h-[44px] flex items-center gap-2"
+            [style.background]="activeSubTab() === 'search' ? 'var(--accent-soft)' : 'transparent'"
+            [style.color]="activeSubTab() === 'search' ? 'var(--accent)' : 'var(--muted)'"
+            [style.border]="activeSubTab() === 'search' ? '1px solid var(--accent)' : '1px solid transparent'">
+      <lucide-icon [img]="icons.Search" class="w-4 h-4"></lucide-icon>
+      <span>Semantic Search</span>
+    </button>
+  </div>
+  <div class="flex items-center gap-2">
+    <span class="text-[9px] font-mono uppercase tracking-[0.2em] text-faint hidden sm:inline">Grounding Engine Active</span>
+    <div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+  </div>
+</div>
+
+<!-- Mode A: AI grounded chatbot -->
+@if (activeSubTab() === 'chat') {
+  <div class="glass-card overflow-hidden border border-hairline flex flex-col h-[600px] shadow-lg animate-fade-in relative">
+    
+    <!-- Chat Header Matrix -->
+    <div class="px-6 py-4 border-b border-hairline bg-[var(--bg-hover)] flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-accent-soft flex items-center justify-center text-[var(--accent)]">
+          <lucide-icon [img]="icons.Sparkles" class="w-4 h-4"></lucide-icon>
+        </div>
+        <div>
+          <h3 class="text-xs font-black uppercase tracking-wider text-ink">DIY Diagnostics Advisor</h3>
+          <p class="text-[10px] text-faint font-mono">Factory Database Grounding Vector (Vertex AI/pgvector)</p>
+        </div>
+      </div>
+      <button (click)="clearChat()" class="btn-ghost p-2 rounded-lg text-xs font-mono flex items-center gap-1 hover:text-[var(--accent)]" title="Reset diagnostic session">
+        <lucide-icon [img]="icons.History" class="w-3.5 h-3.5"></lucide-icon>
+        <span>Reset</span>
+      </button>
+    </div>
+
+    <!-- Scrollable Chat Logs -->
+    <div #chatScrollContainer class="flex-1 overflow-y-auto p-6 space-y-6 bg-paper-edge/10 overscroll-contain">
+      @for (msg of messages(); track $index) {
+        <div class="flex flex-col max-w-[85%] animate-fade-in"
+             [ngClass]="msg.role === 'user' ? 'ml-auto items-end' : 'mr-auto items-start'">
+          
+          <!-- Message Bubble -->
+          <div class="px-5 py-3.5 rounded-2xl border"
+               [ngClass]="msg.role === 'user' 
+                  ? 'bg-[var(--accent)] text-white border-[var(--accent-deep)] rounded-br-none shadow-sm' 
+                  : 'bg-[var(--surface-soft)] text-[var(--ink)] border-hairline rounded-bl-none shadow-sm'">
+            
+            @if (msg.role === 'assistant') {
+              <div class="text-sm leading-relaxed whitespace-pre-wrap select-text motor-prose" [innerHTML]="formatMessage(msg.text)"></div>
+            } @else {
+              <p class="text-sm font-semibold select-text leading-relaxed">{{ msg.text }}</p>
+            }
+
+            <!-- Real-time blinking streaming cursor -->
+            @if (msg.isStreaming && msg.text.length > 0) {
+              <span class="inline-block w-1.5 h-3 ml-1 bg-[var(--accent)] animate-pulse rounded-full align-middle"></span>
+            }
+          </div>
+
+          <!-- Quick Action: If response has steps, offer full step-by-step interactive stepper guide -->
+          @if (msg.role === 'assistant' && !msg.isStreaming && hasProcedureSteps(msg.text)) {
+            <button (click)="openInteractiveStepper(msg.text)" 
+                    class="mt-2.5 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase tracking-wider border border-hairline bg-[var(--surface)] text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-all animate-fade-in">
+              <lucide-icon [img]="icons.Wrench" class="w-3.5 h-3.5"></lucide-icon>
+              <span>Open in DIY Stepper</span>
+            </button>
+          }
+        </div>
+      }
+
+      <!-- Interactive streaming state / loading skeleton -->
+      @if (loading() && messages()[messages().length - 1]?.role === 'user') {
+        <div class="flex flex-col mr-auto items-start max-w-[85%] animate-pulse">
+          <div class="px-5 py-4 rounded-2xl rounded-bl-none border border-hairline bg-[var(--surface-soft)] space-y-2 w-64 shadow-sm">
+            <div class="h-3 bg-[var(--hairline)] rounded w-1/3"></div>
+            <div class="h-3 bg-[var(--hairline)] rounded w-3/4"></div>
+            <div class="h-3 bg-[var(--hairline)] rounded w-1/2"></div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Sugestion chips overlay when chat is fresh -->
+    @if (messages().length <= 1) {
+      <div class="px-6 py-4 border-t border-hairline bg-[var(--surface-soft)] space-y-2">
+        <p class="text-[9px] font-mono uppercase tracking-wider text-faint">Common Diagnoses & Operations</p>
+        <div class="flex flex-wrap gap-2">
+          @for (s of suggestions; track s) {
+            <button (click)="selectSuggestion(s)" 
+                    class="px-3.5 py-2 rounded-xl text-xs bg-[var(--surface)] border border-hairline text-muted hover:border-[var(--accent)] hover:text-accent hover:bg-[var(--accent-soft)] transition-all text-left">
+              {{ s }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Chat input bar -->
+    <div class="p-4 border-t border-hairline bg-[var(--surface)]">
+      <div class="flex gap-2">
+        <input type="text"
+               [(ngModel)]="queryText"
+               (keydown.enter)="sendMessage()"
+               class="app-input flex-1 min-h-[44px]"
+               placeholder="Ask for torque specs, diagnoses, capacities, or procedures..."
+               [disabled]="loading()"
+               [attr.aria-label]="'AI Assistant query input'" />
+        
+        <button (click)="sendMessage()"
+                [disabled]="loading() || !queryText.trim()"
+                class="btn-primary px-5 py-2 rounded-xl flex items-center justify-center min-w-[50px] min-h-[44px]">
+          <lucide-icon [img]="icons.Send" class="w-4 h-4"></lucide-icon>
+        </button>
+      </div>
+      @if (error()) {
+        <p class="text-xs text-red-500 mt-2 flex items-center gap-1 animate-fade-in">
+          <lucide-icon [img]="icons.AlertTriangle" class="w-3.5 h-3.5"></lucide-icon>
+          <span>{{ error() }}</span>
+        </p>
+      }
+    </div>
+  </div>
+}
+
+<!-- Mode B: Raw Semantic Vector Search fallback -->
+@if (activeSubTab() === 'search') {
+  <div class="animate-fade-in">
+    <app-l2-search-panel [contentSource]="contentSource()" [vehicleId]="vehicleId()"></app-l2-search-panel>
+  </div>
+}
+
+<!-- Fullscreen Interactive DIY Stepper Modal Overlay -->
+@if (showStepper() && activeTutorialSteps().length > 0) {
+  <div class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-fade-in" style="z-index:99999">
+    <div class="relative w-full max-w-4xl glass-card rounded-2xl overflow-hidden shadow-2xl bg-surface border border-hairline animate-scale-in">
+      
+      <!-- Stepper Header -->
+      <div class="px-8 py-5 border-b border-hairline bg-surface-soft flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-accent-soft flex items-center justify-center text-[var(--accent)]">
+            <lucide-icon [img]="icons.Wrench" class="w-4 h-4"></lucide-icon>
+          </div>
+          <div>
+            <h3 class="text-xs font-black text-ink uppercase tracking-widest leading-none">Interactive Repair Session</h3>
+            <p class="text-[9px] font-mono text-faint uppercase mt-1 tracking-widest">Active vector DIY steps parsed from chatbot</p>
+          </div>
+        </div>
+        
+        <button (click)="showStepper.set(false)" 
+                class="btn-ghost px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 hover:text-accent border border-hairline min-h-[40px]">
+          <lucide-icon [img]="icons.X" class="w-4 h-4"></lucide-icon>
+          <span>Exit Guide</span>
+        </button>
+      </div>
+
+      <!-- Stepper Component Embedded directly -->
+      <div class="p-6 md:p-8 bg-paper">
+        <app-tutorial-stepper [data]="activeTutorialSteps()"></app-tutorial-stepper>
+      </div>
+    </div>
+  </div>
+}

@@ -1,4 +1,10 @@
-<div [class]="articleId ? 'h-full flex flex-col' : 'min-h-screen flex flex-col'" style="background:var(--bg);color:var(--text-primary)">
+<div [class]="(articleId ? 'h-full flex flex-col' : 'min-h-screen flex flex-col') + (focusMode() ? ' article-reader--focus' : '')"
+  style="background:var(--bg);color:var(--text-primary)">
+  @if (!articleId && !isLoading() && articleContent()) {
+  <div class="reader-progress" aria-hidden="true">
+    <div class="reader-progress-bar" [style.width.%]="readingProgress()"></div>
+  </div>
+  }
   <!-- Header -->
   <!-- Header (Only show if not in window mode) -->
   @if (!articleId) {
@@ -12,8 +18,14 @@
         <span class="hidden sm:inline">Dashboard</span>
       </a>
 
-      <div class="flex items-center gap-3">
-        @if (sections().length > 0) {
+      <div class="flex items-center gap-2">
+        <button type="button" (click)="toggleFocusMode()" class="reader-focus-toggle"
+          [class.is-on]="focusMode()"
+          [attr.aria-pressed]="focusMode()">
+          <lucide-icon [img]="focusMode() ? icons.EyeOff : icons.Eye" class="w-4 h-4"></lucide-icon>
+          <span class="hidden sm:inline">{{ focusMode() ? 'Exit focus' : 'Focus' }}</span>
+        </button>
+        @if (sections().length > 0 && !focusMode()) {
         <button (click)="toggleMobileToc()" class="lg:hidden btn-ghost p-2 rounded-lg"
           [attr.aria-label]="isMobileTocOpen() ? 'Close table of contents' : 'Open table of contents'">
           <lucide-icon [img]="isMobileTocOpen() ? icons.X : icons.List" class="w-5 h-5"></lucide-icon>
@@ -66,7 +78,7 @@
       <!-- Re-authenticating State -->
       <div class="max-w-xl mx-auto text-center py-20 animate-fade-in">
         <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6"
-          style="background:rgba(6,182,212,0.1);color:rgb(6,182,212)">
+          class="bg-accent-soft text-accent">
           <span class="w-8 h-8 border-2 border-accent/30 border-t-accent rounded-full animate-spin block"></span>
         </div>
         <h3 class="text-lg font-semibold mb-1" style="color:var(--text-primary)">Reconnecting…</h3>
@@ -229,7 +241,7 @@
       <div class="flex flex-col lg:flex-row gap-8 lg:gap-12 relative animate-fade-in">
 
         <!-- Sidebar TOC (hidden in window mode to save space) -->
-        @if (sections().length > 1 && !articleId && !isContentCollapsed()) {
+        @if (sections().length > 1 && !articleId && !isContentCollapsed() && !focusMode()) {
         <aside class="md:w-64 lg:w-64 xl:w-72 flex-shrink-0 hidden md:block">
           <div class="sticky top-20">
             <h3 class="text-xs font-bold uppercase tracking-wider mb-6 flex items-center gap-2 opacity-60"
@@ -297,7 +309,7 @@
           <div class="mt-8 pt-6" style="border-top:1px solid var(--border)">
             <button (click)="startTutorial()" [disabled]="isGeneratingTutorial()"
               class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
-              style="background:rgba(6,182,212,0.1);color:rgb(6,182,212);border:1px solid rgba(6,182,212,0.3)">
+              style="background:var(--accent-soft);color:var(--accent);border:1px solid color-mix(in srgb, var(--accent) 35%, transparent)">
               @if (isGeneratingTutorial()) {
               <span class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
               <span>Generating…</span>

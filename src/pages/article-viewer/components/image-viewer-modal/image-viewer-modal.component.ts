@@ -1,13 +1,14 @@
 import { Component, Input, Output, EventEmitter, signal, ElementRef, ViewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule, X, ZoomIn, ZoomOut, RotateCw } from 'lucide-angular';
+import { FocusDepthDirective } from '../../../../directives/focus-depth.directive';
 
 @Component({
     selector: 'app-image-viewer-modal',
     standalone: true,
-    imports: [CommonModule, LucideAngularModule],
+    imports: [CommonModule, LucideAngularModule, FocusDepthDirective],
     template: `
-    <div class="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex flex-col animate-fade-in" 
+    <div class="fixed inset-0 z-[100] image-viewer-shell flex flex-col animate-fade-in modal-backdrop-blur" appFocusDepth 
          (touchstart)="onTouchStart($event)" 
          (touchmove)="onTouchMove($event)" 
          (touchend)="onTouchEnd($event)">

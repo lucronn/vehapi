@@ -84,12 +84,18 @@ describe('MotorApiService Integration Methods', () => {
     expect(res).toEqual({ data: 'test' });
   });
 
-  test('getYears calls correct URL', async () => {
+  test('getYears calls db first and normalizes body', async () => {
+    mockGet.mockImplementationOnce(() => of({
+      body: { header: { statusCode: 200 }, body: [2020, 2019] },
+      status: 200,
+      statusText: 'OK',
+      headers: new Map(),
+    }));
     const res = await new Promise(resolve => service.getYears().subscribe(resolve));
     expect(mockGet).toHaveBeenCalled();
     const args = mockGet.mock.calls[0];
     expect(args[0]).toContain('/api/db/years');
-    expect(res).toEqual({ data: 'test' });
+    expect((res as { body: number[] }).body).toEqual([2020, 2019]);
   });
 
   test('getMakes calls correct URL', async () => {

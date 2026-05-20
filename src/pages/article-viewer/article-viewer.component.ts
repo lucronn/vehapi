@@ -1,5 +1,5 @@
 import { LoggerService } from '@/src/services/logger.service';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, Input, signal, ViewEncapsulation, OnInit, OnChanges, SimpleChanges, SecurityContext, ElementRef, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, Input, signal, ViewEncapsulation, OnInit, OnChanges, OnDestroy, SimpleChanges, SecurityContext, ElementRef, ViewChild, HostListener } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -9,7 +9,7 @@ import { map, switchMap, of, catchError, Subject, takeUntil, Observable } from '
 import { MotorApiService } from '../../services/motor-api.service';
 import { MotorHtmlProcessorService } from '../../services/motor-html-processor.service';
 import { AiRewriteService } from '../../services/ai-rewrite.service';
-import { LucideAngularModule, ArrowLeft, Maximize2, Minus, List, X, Sparkles, BookOpen, Lock, RefreshCw } from 'lucide-angular';
+import { LucideAngularModule, ArrowLeft, Maximize2, Minus, List, X, Sparkles, BookOpen, Lock, RefreshCw, Eye, EyeOff } from 'lucide-angular';
 import { CreditsModalComponent } from '../../components/credits-modal/credits-modal.component';
 import { ImageViewerModalComponent } from './components/image-viewer-modal/image-viewer-modal.component';
 import { TutorialComponent } from '../../components/tutorial/tutorial.component';
@@ -49,7 +49,7 @@ function cleanSpecificTag(match: string): string {
   imports: [CommonModule, RouterModule, LucideAngularModule, ImageViewerModalComponent, TutorialComponent],
   standalone: true
 })
-export class ArticleViewerComponent implements OnInit, OnChanges {
+export class ArticleViewerComponent implements OnInit, OnChanges, OnDestroy {
 
   private logger = inject(LoggerService);
   // Inputs for Window Mode
@@ -73,7 +73,11 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
   private router = inject(Router);
   private pageTitle = inject(PageTitleService);
 
-  readonly icons = { ArrowLeft, Maximize2, Minus, List, X, Sparkles, BookOpen, Lock, RefreshCw };
+  readonly icons = { ArrowLeft, Maximize2, Minus, List, X, Sparkles, BookOpen, Lock, RefreshCw, Eye, EyeOff };
+
+  /** Distraction-free reading: hides TOC chrome and widens typography. */
+  focusMode = signal(false);
+  readingProgress = signal(0);
 
   @ViewChild('pdfContainerMobile') pdfContainerMobile?: ElementRef<HTMLElement>;
   @ViewChild('pdfContainerDesktop') pdfContainerDesktop?: ElementRef<HTMLElement>;
@@ -888,6 +892,25 @@ export class ArticleViewerComponent implements OnInit, OnChanges {
 
   toggleContentCollapse() {
     this.isContentCollapsed.update(v => !v);
+  }
+
+  toggleFocusMode(): void {
+    this.focusMode.update((v) => !v);
+    document.documentElement.classList.toggle('article-focus-active', this.focusMode());
+  }
+
+  @HostListener('window:scroll')
+  onWindowScroll(): void {
+    if (typeof document === 'undefined') return;
+    const el = document.documentElement;
+    const scrollTop = el.scrollTop || document.body.scrollTop;
+    const scrollHeight = el.scrollHeight - el.clientHeight;
+    const pct = scrollHeight > 0 ? Math.min(100, Math.round((scrollTop / scrollHeight) * 100)) : 0;
+    this.readingProgress.set(pct);
+  }
+
+  ngOnDestroy(): void {
+    document.documentElement.classList.remove('article-focus-active');
   }
 
   async maximizePdf(): Promise<void> {

@@ -4,6 +4,8 @@ import { AuthLoadingComponent } from './components/auth-loading/auth-loading.com
 import { ThemeService } from './services/theme.service';
 import { WindowContainerComponent } from './components/window-container/window-container.component';
 import { AmbientBackgroundComponent } from './components/ambient-background/ambient-background.component';
+import { CommandPaletteComponent } from './components/command-palette/command-palette.component';
+import { FocusDepthBackdropComponent } from './components/focus-depth-backdrop/focus-depth-backdrop.component';
 
 @Component({
   selector: 'app-root',
@@ -11,12 +13,14 @@ import { AmbientBackgroundComponent } from './components/ambient-background/ambi
     <app-auth-loading></app-auth-loading>
     <app-ambient-background></app-ambient-background>
     <main class="min-h-screen relative z-10" style="color:var(--ink)">
+      <app-focus-depth-backdrop></app-focus-depth-backdrop>
       <router-outlet></router-outlet>
+      <app-command-palette></app-command-palette>
     </main>
     <app-window-container></app-window-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, AuthLoadingComponent, WindowContainerComponent, AmbientBackgroundComponent],
+  imports: [RouterOutlet, AuthLoadingComponent, WindowContainerComponent, AmbientBackgroundComponent, FocusDepthBackdropComponent, CommandPaletteComponent],
 })
 export class AppComponent {
   private themeService = inject(ThemeService);

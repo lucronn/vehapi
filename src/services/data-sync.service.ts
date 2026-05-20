@@ -1198,43 +1198,8 @@ export class DataSyncService {
     }
 
     private async syncCommonIssues(cs: string, vid: string, name: string, generatedIssues?: CommonIssue[]) {
-        if (this.clientWriteDisabled) return;
-
-        const { data: cached } = await this.supabase.client
-            .from('common_issues_cache')
-            .select('updated_at')
-            .eq('vehicle_id', vid)
-            .maybeSingle();
-
-        if (!cached) {
-            try {
-                let issues = generatedIssues;
-                if (!issues) {
-                    const res = await lastValueFrom(this.aiRewrite.generateCommonIssues(name, vid));
-                    issues = res.issues;
-                }
-
-                if (issues && issues.length > 0) {
-                    const { error } = await this.api.upsert('common_issues_cache', {
-                        vehicle_id: vid,
-                        source: cs,
-                        issues,
-                        updated_at: new Date().toISOString()
-                    }, 'vehicle_id');
-                    
-                    if (error) {
-                        if (this.isClientWriteDenied(error)) {
-                            this.clientWriteDisabled = true;
-                            this.logger.warn(`Browser Supabase write disabled after auth/RLS deny (syncCommonIssues)`);
-                        } else {
-                            this.logger.warn(`common_issues_cache upsert failed: ${error.message}`);
-                        }
-                    }
-                }
-            } catch (err) {
-                this.logger.warn(`Failed to sync common issues: ${err}`);
-            }
-        }
+        this.logger.info(`syncCommonIssues skipped: handled on the backend proxy server.`);
+        return;
     }
 
 

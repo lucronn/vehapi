@@ -129,6 +129,21 @@ export function registerAiEndpoints(app, getAiFunctions) {
             return res.status(400).json({ error: 'vehicleName field is required inside vehicleMetadata' });
         }
 
+        if (vehicleId && isDbConfigured()) {
+            try {
+                const { rows } = await dbQuery(
+                    'SELECT issues FROM public.common_issues_cache WHERE vehicle_id = $1 LIMIT 1',
+                    [vehicleId]
+                );
+                if (rows && rows.length > 0) {
+                    logger.info(`Serving common issues from database cache for vehicleId: ${vehicleId}`);
+                    return res.json({ issues: rows[0].issues });
+                }
+            } catch (dbErr) {
+                logger.warn('Failed to query common_issues_cache:', dbErr.message);
+            }
+        }
+
         try {
             const { generateCommonIssues } = await getAiFunctions();
             if (!generateCommonIssues) {
@@ -150,6 +165,22 @@ export function registerAiEndpoints(app, getAiFunctions) {
                 catch (e) { logger.warn('buildVehicleContext failed, continuing without context:', e.message); }
             }
             const issues = await generateCommonIssues(vehicleName, vehicleContext);
+
+            if (vehicleId && isDbConfigured()) {
+                try {
+                    await dbQuery(
+                        `INSERT INTO public.common_issues_cache (vehicle_id, source, issues, updated_at)
+                         VALUES ($1, 'MOTOR', $2, now())
+                         ON CONFLICT (vehicle_id) DO UPDATE 
+                         SET issues = EXCLUDED.issues, updated_at = now()`,
+                        [vehicleId, JSON.stringify(issues)]
+                    );
+                    logger.info(`Cached generated common issues to database for vehicleId: ${vehicleId}`);
+                } catch (dbErr) {
+                    logger.warn('Failed to save common issues to common_issues_cache:', dbErr.message);
+                }
+            }
+
             res.json({ issues });
         } catch (err) {
             logger.error('AI common issues generation error:', err);

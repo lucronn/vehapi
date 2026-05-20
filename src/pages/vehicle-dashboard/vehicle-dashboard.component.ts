@@ -33,6 +33,7 @@ import { MaintenanceSectionComponent } from './components/sections/maintenance-s
 import { PartsSectionComponent } from './components/sections/parts-section/parts-section.component';
 import { CommonIssuesSectionComponent } from './components/sections/common-issues-section/common-issues-section.component';
 import { SyncProgressOverlayComponent } from './components/layout/sync-progress-overlay/sync-progress-overlay.component';
+import { DiyChatSectionComponent } from './components/sections/diy-chat-section/diy-chat-section.component';
 import { environment } from '../../environments/environment';
 
 // Icons
@@ -45,8 +46,11 @@ import { ThemeToggleComponent } from '../../components/theme-toggle/theme-toggle
 import { ArticleViewerComponent } from '../article-viewer/article-viewer.component';
 import { WindowManagerService } from '../../services/window-manager.service';
 import { AuthModalComponent } from '../../components/auth-modal/auth-modal.component';
+import { CommandPaletteService, type CommandPaletteItem } from '../../services/command-palette.service';
+import { WorkshopCommandBarComponent } from './components/layout/workshop-command-bar/workshop-command-bar.component';
+import { WorkshopDockComponent } from './components/layout/workshop-dock/workshop-dock.component';
 
-export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'component-locations' | 'procedures' | 'parts' | 'specs' | 'maintenance' | 'browse-all' | 'common-issues';
+export type DashboardSection = 'overview' | 'dtcs' | 'tsbs' | 'diagrams' | 'component-locations' | 'procedures' | 'parts' | 'specs' | 'maintenance' | 'browse-all' | 'common-issues' | 'knowledge';
 
 const DASHBOARD_SECTION_LABEL: Record<DashboardSection, string | undefined> = {
   overview: undefined,
@@ -60,6 +64,7 @@ const DASHBOARD_SECTION_LABEL: Record<DashboardSection, string | undefined> = {
   maintenance: 'Maintenance',
   'browse-all': 'Browse All',
   'common-issues': 'Common Issues',
+  knowledge: 'Knowledge Search',
 };
 
 /**
@@ -90,11 +95,15 @@ const DASHBOARD_SECTION_LABEL: Record<DashboardSection, string | undefined> = {
     AuthModalComponent,
     SyncProgressOverlayComponent,
     CommonIssuesSectionComponent,
+    WorkshopCommandBarComponent,
+    WorkshopDockComponent,
+    DiyChatSectionComponent,
   ],
 })
 export class VehicleDashboardComponent {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private commandPalette = inject(CommandPaletteService);
   private motorApi = inject(MotorApiService);
   private vehicleData = inject(VehicleDataService);
   public searchResultsState = inject(SearchResultsState);
@@ -169,6 +178,24 @@ export class VehicleDashboardComponent {
     })
   );
   availableSections = toSignal(this.sections$, { initialValue: null });
+
+  /** Primary “service” destination for dock shortcut. */
+  dockServiceSection = computed((): DashboardSection => {
+    const a = this.availableSections();
+    if (a?.hasProcedures) return 'procedures';
+    if (a?.hasTsbs) return 'tsbs';
+    return 'browse-all';
+  });
+
+  dockShowService = computed(() => {
+    const a = this.availableSections();
+    return !!(a?.hasProcedures || a?.hasTsbs);
+  });
+
+  dockShowDtcs = computed(() => {
+    const a = this.availableSections();
+    return a == null || a.hasDtcs;
+  });
 
   // State for vehicle resolution (non-MOTOR -> MOTOR)
   isResolvingVehicle = signal(false);
@@ -281,6 +308,90 @@ export class VehicleDashboardComponent {
       const sectionLabel = DASHBOARD_SECTION_LABEL[section];
       this.pageTitle.setVehicle(name, sectionLabel);
     });
+
+    effect(() => {
+      this.registerCommandPaletteItems();
+    });
+  }
+
+  openCommandPalette(): void {
+    this.commandPalette.openPalette();
+  }
+
+  private registerCommandPaletteItems(): void {
+    const cs = this.contentSource();
+    const vid = this.vehicleId();
+    const avail = this.availableSections();
+    const name = this.vehicleName().trim() || 'this vehicle';
+    const items: CommandPaletteItem[] = [];
+
+    const sections: Array<{
+      id: DashboardSection;
+      label: string;
+      keywords?: string;
+      flag?: keyof NonNullable<typeof avail>;
+    }> = [
+      { id: 'overview', label: 'Workshop hub', keywords: 'home dashboard overview' },
+      { id: 'dtcs', label: 'Diagnostic trouble codes', keywords: 'dtc obd fault', flag: 'hasDtcs' },
+      { id: 'tsbs', label: 'Technical service bulletins', keywords: 'tsb bulletin recall', flag: 'hasTsbs' },
+      { id: 'procedures', label: 'Service procedures', keywords: 'repair how to', flag: 'hasProcedures' },
+      { id: 'diagrams', label: 'Wiring diagrams', keywords: 'electrical schematic', flag: 'hasDiagrams' },
+      { id: 'component-locations', label: 'Component locations', flag: 'hasComponentLocations' },
+      { id: 'specs', label: 'Specifications & fluids', flag: 'hasSpecs' },
+      { id: 'maintenance', label: 'Maintenance schedules', flag: 'hasMaintenance' },
+      { id: 'parts', label: 'Parts catalog', flag: 'hasParts' },
+      { id: 'common-issues', label: 'Common issues (AI)', keywords: 'ai problems' },
+      { id: 'browse-all', label: 'Browse full catalog', keywords: 'all articles buckets' },
+    ];
+
+    for (const s of sections) {
+      if (s.flag && avail && !avail[s.flag]) continue;
+      items.push({
+        id: `section-${s.id}`,
+        label: s.label,
+        group: 'Sections',
+        keywords: s.keywords,
+        run: () => this.setSection(s.id),
+      });
+    }
+
+    if (this.l2SearchEnabled && cs && vid) {
+      items.push({
+        id: 'knowledge',
+        label: 'Knowledge search',
+        group: 'Navigate',
+        keywords: 'semantic l2 ai',
+        run: () => this.setSection('knowledge'),
+      });
+    }
+
+    items.push(
+      {
+        id: 'search-articles',
+        label: 'Focus vehicle search',
+        group: 'Actions',
+        hint: 'Type in dashboard search',
+        keywords: 'find lookup',
+        run: () => {
+          this.setSection('overview');
+          queueMicrotask(() => document.querySelector<HTMLInputElement>('[data-dashboard-search]')?.focus());
+        },
+      },
+      {
+        id: 'home',
+        label: 'Change vehicle',
+        group: 'Navigate',
+        run: () => void this.router.navigate(['/']),
+      },
+      {
+        id: 'credits',
+        label: 'Account & credits',
+        group: 'Navigate',
+        run: () => void this.router.navigate(['/credits']),
+      },
+    );
+
+    this.commandPalette.setItems(items, `Jump within ${name}…`);
   }
 
   // UI State
@@ -398,6 +509,10 @@ export class VehicleDashboardComponent {
 
   // Section navigation
   setSection(section: DashboardSection): void {
+    if (section === 'browse-all') {
+      this.logger.warn("Section 'browse-all' navigation has been disabled.");
+      return;
+    }
     this.activeSection.set(section);
     this.isMobileMenuOpen.set(false);
   }
@@ -472,9 +587,14 @@ export class VehicleDashboardComponent {
     const name = this.vehicleName() || 'Vehicle';
     const mvid = this.motorVehicleId();
     await this.dataSync.ensureVehicleRecord(cs, vid, name);
-    void this.dataSync.eagerSyncVehicleReferenceData(cs, vid, mvid).catch((err: unknown) =>
-      this.logger.warn('[VehicleDashboard] Eager reference sync failed (non-fatal):', err)
-    );
+    void this.dataSync.eagerSyncVehicleReferenceData(cs, vid, mvid)
+      .then(() => this.vehicleData.prefetchSectionsForVehicle(vid))
+      .catch((err: unknown) =>
+        this.logger.warn('[VehicleDashboard] Eager reference sync failed (non-fatal):', err)
+      );
+    // Warm the articles cache immediately too — if rows already exist from a
+    // prior visit, section navigation is instant without waiting on sync.
+    this.vehicleData.prefetchSectionsForVehicle(vid);
   }
 
   // Orientation Selection

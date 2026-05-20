@@ -5,6 +5,17 @@ import { dbQuery, isDbConfigured } from './db.js';
 const userCache = new Map();
 const CACHE_TTL_MS = 60 * 1000; // 1 minute cache
 
+let demoUserId = null;
+
+export function setDemoUserId(id) {
+    demoUserId = id;
+    logger.info(`Global demo user ID registered: ${id}`);
+}
+
+export function getDemoUserId() {
+    return demoUserId;
+}
+
 /**
  * Get user data or create if not exists.
  * @param {string} userId
@@ -13,6 +24,34 @@ const CACHE_TTL_MS = 60 * 1000; // 1 minute cache
 export async function getUserData(userId, options = {}) {
     try {
         const skipCache = options.skipCache === true;
+
+        if (demoUserId && userId === demoUserId) {
+            try {
+                const { rows } = await dbQuery(`SELECT * FROM users WHERE id = $1 LIMIT 1`, [userId]);
+                if (rows.length === 0) {
+                    await dbQuery(
+                        `INSERT INTO users (id, credits, unlocks) VALUES ($1, 100000, '{}'::jsonb)
+                         ON CONFLICT (id) DO UPDATE SET credits = 100000`,
+                        [userId]
+                    );
+                } else if (rows[0].credits !== 100000) {
+                    await dbQuery(
+                        `UPDATE users SET credits = 100000 WHERE id = $1`,
+                        [userId]
+                    );
+                }
+            } catch (dbErr) {
+                logger.warn('Failed to sync demo user credits in DB:', dbErr.message);
+            }
+
+            const { rows } = await dbQuery(`SELECT * FROM users WHERE id = $1 LIMIT 1`, [userId]);
+            const demoResult = rows[0] || { id: userId, credits: 100000, unlocks: {} };
+            // Ensure runtime returns 100,000
+            demoResult.credits = 100000;
+            userCache.set(userId, { data: demoResult, timestamp: Date.now() });
+            return demoResult;
+        }
+
         if (!skipCache) {
             const cached = userCache.get(userId);
             if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
@@ -91,6 +130,35 @@ export async function getTransactions(userId, limit = 50) {
  */
 export async function unlockModule(userId, vehicleId, vehicleName, moduleType, cost) {
     try {
+        if (demoUserId && userId === demoUserId) {
+            const userData = await getUserData(userId);
+            const currentUnlocks = userData.unlocks?.[vehicleId] || [];
+            if (currentUnlocks.includes(moduleType) || currentUnlocks.includes('full')) {
+                return userData;
+            }
+
+            const newUnlocks = { ...userData.unlocks };
+            if (!newUnlocks[vehicleId]) newUnlocks[vehicleId] = [];
+            newUnlocks[vehicleId].push(moduleType);
+
+            try {
+                await dbQuery(
+                    `UPDATE users SET credits = 100000, unlocks = $1::jsonb WHERE id = $2`,
+                    [JSON.stringify(newUnlocks), userId]
+                );
+            } catch (dbErr) {
+                logger.warn('Failed to update demo user unlocks in DB:', dbErr.message);
+            }
+
+            const demoResult = {
+                id: userId,
+                credits: 100000,
+                unlocks: newUnlocks
+            };
+            userCache.set(userId, { data: demoResult, timestamp: Date.now() });
+            return demoResult;
+        }
+
         const userData = await getUserData(userId);
         const currentCredits = userData.credits || 0;
 
@@ -128,6 +196,10 @@ export async function unlockModule(userId, vehicleId, vehicleName, moduleType, c
  */
 export async function addCredits(userId, amount, { stripeSessionId, stripePaymentIntent, usdCents } = {}) {
     try {
+        if (demoUserId && userId === demoUserId) {
+            return getUserData(userId);
+        }
+
         if (stripeSessionId) {
             const { rows: existing } = await dbQuery(
                 `SELECT id FROM transactions WHERE user_id = $1 AND stripe_session_id = $2 AND type = 'purchase' LIMIT 1`,

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject, ElementRef, HostListener, ViewChild } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, ElementRef, HostListener, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule, X, Minus, Square, Copy } from 'lucide-angular';
 import { WindowInstance, WindowManagerService } from '../../services/window-manager.service';
@@ -8,8 +8,10 @@ import { WindowInstance, WindowManagerService } from '../../services/window-mana
   standalone: true,
   imports: [CommonModule, LucideAngularModule],
   template: `
-    <div class="window-frame flex flex-col shadow-2xl overflow-hidden"
+    <div #windowFrame
+         class="window-frame flex flex-col shadow-2xl overflow-hidden"
          [class.rounded-xl]="!window.isMaximized"
+         tabindex="-1"
          style="background:var(--bg-surface);border:1px solid var(--border)"
          [style.z-index]="window.zIndex"
          [style.left.px]="window.isMaximized ? 0 : window.position.x"
@@ -69,6 +71,9 @@ import { WindowInstance, WindowManagerService } from '../../services/window-mana
       min-width: 300px;
       min-height: 200px;
     }
+    .window-frame:focus {
+      outline: none !important;
+    }
 
     @media (max-width: 767px) {
       .window-title-bar {
@@ -81,12 +86,14 @@ import { WindowInstance, WindowManagerService } from '../../services/window-mana
     }
   `]
 })
-export class WindowComponent {
+export class WindowComponent implements AfterViewInit {
   @Input({ required: true }) window!: WindowInstance;
   @Output() close = new EventEmitter<void>();
   @Output() minimize = new EventEmitter<void>();
   @Output() maximize = new EventEmitter<void>();
   @Output() focus = new EventEmitter<void>();
+
+  @ViewChild('windowFrame') windowFrameElement!: ElementRef<HTMLDivElement>;
 
   readonly windowManager = inject(WindowManagerService);
   private isDragging = false;
@@ -96,6 +103,14 @@ export class WindowComponent {
   private initialPos = { x: 0, y: 0 };
 
   readonly icons = { X, Minus, Square, Copy };
+
+  ngAfterViewInit() {
+    if (this.windowFrameElement) {
+      setTimeout(() => {
+        this.windowFrameElement.nativeElement.focus();
+      }, 0);
+    }
+  }
 
   onWindowMouseDown() {
     this.focus.emit();

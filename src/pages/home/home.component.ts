@@ -10,25 +10,33 @@ import { VehiclePersistenceService } from '../../services/vehicle-persistence.se
 import { DataSyncService } from '../../services/data-sync.service';
 import { LogoComponent } from '../../components/logo/logo.component';
 import { Make, Model, Engine, PersistedVehicle } from '../../models/motor.models';
-import { LucideAngularModule, Search, X, ArrowRight, ArrowUpRight, ArrowLeft } from 'lucide-angular';
+import { LucideAngularModule, Search, X, ArrowRight, ArrowUpRight, ArrowLeft, Sparkles } from 'lucide-angular';
 import { ThemeToggleComponent } from '../../components/theme-toggle/theme-toggle.component';
 import { PageTitleService } from '../../services/page-title.service';
 import { LoggerService } from '../../services/logger.service';
+import { CommandPaletteService, type CommandPaletteItem } from '../../services/command-palette.service';
+import { FocusDepthDirective } from '../../directives/focus-depth.directive';
+import { normalizeYearList } from '../../utils/year-list';
+import { AuthService } from '../../services/auth.service';
 
 type Suggestion =
+  | { type: 'Decade'; value: number; display: string }
   | { type: 'Year'; value: number; display: string }
   | { type: 'Make'; value: Make; display: string }
   | { type: 'Model'; value: Model; display: string }
   | { type: 'Engine'; value: { vehicleId: string; displayName: string }; display: string };
 
+type WizardPhase = 'pick' | 'confirm';
+type YearPickerMode = 'decade' | 'year';
+
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, LogoComponent, RouterModule, LucideAngularModule, ThemeToggleComponent],
+  imports: [CommonModule, FormsModule, LogoComponent, RouterModule, LucideAngularModule, ThemeToggleComponent, FocusDepthDirective],
 })
 export class HomeComponent implements OnInit {
-  readonly icons = { Search, X, ArrowRight, ArrowUpRight, ArrowLeft };
+  readonly icons = { Search, X, ArrowRight, ArrowUpRight, ArrowLeft, Sparkles };
   private motorApi = inject(MotorApiService);
   private persistence = inject(VehiclePersistenceService);
   private dataSync = inject(DataSyncService);
@@ -37,13 +45,14 @@ export class HomeComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   private pageTitle = inject(PageTitleService);
   private logger = inject(LoggerService);
+  private commandPalette = inject(CommandPaletteService);
+  protected authService = inject(AuthService);
   private motorVehicleMappingInFlight = false;
 
   constructor() { }
 
   @ViewChild('searchInputRef') searchInputRef!: ElementRef<HTMLInputElement>;
-  @ViewChild('desktopSuggestionsContainer') desktopSuggestionsContainerRef!: ElementRef<HTMLDivElement>;
-  @ViewChild('searchContainer') searchContainerRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('ymmePickerRef') ymmePickerRef!: ElementRef<HTMLDivElement>;
 
   // Search State
   searchInput = signal(''); // Immediate input value
@@ -67,8 +76,14 @@ export class HomeComponent implements OnInit {
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
   showSuggestions = signal(false);
-  /** Ignore the next document click - prevents closing dropdown when same click triggers focus */
   private ignoreNextDocumentClick = false;
+  wizardSlideBack = signal(false);
+  wizardPhase = signal<WizardPhase>('pick');
+  yearPickerMode = signal<YearPickerMode>('decade');
+  selectedDecade = signal<number | null>(null);
+  private readonly WIZARD_CHUNK = 8;
+  /** How many wizard list rows to render (grows on “Show more”). */
+  wizardListLimit = signal(8);
   viewportHeight = signal<number>(0);
   private baseViewportHeight = signal<number>(0);
   selectedSuggestionIndex = signal<number>(-1); // For keyboard navigation
@@ -77,6 +92,7 @@ export class HomeComponent implements OnInit {
     this.pageTitle.set();
     void this.loadYears();
     this.persistedVehicle.set(this.persistence.getVehicle());
+    this.registerHomeCommands();
 
     this.searchSubject.pipe(
       debounceTime(500),
@@ -86,44 +102,15 @@ export class HomeComponent implements OnInit {
       this.searchTerm.set(term);
     });
 
-    // Track viewport height for mobile keyboard detection
     this.updateViewportHeight();
     if (typeof window !== 'undefined') {
-      window.addEventListener('resize', () => {
-        this.updateViewportHeight();
-        if (this.showSuggestions()) {
-          this.calculateDropdownPosition();
-        }
-      });
-      window.addEventListener('scroll', () => {
-        if (this.showSuggestions()) {
-          this.calculateDropdownPosition();
-        }
-      }, true);
-      window.addEventListener('orientationchange', () => {
-        setTimeout(() => {
-          this.updateViewportHeight();
-          if (this.showSuggestions()) {
-            this.calculateDropdownPosition();
-          }
-        }, 100);
-      });
-      // Use visual viewport API if available (better for mobile keyboards)
-      if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', () => {
-          this.updateViewportHeight();
-          if (this.showSuggestions()) {
-            this.calculateDropdownPosition();
-          }
-        });
-        window.visualViewport.addEventListener('scroll', () => {
-          this.updateViewportHeight();
-          if (this.showSuggestions()) {
-            this.calculateDropdownPosition();
-          }
-        });
-      }
+      window.addEventListener('resize', () => this.updateViewportHeight());
     }
+
+    this.destroyRef.onDestroy(() => {
+      if (typeof document !== 'undefined') {
+      }
+    });
   }
 
   /** Max attempts (first load + retries after auth recovery) before giving up on `/api/years`. */
@@ -198,26 +185,166 @@ export class HomeComponent implements OnInit {
 
 
 
-  // Determine if dropdown should appear above or below input
-  dropdownPosition = signal<'above' | 'below'>('below');
-  dropdownMaxHeight = signal<number | null>(null);
+  wizardProgress = computed(() => {
+    if (this.wizardPhase() === 'confirm') return 100;
+    const step = this.searchStep();
+    const idx = this.ymmeFlow.indexOf(step);
+    return ((idx + 1) / this.ymmeFlow.length) * 100;
+  });
 
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent): void {
-    if (this.ignoreNextDocumentClick) {
-      this.ignoreNextDocumentClick = false;
-      return;
+  wizardStepLabel = computed(() => {
+    if (this.wizardPhase() === 'confirm') return 'Does this look right?';
+    if (this.searchStep() === 'Year' && this.yearPickerMode() === 'decade') {
+      return 'Choose a decade';
     }
-    if (this.showSuggestions()) {
-      const clickedInsideInput = this.searchInputRef?.nativeElement?.contains(event.target as Node);
-      const clickedInsideSuggestions = this.desktopSuggestionsContainerRef?.nativeElement?.contains(event.target as Node);
-      const clickedInsideContainer = this.searchContainerRef?.nativeElement?.contains(event.target as Node);
+    switch (this.searchStep()) {
+      case 'Year': return 'What year is your vehicle?';
+      case 'Make': return 'Which make?';
+      case 'Model': return 'Which model?';
+      case 'Engine': return 'Which engine?';
+    }
+  });
 
-      if (!clickedInsideInput && !clickedInsideSuggestions && !clickedInsideContainer) {
-        this.showSuggestions.set(false);
+  wizardFilterPlaceholder = computed(() => {
+    switch (this.searchStep()) {
+      case 'Year': return 'Filter years…';
+      case 'Make': return 'Filter makes…';
+      case 'Model': return 'Filter models…';
+      case 'Engine': return 'Filter engines…';
+    }
+  });
+
+  /** Full YMME line for the home launch card (year make model [· engine]). */
+  ymmeSelectionLabel = computed(() => {
+    const year = this.selectedYear();
+    const makeName = this.selectedMake()?.makeName?.trim();
+    const modelName = this.selectedModel()?.model?.trim();
+    const vehicle = this.selectedVehicle();
+
+    const segments: string[] = [];
+    if (year != null) segments.push(String(year));
+    if (makeName) segments.push(makeName);
+    if (modelName) segments.push(modelName);
+
+    if (segments.length === 0) return null;
+
+    let label = segments.join(' ');
+
+    if (vehicle?.displayName && modelName) {
+      const display = vehicle.displayName.trim();
+      if (display && display !== label && display !== modelName) {
+        let enginePart = '';
+        if (display.startsWith(modelName)) {
+          enginePart = display.slice(modelName.length).replace(/^[\s\-–—]+/, '').trim();
+        } else if (display.includes(' - ')) {
+          const idx = display.indexOf(' - ');
+          const prefix = display.slice(0, idx).trim();
+          if (prefix === modelName || label.endsWith(prefix)) {
+            enginePart = display.slice(idx + 3).trim();
+          }
+        }
+        if (enginePart) {
+          label = `${label} · ${enginePart}`;
+        }
       }
     }
-  }
+
+    return label;
+  });
+
+  ymmeSelectionHint = computed(() => {
+    if (this.hasCompleteYmme()) return 'Tap to change';
+    if (this.ymmeSelectionLabel()) return 'Continue selection';
+    return 'Year · Make · Model';
+  });
+
+  hasCompleteYmme = computed(() => {
+    return !!(
+      this.selectedVehicle() ||
+      (this.selectedYear() && this.selectedMake() && this.selectedModel())
+    );
+  });
+
+  /** Normalized year list from the last `/api/db/years` or `/api/years` response. */
+  yearsList = computed(() => normalizeYearList(this.years()?.body));
+
+  yearsLoaded = computed(() => this.years() !== null);
+
+  yearDecades = computed(() => {
+    const decades = new Set<number>();
+    for (const y of this.yearsList()) {
+      decades.add(Math.floor(y / 10) * 10);
+    }
+    return [...decades].sort((a, b) => b - a);
+  });
+
+  yearsInSelectedDecade = computed(() => {
+    const decade = this.selectedDecade();
+    if (decade == null) return [];
+    return this.yearsList().filter((y) => y >= decade && y < decade + 10);
+  });
+
+  /** Options shown in the wizard (decades, chunked lists, or filtered). */
+  wizardListSuggestions = computed<Suggestion[]>(() => {
+    const step = this.searchStep();
+    const term = this.searchTerm().trim().toLowerCase();
+
+    if (step === 'Year' && !term) {
+      if (this.yearPickerMode() === 'decade') {
+        return this.yearDecades().map((d) => ({
+          type: 'Decade' as const,
+          value: d,
+          display: `${d}s`,
+        }));
+      }
+      const years =
+        this.selectedDecade() != null
+          ? this.yearsInSelectedDecade()
+          : this.yearsList();
+      return years.map((y) => ({ type: 'Year' as const, value: y, display: String(y) }));
+    }
+
+    return this.suggestions();
+  });
+
+  wizardVisibleSuggestions = computed(() => {
+    const all = this.wizardListSuggestions();
+    const term = this.searchTerm().trim();
+    if (term) return all;
+    // Decades (≤15) and years-per-decade (≤10) are small — never truncate or 2010/2011 vanish.
+    if (this.searchStep() === 'Year') return all;
+    return all.slice(0, this.wizardListLimit());
+  });
+
+  wizardHiddenCount = computed(() => {
+    const all = this.wizardListSuggestions();
+    const term = this.searchTerm().trim();
+    if (term) return 0;
+    if (this.searchStep() === 'Year') return 0;
+    return Math.max(0, all.length - this.wizardListLimit());
+  });
+
+  wizardShowDecadeGrid = computed(
+    () => this.searchStep() === 'Year' && this.yearPickerMode() === 'decade' && !this.searchTerm().trim()
+  );
+
+  wizardShowYearGrid = computed(
+    () => this.searchStep() === 'Year' && this.yearPickerMode() === 'year' && !this.searchTerm().trim()
+  );
+
+  readonly ymmeFlow: Array<'Year' | 'Make' | 'Model' | 'Engine'> = ['Year', 'Make', 'Model', 'Engine'];
+
+  ymmeStepPills = computed(() => {
+    const current = this.searchStep();
+    const currentIdx = this.ymmeFlow.indexOf(current);
+    return this.ymmeFlow.map((step, idx) => ({
+      step,
+      label: step,
+      done: idx < currentIdx,
+      active: step === current,
+      upcoming: idx > currentIdx,
+    }));
+  });
 
   searchStep = computed<'Year' | 'Make' | 'Model' | 'Engine'>(() => {
     if (!this.selectedYear()) return 'Year';
@@ -260,11 +387,8 @@ export class HomeComponent implements OnInit {
     const term = this.searchTerm().toLowerCase().trim();
 
     if (step === 'Year') {
-      const yearsResponse = this.years();
-      if (!yearsResponse || !yearsResponse.body) {
-        return [];
-      }
-      const yearsData = yearsResponse.body.sort((a, b) => b - a);
+      const yearsData = this.yearsList();
+      if (!yearsData.length) return [];
       if (!term) return yearsData.map(y => ({ type: 'Year', value: y, display: y.toString() }));
       return yearsData.filter(y => y.toString().startsWith(term)).map(y => ({ type: 'Year', value: y, display: y.toString() }));
     }
@@ -318,24 +442,157 @@ export class HomeComponent implements OnInit {
     return [];
   });
 
-  onSearchInput(value: string): void {
+  onVinInput(value: string): void {
     this.searchInput.set(value);
     this.searchSubject.next(value);
-
-    // Show suggestions when user starts typing (if not already showing and conditions are met)
-    if (!this.showSuggestions() && !this.selectedVehicle() && !this.isVin()) {
-      this.showSuggestions.set(true);
-    }
-
-    // Recalculate position when typing
     if (this.showSuggestions()) {
-      setTimeout(() => this.calculateDropdownPosition(), 50);
+      this.closeYmmeWizard();
     }
+  }
 
-    // Smart Input Handling: If input starts with Year + Space (e.g. "2011 Ford"), try to auto-parse
+  onWizardFilterInput(value: string): void {
+    this.searchInput.set(value);
+    this.searchSubject.next(value);
+    this.resetWizardListLimit();
+    if (this.searchStep() === 'Year' && value.trim()) {
+      this.yearPickerMode.set('year');
+    }
     if (this.searchStep() === 'Year' && /^\d{4}\s+/.test(value)) {
       this.processFullVehicleString(value);
     }
+  }
+
+  openYmmeWizard(): void {
+    if (this.isVin()) return;
+    this.errorMessage.set(null);
+    this.wizardSlideBack.set(false);
+    this.resetWizardListLimit();
+    this.searchInput.set('');
+    this.searchTerm.set('');
+    this.searchSubject.next('');
+    this.yearPickerMode.set(this.selectedYear() ? 'year' : 'decade');
+    this.selectedDecade.set(null);
+    this.wizardPhase.set(this.hasCompleteYmme() ? 'confirm' : 'pick');
+    this.showSuggestions.set(true);
+    if (!this.yearsLoaded()) {
+      void this.loadYears();
+    }
+    this.lockBodyScroll(true);
+    queueMicrotask(() => this.focusWizardInput());
+  }
+
+  confirmVehicleSelection(): void {
+    this.closeYmmeWizard();
+  }
+
+  async enterDemoMode(): Promise<void> {
+    try {
+      this.isLoading.set(true);
+      await this.authService.signInDemoMode();
+      if (typeof window !== 'undefined') {
+        window.location.reload();
+      }
+    } catch (err) {
+      this.logger.error('Failed to enter demo mode', err);
+      this.errorMessage.set('Failed to sign in to Demo Mode. Please try again.');
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  expandWizardList(event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
+    const total = this.wizardListSuggestions().length;
+    this.wizardListLimit.set(total);
+  }
+
+  /** Stable @for track — display alone collides when names repeat in Motor data. */
+  trackSuggestion(s: Suggestion): string {
+    switch (s.type) {
+      case 'Decade':
+        return `decade-${s.value}`;
+      case 'Year':
+        return `year-${s.value}`;
+      case 'Make':
+        return `make-${(s.value as Make).makeId}`;
+      case 'Model':
+        return `model-${(s.value as Model).id}`;
+      case 'Engine':
+        return `engine-${(s.value as { vehicleId: string }).vehicleId}`;
+    }
+  }
+
+  private resetWizardListLimit(): void {
+    this.wizardListLimit.set(this.WIZARD_CHUNK);
+  }
+
+  editYmmeStep(step: 'Year' | 'Make' | 'Model' | 'Engine'): void {
+    this.wizardPhase.set('pick');
+    this.wizardSlideBack.set(false);
+    this.resetWizardListLimit();
+    this.searchInput.set('');
+    this.searchTerm.set('');
+    this.selectedSuggestionIndex.set(-1);
+
+    if (step === 'Year') {
+      this.clearYmmeFrom('Year');
+      this.yearPickerMode.set('decade');
+      this.selectedDecade.set(null);
+    } else if (step === 'Make') {
+      this.clearYmmeFrom('Make');
+    } else if (step === 'Model') {
+      this.clearYmmeFrom('Model');
+    } else {
+      this.selectedVehicle.set(null);
+    }
+    queueMicrotask(() => this.focusWizardInput());
+  }
+
+  private focusWizardInput(): void {
+    if (this.wizardPhase() === 'confirm') return;
+    this.ymmePickerRef?.nativeElement?.querySelector<HTMLInputElement>('.ymme-wizard-filter-input')?.focus();
+  }
+
+  private clearYmmeFrom(step: 'Year' | 'Make' | 'Model'): void {
+    this.selectedVehicle.set(null);
+    if (step === 'Year') {
+      this.selectedYear.set(null);
+      this.selectedMake.set(null);
+      this.selectedModel.set(null);
+      this.makes.set([]);
+      this.models.set([]);
+      this.engines.set([]);
+      this.currentContentSource.set('MOTOR');
+      return;
+    }
+    if (step === 'Make') {
+      this.selectedMake.set(null);
+      this.selectedModel.set(null);
+      this.models.set([]);
+      this.engines.set([]);
+      this.currentContentSource.set('MOTOR');
+      return;
+    }
+    this.selectedModel.set(null);
+    this.engines.set([]);
+  }
+
+  closeYmmeWizard(): void {
+    this.showSuggestions.set(false);
+    this.selectedSuggestionIndex.set(-1);
+    this.wizardPhase.set('pick');
+    this.resetWizardListLimit();
+    this.lockBodyScroll(false);
+  }
+
+  private lockBodyScroll(_lock: boolean): void {
+    /* scroll lock handled globally via body.focus-depth-active */
+  }
+
+  private ensureWizardOpen(): void {
+    this.showSuggestions.set(true);
+    this.lockBodyScroll(true);
   }
 
   private async processFullVehicleString(fullString: string) {
@@ -364,7 +621,7 @@ export class HomeComponent implements OnInit {
       if (!remainingAfterYear) {
         this.searchInput.set('');
         this.searchSubject.next(''); // Clear subject to prevent race condition
-        this.showSuggestions.set(true); // Show all makes
+        this.ensureWizardOpen();
         return;
       }
 
@@ -389,7 +646,7 @@ export class HomeComponent implements OnInit {
         if (!remainingAfterMake) {
           this.searchInput.set('');
           this.searchSubject.next('');
-          this.showSuggestions.set(true); // Show all models
+          this.ensureWizardOpen();
           return;
         }
 
@@ -403,7 +660,7 @@ export class HomeComponent implements OnInit {
           if (mapped) {
             this.searchInput.set('');
             this.searchSubject.next('');
-            this.showSuggestions.set(true);
+            this.ensureWizardOpen();
             return;
           }
           this.searchInput.set('');
@@ -413,14 +670,14 @@ export class HomeComponent implements OnInit {
           // Make selected, passed string is likely a partial search term for model
           this.searchInput.set(remainingAfterMake);
           this.searchTerm.set(remainingAfterMake); // Trigger filter
-          this.showSuggestions.set(true);
+          this.ensureWizardOpen();
         }
 
       } else {
         // Year selected, passed string is likely a search term for Make
         this.searchInput.set(remainingAfterYear);
         this.searchTerm.set(remainingAfterYear);
-        this.showSuggestions.set(true);
+        this.ensureWizardOpen();
       }
 
     } catch (e) {
@@ -431,49 +688,46 @@ export class HomeComponent implements OnInit {
     }
   }
 
-  onSearchFocus(): void {
-    if (this.selectedVehicle()) return;
-    this.errorMessage.set(null);
-    this.ignoreNextDocumentClick = true; // Same click that focused will bubble to document - don't close
-    this.showSuggestions.set(true);
-    setTimeout(() => {
-      this.updateViewportHeight();
-      this.calculateDropdownPosition();
-    }, 50);
-  }
+  ymmePickerBack(): void {
+    this.wizardSlideBack.set(true);
+    this.resetWizardListLimit();
+    this.searchInput.set('');
+    this.searchTerm.set('');
 
-  private calculateDropdownPosition(): void {
-    if (typeof window === 'undefined') return;
+    if (this.wizardPhase() === 'confirm') {
+      this.wizardPhase.set('pick');
+      return;
+    }
 
-    const input = this.searchInputRef?.nativeElement;
-    if (!input) return;
+    if (this.searchStep() === 'Year' && this.yearPickerMode() === 'year' && this.selectedDecade() != null) {
+      this.yearPickerMode.set('decade');
+      return;
+    }
 
-    const inputRect = input.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
-    const spaceBelow = viewportHeight - inputRect.bottom;
-    const spaceAbove = inputRect.top;
-    const minSpaceNeeded = 300; // Minimum space for dropdown (adjust as needed)
-
-    // Calculate max height based on available space
-    if (spaceBelow >= minSpaceNeeded) {
-      // Enough space below, position below
-      this.dropdownPosition.set('below');
-      this.dropdownMaxHeight.set(Math.min(spaceBelow - 16, 400)); // 16px for margin
-    } else if (spaceAbove >= minSpaceNeeded) {
-      // Not enough space below, but enough above, position above
-      this.dropdownPosition.set('above');
-      this.dropdownMaxHeight.set(Math.min(spaceAbove - 16, 400));
+    if (this.selectedModel()) {
+      this.clearYmmeFrom('Model');
+    } else if (this.selectedMake()) {
+      this.clearYmmeFrom('Make');
+      this.yearPickerMode.set('year');
+    } else if (this.selectedYear()) {
+      this.clearYmmeFrom('Year');
+      this.yearPickerMode.set('decade');
+      this.selectedDecade.set(null);
     } else {
-      // Limited space, use available space (prefer below)
-      this.dropdownPosition.set(spaceBelow > spaceAbove ? 'below' : 'above');
-      const availableSpace = Math.max(spaceBelow, spaceAbove) - 16;
-      this.dropdownMaxHeight.set(Math.max(availableSpace, 200)); // Minimum 200px
+      this.closeYmmeWizard();
     }
   }
 
   handleEnterKey(): void {
-    if (this.isVin() || this.selectedVehicle()) { this.submitSearch(); return; }
-    const currentSuggestions = this.suggestions();
+    if (this.wizardPhase() === 'confirm') {
+      this.confirmVehicleSelection();
+      return;
+    }
+    if (this.isVin() || (this.selectedVehicle() && !this.showSuggestions())) {
+      this.submitSearch();
+      return;
+    }
+    const currentSuggestions = this.wizardVisibleSuggestions();
     const selectedIndex = this.selectedSuggestionIndex();
 
     // If a suggestion is highlighted via keyboard, select it
@@ -492,11 +746,11 @@ export class HomeComponent implements OnInit {
   @HostListener('keydown', ['$event'])
   onKeyDown(event: KeyboardEvent): void {
     // Only handle keyboard navigation when suggestions are visible and input is focused
-    if (!this.showSuggestions() || this.selectedVehicle() || this.isVin()) {
+    if (!this.showSuggestions() || this.isVin() || this.wizardPhase() === 'confirm') {
       return;
     }
 
-    const currentSuggestions = this.suggestions();
+    const currentSuggestions = this.wizardVisibleSuggestions();
     if (currentSuggestions.length === 0) return;
 
     let newIndex = this.selectedSuggestionIndex();
@@ -516,19 +770,17 @@ export class HomeComponent implements OnInit {
         break;
       case 'Escape':
         event.preventDefault();
-        this.showSuggestions.set(false);
-        this.selectedSuggestionIndex.set(-1);
+        this.closeYmmeWizard();
         break;
     }
   }
 
   private scrollToSuggestion(index: number): void {
     // Scroll the selected suggestion into view
-    const container = this.desktopSuggestionsContainerRef?.nativeElement;
+    const container = this.ymmePickerRef?.nativeElement;
     if (!container) return;
 
-    // Find the scrollable container (might be nested)
-    const scrollContainer = container.querySelector('.overflow-y-auto') || container;
+    const scrollContainer = container.querySelector('.ymme-picker-body') || container;
     const buttons = scrollContainer.querySelectorAll('button');
     const targetButton = buttons[index];
     if (targetButton) {
@@ -537,7 +789,7 @@ export class HomeComponent implements OnInit {
   }
 
   handleSpacebar(event: Event): void {
-    const currentSuggestions = this.suggestions();
+    const currentSuggestions = this.wizardListSuggestions();
     if (currentSuggestions.length === 1 && this.searchTerm().trim() !== '') {
       event.preventDefault();
       this.selectSuggestion(new MouseEvent('mousedown'), currentSuggestions[0]);
@@ -547,11 +799,20 @@ export class HomeComponent implements OnInit {
   selectSuggestion(event: MouseEvent, suggestion: Suggestion): void {
     event.preventDefault();
     event.stopPropagation();
+    this.wizardSlideBack.set(false);
     this.searchInput.set('');
     this.searchTerm.set('');
-    this.selectedSuggestionIndex.set(-1); // Reset keyboard selection
+    this.selectedSuggestionIndex.set(-1);
+
+    this.resetWizardListLimit();
 
     switch (suggestion.type) {
+      case 'Decade':
+        this.selectedDecade.set(suggestion.value as number);
+        this.yearPickerMode.set('year');
+        this.wizardSlideBack.set(false);
+        this.resetWizardListLimit();
+        break;
       case 'Year':
         this.selectedYear.set(suggestion.value as number);
         this.isLoading.set(true);
@@ -564,13 +825,13 @@ export class HomeComponent implements OnInit {
             }
             this.isLoading.set(false);
             if (res.body && res.body.length > 0) {
-              this.showSuggestions.set(true);
+              this.ensureWizardOpen();
             }
           },
           error: () => {
             this.isLoading.set(false);
             this.errorMessage.set('Could not load makes.');
-            this.showSuggestions.set(false);
+            this.closeYmmeWizard();
           }
         });
         break;
@@ -593,14 +854,14 @@ export class HomeComponent implements OnInit {
               this.isLoading.set(false);
               // Show suggestions after models are loaded
               if (res.body.models && res.body.models.length > 0) {
-                this.showSuggestions.set(true);
+                this.ensureWizardOpen();
               }
             },
             error: (err) => {
               this.logger.error('Error loading models:', err);
               this.isLoading.set(false);
               this.errorMessage.set('Could not load models.');
-              this.showSuggestions.set(false);
+              this.closeYmmeWizard();
             }
           });
         }
@@ -610,7 +871,7 @@ export class HomeComponent implements OnInit {
         this.selectedModel.set(model);
         this.resolveMotorVehicleOptionsForModel(model).then((mapped) => {
           if (mapped) {
-            this.showSuggestions.set(true);
+            this.ensureWizardOpen();
             return;
           }
           this.resolveEnginesOrAutoSelect(model);
@@ -621,13 +882,9 @@ export class HomeComponent implements OnInit {
       case 'Engine':
         const selectedEngine = suggestion.value as { vehicleId: string; displayName: string };
         this.selectedVehicle.set(selectedEngine);
-        this.showSuggestions.set(false);
-        // Force change detection to update UI immediately
+        this.wizardPhase.set('confirm');
+        this.ensureWizardOpen();
         this.cdr.detectChanges();
-        // Auto-advance if on mobile since there is no continue button in wizard
-        if (this.isMobile()) {
-          this.submitSearch();
-        }
         break;
     }
   }
@@ -660,8 +917,9 @@ export class HomeComponent implements OnInit {
     }
     // If step === 'Engine', we just cleared selectedVehicle (done above), so we stay at Model step with engines list open.
 
-    // Show suggestions after clearing selection
-    this.showSuggestions.set(true);
+    if (this.showSuggestions()) {
+      this.wizardSlideBack.set(true);
+    }
   }
 
   clearAllSelections(): void {
@@ -673,7 +931,7 @@ export class HomeComponent implements OnInit {
     this.makes.set([]);
     this.models.set([]);
     this.errorMessage.set(null);
-    this.showSuggestions.set(false);
+    this.closeYmmeWizard();
   }
 
   submitSearch(): void {
@@ -689,6 +947,7 @@ export class HomeComponent implements OnInit {
         this.isLoading.set(false);
         // OpenAPI spec returns: { vin, vehicleId, contentSource?, year?, make?, model? }
         const { vehicleId, contentSource = 'MOTOR' } = res.body;
+        this.prefetchVehicleReferenceData(contentSource, vehicleId, this.searchTerm().toUpperCase());
         this.router.navigate(['/vehicle', contentSource, vehicleId]);
       },
       error: () => { this.isLoading.set(false); this.errorMessage.set('Could not find a vehicle with that VIN.'); }
@@ -709,10 +968,28 @@ export class HomeComponent implements OnInit {
       this.persistence.saveVehicle(persisted);
       this.persistedVehicle.set(persisted);
       this.isLoading.set(true);
+      this.prefetchVehicleReferenceData(this.currentContentSource(), vehicle.vehicleId, vehicle.displayName);
       this.router.navigate(['/vehicle', this.currentContentSource(), vehicle.vehicleId]);
     } else {
       this.errorMessage.set('Please select a complete vehicle.');
     }
+  }
+
+  /**
+   * Kick off catalog/specs/parts/maintenance sync the moment a vehicle is chosen,
+   * so the dashboard renders against warm data instead of waiting for its own
+   * effect to fire. Safe to call multiple times — DataSync guards against
+   * duplicate work per vehicle.
+   */
+  private prefetchVehicleReferenceData(contentSource: string, vehicleId: string, vehicleName: string): void {
+    void (async () => {
+      try {
+        await this.dataSync.ensureVehicleRecord(contentSource, vehicleId, vehicleName || 'Vehicle');
+        await this.dataSync.eagerSyncVehicleReferenceData(contentSource, vehicleId);
+      } catch (err) {
+        this.logger.warn('[Home] Vehicle prefetch failed (non-fatal):', err);
+      }
+    })();
   }
 
   /**
@@ -728,10 +1005,9 @@ export class HomeComponent implements OnInit {
     const engines = model.engines || [];
     if (engines.length >= 2) {
       this.engines.set(engines);
-      this.showSuggestions.set(true);
+      this.ensureWizardOpen();
       return;
     }
-    // 0 or 1 engine: resolve the vehicle now and skip the Engine step.
     const onlyEngine = engines[0];
     const vehicleId = onlyEngine?.id || model.id;
     const displayName = onlyEngine
@@ -739,10 +1015,8 @@ export class HomeComponent implements OnInit {
       : model.model;
     this.engines.set([]);
     this.selectedVehicle.set({ vehicleId, displayName });
-    this.showSuggestions.set(false);
-    if (this.isMobile()) {
-      this.submitSearch();
-    }
+    this.wizardPhase.set('confirm');
+    this.ensureWizardOpen();
   }
 
   private async resolveMotorVehicleOptionsForModel(model: Model): Promise<boolean> {
@@ -804,6 +1078,7 @@ export class HomeComponent implements OnInit {
   continueToVehicle(): void {
     const vehicle = this.persistedVehicle();
     if (vehicle) {
+      this.prefetchVehicleReferenceData(vehicle.contentSource, vehicle.vehicleId, vehicle.name);
       this.router.navigate(['/vehicle', vehicle.contentSource, vehicle.vehicleId]);
     }
   }
@@ -812,25 +1087,38 @@ export class HomeComponent implements OnInit {
     this.persistence.clearVehicle();
     this.persistedVehicle.set(null);
   }
-  onMobileSearchTrigger(): void {
-    // Unconditionally show suggestions - removed isMobile() check
-    this.showSuggestions.set(true);
-
-    // CRITICAL FIX: Force Angular to detect the change
-    // Signals should trigger change detection automatically, but seems to fail on mobile
-    this.cdr.detectChanges();
+  closeMobileWizard(): void {
+    this.ymmePickerBack();
   }
 
-  closeMobileWizard(): void {
-    // Go back one step in the selection hierarchy, or close wizard if at top level
-    if (this.selectedModel()) {
-      this.removeSelection(new MouseEvent('click'), 'Model');
-    } else if (this.selectedMake()) {
-      this.removeSelection(new MouseEvent('click'), 'Make');
-    } else if (this.selectedYear()) {
-      this.removeSelection(new MouseEvent('click'), 'Year');
-    } else {
-      this.showSuggestions.set(false);
+  private registerHomeCommands(): void {
+    const persisted = this.persistedVehicle();
+    const items: CommandPaletteItem[] = [
+      {
+        id: 'focus-search',
+        label: 'Find a vehicle',
+        group: 'Actions',
+        keywords: 'year make model search ymme',
+        run: () => this.openYmmeWizard(),
+      },
+      {
+        id: 'credits',
+        label: 'Account & credits',
+        group: 'Navigate',
+        run: () => void this.router.navigate(['/credits']),
+      },
+    ];
+
+    if (persisted?.vehicleId) {
+      items.unshift({
+        id: 'continue-vehicle',
+        label: `Continue with ${persisted.name}`,
+        group: 'Vehicle',
+        hint: persisted.vehicleId,
+        run: () => this.continueToVehicle(),
+      });
     }
+
+    this.commandPalette.setItems(items, 'Search Torque…');
   }
 }

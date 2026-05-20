@@ -41,41 +41,45 @@ const MODULE_LABELS: Record<string, string> = {
         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-accent/5 rounded-full blur-[200px]"></div>
       </div>
 
-      <div class="relative z-10 max-w-5xl xl:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10"
-        style="padding-left: calc(1rem + env(safe-area-inset-left, 0px)); padding-right: calc(1rem + env(safe-area-inset-right, 0px)); padding-top: calc(2.5rem + env(safe-area-inset-top, 0px)); padding-bottom: calc(2.5rem + env(safe-area-inset-bottom, 0px));">
+      <div class="relative z-10 max-w-5xl xl:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10"
+        style="padding-left: calc(1rem + env(safe-area-inset-left, 0px)); padding-right: calc(1rem + env(safe-area-inset-right, 0px)); padding-top: calc(1.5rem + env(safe-area-inset-top, 0px)); padding-bottom: calc(2.5rem + env(safe-area-inset-bottom, 0px));">
 
         <!-- Back Nav -->
-        <a routerLink="/" class="inline-flex items-center gap-2 text-sm text-faint hover:text-accent transition-colors mb-8 group">
+        <a routerLink="/" class="inline-flex items-center gap-2 text-sm text-faint hover:text-accent transition-colors mb-6 sm:mb-8 group">
           <lucide-icon [img]="icons.ArrowLeft" class="w-4 h-4 group-hover:-translate-x-1 transition-transform"></lucide-icon>
           Back to Home
         </a>
 
         <!-- Header -->
-        <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <p class="text-xs text-accent uppercase tracking-widest font-semibold mb-1">Account</p>
-            <h1 class="text-3xl sm:text-4xl font-bold">
-              {{ authService.user()?.email ?? 'My Account' }}
-            </h1>
-          </div>
-          <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
-            @if (authService.user(); as user) {
-              <button (click)="signOut()" class="flex items-center gap-2 px-4 py-3 min-h-[44px] rounded-xl border border-hairline hover:border-red-400/40 hover:bg-red-400/10 transition-colors text-sm text-faint hover:text-red-300 touch-manipulation">
-                <lucide-icon [img]="icons.LogOut" class="w-4 h-4"></lucide-icon>
-                Sign out
-              </button>
-              <button (click)="openBillingPortal()" [disabled]="creditsService.portalLoading()"
-                class="flex items-center gap-2 px-4 py-3 min-h-[44px] rounded-xl border border-hairline hover:border-accent/40 hover:bg-surface-soft transition-colors text-sm text-faint hover:text-ink disabled:opacity-50 touch-manipulation">
-                <lucide-icon [img]="icons.Settings" class="w-4 h-4"></lucide-icon>
-                {{ creditsService.portalLoading() ? 'Opening…' : 'Payment methods' }}
-              </button>
-              <div class="flex items-center gap-3 bg-surface-soft border border-hairline rounded-2xl px-5 py-3">
-                <lucide-icon [img]="icons.CreditCard" class="w-5 h-5 text-accent"></lucide-icon>
-                <div>
-                  <p class="text-xs text-faint">Credits</p>
-                  <p class="text-2xl font-mono font-bold text-ink">{{ creditsService.balance() }}</p>
+        <header class="flex flex-col gap-4 mb-6 sm:mb-8">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0 flex-1">
+              <p class="text-xs text-accent uppercase tracking-widest font-semibold mb-1">Account</p>
+              <h1 class="text-xl sm:text-3xl lg:text-4xl font-bold truncate" style="font-family:'Literata',serif;color:var(--ink)">
+                {{ authService.user()?.email ?? 'My Account' }}
+              </h1>
+            </div>
+            @if (authService.user()) {
+              <div class="flex items-center gap-2 bg-surface-soft border border-hairline rounded-2xl px-3 py-2 sm:px-5 sm:py-3 flex-shrink-0">
+                <lucide-icon [img]="icons.CreditCard" class="w-4 h-4 sm:w-5 sm:h-5 text-accent"></lucide-icon>
+                <div class="leading-tight">
+                  <p class="text-[10px] sm:text-xs text-faint">Credits</p>
+                  <p class="text-lg sm:text-2xl font-mono font-bold" style="color:var(--ink)">{{ creditsService.balance() }}</p>
                 </div>
               </div>
+            }
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            @if (authService.user(); as user) {
+              <button (click)="openBillingPortal()" [disabled]="creditsService.portalLoading()"
+                class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 min-h-[44px] rounded-xl border border-hairline hover:border-accent/40 hover:bg-surface-soft transition-colors text-sm text-faint hover:text-ink disabled:opacity-50 touch-manipulation">
+                <lucide-icon [img]="icons.Settings" class="w-4 h-4 flex-shrink-0"></lucide-icon>
+                <span class="truncate">{{ creditsService.portalLoading() ? 'Opening…' : 'Payment methods' }}</span>
+              </button>
+              <button (click)="signOut()" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 min-h-[44px] rounded-xl border border-hairline hover:border-accent/40 hover:bg-surface-soft transition-colors text-sm text-faint hover:text-ink touch-manipulation">
+                <lucide-icon [img]="icons.LogOut" class="w-4 h-4 flex-shrink-0"></lucide-icon>
+                Sign out
+              </button>
             } @else {
               <div class="flex items-center gap-2">
                 <button (click)="openAuthModal('signin')" class="flex items-center gap-2 px-4 py-3 min-h-[44px] rounded-xl bg-[var(--bg-hover)] border border-hairline hover:border-accent/40 text-sm text-ink font-medium touch-manipulation">
@@ -106,7 +110,7 @@ const MODULE_LABELS: Record<string, string> = {
 
         <!-- Purchase success banner -->
         @if (purchaseSuccess()) {
-        <div class="mb-6 flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-5 py-4 text-emerald-400">
+        <div class="mb-6 flex items-center gap-3 bg-[var(--status-success-bg)] border border-[color:var(--status-success)]/30 rounded-xl px-5 py-4 text-[color:var(--status-success)]">
           <lucide-icon [img]="icons.Check" class="w-5 h-5 flex-shrink-0"></lucide-icon>
           <span class="font-medium">Payment successful! Your credits have been added.</span>
         </div>
@@ -114,24 +118,25 @@ const MODULE_LABELS: Record<string, string> = {
 
         <!-- Error banner -->
         @if (creditsService.lastError(); as err) {
-        <div class="mb-6 flex items-center gap-3 bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-4 text-red-400">
+        <div class="mb-6 flex items-center gap-3 bg-[var(--danger-soft)] border border-[color:var(--danger)]/30 rounded-xl px-5 py-4 text-[color:var(--danger)]">
           <lucide-icon [img]="icons.AlertCircle" class="w-5 h-5 flex-shrink-0"></lucide-icon>
           <span class="font-medium flex-1">{{ err }}</span>
-          <button (click)="creditsService.lastError.set(null)" class="p-1.5 rounded-lg hover:bg-red-500/20 transition-colors" aria-label="Dismiss">
+          <button (click)="creditsService.lastError.set(null)" class="p-1.5 rounded-lg hover:bg-[var(--danger-soft)] transition-colors" aria-label="Dismiss">
             <lucide-icon [img]="icons.X" class="w-4 h-4"></lucide-icon>
           </button>
         </div>
         }
 
         <!-- Tabs: min 44px tap targets, scroll on narrow screens -->
-        <div class="flex gap-1 bg-surface-soft border border-hairline rounded-xl p-1.5 mb-8 overflow-x-auto -mx-1 sm:mx-0" style="-webkit-overflow-scrolling: touch;">
+        <div class="flex gap-1 bg-surface-soft border border-hairline rounded-xl p-1 sm:p-1.5 mb-6 sm:mb-8 overflow-x-auto no-scrollbar" style="-webkit-overflow-scrolling: touch;">
           @for (tab of tabs; track tab.id) {
           <button
             (click)="activeTab.set(tab.id)"
             [class.bg-surface]="activeTab() === tab.id"
-            [class.text-black]="activeTab() === tab.id"
+            [class.text-accent]="activeTab() === tab.id"
             [class.font-semibold]="activeTab() === tab.id"
-            class="flex items-center gap-2 px-4 py-3 min-h-[44px] rounded-lg text-sm whitespace-nowrap transition-all duration-200 text-faint hover:text-ink touch-manipulation">
+            [class.shadow-sm]="activeTab() === tab.id"
+            class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 min-h-[44px] rounded-lg text-sm whitespace-nowrap transition-all duration-200 text-faint hover:text-ink touch-manipulation">
             <lucide-icon [img]="tab.icon" class="w-4 h-4 flex-shrink-0"></lucide-icon>
             {{ tab.label }}
           </button>
@@ -147,34 +152,34 @@ const MODULE_LABELS: Record<string, string> = {
             <div class="bg-surface-soft border border-hairline rounded-xl p-4 sm:p-5">
               <p class="text-xs text-faint mb-1">Balance</p>
               <p class="text-2xl font-mono font-bold text-accent">{{ creditsService.balance() }}</p>
-              <p class="text-xs text-gray-600 mt-1">credits</p>
+              <p class="text-xs text-faint mt-1">credits</p>
             </div>
             <div class="bg-surface-soft border border-hairline rounded-xl p-4 sm:p-5">
               <p class="text-xs text-faint mb-1">Vehicles</p>
               <p class="text-2xl font-mono font-bold">{{ unlockedVehicleCount() }}</p>
-              <p class="text-xs text-gray-600 mt-1">unlocked</p>
+              <p class="text-xs text-faint mt-1">unlocked</p>
             </div>
             <div class="bg-surface-soft border border-hairline rounded-xl p-4 sm:p-5">
               <p class="text-xs text-faint mb-1">Purchases</p>
               <p class="text-2xl font-mono font-bold">{{ purchaseCount() }}</p>
-              <p class="text-xs text-gray-600 mt-1">transactions</p>
+              <p class="text-xs text-faint mt-1">transactions</p>
             </div>
             <div class="bg-surface-soft border border-hairline rounded-xl p-4 sm:p-5">
               <p class="text-xs text-faint mb-1">Total Spent</p>
               <p class="text-2xl font-mono font-bold">\${{ totalSpent() }}</p>
-              <p class="text-xs text-gray-600 mt-1">lifetime</p>
+              <p class="text-xs text-faint mt-1">lifetime</p>
             </div>
           </div>
 
           <!-- Quick buy: responsive grid, touch-friendly buttons -->
           <div class="bg-surface-soft border border-hairline rounded-xl p-4 sm:p-6">
-            <h2 class="font-semibold text-gray-300 mb-4">Top Up Credits</h2>
+            <h2 class="font-semibold text-muted mb-4">Top Up Credits</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               @for (pack of creditPacks; track pack.credits) {
               <button
                 (click)="purchase(pack.credits)"
                 [disabled]="creditsService.isLoading()"
-                class="group relative overflow-hidden bg-surface-soft hover:bg-[var(--bg-hover)] border border-hairline hover:border-accent/40 rounded-xl p-5 min-h-[100px] transition-all duration-200 text-left touch-manipulation disabled:opacity-50">
+                class="group relative overflow-hidden bg-[var(--surface)] hover:bg-[var(--bg-hover)] border border-hairline hover:border-accent/40 rounded-xl p-5 min-h-[100px] transition-all duration-200 text-left touch-manipulation disabled:opacity-50">
                 <p class="text-sm text-faint mb-1">{{ pack.label }}</p>
                 <p class="text-xl font-mono font-bold text-accent">{{ pack.credits | number }}</p>
                 <p class="text-xs text-faint mt-1">\${{ pack.price }}</p>
@@ -190,7 +195,7 @@ const MODULE_LABELS: Record<string, string> = {
               <h3 class="text-xs font-semibold text-faint uppercase tracking-wider mb-3">Credit Usage</h3>
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 @for (item of costItems; track item.label) {
-                <div class="text-center py-2 rounded-lg bg-surface-soft">
+                <div class="text-center py-2 rounded-lg bg-[var(--surface)] border border-hairline">
                   <p class="text-sm font-mono font-bold text-accent">{{ item.cost }} CR</p>
                   <p class="text-[10px] text-faint mt-0.5">{{ item.label }}</p>
                 </div>
@@ -203,14 +208,14 @@ const MODULE_LABELS: Record<string, string> = {
           @if (creditsService.transactions().length > 0) {
           <div class="bg-surface-soft border border-hairline rounded-xl p-6">
             <div class="flex items-center justify-between mb-4">
-              <h2 class="font-semibold text-gray-300">Recent Activity</h2>
+              <h2 class="font-semibold text-muted">Recent Activity</h2>
               <button (click)="activeTab.set('receipts')" class="text-xs text-accent hover:underline">View All</button>
             </div>
             <div class="space-y-3">
               @for (txn of recentTransactions(); track txn.id) {
               <div class="flex items-center justify-between py-2 border-b border-hairline-soft last:border-0">
                 <div class="flex items-center gap-3">
-                  <div [class]="txn.amount > 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-orange-500/10 text-orange-400'"
+                  <div [class]="txn.amount > 0 ? 'bg-[var(--status-success-bg)] text-[color:var(--status-success)]' : 'bg-[var(--status-warning-bg)] text-[color:var(--status-warning)]'"
                     class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold">
                     {{ txn.amount > 0 ? '+' : '−' }}
                   </div>
@@ -219,7 +224,7 @@ const MODULE_LABELS: Record<string, string> = {
                     <p class="text-xs text-faint">{{ txn.created_at | date:'MMM d, y' }}</p>
                   </div>
                 </div>
-                <span [class]="txn.amount > 0 ? 'text-emerald-400' : 'text-orange-400'" class="font-mono text-sm font-semibold">
+                <span [class]="txn.amount > 0 ? 'text-[color:var(--status-success)]' : 'text-[color:var(--status-warning)]'" class="font-mono text-sm font-semibold">
                   {{ txn.amount > 0 ? '+' : '' }}{{ txn.amount }} CR
                 </span>
               </div>
@@ -303,13 +308,13 @@ const MODULE_LABELS: Record<string, string> = {
                   <p class="font-medium text-ink">{{ txnLabel(txn) }}</p>
                   <p class="text-xs text-faint mt-1">{{ txn.created_at | date:'MMM d, y' }}</p>
                 </div>
-                <span [class.text-emerald-400]="txn.amount > 0" [class.text-orange-400]="txn.amount < 0"
+                <span [class.text-[color:var(--status-success)]]="txn.amount > 0" [class.text-[color:var(--status-warning)]]="txn.amount < 0"
                   class="font-mono font-semibold text-sm flex-shrink-0">
                   {{ txn.amount > 0 ? '+' : '' }}{{ txn.amount }} CR
                 </span>
               </div>
               <div class="flex items-center gap-2 mt-2">
-                <span [class]="txn.type === 'purchase' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-orange-500/20 text-orange-400'"
+                <span [class]="txn.type === 'purchase' ? 'bg-[var(--status-success-bg)] text-[color:var(--status-success)]' : 'bg-[var(--status-warning-bg)] text-[color:var(--status-warning)]'"
                   class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded">
                   {{ txn.type === 'purchase' ? 'Purchase' : 'Usage' }}
                 </span>
@@ -337,19 +342,19 @@ const MODULE_LABELS: Record<string, string> = {
                 <tr class="border-b border-hairline-soft last:border-0 hover:bg-surface-soft transition-colors">
                   <td class="px-5 py-4 text-faint whitespace-nowrap">{{ txn.created_at | date:'MMM d, y' }}</td>
                   <td class="px-5 py-4">
-                    <span [class]="txn.type === 'purchase' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-orange-500/20 text-orange-400'" class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded">
+                    <span [class]="txn.type === 'purchase' ? 'bg-[var(--status-success-bg)] text-[color:var(--status-success)]' : 'bg-[var(--status-warning-bg)] text-[color:var(--status-warning)]'" class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded">
                       {{ txn.type === 'purchase' ? 'Purchase' : 'Usage' }}
                     </span>
                   </td>
                   <td class="px-5 py-4">
                     <p class="font-medium text-ink">{{ txnLabel(txn) }}</p>
                     @if (txn.stripe_session_id) {
-                    <p class="text-xs text-gray-600 mt-0.5 font-mono truncate max-w-[200px]">{{ txn.stripe_session_id }}</p>
+                    <p class="text-xs text-faint mt-0.5 font-mono truncate max-w-[200px]">{{ txn.stripe_session_id }}</p>
                     }
                   </td>
                   <td class="px-5 py-4 text-right font-mono font-semibold whitespace-nowrap"
-                    [class.text-emerald-400]="txn.amount > 0"
-                    [class.text-orange-400]="txn.amount < 0">
+                    [class.text-[color:var(--status-success)]]="txn.amount > 0"
+                    [class.text-[color:var(--status-warning)]]="txn.amount < 0">
                     {{ txn.amount > 0 ? '+' : '' }}{{ txn.amount }} CR
                   </td>
                   <td class="px-5 py-4 text-right text-faint whitespace-nowrap">

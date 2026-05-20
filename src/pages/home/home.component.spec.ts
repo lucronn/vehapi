@@ -39,7 +39,7 @@ mockInject.mockImplementation((token: any) => {
 
   if (tokenName.includes('MotorApiService')) {
     return {
-      getYears: () => of({ body: [] }),
+      getYears: () => of({ body: [2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010] }),
       getMakes: () => of({ body: [] }),
       getModels: () => of({ body: { models: [] } }),
       getEngines: () => of({ body: [] }),
@@ -73,6 +73,17 @@ mockInject.mockImplementation((token: any) => {
       set: vi.fn(),
     };
   }
+  if (tokenName.includes('CommandPalette')) {
+    return {
+      setItems: vi.fn(),
+      openPalette: vi.fn(),
+      closePalette: vi.fn(),
+      togglePalette: vi.fn(),
+    };
+  }
+  if (tokenName.includes('DataSyncService')) {
+    return {};
+  }
   if (tokenName.includes('AuthService')) {
     return {
       user: () => null,
@@ -103,6 +114,7 @@ vi.mock('@angular/core', () => ({
   effect: () => {},
   ChangeDetectionStrategy: { OnPush: 0 },
   Component: () => () => {},
+  Directive: () => () => {},
   ViewChild: () => () => {},
   HostListener: () => () => {},
   OnInit: class {},
@@ -146,6 +158,15 @@ vi.mock('../../services/motor-api.service', () => ({
 
 vi.mock('../../services/vehicle-persistence.service', () => ({
   VehiclePersistenceService: class {}
+}));
+
+vi.mock('../../services/command-palette.service', () => ({
+  CommandPaletteService: class {
+    setItems = vi.fn();
+    openPalette = vi.fn();
+    closePalette = vi.fn();
+    togglePalette = vi.fn();
+  },
 }));
 
 vi.mock('../../components/logo/logo.component', () => ({

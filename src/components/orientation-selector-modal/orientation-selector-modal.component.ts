@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule, X, ChevronRight } from 'lucide-angular';
+import { FocusDepthDirective } from '../../directives/focus-depth.directive';
 
 export interface OrientationOption {
   id: string;
@@ -11,11 +12,11 @@ export interface OrientationOption {
 @Component({
   selector: 'app-orientation-selector-modal',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule, LucideAngularModule, FocusDepthDirective],
   template: `
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
-      style="background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)" (click)="onClose()">
-      <div class="glass-card max-w-2xl w-full max-h-[80vh] overflow-hidden animate-scale-in" (click)="$event.stopPropagation()">
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in orientation-modal-shell modal-backdrop-blur"
+      appFocusDepth (click)="onClose()">
+      <div class="glass-card max-w-2xl w-full max-h-[80vh] overflow-hidden animate-scale-in modal-panel-shadow" (click)="$event.stopPropagation()">
         <!-- Header -->
         <div class="px-6 py-4 flex items-center justify-between border-b border-hairline">
           <div>

@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, map, of, tap, catchError, timeout } from 'rxjs';
+import { Observable, map, of, tap, catchError, timeout, switchMap } from 'rxjs';
+import { normalizeYearList } from '../utils/year-list';
 import { OrientationOption } from '../components/orientation-selector-modal/orientation-selector-modal.component';
 import {
   ApiResponse,
@@ -204,9 +205,23 @@ export class MotorApiService {
   }
 
   getYears(): Observable<ApiResponse<number[]>> {
-    return this.dbFirst<number[]>(
-      `${this.baseUrl}/api/db/years`,
-      `${this.baseUrl}/api/years`
+    const dbUrl = `${this.baseUrl}/api/db/years`;
+    const liveUrl = `${this.baseUrl}/api/years`;
+    return this.getWithLogging<ApiResponse<number[]>>(dbUrl).pipe(
+      switchMap((res) => {
+        const body = normalizeYearList(res?.body);
+        if (body.length > 0) {
+          return of({ ...res, body });
+        }
+        return this.getWithLogging<ApiResponse<number[]>>(liveUrl).pipe(
+          map((live) => ({ ...live, body: normalizeYearList(live?.body) }))
+        );
+      }),
+      catchError(() =>
+        this.getWithLogging<ApiResponse<number[]>>(liveUrl).pipe(
+          map((live) => ({ ...live, body: normalizeYearList(live?.body) }))
+        )
+      )
     );
   }
 

@@ -46,6 +46,26 @@ export class AuthService {
         return result.user;
     }
 
+    async signInDemoMode() {
+        const email = 'demo@torque.com';
+        const password = 'DemoPassword123!';
+        try {
+            // First, try to sign in
+            const user = await this.signInWithEmail(email, password);
+            return user;
+        } catch (err: any) {
+            // If sign in fails, try to register the user
+            try {
+                const user = await this.signUpWithEmail(email, password);
+                return user;
+            } catch (signUpErr) {
+                // If sign up fails because user already exists or other error, try sign in one last time
+                const user = await this.signInWithEmail(email, password);
+                return user;
+            }
+        }
+    }
+
     async signOut() {
         await this.firebase.signOut();
     }

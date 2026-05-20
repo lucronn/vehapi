@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Last updated**: 2026-05-17 — **Calm minimalist UI theme complete:** Literata + Figtree + IBM Plex Mono app-wide; terracotta accent tokens only (no legacy `torque-cyan` / cyan); dashboard, credits, article viewer, and sections migrated to paper/ink semantic classes. **Prior:** **Calm minimalist UI redesign (in progress on branch):** paper/ink/terracotta design tokens (`src/styles.css`, `tailwind.config.js`), Fraunces + Geist fonts, light-first theme default, ambient particle backdrop (`app-ambient-background`), home + vehicle browse restyle, Browse All flattened bucket grid with preview/+N more, category-tree removed (duplicated Browse All). **Prior:** **Ingest progress dashboard:** `cd vehapiproxi && npm run ingest:dashboard` → local UI at **127.0.0.1:3847** (aggregates `data/raw/MOTOR/*/ingest_tracker.json`). Also: **`worker:ingest-loop`** + Motor auth polling (**`/auth/status`**); maintenance **21000** dedupe in **`insertParsedData`**; **`verify:ingest-golden`**.
+**Last updated**: 2026-05-20 — **Grounded AI DIY Chatbot & Stepper Integration complete:** Streaming SSE chat grounded in direct vehicle specs/DTCs/procedures, with dynamic markdown steps parsing and fullscreen interactive tutorial stepper overlay. **Prior:** **Calm minimalist UI theme complete:** Literata + Figtree + IBM Plex Mono app-wide; terracotta accent tokens only (no legacy `torque-cyan` / cyan); dashboard, credits, article viewer, and sections migrated to paper/ink semantic classes. **Prior:** **Calm minimalist UI redesign (in progress on branch):** paper/ink/terracotta design tokens (`src/styles.css`, `tailwind.config.js`), Fraunces + Geist fonts, light-first theme default, ambient particle backdrop (`app-ambient-background`), home + vehicle browse restyle, Browse All flattened bucket grid with preview/+N more, category-tree removed (duplicated Browse All). **Prior:** **Ingest progress dashboard:** `cd vehapiproxi && npm run ingest:dashboard` → local UI at **127.0.0.1:3847** (aggregates `data/raw/MOTOR/*/ingest_tracker.json`). Also: **`worker:ingest-loop`** + Motor auth polling (**`/auth/status`**); maintenance **21000** dedupe in **`insertParsedData`**; **`verify:ingest-golden`**.
 
 **2026-04-22 — Agent wrap-up snapshot:** The wrap-up is 100% complete from an agent perspective. All actionable tasks have been completed. Remaining items (database schema migrations for future fields, and remaining Motor proxy aux/auth calls) are blocked pending human operator execution. (YMME seed and metadata path cleanup completed 2026-04-22). **Browser Motor session redirect:** `GET /api/redirect?token=…` (env `MOTOR_BROWSER_REDIRECT_SECRET`) → `302` to EBSCO login URL so the browser receives `sites.motor.com` cookies; same chain as `authenticate()`. **Prior:** **Agent debug sweep:** normalization + frontend risks logged under **Bugs** (worker catalog/evidence/concurrency, Common Issues double-POST + cache writes, Motor fallback on Supabase/`vehicles` errors, article body priority). Prior milestone summary: 2026-03-27 **Final wrap-up ALL 6 PHASES shipped** (plan: `docs/plans/2026-03-26-final-wrap-up.md`). 16/16 tasks complete. **Phase 1 (Security):** B1 RLS read-only, B2 EBSCO env vars, B3 Eruda opt-in. **Phase 2 (Motor kill switch):** A1 YMME staleness TTL + seed, A2 Supabase catalog browse, A3 article viewer no Motor for normalized, A4 make-ID from cache. **Phase 3 (Proxy):** A5 canary observability, A6 dead code removal. **Phase 4 (UX/DX):** D1 404 page, D2 SEO + OG + dynamic titles, B4 global ErrorHandler, D3 LoggerService for console noise. **Phase 5 (Testing):** C1 Vitest wired, C2 all 15 specs migrated (134/141 pass). **Phase 6 (Audit):** B5 security audit (`documentation/SECURITY_AUDIT.md`), CORS tightened, headers added, secrets sanitized. **Remaining Motor calls for normalized vehicles:** `getMotorVehicles` (non-MOTOR source), `getArticleOrientations`, `getMotorInformationBaseVehicle` (aux), `getAuthStatus` (session). **Ops (done):** RLS migration applied to Supabase (2026-03-26); `EBSCO_USER`/`EBSCO_PASSWORD` confirmed set on Vercel. **Ops (remaining):** run `cd vehapiproxi && npm run seed:ymme`; rotate secrets per `documentation/SECURITY_AUDIT.md`.
 
@@ -11,6 +11,7 @@
 | Area | Status |
 |------|--------|
 | **Phase out motor.com** | **Highest priority** — end state: no runtime dependency on live Motor for normal flows; data served from Supabase (ingest continues until parity). Contract: **`documentation/DATA_SOURCE_AND_NORMALIZATION.md`**. See **What's Left to Do**. |
+| Grounded AI DIY Chatbot & Stepper Integration | **Complete** — streaming SSE chatbot utilizing `/api/ai/vehicle/:vehicleId/tutorial` grounded directly in specs, DTCs, TSBs, and procedures, with client-side markdown steps extraction and interactive fullscreen `<app-tutorial-stepper>` modal |
 | Stripe Integration (Checkout, Portal, Webhooks) | Complete |
 | Credits Service (Balance, Unlocks, Transactions) | Complete |
 | Section-Level Content Locking | Complete |
@@ -30,6 +31,13 @@
 - **Worker assumption:** L1 tables + RLS follow `supabase_schema.sql`; thread writes from existing parse outputs before expanding ingest sources.
 
 ## Implementation Checklist
+
+### Grounded AI DIY Chatbot & Stepper
+- [x] Streamed SSE chat connection (`DiyChatService` in `src/services/diy-chat.service.ts`) utilizing fetch and custom ReadableStream decoder to safely support Bearer Token header authentication.
+- [x] Client-side Markdown procedure parser to structure dynamic AI replies (numbered lists and heading formats) into a standard `TutorialStep[]` schema.
+- [x] Standalone component `DiyChatSectionComponent` wrapping the chat logs, user queries, suggestions chips, typing skeletons, and error matrices.
+- [x] Responsive layout with sub-navigation matrix: toggle between Direct Chatbot interface and raw Vector Search (`L2SearchPanelComponent`).
+- [x] Fullscreen Interactive DIY Stepper overlay: dynamically load parsed steps into the premium `<app-tutorial-stepper>` component for hands-on diagnostics.
 
 ### Stripe & Credits
 - [x] Stripe Checkout flow (backend + frontend)
@@ -62,6 +70,9 @@
 - [x] Removed redundant sign-in prompt from credits dashboard (header already has auth)
 - [x] Consolidated credits tabs: merged Buy into Overview
 - [x] Vehicle dashboard: mobile nav as bottom sheet, Home/Account in header, dynamic bottom tabs
+- [x] Global command palette (⌘K): sections, navigate, vehicle search focus
+- [x] Workshop shell: sticky command bar (desktop), floating dock (mobile), hub overview
+- [x] Article focus reader: reading progress bar + distraction-free focus mode
 - [x] Navigation tree: shared CategoryTreeComponent in sidebar (desktop) and mobile menu; article catalog visible before purchase
 - [x] Fixed vehicle selection dropdown: no more flash/second-click (ignoreNextDocumentClick, keep open during Year load)
 - [x] Desktop: Home link in sidebar header, modals use design tokens, Escape to close
@@ -69,6 +80,9 @@
 
 ## Bugs & Known Issues
 
+- **Shipped 2026-05-20** — **Grounded AI DIY Chatbot & Stepper:** Complete interactive AI diagnostics chatbot grounded directly in the vehicle database (DTCs, TSBs, specs, procedures) using streamed Server-Sent Events (SSE). Seamlessly parses markdown steps to load into the premium `<app-tutorial-stepper>` overlay modal, allowing full step-by-step interactive navigation of generated procedures.
+- **Fixed 2026-05-20** — **Angular CLI font inlining build failure:** Disabled font inlining optimization (`"fonts": { "inline": false }`) in `angular.json` production configurations to avoid network errors (`getaddrinfo ENOTFOUND fonts.googleapis.com`) during production builds in sandboxed/offline environments.
+- **Shipped 2026-05-17** — **Major UX (workshop shell):** global **⌘K command palette** (`CommandPaletteService`, `app-command-palette`); vehicle dashboard **workshop command bar** (desktop) + **floating dock** (mobile, replaces bottom tabs); overview **workshop hub** with palette CTA; article viewer **focus mode** + top **reading progress** bar.
 - **Shipped 2026-05-17** — **Calm minimalist theme (full app):** **Literata** (display) + **Figtree** (UI) + **IBM Plex Mono** (metadata); paper/ink/terracotta tokens; removed all `torque-cyan` / cyan / gunmetal styling; dashboard chrome, credits, article viewer, tutorial, and section components use semantic `accent`, `hairline`, `surface` classes.
 - **Shipped 2026-05-17** — **Calm minimalist redesign:** new design tokens, light-default theme, ambient backdrop, home/catalog restyle, Browse All flat bucket cards; removed redundant `CategoryTreeComponent` / `CategoryTreeService`.
 
