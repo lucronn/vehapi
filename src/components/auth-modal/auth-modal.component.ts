@@ -131,8 +131,8 @@ type AuthMode = 'signin' | 'signup' | 'reset';
       to { opacity: 1; }
     }
     .modal-panel {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
+      background: #1E1812;
+      border: 1px solid hsl(30, 12%, 22%);
       border-radius: var(--radius-lg);
       padding: 1.25rem;
       width: 100%;
@@ -141,6 +141,7 @@ type AuthMode = 'signin' | 'signup' | 'reset';
       animation: modalIn 0.25s ease;
       max-height: calc(100dvh - 2rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
       overflow: auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.4);
     }
     @keyframes modalIn {
       from { opacity: 0; transform: scale(0.95) translateY(-8px); }

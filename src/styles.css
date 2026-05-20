@@ -1055,9 +1055,9 @@
 
   /* ---- Modal Utilities ---- */
   .modal-backdrop-blur {
-    background: color-mix(in srgb, var(--ink) 40%, transparent) !important;
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
+    background: rgba(0, 0, 0, 0.72) !important;
+    backdrop-filter: blur(6px) !important;
+    -webkit-backdrop-filter: blur(6px) !important;
   }
 
   .modal-panel-shadow {
