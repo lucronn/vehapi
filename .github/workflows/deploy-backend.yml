@@ -1,13 +1,11 @@
-name: Deploy Backend (vehapiproxi)
+name: Deploy Backend (Cloud Run)
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - 'vehapiproxi/**'
-      - 'api/**'
-      - 'vercel.json'
+      - '.github/workflows/deploy-backend.yml'
   workflow_dispatch:
 
 permissions:
@@ -15,46 +13,38 @@ permissions:
   id-token: write
 
 env:
+  PROJECT_ID: vehapi-torque
+  REGION: us-central1
+  SERVICE: motorapiauthproxy
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-      - name: Install dependencies
-        run: npm ci
-      - name: Production readiness gate
-        run: npm run verify:prod-readiness
-      - name: Upload dist
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: dist/
 
-  deploy-backend:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Download dist
-        uses: actions/download-artifact@v4
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          name: dist
-          path: dist
-      - name: Deploy backend (vehapiproxi) to Vercel
-        uses: amondnet/vercel-action@v20
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: prj_b4OTKYmhaSuJKAIhZ1O49erFEVgI
-          vercel-args: '--prod'
-          working-directory: ./
-        env:
-          VERCEL_FORCE_NO_BUILD: 1
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud functions deploy ${{ env.SERVICE }} \
+            --project=${{ env.PROJECT_ID }} \
+            --region=${{ env.REGION }} \
+            --gen2 \
+            --runtime=nodejs22 \
+            --source=vehapiproxi \
+            --entry-point=app \
+            --trigger-http \
+            --allow-unauthenticated \
+            --memory=512Mi \
+            --timeout=120s \
+            --min-instances=0 \
+            --max-instances=20 \
+            --set-env-vars="NODE_ENV=production,GOOGLE_CLOUD_RUN=1,GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }}"
