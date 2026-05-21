@@ -239,7 +239,23 @@ router.get('/normalization', async (req, res) => {
             `SELECT external_id, is_normalized FROM vehicles WHERE external_id = ANY($1)`,
             [ids]
         );
-        const normalized = rows.some(r => !!r.is_normalized);
+        let normalized = rows.some(r => !!r.is_normalized);
+        
+        if (!normalized) {
+            const { rows: artRows } = await dbQuery(
+                `SELECT 1 FROM articles WHERE vehicle_id = ANY($1) LIMIT 1`,
+                [ids]
+            );
+            if (artRows.length > 0) {
+                normalized = true;
+                // Proactively mark it as normalized in the vehicles table in the background
+                dbQuery(
+                    `UPDATE vehicles SET is_normalized = true, updated_at = NOW() WHERE external_id = ANY($1)`,
+                    [ids]
+                ).catch(err => logger.warn('[db/normalization] Proactive update failed:', err.message));
+            }
+        }
+
         res.json({
             header: { status: 'OK', statusCode: 200, dataSource: 'cloudsql' },
             body: { vehicleId, normalized, vehicleIds: rows.map(r => r.external_id) },

@@ -222,8 +222,8 @@ export async function resolveAssociatedVehicleIds(vehicleId) {
              FROM vehicles 
              WHERE external_id = $1 
                 OR external_id = $2
-                OR right(external_id, length($1) + 1) = ':' || $1
-                OR right(lower(external_id), length($1) + 3) = '%3a' || $1`,
+                OR external_id LIKE '%:' || $1
+                OR lower(external_id) LIKE '%%3a' || $1`,
             [vehicleId, encoded]
         );
         for (const r of vRows) ids.add(r.external_id);
@@ -233,20 +233,26 @@ export async function resolveAssociatedVehicleIds(vehicleId) {
         //    This bridges the gap: articles use Motor composite IDs, vehicles use year:Make:Model.
         const isNumeric = /^\d+$/.test(vehicleId);
         const isComposite = /^\d+:\d+$/.test(vehicleId);
-        if (isNumeric || isComposite) {
+        if (isComposite) {
             // encoded form is what's stored in articles.vehicle_id
             ids.add(encoded);
-            // Also search for any article whose vehicle_id ends with %3A<vehicleId>
-            // e.g. vehicleId=15305 matches article vehicle_id=124019%3A15305
+            const { rows: aRows } = await dbQuery(
+                `SELECT DISTINCT vehicle_id
+                 FROM articles
+                 WHERE vehicle_id = $1
+                    OR vehicle_id = $2`,
+                [encoded, vehicleId]
+            );
+            for (const r of aRows) ids.add(r.vehicle_id);
+        } else if (isNumeric) {
+            ids.add(encoded);
             const { rows: aRows } = await dbQuery(
                 `SELECT DISTINCT vehicle_id
                  FROM articles
                  WHERE vehicle_id = $1
                     OR vehicle_id = $2
-                    OR right(vehicle_id, length($2) + 3) = '%3A' || $2
-                    OR right(vehicle_id, length($2) + 3) = '%3a' || $2
-                 LIMIT 100`,
-                [encoded, vehicleId]
+                    OR vehicle_id LIKE $3`,
+                [encoded, vehicleId, vehicleId + '%']
             );
             for (const r of aRows) ids.add(r.vehicle_id);
         }

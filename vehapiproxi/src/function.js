@@ -28,6 +28,8 @@ import {
     getVehicleIsNormalized
 } from './db.service.js';
 import jwt from 'jsonwebtoken';
+import { dbQuery } from './db.js';
+import { resolveAssociatedVehicleIds } from './db.service.js';
 import admin from 'firebase-admin';
 import { registerHealthEndpoint } from './routes/health.js';
 import { registerAuthEndpoints } from './routes/auth.js';
@@ -851,6 +853,120 @@ registerIngestEndpoint(app, secureAuthMiddleware, logger);
 
 // Fluids: optional direct `api.motor.com` RecommendedFluids when MOTOR_INFORMATION_* env + baseVehicleId + engineId query params
 registerMotorInformationFluidsIntercept(app, logger);
+
+// Dynamic vehicle name resolution endpoint
+app.get('/api/source/:contentSource/:vehicleId/name', async (req, res) => {
+    const { contentSource, vehicleId } = req.params;
+    if (!vehicleId) {
+        return res.json({ header: { status: 'OK', statusCode: 200 }, body: 'Unknown Vehicle' });
+    }
+    
+    try {
+        const decodedId = decodeURIComponent(vehicleId).trim();
+        
+        // 1. URL Parse for standard Year:Make:Model format
+        const parts = decodedId.split(':');
+        if (parts.length >= 3 && /^\d{4}$/.test(parts[0])) {
+            const formatted = parts.map(p => p.trim()).join(' ');
+            return res.json({
+                header: { status: 'OK', statusCode: 200, dataSource: 'url-parse' },
+                body: formatted
+            });
+        }
+        
+        // 2. Query vehicles table for associated ID mapping
+        const resolvedIds = await resolveAssociatedVehicleIds(decodedId);
+        if (resolvedIds && resolvedIds.length > 0) {
+            const { rows } = await dbQuery(
+                `SELECT year, make, model 
+                 FROM vehicles 
+                 WHERE external_id = ANY($1) 
+                   AND year IS NOT NULL 
+                 LIMIT 1`,
+                [resolvedIds]
+            );
+            if (rows.length > 0 && rows[0].year && rows[0].make) {
+                const formatted = `${rows[0].year} ${rows[0].make} ${rows[0].model || ''}`.trim();
+                return res.json({
+                    header: { status: 'OK', statusCode: 200, dataSource: 'cloudsql' },
+                    body: formatted
+                });
+            }
+        }
+        
+        // 3. Fallback to vehicle_metadata using the base ID
+        let baseId = decodedId;
+        if (decodedId.includes(':')) {
+            baseId = decodedId.split(':')[0];
+        }
+        
+        if (/^\d+$/.test(baseId)) {
+            const { rows: metaRows } = await dbQuery(
+                `SELECT path, data 
+                 FROM vehicle_metadata 
+                 WHERE data::text LIKE $1 
+                 LIMIT 5`,
+                [`%"id": "${baseId}"%`]
+            );
+            
+            for (const row of metaRows) {
+                const pathParts = row.path.split('/');
+                let year = '';
+                let make = '';
+                const yrIdx = pathParts.indexOf('year');
+                if (yrIdx !== -1 && pathParts[yrIdx + 1]) {
+                    year = pathParts[yrIdx + 1];
+                }
+                const mkIdx = pathParts.indexOf('make');
+                if (mkIdx !== -1 && pathParts[mkIdx + 1]) {
+                    make = decodeURIComponent(pathParts[mkIdx + 1]);
+                }
+                
+                const models = row.data?.body?.models || row.data?.body || [];
+                for (const m of models) {
+                    if (String(m.id || m.baseVehicleId) === baseId) {
+                        let modelName = m.model || m.modelName || '';
+                        let engineDetails = '';
+                        
+                        if (decodedId.includes(':')) {
+                            const engineId = decodedId.split(':')[1];
+                            const engines = m.engines || [];
+                            const matchedEngine = engines.find(e => String(e.id || e.engineId).includes(engineId));
+                            if (matchedEngine) {
+                                engineDetails = matchedEngine.name || matchedEngine.description || '';
+                            }
+                        }
+                        
+                        let fullName = `${year} ${make} ${modelName}`.trim();
+                        if (engineDetails) {
+                            const engMatch = engineDetails.match(/^\d+\.\d+L\s+\w+\d*/i);
+                            const engStr = engMatch ? engMatch[0] : engineDetails;
+                            fullName += ` (${engStr})`;
+                        }
+                        
+                        return res.json({
+                            header: { status: 'OK', statusCode: 200, dataSource: 'metadata-parse' },
+                            body: fullName
+                        });
+                    }
+                }
+            }
+        }
+        
+        // 4. Default Unknown
+        logger.info(`Name not found in DB cache for ${decodedId}. Falling back to Unknown Vehicle.`);
+        return res.json({
+            header: { status: 'OK', statusCode: 200, dataSource: 'fallback' },
+            body: 'Unknown Vehicle'
+        });
+    } catch (err) {
+        logger.error(`Error resolving vehicle name for ${vehicleId}:`, err);
+        return res.json({
+            header: { status: 'ERROR', statusCode: 500 },
+            body: 'Unknown Vehicle'
+        });
+    }
+});
 
 // Canary: log when Motor catch-all is used for paths that should be Cloud SQL-backed.
 app.use('/', (req, res, next) => {
