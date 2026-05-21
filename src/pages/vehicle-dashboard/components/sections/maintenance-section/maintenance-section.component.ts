@@ -5,7 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 import { lastValueFrom } from 'rxjs';
 import { VehicleDataService } from '../../../../../services/vehicle-data.service';
 import { MotorApiService } from '../../../../../services/motor-api.service';
-import { SupabaseService } from '../../../../../services/supabase.service';
+import { ApiDataService } from '../../../../../services/api-data.service';
 import { MaintenanceSchedule } from '../../../../../models/motor.models';
 import { LoadingSkeletonComponent } from '../../../../../components/loading-skeleton/loading-skeleton.component';
 import { EmptyStateComponent } from '../../../../../components/empty-state/empty-state.component';
@@ -40,7 +40,7 @@ export class MaintenanceSectionComponent implements OnInit {
 
     private vehicleData = inject(VehicleDataService);
     private motorApi = inject(MotorApiService);
-    private supabase = inject(SupabaseService);
+    private api = inject(ApiDataService);
     private router = inject(Router);
     private windowManager = inject(WindowManagerService);
     protected creditsService = inject(CreditsService);
@@ -122,7 +122,7 @@ export class MaintenanceSectionComponent implements OnInit {
     }
 
     /**
-     * Resolve catalog `L:` id: Supabase `articles` → Motor search by taxonomy → full catalog scan.
+     * Resolve catalog `L:` id: DB `articles` → Motor search by taxonomy → full catalog scan.
      */
     private async resolveLaborArticleId(item: MaintenanceSchedule): Promise<{ id: string; title: string } | null> {
         const m = item.taskMetadata!;
@@ -143,16 +143,16 @@ export class MaintenanceSectionComponent implements OnInit {
             parentBucket: r.parent_bucket || undefined
         });
 
-        const { data: supRows, error: supErr } = await this.supabase.client
+        const { data: supRows, error: supErr } = await this.api
             .from('articles')
             .select('original_id,title,bucket,parent_bucket')
             .eq('vehicle_id', this.vehicleId)
-            .like('original_id', 'L:%')
+
             .limit(2000);
 
         if (!supErr && supRows?.length) {
             const picked = pickLaborArticleFromCatalog(
-                supRows.map(mapRow),
+                supRows.filter((r: any) => r.original_id?.startsWith('L:')).map(mapRow),
                 literal,
                 item.description
             );

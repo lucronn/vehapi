@@ -1,5 +1,5 @@
 vi.mock('../utils/motor-api.constants', () => ({
-    getMotorProxyBaseUrl: () => 'https://vehapiproxi.vercel.app'
+    getMotorProxyBaseUrl: () => 'https://vehapiproxi.web.app'
 }));
 
 vi.mock('@angular/core', () => ({

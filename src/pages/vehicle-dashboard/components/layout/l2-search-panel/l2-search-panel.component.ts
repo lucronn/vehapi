@@ -62,7 +62,7 @@ export class L2SearchPanelComponent {
           } else if (code === 'L2_EMBEDDING_DIM_MISMATCH') {
             friendly = `${msg} The DB RPC uses vector(1024); set L2_EMBEDDING_DIMS to match your embedding model or adjust the migration.`;
           } else if (code === 'L2_RPC_OR_SCHEMA') {
-            friendly = `${msg} Apply documentation/migrations/20260321_match_content_chunks_rpc.sql and L2 content_chunk pgvector migration in Supabase.`;
+            friendly = `${msg} Apply documentation/migrations/20260321_match_content_chunks_rpc.sql and L2 content_chunk pgvector migration in the database.`;
           }
           this.error.set(friendly);
           return of({ chunks: [] as L2SearchChunk[], code } satisfies L2SearchResponse);

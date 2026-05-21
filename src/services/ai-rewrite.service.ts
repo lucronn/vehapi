@@ -8,7 +8,7 @@ import { getMotorProxyBaseUrl } from '../utils/motor-api.constants';
 /** Result of {@link AiRewriteService.rewriteArticleHtml} */
 export interface ArticleRewriteResult {
     html: string;
-    /** True when the API explicitly reports AI unavailable (e.g. missing LLM env on Vercel). */
+    /** True when the API explicitly reports AI unavailable (e.g. missing LLM env on Cloud Run). */
     aiUnavailable?: boolean;
 }
 
@@ -78,7 +78,7 @@ export class AiRewriteService {
 
     /**
      * Generates common issues for a given vehicle using AI.
-     * When vehicleId is provided, the backend queries Supabase for DTCs, TSBs,
+     * When vehicleId is provided, the backend queries Cloud SQL for DTCs, TSBs,
      * procedures, specs, and maintenance to ground the LLM output in real data.
      */
     generateCommonIssues(vehicleName: string, vehicleId?: string): Observable<CommonIssuesResult> {

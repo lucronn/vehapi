@@ -1,6 +1,9 @@
 # PROGRESS
 
-**Last updated**: 2026-05-21 — **Cloud SQL B-tree query range optimization, self-healing normalization, and dynamic name resolution complete:** 
+**Last updated**: 2026-05-21 — **Purged Vercel and Supabase, and resolved TypeScript compilation errors:**
+Decommissioned and purged all legacy Vercel config files (`vercel.json`, `vehapiproxi/vercel.json`), serverless shims (`api/index.js`, `vehapiproxi/api/index.js`), Supabase migration scripts and schemas (`supabase_schema.sql`). Refactored frontend and backend references, replacing direct PostgREST Supabase client queries with proxy `ApiDataService` requests. Resolved Angular production compiler errors by casting PostgREST array responses to `any` before mapping them to specific TypeScript schema interfaces. 
+ 
+**Prior update:** **Cloud SQL B-tree query range optimization, self-healing normalization, and dynamic name resolution complete:** 
 Resolved slow composite suffix-matching `RIGHT` queries in `resolveAssociatedVehicleIds` with index-friendly B-tree queries (`vehicle_id LIKE $3` constructed as `<vehicleId>%`), completely eliminating parallel sequential scans and Postgres connection pool timeouts. 
 Implemented a dynamic vehicle YMME name resolution endpoint (`/api/source/:contentSource/:vehicleId/name`) using URL parsing, database `vehicles` table lookup, and dynamic `vehicle_metadata` JSON extraction fallback to resolve YMME strings instantly (e.g. `"2024 Subaru Forester Base (2.5L H4)"`) and prevent `"index"` or `"Unknown Vehicle"` fallbacks. 
 Added self-healing proactive normalization mapping checks to `/api/db/normalization` to ensure the catalog is identified as cached as soon as database rows exist.

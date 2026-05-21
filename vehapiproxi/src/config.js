@@ -10,7 +10,7 @@ dotenv.config();
 
 export const config = {
     // Authentication credentials
-    // On Vercel, these come from environment / project settings
+    // On Cloud Run, these come from environment / project settings
     // Locally, these come from .env file
     libraryBarcode: process.env.LIBRARY_BARCODE || '',
     ebscoUser: process.env.EBSCO_USER || '',

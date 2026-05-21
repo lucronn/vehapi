@@ -18,7 +18,7 @@ import { WindowManagerService } from '../../services/window-manager.service';
 import { DataSyncService, type CanonicalArticleBodyResult } from '../../services/data-sync.service';
 import { CreditsService } from '../../services/credits.service';
 import { Router } from '@angular/router';
-import { SupabaseService } from '../../services/supabase.service';
+import { ApiDataService } from '../../services/api-data.service';
 import { bucketToModuleType } from '../../utils/module-access.util';
 import { PageTitleService } from '../../services/page-title.service';
 
@@ -68,7 +68,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges, OnDestroy {
   private sanitizer = inject(DomSanitizer);
   private windowManager = inject(WindowManagerService);
   private dataSync = inject(DataSyncService);
-  private supabase = inject(SupabaseService);
+  private api = inject(ApiDataService);
   protected creditsService = inject(CreditsService);
   private router = inject(Router);
   private pageTitle = inject(PageTitleService);
@@ -196,8 +196,8 @@ export class ArticleViewerComponent implements OnInit, OnChanges, OnDestroy {
       this.loadData();
     }
 
-    // Resolve moduleType: Supabase bucket/parent_bucket first; Motor metadata only for non-normalized vehicles
-    void this.resolveModuleTypeFromSupabaseThenMaybeMotor();
+    // Resolve moduleType: DB bucket/parent_bucket first; Motor metadata only for non-normalized vehicles
+    void this.resolveModuleTypeFromDbThenMaybeMotor();
 
     if (this.articleTitleInput) {
       this.articleTitle.set(this.cleanTitle(this.articleTitleInput));
@@ -235,20 +235,20 @@ export class ArticleViewerComponent implements OnInit, OnChanges, OnDestroy {
     this.aiUnavailableNotice.set(null);
     this.isCached.set(false);
 
-    void this.loadDataWithSupabaseFirst(aid);
+    void this.loadDataWithDbFirst(aid);
   }
 
   /**
-   * Supabase-first read: check canonical body + title before issuing Motor HTTP.
-   * Normalized vehicles: lazy ingest + Supabase re-read; no Motor HTTP fallback for display.
+   * DB-first read: check canonical body + title before issuing Motor HTTP.
+   * Normalized vehicles: lazy ingest + DB re-read; no Motor HTTP fallback for display.
    */
-  private async loadDataWithSupabaseFirst(aid: string): Promise<void> {
+  private async loadDataWithDbFirst(aid: string): Promise<void> {
     const isNormalized = await this.dataSync.checkNormalizationStatus(this.vehicleId!);
 
-    // Title: try Supabase articles table first
+    // Title: try DB articles table first
     if (!this.articleTitleInput) {
       try {
-        const titleRow = await this.dataSync.getArticleTitleFromSupabase(this.vehicleId!, aid);
+        const titleRow = await this.dataSync.getArticleTitleFromDb(this.vehicleId!, aid);
         if (titleRow) {
           const cleaned = this.cleanTitle(titleRow);
           this.articleTitle.set(cleaned);
@@ -257,7 +257,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges, OnDestroy {
       } catch { /* ignore */ }
     }
 
-    // Body: canonical Supabase first. Non-normalized L: articles skip this (legacy Motor path).
+    // Body: canonical DB first. Non-normalized L: articles skip this (legacy Motor path).
     const tryCanonical = !String(aid).startsWith('L:') || isNormalized;
     if (tryCanonical) {
       try {
@@ -284,7 +284,7 @@ export class ArticleViewerComponent implements OnInit, OnChanges, OnDestroy {
       return;
     }
 
-    // Normalized: lazy ingest (server-side Motor inside DataSync), then re-read Supabase — never Motor HTTP from viewer
+    // Normalized: lazy ingest (server-side Motor inside DataSync), then re-read DB — never Motor HTTP from viewer
     try {
       await this.dataSync.syncSingleArticle(this.contentSource!, this.vehicleId!, {
         id: aid,
@@ -418,19 +418,19 @@ export class ArticleViewerComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
-  private async resolveModuleTypeFromSupabaseThenMaybeMotor(): Promise<void> {
+  private async resolveModuleTypeFromDbThenMaybeMotor(): Promise<void> {
     if (this.resolvedModuleType()) return;
     const cs = this.contentSource || this.params()?.get('contentSource') || '';
     const vid = this.vehicleId || this.params()?.get('vehicleId') || '';
     const aid = this.internalArticleId();
     if (!cs || !vid || !aid) return;
 
-    const { data: artRow } = await this.supabase.client
+    const { data } = await this.api
       .from('articles')
       .select('bucket,parent_bucket')
       .eq('vehicle_id', vid)
-      .eq('original_id', aid)
-      .maybeSingle();
+      .eq('original_id', aid);
+    const artRow = data && data.length > 0 ? data[0] : null;
 
     if (artRow) {
       const mt = bucketToModuleType(artRow.bucket, artRow.parent_bucket);

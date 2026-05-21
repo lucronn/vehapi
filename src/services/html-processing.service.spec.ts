@@ -8,7 +8,7 @@ vi.mock('@angular/core', () => ({
 describe('HtmlProcessingService', () => {
   let HtmlProcessingService: any;
   let service: any;
-  const baseUrl = 'https://vehapiproxi.vercel.app';
+  const baseUrl = 'https://vehapiproxi.web.app';
 
   beforeEach(async () => {
     const module = await import('./html-processing.service');

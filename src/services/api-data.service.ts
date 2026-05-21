@@ -31,6 +31,7 @@ class ApiQuery<T = any> {
     private _filters: Record<string, string> = {};
     private _limit: number | null = null;
     private _countOnly = false;
+    private _maybeSingle = false;
     private _http: HttpClient;
     private _baseUrl: string;
 
@@ -48,6 +49,17 @@ class ApiQuery<T = any> {
 
     eq(column: string, value: string | number): this {
         this._filters[column] = String(value);
+        return this;
+    }
+
+    in(column: string, values: any[]): this {
+        this._filters[column] = values.join(',');
+        return this;
+    }
+
+    maybeSingle(): this {
+        this._maybeSingle = true;
+        this._limit = 1;
         return this;
     }
 
@@ -87,6 +99,11 @@ class ApiQuery<T = any> {
             const res = await firstValueFrom(
                 this._http.get<{ data: T[]; count: number }>(`${this._baseUrl}/data/${this._table}`, { params })
             );
+
+            if (this._maybeSingle) {
+                const singleData = res.data && res.data.length > 0 ? res.data[0] : null;
+                return { data: singleData as any, count: res.count ?? 0, error: null };
+            }
             return { data: res.data ?? [], count: res.count ?? 0, error: null };
         } catch (err: any) {
             const message = err?.error?.error || err?.message || 'Request failed';

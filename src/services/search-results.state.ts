@@ -249,7 +249,7 @@ export class SearchResultsState {
     ): void {
         if (isNormalized) {
             // Route through backend so resolveAssociatedVehicleIds maps composite IDs correctly.
-            // Direct Supabase PostgREST queries use the bare vehicleId and miss composite rows.
+            // Direct PostgREST queries use the bare vehicleId and miss composite rows.
             this.searchViaBackend(contentSource, vehicleId, searchTerm, motorVehicleId);
             return;
         }

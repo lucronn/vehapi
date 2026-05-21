@@ -69,7 +69,7 @@ export class PartsSectionComponent implements OnInit {
 
     private loadParts(term: string = '') {
         this.isLoading.set(true);
-        // Using VehicleDataService which handles Supabase caching properly
+        // Using VehicleDataService which handles database caching properly
         const vehicleData = inject(VehicleDataService);
         vehicleData.loadParts(this.contentSource, this.vehicleId, undefined, term, this.isLoading, (data) => {
             this.parts.set(data);

@@ -740,8 +740,8 @@ const articleAccessMiddleware = async (req, res, next) => {
     }
 
     const userId = decoded.sub;
-    // Always read fresh unlocks from Supabase: in-memory cache is per-instance and stale after
-    // unlock/purchase on another serverless worker (common on Vercel).
+    // Always read fresh unlocks from database: in-memory cache is per-instance and stale after
+    // unlock/purchase on another serverless worker (common on Cloud Run).
     const userData = await getUserData(userId, { skipCache: true });
     const unlocks = userData.unlocks || {};
     const vehicleUnlocks = unlocks[vehicleId] || [];
@@ -1244,7 +1244,7 @@ app.use('/', authMiddleware, createProxyMiddleware({
 
                             if (didTruncate) {
                                 normalizedData = JSON.stringify(parsedJson);
-                                logger.info(`Truncated massive JSON arrays to prevent iOS/Vercel OOM crashes on ${req.path}`);
+                                logger.info(`Truncated massive JSON arrays to prevent iOS/Cloud Run OOM crashes on ${req.path}`);
                             }
                         } catch (e) {
                             logger.warn('Failed to parse or truncate JSON for performance protections:', e);

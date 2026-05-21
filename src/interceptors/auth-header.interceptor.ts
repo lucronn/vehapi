@@ -10,9 +10,9 @@ import { AuthService } from '../services/auth.service';
  */
 export const authHeaderInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
-  // Only attach Supabase Bearer token for endpoints that explicitly verify Supabase JWT.
+  // Only attach Firebase Bearer token for endpoints that explicitly verify Firebase JWT.
   // Important: many `/api/source/*` routes are proxied to Motor.com using a *cookie jar*.
-  // Forwarding a Supabase `Authorization` header to Motor-proxy endpoints can cause Motor to
+  // Forwarding a Firebase `Authorization` header to Motor-proxy endpoints can cause Motor to
   // reject the request with 401 when the user is logged in.
   //
   // We attach:

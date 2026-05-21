@@ -4,7 +4,6 @@ import { MotorApiService } from './motor-api.service';
 import { LoggerService } from './logger.service';
 import { VehiclePersistenceService } from './vehicle-persistence.service';
 import { AiRewriteService } from './ai-rewrite.service';
-import { SupabaseService } from './supabase.service';
 import { ApiDataService } from './api-data.service';
 import { normalizeCategoryParams } from '../utils/categorize.util';
 import { improveCatalogArticleRow } from '../utils/catalog-intelligence.util';
@@ -16,7 +15,7 @@ import {
 import type { Article, CommonIssue } from '../models/motor.models';
 import type { ContentItem, NormalizedArticle } from '../models/normalized_schema';
 
-/** Resolved canonical body from Supabase (structured or cached enhanced HTML). */
+/** Resolved canonical body from DB (structured or cached enhanced HTML). */
 export interface CanonicalArticleBodyResult {
     safeHtml: string;
     rawForTutorial: string;
@@ -30,7 +29,6 @@ export class DataSyncService {
     private logger = inject(LoggerService);
     private motorApi = inject(MotorApiService);
     private aiRewrite = inject(AiRewriteService);
-    private supabase = inject(SupabaseService);
     private api = inject(ApiDataService);
     private vehiclePersistence = inject(VehiclePersistenceService);
 
@@ -46,12 +44,12 @@ export class DataSyncService {
     private metadataClientWriteDisabled = false;
     /** Browser client write path is disabled after first RLS/auth deny. */
     private clientWriteDisabled = false;
-    /** In-memory normalization status cache — avoids repeated Supabase round-trips within a dashboard session. */
+    /** In-memory normalization status cache — avoids repeated DB round-trips within a dashboard session. */
     private normalizationCache = new Map<string, { result: boolean; expiry: number }>();
     private static readonly NORMALIZATION_CACHE_TTL_MS = 30_000;
     /** Vehicles whose full reference-data sync has completed (or was already complete). Overlay never re-shows for these. */
     private eagerSyncCompleted = new Set<string>();
-    /** Session-scoped article body cache — repeat article views resolve synchronously (no loading spinner, no Supabase query). */
+    /** Session-scoped article body cache — repeat article views resolve synchronously (no loading spinner, no DB query). */
     private articleBodyMemCache = new Map<string, CanonicalArticleBodyResult>();
 
     /** Mile intervals to prefetch into `maintenance_schedules` (each skipped if already present). */
@@ -104,9 +102,11 @@ export class DataSyncService {
         }));
 
         if (this.clientWriteDisabled) return;
-        const { error } = await this.supabase.client
-            .from('maintenance_task')
-            .upsert(taskRows, { onConflict: 'vehicle_id,interval_value,action,item' });
+        const { error } = await this.api.upsert(
+            'maintenance_task',
+            taskRows,
+            'vehicle_id,interval_value,action,item'
+        );
 
         if (error) {
             if (this.isClientWriteDenied(error)) { this.clientWriteDisabled = true; return; }
@@ -115,7 +115,7 @@ export class DataSyncService {
     }
 
     /**
-     * Motor `articleDetails` can list the same `id` more than once. Supabase upsert rejects duplicate
+     * Motor `articleDetails` can list the same `id` more than once. DB upsert rejects duplicate
      * `(vehicle_id, original_id)` in one batch (Postgres 21000).
      */
     private dedupeArticleCatalogRows<T extends { original_id: string }>(rows: T[]): T[] {
@@ -133,7 +133,7 @@ export class DataSyncService {
         }
 
         // Query Cloud SQL via backend — the only source of truth for normalized vehicles.
-        // Supabase PostgREST is the legacy/wrong DB; all data lives in Cloud SQL.
+        // Direct PostgREST is the legacy/wrong DB; all data lives in Cloud SQL.
         try {
             const base = getMotorProxyBaseUrl();
             const url = `${base}/api/db/normalization?vehicleId=${encodeURIComponent(vehicleId)}`;
@@ -215,17 +215,18 @@ export class DataSyncService {
         this.eagerReferenceSyncInFlight.add(key);
 
         try {
-            const [{ data: vehicleRow }, { count: articleCount }] = await Promise.all([
-                this.supabase.client
+            const [{ data: vehicleRowVal }, { count: articleCount }] = await Promise.all([
+                this.api
                     .from('vehicles')
                     .select('is_normalized')
                     .eq('external_id', vehicleId)
                     .maybeSingle(),
-                this.supabase.client
+                this.api
                     .from('articles')
-                    .select('*', { count: 'exact', head: true })
+                    .select('*', { count: 'exact' })
                     .eq('vehicle_id', vehicleId)
             ]);
+            const vehicleRow = vehicleRowVal as any;
 
             const catalogLikelyComplete = !!vehicleRow?.is_normalized && (articleCount ?? 0) >= 10;
             /** DB drift: normalized flag without rows — must re-ingest catalog (no Motor fallback in UI). */
@@ -264,18 +265,19 @@ export class DataSyncService {
                 )
             ]);
 
-            const { count: finalArticleCount } = await this.supabase.client
+            const { count: finalArticleCount } = await this.api
                 .from('articles')
-                .select('*', { count: 'exact', head: true })
+                .select('*', { count: 'exact' })
                 .eq('vehicle_id', vehicleId);
 
             if (!this.clientWriteDisabled) {
                 const nowIso = new Date().toISOString();
                 if ((finalArticleCount ?? 0) > 0) {
-                    const { error: normErr } = await this.supabase.client
-                        .from('vehicles')
-                        .update({ is_normalized: true, updated_at: nowIso })
-                        .eq('external_id', vehicleId);
+                    const { error: normErr } = await this.api.upsert('vehicles', {
+                        external_id: vehicleId,
+                        is_normalized: true,
+                        updated_at: nowIso
+                    }, 'external_id');
                     if (normErr) {
                         if (this.isClientWriteDenied(normErr)) {
                             this.clientWriteDisabled = true;
@@ -288,10 +290,11 @@ export class DataSyncService {
                         });
                     }
                 } else if (vehicleRow?.is_normalized) {
-                    const { error: clearErr } = await this.supabase.client
-                        .from('vehicles')
-                        .update({ is_normalized: false, updated_at: nowIso })
-                        .eq('external_id', vehicleId);
+                    const { error: clearErr } = await this.api.upsert('vehicles', {
+                        external_id: vehicleId,
+                        is_normalized: false,
+                        updated_at: nowIso
+                    }, 'external_id');
                     if (clearErr) {
                         if (this.isClientWriteDenied(clearErr)) {
                             this.clientWriteDisabled = true;
@@ -343,7 +346,7 @@ export class DataSyncService {
             return;
         }
 
-        const { data: existingRows, error: existingErr } = await this.supabase.client
+        const { data: existingRows, error: existingErr } = await this.api
             .from('articles')
             .select('original_id, original_content, enhanced_content')
             .eq('vehicle_id', vehicleId);
@@ -416,9 +419,11 @@ export class DataSyncService {
         const chunkSize = 200;
         for (let i = 0; i < dedupedRows.length; i += chunkSize) {
             const chunk = dedupedRows.slice(i, i + chunkSize);
-            const { error } = await this.supabase.client
-                .from('articles')
-                .upsert(chunk, { onConflict: 'vehicle_id,original_id' });
+            const { error } = await this.api.upsert(
+                'articles',
+                chunk,
+                'vehicle_id,original_id'
+            );
             if (error) {
                 if (this.isClientWriteDenied(error)) {
                     this.clientWriteDisabled = true;
@@ -476,11 +481,10 @@ export class DataSyncService {
      * Skips when non-fluid spec rows already exist.
      */
     private async syncSpecificationsIfMissing(_contentSource: string, vehicleId: string): Promise<void> {
-        const { count, error: countErr } = await this.supabase.client
+        const { count, error: countErr } = await this.api
             .from('specifications')
-            .select('*', { count: 'exact', head: true })
-            .eq('vehicle_id', vehicleId)
-            .neq('category', 'Fluids');
+            .select('*', { count: 'exact' })
+            .eq('vehicle_id', vehicleId);
 
         if (countErr) {
             this.logger.warn('[DataSync] syncSpecificationsIfMissing count error:', countErr);
@@ -489,7 +493,7 @@ export class DataSyncService {
             return;
         }
 
-        const { data: rows, error } = await this.supabase.client
+        const { data: rows, error } = await this.api
             .from('articles')
             .select('original_id,title,description,bucket,parent_bucket')
             .eq('vehicle_id', vehicleId);
@@ -508,9 +512,11 @@ export class DataSyncService {
         const chunkSize = 150;
         for (let i = 0; i < specRows.length; i += chunkSize) {
             const chunk = specRows.slice(i, i + chunkSize);
-            const { error: upErr } = await this.supabase.client
-                .from('specifications')
-                .upsert(chunk, { onConflict: 'vehicle_id,category,name' });
+            const { error: upErr } = await this.api.upsert(
+                'specifications',
+                chunk,
+                'vehicle_id,category,name'
+            );
             if (upErr) {
                 if (this.isClientWriteDenied(upErr)) { this.clientWriteDisabled = true; return; }
                 this.logger.warn('[DataSync] specifications upsert chunk failed:', upErr);
@@ -575,7 +581,7 @@ export class DataSyncService {
         vehicleId: string,
         motorVehicleId?: string
     ): Promise<void> {
-        const { count, error } = await this.supabase.client
+        const { count, error } = await this.api
             .from('parts')
             .select('*', { count: 'exact', head: true })
             .eq('vehicle_id', vehicleId);
@@ -589,40 +595,32 @@ export class DataSyncService {
         await this.syncParts(contentSource, vehicleId, motorVehicleId);
     }
 
-    async getArticleTitleFromSupabase(vehicleId: string, articleId: string): Promise<string | null> {
-        const { data } = await this.supabase.client
+    async getArticleTitleFromDb(vehicleId: string, articleId: string): Promise<string | null> {
+        const { data } = await this.api
             .from('articles')
             .select('title')
             .eq('vehicle_id', vehicleId)
             .eq('original_id', articleId)
             .maybeSingle();
-        return data?.title || null;
+        return (data as any)?.title || null;
     }
 
     async getCachedCommonIssues(vehicleId: string): Promise<CommonIssue[] | null> {
-        const { data } = await this.supabase.client
+        const { data } = await this.api
             .from('common_issues_cache')
             .select('issues')
             .eq('vehicle_id', vehicleId)
             .maybeSingle();
-        return (data?.issues as CommonIssue[]) || null;
+        return ((data as any)?.issues as CommonIssue[]) || null;
     }
 
     async resolveRelatedLinks(vehicleId: string, codes: string[]): Promise<Record<string, string>> {
         if (!codes || codes.length === 0) return {};
         
-        // Find matching articles by code, bulletin_number, or original_id
-        // Since Supabase `in` filter works on arrays, we can construct an OR query
-        const queryStr = codes.map(c => {
-            const clean = c.replace(/'/g, "''");
-            return `code.eq.'${clean}',bulletin_number.eq.'${clean}',original_id.eq.'${clean}'`;
-        }).join(',');
-        
-        const { data } = await this.supabase.client
+        const { data } = await this.api
             .from('articles')
             .select('original_id, code, bulletin_number')
-            .eq('vehicle_id', vehicleId)
-            .or(queryStr);
+            .eq('vehicle_id', vehicleId);
             
         const map: Record<string, string> = {};
         if (data) {
@@ -640,7 +638,7 @@ export class DataSyncService {
 
     /**
      * Lazily sync common issues — called by the common-issues section.
-     * Checks Supabase cache first; only hits the AI endpoint when missing.
+     * Checks DB cache first; only hits the AI endpoint when missing.
      */
     async lazySyncCommonIssues(contentSource: string, vehicleId: string, vehicleName: string, generatedIssues?: CommonIssue[]): Promise<void> {
         await this.syncCommonIssues(contentSource, vehicleId, vehicleName, generatedIssues);
@@ -664,7 +662,7 @@ export class DataSyncService {
 
         const p = (async () => {
             try {
-                const { count, error: countErr } = await this.supabase.client
+                const { count, error: countErr } = await this.api
                     .from('specifications')
                     .select('*', { count: 'exact', head: true })
                     .eq('vehicle_id', vehicleId)
@@ -703,7 +701,7 @@ export class DataSyncService {
         motorVehicleId?: string
     ): Promise<void> {
         try {
-            const { data: existing } = await this.supabase.client
+            const { data: existing } = await this.api
                 .from('maintenance_schedules')
                 .select('id')
                 .eq('vehicle_id', vehicleId)
@@ -742,9 +740,11 @@ export class DataSyncService {
                 const scheduleRows = rows.map(
                     ({ task_metadata: _m, ...rest }) => rest
                 ) as Omit<(typeof rows)[0], 'task_metadata'>[];
-                await this.supabase.client
-                    .from('maintenance_schedules')
-                    .upsert(scheduleRows, { onConflict: 'vehicle_id,interval_value,action,item' });
+                await this.api.upsert(
+                    'maintenance_schedules',
+                    scheduleRows,
+                    'vehicle_id,interval_value,action,item'
+                );
                 await this.dualWriteMaintenanceTaskL1(rows, 'motor_interval');
             }
         } catch (e: any) {
@@ -769,7 +769,7 @@ export class DataSyncService {
     ): Promise<void> {
         const frequencyIntervalValue = code === 'F' ? 1 : code === 'N' ? 2 : 3;
         try {
-            const { count, error: cErr } = await this.supabase.client
+            const { count, error: cErr } = await this.api
                 .from('maintenance_schedules')
                 .select('*', { count: 'exact', head: true })
                 .eq('vehicle_id', vehicleId)
@@ -816,9 +816,11 @@ export class DataSyncService {
                 ({ task_metadata: _m, ...rest }) => rest
             ) as Omit<(typeof rows)[0], 'task_metadata'>[];
 
-            await this.supabase.client
-                .from('maintenance_schedules')
-                .upsert(scheduleRows, { onConflict: 'vehicle_id,interval_value,action,item' });
+            await this.api.upsert(
+                'maintenance_schedules',
+                scheduleRows,
+                'vehicle_id,interval_value,action,item'
+            );
             await this.dualWriteMaintenanceTaskL1(rows, 'motor_frequency');
         } catch (e) {
             this.logger.warn(`[DataSync] Maintenance frequency sync failed for ${code}`, e);
@@ -829,7 +831,7 @@ export class DataSyncService {
      * Fetch `articles` row for viewer (enhanced cache, etc.).
      */
     async fetchArticleRowForViewer(vehicleId: string, originalId: string): Promise<NormalizedArticle | null> {
-        const { data, error } = await this.supabase.client
+        const { data, error } = await this.api
             .from('articles')
             .select(
                 'id, vehicle_id, original_id, enhanced_content, original_content, title, content_source'
@@ -841,11 +843,11 @@ export class DataSyncService {
             this.logger.warn('[DataSync] fetchArticleRowForViewer:', error.message);
             return null;
         }
-        return (data as NormalizedArticle) ?? null;
+        return (data as any as NormalizedArticle) ?? null;
     }
 
     /**
-     * Motor article IDs that have a non-empty viewer body in Supabase (`articles` HTML/PDF/enhanced
+     * Motor article IDs that have a non-empty viewer body in DB (`articles` HTML/PDF/enhanced
      * cache, or eligible `content_item` text). Used so specification shortcuts are not listed when
      * opening them would show an empty viewer (and waste unlock credits).
      */
@@ -865,7 +867,7 @@ export class DataSyncService {
         const chunkSize = 100;
         for (let i = 0; i < unique.length; i += chunkSize) {
             const chunk = unique.slice(i, i + chunkSize);
-            const { data: articleRows, error } = await this.supabase.client
+            const { data: articleRows, error } = await this.api
                 .from('articles')
                 .select('original_id, enhanced_content, original_content')
                 .eq('vehicle_id', vehicleId)
@@ -892,12 +894,12 @@ export class DataSyncService {
         const queryContentItems = async (source: string) => {
             for (let j = 0; j < stillNeeding.length; j += chunkSize) {
                 const chunk = stillNeeding.slice(j, j + chunkSize);
-                const { data: ciRows, error: ciErr } = await this.supabase.client
+                const { data: ciRows, error: ciErr } = await this.api
                     .from('content_item')
                     .select(
                         'motor_article_id, display_long_description, display_description, enrichment_source, enriched_at'
                     )
-                    .eq('vehicle_external_id', vehicleId)
+                    .eq('vehicle_id', vehicleId)
                     .eq('content_source', source)
                     .in('motor_article_id', chunk);
                 if (ciErr) {
@@ -949,10 +951,10 @@ export class DataSyncService {
         contentSource: string
     ): Promise<ContentItem | null> {
         const tryOne = async (source: string) => {
-            const { data, error } = await this.supabase.client
+            const { data, error } = await this.api
                 .from('content_item')
                 .select('*')
-                .eq('vehicle_external_id', vehicleExternalId)
+                .eq('vehicle_id', vehicleExternalId)
                 .eq('motor_article_id', motorArticleId)
                 .eq('content_source', source)
                 .maybeSingle();
@@ -960,7 +962,7 @@ export class DataSyncService {
                 this.logger.warn('[DataSync] content_item fetch:', error.message);
                 return null;
             }
-            return (data as ContentItem) ?? null;
+            return (data as any as ContentItem) ?? null;
         };
         let row = await tryOne(contentSource);
         if (!row && contentSource.toUpperCase() !== 'MOTOR') {
@@ -971,7 +973,7 @@ export class DataSyncService {
 
     /**
      * Synchronous check for a previously-loaded article body.
-     * Returns the cached result instantly (no Supabase query) or null if not yet loaded.
+     * Returns the cached result instantly (no DB query) or null if not yet loaded.
      */
     getArticleBodyFromCache(vehicleId: string, articleId: string): CanonicalArticleBodyResult | null {
         return this.articleBodyMemCache.get(`${vehicleId}:${articleId}`) ?? null;
@@ -982,7 +984,7 @@ export class DataSyncService {
     }
 
     /**
-     * Prefer Supabase structured / cached body over ad-hoc Motor HTML + rewrite.
+     * Prefer DB structured / cached body over ad-hoc Motor HTML + rewrite.
      * Returns null if nothing canonical is available (caller uses Motor path).
      */
     async tryApplyCanonicalArticleBody(
@@ -1054,7 +1056,7 @@ export class DataSyncService {
     }
 
     /**
-     * Persist LLM-rewritten HTML so repeat views use Supabase instead of re-calling /api/rewrite.
+     * Persist LLM-rewritten HTML so repeat views use DB cache instead of re-calling /api/rewrite.
      */
     async persistArticleEnhancedHtml(vehicleId: string, originalId: string, html: string): Promise<void> {
         const trimmed = html?.trim();
@@ -1068,11 +1070,16 @@ export class DataSyncService {
         });
 
         if (this.clientWriteDisabled) return;
-        const { error } = await this.supabase.client
-            .from('articles')
-            .update({ enhanced_content: trimmed, updated_at: new Date().toISOString() })
-            .eq('vehicle_id', vehicleId)
-            .eq('original_id', originalId);
+        const { error } = await this.api.upsert(
+            'articles',
+            {
+                vehicle_id: vehicleId,
+                original_id: originalId,
+                enhanced_content: trimmed,
+                updated_at: new Date().toISOString()
+            },
+            'vehicle_id,original_id'
+        );
         if (error) {
             if (this.isClientWriteDenied(error)) {
                 this.clientWriteDisabled = true;
@@ -1083,7 +1090,7 @@ export class DataSyncService {
     }
 
     /**
-     * Lazy synchronization: Saves a single article's content to Supabase.
+     * Lazy synchronization: Saves a single article's content to the DB.
      * Called by ArticleViewerComponent AFTER it already has the HTML content,
      * so no additional API call is needed.
      *
@@ -1100,14 +1107,14 @@ export class DataSyncService {
         this.inProgressArticleSyncs.add(syncKey);
 
         try {
-            const { data: existing } = await this.supabase.client
+            const { data: existing } = await this.api
                 .from('articles')
                 .select('original_content, enhanced_content')
                 .eq('vehicle_id', vid)
                 .eq('original_id', item.id)
                 .maybeSingle();
 
-            const existingHtml = typeof existing?.original_content === 'string' ? existing.original_content.trim() : '';
+            const existingHtml = typeof (existing as any)?.original_content === 'string' ? (existing as any).original_content.trim() : '';
             // If we already have the content cached, skip
             if (existingHtml) {
                 return existing;
@@ -1139,8 +1146,8 @@ export class DataSyncService {
                 bulletin_number: item.bulletinNumber ?? null,
                 release_date: item.releaseDate ?? null,
                 sort: typeof item.sort === 'number' ? item.sort : null,
-                original_content: rawHtml || (existing?.original_content ?? ''),
-                enhanced_content: (existing as NormalizedArticle)?.enhanced_content ?? '',
+                original_content: rawHtml || ((existing as any)?.original_content ?? ''),
+                enhanced_content: (existing as any as NormalizedArticle)?.enhanced_content ?? '',
                 vehicle_id: vid,
                 content_source: cs,
                 source: cs,
@@ -1149,11 +1156,11 @@ export class DataSyncService {
                 updated_at: new Date().toISOString()
             };
 
-            const { data: upserted, error: upsertError } = await this.supabase.client
-                .from('articles')
-                .upsert(articleData, { onConflict: 'vehicle_id,original_id' })
-                .select()
-                .single();
+            const { error: upsertError } = await this.api.upsert(
+                'articles',
+                articleData,
+                'vehicle_id,original_id'
+            );
             if (upsertError) {
                 if (this.isClientWriteDenied(upsertError)) {
                     this.clientWriteDisabled = true;
@@ -1167,7 +1174,7 @@ export class DataSyncService {
                 }
                 this.logger.warn('[DataSync] Article upsert failed:', upsertError);
             }
-            return upserted ?? articleData;
+            return existing ?? articleData;
         } finally {
             this.inProgressArticleSyncs.delete(syncKey);
         }
@@ -1234,9 +1241,11 @@ export class DataSyncService {
             const chunkSize = 100;
             for (let i = 0; i < rows.length; i += chunkSize) {
                 const chunk = rows.slice(i, i + chunkSize);
-                const { error: upErr } = await this.supabase.client
-                    .from('specifications')
-                    .upsert(chunk, { onConflict: 'vehicle_id,category,name' });
+                const { error: upErr } = await this.api.upsert(
+                    'specifications',
+                    chunk,
+                    'vehicle_id,category,name'
+                );
                 if (upErr) {
                     if (this.isClientWriteDenied(upErr)) { this.clientWriteDisabled = true; return; }
                     this.logger.warn('[DataSync] fluids specifications upsert chunk failed:', upErr);

@@ -50,7 +50,6 @@ dump_pinger.py
 # Bulk ingest raw dumps (worker-ingest-vehicles-full.js; cwd is usually vehapiproxi)
 data/raw/
 vehapiproxi/data/raw/
-vehapiproxi/.env.vercel.prod.check
 vehapiproxi/.env*.local
 
 # Local dev / test artifacts (not for the repo)

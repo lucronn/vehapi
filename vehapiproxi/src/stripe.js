@@ -18,7 +18,7 @@ function getStripe() {
     return stripe;
 }
 
-const FRONTEND_URL = (process.env.VEHAPI_URL || process.env.FRONTEND_URL || 'https://vehapi.vercel.app').replace(/\/$/, '');
+const FRONTEND_URL = (process.env.VEHAPI_URL || process.env.FRONTEND_URL || 'https://vehapi-torque.web.app').replace(/\/$/, '');
 
 export async function createCheckoutSession(userId, amount, origin) {
     const parsedAmount = parseInt(amount, 10);
@@ -66,7 +66,7 @@ export async function createCheckoutSession(userId, amount, origin) {
 
 /**
  * Create a Stripe Customer Billing Portal session.
- * Customer must have made at least one purchase (customer ID stored in Supabase).
+ * Customer must have made at least one purchase (customer ID stored in database).
  * @param {string} customerId - Stripe customer ID (cus_xxx)
  * @param {string} returnUrl - URL to redirect after portal (e.g. origin + /#/account)
  */
