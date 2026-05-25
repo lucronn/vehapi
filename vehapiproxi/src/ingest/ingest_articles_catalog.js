@@ -7,10 +7,9 @@ import {
     insertParsedData,
     ensureVehicleExists,
     markVehicleNormalized,
-    insertEvidenceIngest,
-    getSupabaseConfig
+    insertEvidenceIngest
 } from '../db.service.js';
-import { dbQuery } from '../db.js';
+import { dbQuery, isDbConfigured } from '../db.js';
 import {
     buildArticlesTableRowFromMotorCatalogArticle,
     buildContentItemFromCatalogArticle
@@ -151,7 +150,7 @@ export async function ingestArticlesCatalogFromMotorJson({
         process.env.RELAXED_COMPLETION === '1';
 
     if (!relaxed && uniqueIds.length > 0) {
-        if (!getSupabaseConfig()) {
+        if (!isDbConfigured()) {
             return { success: false, error: 'DB not configured for catalog verification' };
         }
         try {

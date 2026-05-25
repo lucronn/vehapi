@@ -133,7 +133,7 @@ export class DataSyncService {
         }
 
         // Query Cloud SQL via backend — the only source of truth for normalized vehicles.
-        // Direct PostgREST is the legacy/wrong DB; all data lives in Cloud SQL.
+        // All data lives in Cloud SQL; no direct PostgREST calls.
         try {
             const base = getMotorProxyBaseUrl();
             const url = `${base}/api/db/normalization?vehicleId=${encodeURIComponent(vehicleId)}`;

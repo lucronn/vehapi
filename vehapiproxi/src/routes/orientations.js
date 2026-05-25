@@ -1,6 +1,6 @@
 /**
  * Fetches available vehicle orientations/configurations for articles that require selection.
- * Prefers Supabase articles table; falls back to Motor articles/v2 when Supabase is empty.
+ * Prefers Cloud SQL articles table; falls back to live Motor API when not in DB.
  * Example: GET /api/source/Ford/vehicle/2013:Ford:Explorer/article/-999/orientations
  */
 export function registerOrientationEndpoints(app, authMiddleware, config, logger) {
@@ -12,7 +12,7 @@ export function registerOrientationEndpoints(app, authMiddleware, config, logger
                 const { source, vehicleId, articleId } = req.params;
                 logger.info(`Fetching orientations for article ${articleId} in vehicle ${vehicleId}`);
 
-                // Supabase-first: articles table has subtitle/description
+                // DB-first: articles table has subtitle/description
                 let orientations = [];
                 try {
                     const { getVehicleArticles } = await import('../db.service.js');
@@ -27,10 +27,10 @@ export function registerOrientationEndpoints(app, authMiddleware, config, logger
                             }));
                     }
                 } catch (e) {
-                    logger.warn('Orientations Supabase fallback:', e?.message);
+                    logger.warn('Orientations DB fallback:', e?.message);
                 }
 
-                // Fall back to Motor if Supabase yielded nothing
+                // Fall back to Motor if DB yielded nothing
                 if (orientations.length === 0) {
                     const motorApiUrl = `${config.motorApiBase}/api/source/${source}/vehicle/${encodeURIComponent(vehicleId)}/articles/v2`;
                     const response = await fetch(motorApiUrl, {

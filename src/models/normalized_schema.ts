@@ -1,6 +1,6 @@
 // Normalized Vehicle Data Models
 // These interfaces define the standardized data formats for vehicle information
-// stored in the Supabase database. This serves as the contract for AI processing pipelines.
+// stored in Cloud SQL. This serves as the contract for AI processing pipelines.
 
 /**
  * Core Vehicle Entity
@@ -48,7 +48,7 @@ export interface NormalizedArticle {
 }
 
 /**
- * Unified catalog row (Supabase `content_item`) — dual-written with `articles` during normalization phase 1.
+ * Unified catalog row (Cloud SQL `content_item`) — dual-written with `articles` during normalization phase 1.
  * @see documentation/migrations/20260319_phase1_normalization.sql
  */
 export interface ContentItem {
@@ -137,7 +137,7 @@ export interface NormalizedProcedure {
 }
 
 /**
- * L1 atomic procedure step (Supabase `procedure_step`) — dual-written from worker after `procedures` upsert.
+ * L1 atomic procedure step (Cloud SQL `procedure_step`) — dual-written from worker after `procedures` upsert.
  * @see documentation/migrations/20260322_l1_procedure_step.sql
  */
 export interface NormalizedProcedureStep {
@@ -156,7 +156,7 @@ export interface NormalizedProcedureStep {
 }
 
 /**
- * L1 tool line (Supabase `procedure_tool`) — from `tools_required` after `procedures` upsert.
+ * L1 tool line (Cloud SQL `procedure_tool`) — from `tools_required` after `procedures` upsert.
  * @see documentation/migrations/20260323_l1_procedure_tool_and_part.sql
  */
 export interface NormalizedProcedureTool {
@@ -171,7 +171,7 @@ export interface NormalizedProcedureTool {
 }
 
 /**
- * L1 part line (Supabase `procedure_part`) — from `parts_required` after `procedures` upsert.
+ * L1 part line (Cloud SQL `procedure_part`) — from `parts_required` after `procedures` upsert.
  */
 export interface NormalizedProcedurePart {
   id?: string;
@@ -198,7 +198,7 @@ export interface NormalizedTSB {
   title: string;
   summary?: string;
   content: string; // Full HTML or text from AI; pipeline copies to content_html for DB
-  /** Maps to DB column content_html; set from content in normalizeForSupabase. */
+  /** Maps to DB column content_html; set from content in normalizeForDb. */
   content_html?: string;
   affected_components: string[];
   models_affected?: string[];
@@ -206,7 +206,7 @@ export interface NormalizedTSB {
 
 /**
  * Diagnostic Step for DTCs
- * Aligned with ai_parser SCHEMAS.dtcs.diagnostic_steps and normalizeForSupabase output.
+ * Aligned with ai_parser SCHEMAS.dtcs.diagnostic_steps and normalizeForDb output.
  */
 export interface DiagnosticStep {
   order: number;
@@ -252,7 +252,7 @@ export interface NormalizedSpecification {
 }
 
 /**
- * L1 spec row (Supabase `spec_fact`) — dual-written from AI-parsed specifications.
+ * L1 spec row (Cloud SQL `spec_fact`) — dual-written from AI-parsed specifications.
  * @see documentation/migrations/20260320_l1_spec_fact.sql
  */
 export interface NormalizedSpecFact {
@@ -294,7 +294,7 @@ export interface NormalizedMaintenanceSchedule {
 }
 
 /**
- * L1 maintenance row (Supabase `maintenance_task`) — dual-written with `maintenance_schedules`.
+ * L1 maintenance row (Cloud SQL `maintenance_task`) — dual-written with `maintenance_schedules`.
  * @see documentation/migrations/20260321_l1_maintenance_task.sql
  */
 export interface NormalizedMaintenanceTask {

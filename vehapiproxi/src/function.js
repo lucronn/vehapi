@@ -14,22 +14,21 @@ import { createRequire } from 'module';
 import { createCheckoutSession, createBillingPortalSession, handleWebhook, verifyAndFulfillSession } from './stripe.js';
 import { getUserData, unlockModule, getTransactions } from './credits.js';
 import { mapChunksToL2ApiResponse, runL2VehicleChunkSearch } from './l2_retrieval.js';
-import { 
-    insertParsedData, 
+import {
+    insertParsedData,
     checkParsedArticle,
     checkArticleContent,
     getArticleMetadata,
     upsertMediaAssetGraphicBinary,
-    insertMetadata, 
+    insertMetadata,
     getMetadata,
     isMetadataStale,
-    getVehicleArticles,
     getVehicleArticlesCount,
     getVehicleIsNormalized
 } from './db.service.js';
-import jwt from 'jsonwebtoken';
-import { dbQuery } from './db.js';
-import { resolveAssociatedVehicleIds } from './db.service.js';
+import { resolveVehicleName } from './domain/vehicle-identity.js';
+import { isCatalogEligible, buildCatalogResponseBody, getReferenceData } from './services/catalog.service.js';
+import { enqueueNormalization } from './services/normalization.service.js';
 import admin from 'firebase-admin';
 import { registerHealthEndpoint } from './routes/health.js';
 import { registerAuthEndpoints } from './routes/auth.js';
@@ -41,6 +40,7 @@ import { registerDebugEndpoints } from './routes/debug.js';
 import tutorialRouter from './routes/tutorial.js';
 import dataApiRouter from './routes/data-api.js';
 import dbEndpointsRouter from './routes/db-endpoints.js';
+import normalizationRouter from './routes/normalization.js';
 import { registerMakeIdResolutionEndpoints } from './routes/make-id-resolution.js';
 import { registerOrientationEndpoints } from './routes/orientations.js';
 import { registerArticleMetadataEndpoint } from './routes/article-metadata.js';
@@ -165,7 +165,7 @@ app.use((req, res, next) => {
     next();
 });
 
-/** When `x-vehapi-verify: 1`, skip Supabase-first caches so requests hit Motor and enqueue background parsing (verify script only). */
+/** When `x-vehapi-verify: 1`, skip DB-first caches so requests hit Motor and enqueue background parsing (verify script only). */
 function isVerifyBypass(req) {
     return String(req.get('x-vehapi-verify') || '').trim() === '1';
 }
@@ -283,10 +283,6 @@ const authMiddleware = async (req, res, next) => {
     }
 };
 
-// --- MOCK SHIM REMOVED ---
-// Requests to /dtcs, /tsbs, etc. will now be proxied to the upstream Motor API.
-// The proxy middleware below handles the request forwarding and HTML normalization.
-
 // --- MAKE ID RESOLUTION + ORIENTATIONS ---
 registerMakeIdResolutionEndpoints(app, authMiddleware, config, logger);
 registerOrientationEndpoints(app, authMiddleware, config, logger);
@@ -305,7 +301,7 @@ async function verifyFirebaseToken(token) {
     }
 }
 
-// Secure Auth Middleware: require Bearer token (Supabase JWT)
+// Secure Auth Middleware: require Bearer token (Firebase ID token)
 const secureAuthMiddleware = async (req, res, next) => {
     if (req.method === 'OPTIONS') {
         return next();
@@ -375,7 +371,7 @@ async function handleL2VehicleSearch(req, res, vehicleExternalId) {
             code = 'L2_EMBEDDING_DIM_MISMATCH';
         } else if (/No NVIDIA|EMBEDDING_MODEL|API key|embeddings/i.test(msg)) {
             code = 'L2_EMBEDDING_CONFIG';
-        } else if (/RPC|Supabase|match_content_chunks|42883|function public\.match_content_chunks/i.test(msg)) {
+        } else if (/RPC|DB|match_content_chunks|42883|function public\.match_content_chunks/i.test(msg)) {
             code = 'L2_RPC_OR_SCHEMA';
         }
         return res.status(503).json({ error: msg, code });
@@ -434,6 +430,9 @@ app.use('/api/ai', secureAuthMiddleware, tutorialRouter);
 // Cloud SQL-backed read endpoints (YMME + article catalog from our DB)
 app.use('/api/db', dbEndpointsRouter);
 
+// Normalized content endpoints (atomic steps + DTC trees)
+app.use('/api/db', express.json({ limit: '1mb' }), normalizationRouter);
+
 // Data API — GET /api/data/:table (public reads), POST /api/data/:table (auth required)
 app.use('/api/data', express.json({ limit: '2mb' }), (req, res, next) => {
     // Only POST/PUT/PATCH require auth; GET is public (vehicle data is not user-private)
@@ -441,7 +440,7 @@ app.use('/api/data', express.json({ limit: '2mb' }), (req, res, next) => {
     return secureAuthMiddleware(req, res, next);
 }, dataApiRouter);
 
-// Motor Information API — YMME helpers (base vehicle id, engines); requires Supabase JWT
+// Motor Information API — YMME helpers (base vehicle id, engines)
 registerMotorInformationYmmeRoutes(app, secureAuthMiddleware, logger);
 
 /** In-memory observability for Motor catch-all vs Cloud SQL cache hits. */
@@ -631,58 +630,67 @@ const articlesCacheMiddleware = async (req, res, next) => {
                     setCachedCatalogEligibility(vehicleId, count, isNormalized);
                 }
 
-                const minRows = parseInt(process.env.ARTICLE_CATALOG_MIN_ROWS ?? '10', 10);
-                const serveFromCloudSql =
-                    isNormalized === true &&
-                    count >= minRows;
-
-                if (!serveFromCloudSql) {
+                if (!isCatalogEligible({ count, isNormalized })) {
                     if (count > 0 || isNormalized != null) {
                         logger.info(
-                            `Articles cache bypass for ${vehicleId}: count=${count}, is_normalized=${isNormalized} (need both normalized flag and count>=${minRows})`
+                            `Articles cache bypass for ${vehicleId}: count=${count}, is_normalized=${isNormalized}`
                         );
                     }
                     return next();
                 }
 
                 logger.info(`✓ Serving ${count} cached articles for ${vehicleId} from Cloud SQL (normalized catalog).`);
-                const articles = await getVehicleArticles(vehicleId);
-                    
-                if (articles && articles.length > 0) {
-                        // We need to transform these Cloud SQL rows back into the shape Motor API returns
-                        // or at least what our normalizeMotorResponse expects.
-                        const articleDetails = articles.map(a => ({
-                            id: a.original_id,
-                            title: a.title,
-                            subtitle: a.subtitle,
-                            code: a.code || undefined,
-                            description: a.description || undefined,
-                            bucket: a.bucket,
-                            parentBucket: a.parent_bucket,
-                            thumbnailHref: a.thumbnail_href,
-                            bulletinNumber: a.bulletin_number || undefined,
-                            releaseDate: a.release_date || undefined,
-                            sort: a.sort,
-                            contentSource: a.content_source || 'MOTOR'
-                        }));
-                        const motorShape = {
-                            header: { status: 'OK', statusCode: 200 },
-                            body: {
-                                articleDetails,
-                                filterTabs: [],
-                                normalizedMenu: buildMenuFromNormalizedArticles(articles)
-                            }
-                        };
-                        
-                        recordProxyStat('db');
-                        res.setHeader('x-data-source', 'cloudsql');
-                        res.setHeader('x-cache-hit', 'true');
-                        return res.json(motorShape);
+                const body = await buildCatalogResponseBody(vehicleId, { buildMenu: buildMenuFromNormalizedArticles });
+                if (body) {
+                    recordProxyStat('db');
+                    res.setHeader('x-data-source', 'cloudsql');
+                    res.setHeader('x-cache-hit', 'true');
+                    return res.json({ header: { status: 'OK', statusCode: 200 }, body });
                 }
             }
         } catch (err) {
             logger.warn(`Failed to fetch articles from cache for ${path}:`, err.message);
         }
+    }
+    next();
+};
+
+// Reference-data cache: serve fluids / parts / maintenance from Cloud SQL for
+// normalized vehicles (mirrors articlesCacheMiddleware). Falls through to the live
+// Motor proxy when the vehicle isn't ingested, so a live session is only needed for
+// vehicles we haven't cached yet. Shapes match what the Angular client reads:
+//   fluids → { data: [...] }, parts → { items: [...] }, maintenance → { items: [...] }
+const referenceCacheMiddleware = async (req, res, next) => {
+    const path = req.path;
+    if (req.method !== 'GET') return next();
+
+    const isFluids = path.endsWith('/fluids');
+    const isParts = path.endsWith('/parts');
+    const isMaintInterval = path.includes('/maintenanceSchedules/intervals');
+    const isMaintFrequency = path.includes('/maintenanceSchedules/frequency');
+    if (!isFluids && !isParts && !isMaintInterval && !isMaintFrequency) return next();
+
+    try {
+        const pathParts = path.split('/');
+        const vehicleIdx = pathParts.indexOf('vehicle');
+        if (vehicleIdx === -1 || pathParts.length <= vehicleIdx + 1) return next();
+        const vehicleId = decodeURIComponent(pathParts[vehicleIdx + 1]);
+
+        const type = isFluids ? 'fluids' : isParts ? 'parts' : 'maintenance';
+        const interval = Number.parseInt(req.query.interval ?? '', 10);
+        const freqCode = isMaintFrequency ? String(req.query.frequencyTypeCode || '').trim() : undefined;
+        const refBody = await getReferenceData(vehicleId, type, {
+            interval: isMaintInterval && Number.isFinite(interval) ? interval : undefined,
+            freqCode: freqCode || undefined,
+        });
+        if (!refBody) return next();
+
+        recordProxyStat('db');
+        res.setHeader('x-data-source', 'cloudsql');
+        res.setHeader('x-cache-hit', 'true');
+        return res.json({ header: { status: 'OK', statusCode: 200 }, body: refBody });
+    } catch (err) {
+        logger.warn(`Reference cache miss for ${path}:`, err.message);
     }
     next();
 };
@@ -773,6 +781,7 @@ app.use('/api', articleContentRateLimitGate(createArticleContentRateLimiter()));
 app.use('/api', articleAccessMiddleware);
 app.use('/api', metadataCacheMiddleware);
 app.use('/api', articlesCacheMiddleware);
+app.use('/api', referenceCacheMiddleware);
 
 // Article Content Cache-First Middleware
 const articleContentCacheMiddleware = async (req, res, next) => {
@@ -828,6 +837,11 @@ const articleContentCacheMiddleware = async (req, res, next) => {
                 recordProxyStat('db');
                 res.setHeader('x-data-source', 'cloudsql');
                 res.setHeader('x-cache-hit', 'true');
+                // Lazy-trigger normalization pipeline in background (no-op if already done)
+                enqueueNormalization(vehicleId, articleId, articleRow.original_content, {
+                    title: articleRow.title,
+                    bucket: articleRow.bucket,
+                });
                 return res.json(payload);
             }
         } catch (err) {
@@ -854,117 +868,24 @@ registerIngestEndpoint(app, secureAuthMiddleware, logger);
 // Fluids: optional direct `api.motor.com` RecommendedFluids when MOTOR_INFORMATION_* env + baseVehicleId + engineId query params
 registerMotorInformationFluidsIntercept(app, logger);
 
-// Dynamic vehicle name resolution endpoint
+// Dynamic vehicle name resolution endpoint — deterministic, via vehicle-identity.
 app.get('/api/source/:contentSource/:vehicleId/name', async (req, res) => {
-    const { contentSource, vehicleId } = req.params;
+    const { vehicleId } = req.params;
     if (!vehicleId) {
         return res.json({ header: { status: 'OK', statusCode: 200 }, body: 'Unknown Vehicle' });
     }
-    
     try {
-        const decodedId = decodeURIComponent(vehicleId).trim();
-        
-        // 1. URL Parse for standard Year:Make:Model format
-        const parts = decodedId.split(':');
-        if (parts.length >= 3 && /^\d{4}$/.test(parts[0])) {
-            const formatted = parts.map(p => p.trim()).join(' ');
-            return res.json({
-                header: { status: 'OK', statusCode: 200, dataSource: 'url-parse' },
-                body: formatted
-            });
+        const { name, dataSource } = await resolveVehicleName(vehicleId);
+        if (dataSource === 'fallback') {
+            logger.info(`Name not resolved for ${vehicleId}; returning Unknown Vehicle.`);
         }
-        
-        // 2. Query vehicles table for associated ID mapping
-        const resolvedIds = await resolveAssociatedVehicleIds(decodedId);
-        if (resolvedIds && resolvedIds.length > 0) {
-            const { rows } = await dbQuery(
-                `SELECT year, make, model 
-                 FROM vehicles 
-                 WHERE external_id = ANY($1) 
-                   AND year IS NOT NULL 
-                 LIMIT 1`,
-                [resolvedIds]
-            );
-            if (rows.length > 0 && rows[0].year && rows[0].make) {
-                const formatted = `${rows[0].year} ${rows[0].make} ${rows[0].model || ''}`.trim();
-                return res.json({
-                    header: { status: 'OK', statusCode: 200, dataSource: 'cloudsql' },
-                    body: formatted
-                });
-            }
-        }
-        
-        // 3. Fallback to vehicle_metadata using the base ID
-        let baseId = decodedId;
-        if (decodedId.includes(':')) {
-            baseId = decodedId.split(':')[0];
-        }
-        
-        if (/^\d+$/.test(baseId)) {
-            const { rows: metaRows } = await dbQuery(
-                `SELECT path, data 
-                 FROM vehicle_metadata 
-                 WHERE data::text LIKE $1 
-                 LIMIT 5`,
-                [`%"id": "${baseId}"%`]
-            );
-            
-            for (const row of metaRows) {
-                const pathParts = row.path.split('/');
-                let year = '';
-                let make = '';
-                const yrIdx = pathParts.indexOf('year');
-                if (yrIdx !== -1 && pathParts[yrIdx + 1]) {
-                    year = pathParts[yrIdx + 1];
-                }
-                const mkIdx = pathParts.indexOf('make');
-                if (mkIdx !== -1 && pathParts[mkIdx + 1]) {
-                    make = decodeURIComponent(pathParts[mkIdx + 1]);
-                }
-                
-                const models = row.data?.body?.models || row.data?.body || [];
-                for (const m of models) {
-                    if (String(m.id || m.baseVehicleId) === baseId) {
-                        let modelName = m.model || m.modelName || '';
-                        let engineDetails = '';
-                        
-                        if (decodedId.includes(':')) {
-                            const engineId = decodedId.split(':')[1];
-                            const engines = m.engines || [];
-                            const matchedEngine = engines.find(e => String(e.id || e.engineId).includes(engineId));
-                            if (matchedEngine) {
-                                engineDetails = matchedEngine.name || matchedEngine.description || '';
-                            }
-                        }
-                        
-                        let fullName = `${year} ${make} ${modelName}`.trim();
-                        if (engineDetails) {
-                            const engMatch = engineDetails.match(/^\d+\.\d+L\s+\w+\d*/i);
-                            const engStr = engMatch ? engMatch[0] : engineDetails;
-                            fullName += ` (${engStr})`;
-                        }
-                        
-                        return res.json({
-                            header: { status: 'OK', statusCode: 200, dataSource: 'metadata-parse' },
-                            body: fullName
-                        });
-                    }
-                }
-            }
-        }
-        
-        // 4. Default Unknown
-        logger.info(`Name not found in DB cache for ${decodedId}. Falling back to Unknown Vehicle.`);
         return res.json({
-            header: { status: 'OK', statusCode: 200, dataSource: 'fallback' },
-            body: 'Unknown Vehicle'
+            header: { status: 'OK', statusCode: 200, dataSource },
+            body: name,
         });
     } catch (err) {
         logger.error(`Error resolving vehicle name for ${vehicleId}:`, err);
-        return res.json({
-            header: { status: 'ERROR', statusCode: 500 },
-            body: 'Unknown Vehicle'
-        });
+        return res.json({ header: { status: 'ERROR', statusCode: 500 }, body: 'Unknown Vehicle' });
     }
 });
 
@@ -1027,7 +948,7 @@ app.use('/', authMiddleware, createProxyMiddleware({
             proxyReq.removeHeader('accept-encoding');
 
             // IMPORTANT:
-            // For `/api/source/.../article/...` requests the browser also sends a Supabase
+            // For `/api/source/.../article/...` requests the browser also sends a
             // `Authorization: Bearer <jwt>` header so our backend can verify unlocks.
             // Those headers must NOT be forwarded to Motor.com (we authenticate to Motor.com
             // exclusively via the cookie jar established in `authMiddleware`).
@@ -1060,7 +981,7 @@ app.use('/', authMiddleware, createProxyMiddleware({
         const requestOrigin = normalizeOriginHeader(req.headers.origin);
         if (isOriginAllowed(requestOrigin)) {
             res.setHeader('access-control-allow-origin', requestOrigin);
-            // Required when frontend sends withCredentials: true (Supabase auth). Cannot use * with credentials.
+            // Required when frontend sends withCredentials: true (Firebase auth). Cannot use * with credentials.
             res.setHeader('access-control-allow-credentials', 'true');
         } else {
             // Do not emit wildcard for credentialed/browser requests.

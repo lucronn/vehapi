@@ -185,7 +185,7 @@ export class SearchResultsState {
     /**
      * Load articles for a normalized vehicle via the backend /api/db/articles endpoint.
      * This ensures composite vehicle IDs (e.g. 271312%3A16774) are resolved correctly
-     * via resolveAssociatedVehicleIds on the server — PostgREST direct queries with the
+     * via resolveAssociatedVehicleIds on the server — direct queries with the
      * bare vehicleId would return 0 results since articles are stored under composite IDs.
      */
     private searchViaBackend(
@@ -249,7 +249,7 @@ export class SearchResultsState {
     ): void {
         if (isNormalized) {
             // Route through backend so resolveAssociatedVehicleIds maps composite IDs correctly.
-            // Direct PostgREST queries use the bare vehicleId and miss composite rows.
+            // Direct bare-vehicleId queries miss composite rows.
             this.searchViaBackend(contentSource, vehicleId, searchTerm, motorVehicleId);
             return;
         }

@@ -46,7 +46,7 @@ interface SectionStrategy {
  * Centralized service for vehicle data fetching
  * Implements "Build-As-Used" caching pattern.
  *
- * **Normalized vehicles (`vehicles.is_normalized`):** read from Supabase only for sections below;
+ * **Normalized vehicles (`vehicles.is_normalized`):** read from Cloud SQL only for sections below;
  * do not fall back to Motor for display — ingest runs via {@link DataSyncService} (see
  * `documentation/DATA_SOURCE_AND_NORMALIZATION.md`).
  */
@@ -62,7 +62,7 @@ export class VehicleDataService {
 
     /** Per-vehicle cache of the raw `articles` rows — populated once per dashboard
      *  visit by {@link prefetchSectionsForVehicle} so each section's
-     *  {@link loadSectionData} call hits memory instead of round-tripping Supabase. */
+     *  {@link loadSectionData} call hits memory instead of round-tripping Cloud SQL. */
     private articlesCache = new Map<string, any[]>();
     private articlesCacheInFlight = new Map<string, Promise<any[]>>();
 
@@ -217,17 +217,17 @@ export class VehicleDataService {
         vehicleId: string,
         motorVehicleId?: string
     ): Observable<{ specs: Spec[], fluids: Fluid[] }> {
-        // Priority: Check Supabase if vehicle is normalized
+        // Priority: Check Cloud SQL if vehicle is normalized
         return from(this.dataSync.checkNormalizationStatus(vehicleId)).pipe(
             switchMap((isNormalized) => {
                 if (isNormalized) {
-                    this.logger.info(`[VehicleDataService] Loading specs from Supabase for ${vehicleId}`);
+                    this.logger.info(`[VehicleDataService] Loading specs from Cloud SQL for ${vehicleId}`);
                     return from(
                         this.api.from('specifications').select('*').eq('vehicle_id', vehicleId)
                     ).pipe(
                         switchMap(({ data: specsData, error }) => {
                             if (error) {
-                                this.logger.error('[VehicleDataService] Supabase specs fetch failed:', error);
+                                this.logger.error('[VehicleDataService] Cloud SQL specs fetch failed:', error);
                                 return of({ specs: [] as Spec[], fluids: [] as Fluid[] });
                             }
                             const rows = specsData || [];
@@ -297,7 +297,7 @@ export class VehicleDataService {
                             );
                         }),
                         catchError(err => {
-                            this.logger.error('[VehicleDataService] Supabase specs fetch failed:', err);
+                            this.logger.error('[VehicleDataService] Cloud SQL specs fetch failed:', err);
                             return of({ specs: [], fluids: [] });
                         })
                     );
@@ -427,7 +427,7 @@ export class VehicleDataService {
         vehicleId: string,
         motorVehicleId?: string
     ): Observable<SectionAvailability> {
-        // Priority: Check Supabase if vehicle is normalized
+        // Priority: Check Cloud SQL if vehicle is normalized
         return from(this.dataSync.checkNormalizationStatus(vehicleId)).pipe(
             switchMap((isNormalized) => {
                 if (isNormalized) {
@@ -599,7 +599,7 @@ export class VehicleDataService {
 
     /**
      * Load data for a specific dashboard section.
-     * Uses `articles` as the list source. If the vehicle is **normalized**, Supabase only — no Motor
+     * Uses `articles` as the list source. If the vehicle is **normalized**, Cloud SQL only — no Motor
      * display fallback (empty UI until ingest fills rows). If not normalized, Motor API + lazy sync.
      */
     loadSectionData(
@@ -636,7 +636,7 @@ export class VehicleDataService {
         ).subscribe({
             next: ({ isNormalized, mapped }) => {
                 if (mapped && mapped.length > 0) {
-                    this.logger.info(`[VehicleData] Loaded ${section} from Supabase articles (${mapped.length} items)`);
+                    this.logger.info(`[VehicleData] Loaded  from Cloud SQL articles (${mapped.length} items)`);
                     updateState(mapped);
                     loadingSignal.set(false);
                     return;
@@ -649,7 +649,7 @@ export class VehicleDataService {
                 this.loadSectionDataFromApi(section, contentSource, vehicleId, motorVehicleId, loadingSignal, updateState, errorCallback);
             },
             error: (err) => {
-                this.logger.error('[VehicleData] Supabase read failed for', section, err);
+                this.logger.error('[VehicleData] Cloud SQL read failed for', section, err);
                 if (errorCallback) errorCallback(err);
                 updateState([]);
                 loadingSignal.set(false);
@@ -732,8 +732,8 @@ export class VehicleDataService {
     }
 
     /**
-     * Load maintenance schedules. Normalized vehicles: Supabase only; empty rows trigger background
-     * lazy sync (no Motor display). Pre-normalization: Motor API + lazy cache to Supabase.
+     * Load maintenance schedules. Normalized vehicles: Cloud SQL only; empty rows trigger background
+     * lazy sync (no Motor display). Pre-normalization: Motor API + lazy cache to Cloud SQL.
      */
     loadMaintenanceSchedules(
         contentSource: string,
@@ -746,11 +746,11 @@ export class VehicleDataService {
     ): void {
         loadingSignal.set(true);
 
-        // 1. Check Supabase first
+        // 1. Check Cloud SQL first
         from(this.dataSync.checkNormalizationStatus(vehicleId)).pipe(
             switchMap((isNormalized) => {
                 if (isNormalized) {
-                    this.logger.info(`[VehicleDataService] Loading maintenance from Supabase for ${vehicleId}`);
+                    this.logger.info(`[VehicleDataService] Loading maintenance from Cloud SQL for ${vehicleId}`);
                     return from(this.api
                         .from('maintenance_task')
                         .select('id,action,item,description,interval_value,frequency_code,metadata_json')
@@ -781,9 +781,9 @@ export class VehicleDataService {
                 return of(null);
             })
         ).subscribe({
-            next: (supabaseData) => {
-                if (supabaseData !== null) {
-                    updateState(supabaseData);
+            next: (dbData) => {
+                if (dbData !== null) {
+                    updateState(dbData);
                     loadingSignal.set(false);
                 } else {
                     this.loadMaintenanceSchedulesFromApi(contentSource, vehicleId, motorVehicleId, interval, loadingSignal, updateState, errorCallback);
@@ -827,7 +827,7 @@ export class VehicleDataService {
     }
 
     /**
-     * Load parts. Normalized vehicles: Supabase only; empty full-catalog triggers lazy parts ingest.
+     * Load parts. Normalized vehicles: Cloud SQL only; empty full-catalog triggers lazy parts ingest.
      */
     loadParts(
         contentSource: string,
@@ -869,9 +869,9 @@ export class VehicleDataService {
                 return of(null);
             })
         ).subscribe({
-            next: (supabaseData) => {
-                if (supabaseData !== null) {
-                    updateState(supabaseData);
+            next: (dbData) => {
+                if (dbData !== null) {
+                    updateState(dbData);
                     loadingSignal.set(false);
                 } else {
                     this.motorApi.getParts(contentSource, vehicleId, searchTerm, motorVehicleId).subscribe({
@@ -891,7 +891,7 @@ export class VehicleDataService {
                 }
             },
             error: (err) => {
-                this.logger.error('[VehicleDataService] Supabase parts read failed:', err);
+                this.logger.error('[VehicleDataService] Cloud SQL parts read failed:', err);
                 loadingSignal.set(false);
                 if (errorCallback) errorCallback(err);
             }

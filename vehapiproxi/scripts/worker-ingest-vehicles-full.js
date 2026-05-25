@@ -46,8 +46,9 @@ import {
     upsertPartsFromMotorBody,
     upsertMaintenanceIntervalFromMotorBody,
     upsertMaintenanceFrequencyFromMotorBody
-} from '../src/ingest/reference_data_supabase.js';
-import { getSupabaseConfig, checkParsedArticle } from '../src/supabase.js';
+} from '../src/ingest/reference_data_ingest.js';
+import { isDbConfigured } from '../src/db.js';
+import { checkParsedArticle } from '../src/db.service.js';
 import { ingestMotorProxyPayloadAwait } from '../src/background_worker.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -376,7 +377,7 @@ async function fetchSave({ baseUrl, relPathQuery, filePathRelative, absDir, head
 }
 
 async function aiLogLatestStatus(normPathRaw) {
-    if (!getSupabaseConfig()) return null;
+    if (!isDbConfigured()) return null;
     const { dbQuery: pgQuery } = await import('../src/db.js');
     /** @see normalizeSourcePathForDedup — trim /html duplicate */
     const norm =

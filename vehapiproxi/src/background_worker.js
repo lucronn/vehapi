@@ -558,15 +558,15 @@ function extractContentSource(urlPath) {
 }
 
 /**
- * Normalizes parsed data for Supabase: ensures arrays exist, dates are valid, no undefined.
+ * Normalizes parsed data for Cloud SQL: ensures arrays exist, dates are valid, no undefined.
  * Maximizes retention by preserving all extracted data in a DB-compatible form.
  */
-function normalizeForSupabase(data, schemaType) {
+function normalizeForDb(data, schemaType) {
     const ensureArray = (v) => (Array.isArray(v) ? v : []);
     const ensureNum = (v) => (typeof v === 'number' && !isNaN(v) ? v : null);
 
     if (Array.isArray(data)) {
-        return data.map(item => normalizeForSupabase(item, schemaType));
+        return data.map(item => normalizeForDb(item, schemaType));
     }
 
     const out = { ...data };
@@ -960,7 +960,7 @@ export async function processTaskImmediate(taskId, targetSchema, urlPath, rawDat
             attachMeta(parsedData);
         }
 
-        const normalized = normalizeForSupabase(parsedData, targetSchema);
+        const normalized = normalizeForDb(parsedData, targetSchema);
 
         // Store raw HTML in content_html for content cache.
         // For HTML article content (starts with <), always store it.
@@ -1239,7 +1239,7 @@ export async function processTaskImmediate(taskId, targetSchema, urlPath, rawDat
             tokens_used: totalTokensUsed || null,
             prompt_tokens: promptTokens,
             completion_tokens: completionTokens
-        }).catch(e => logger.warn('Failed to log AI processing metrics to Supabase.', e));
+        }).catch(e => logger.warn('Failed to log AI processing metrics.', e));
 
         logger.info(`Finished background task [${taskId}] in ${duration}ms. Status: ${status}`);
     }

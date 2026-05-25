@@ -179,6 +179,77 @@ vi.mock('../../components/theme-toggle/theme-toggle.component', () => ({
 
 const { HomeComponent } = await import('./home.component');
 
+describe('HomeComponent modelRoutingId', () => {
+  let component: any;
+
+  beforeEach(() => {
+    component = new HomeComponent();
+  });
+
+  test('uses baseVehicleId when present', () => {
+    const model = { id: '3398', baseVehicleId: '192168', model: 'Rogue' };
+    expect(component['modelRoutingId'](model)).toBe('192168');
+  });
+
+  test('falls back to model.id when baseVehicleId is absent', () => {
+    const model = { id: '370', model: 'Escalade' };
+    expect(component['modelRoutingId'](model)).toBe('370');
+  });
+
+  test('falls back to model.id when baseVehicleId is empty string', () => {
+    const model = { id: '370', baseVehicleId: '  ', model: 'Escalade' };
+    expect(component['modelRoutingId'](model)).toBe('370');
+  });
+
+  test('returns empty string when model is null', () => {
+    expect(component['modelRoutingId'](null)).toBe('');
+  });
+});
+
+describe('HomeComponent resolveEnginesOrAutoSelect', () => {
+  let component: any;
+
+  beforeEach(() => {
+    component = new HomeComponent();
+    component.ngOnInit();
+  });
+
+  test('sets vehicleId as baseVehicleId:engineId when single engine', () => {
+    const model = { id: '3398', baseVehicleId: '192168', model: 'Rogue', engines: [{ id: '7835', name: '2.5L' }] };
+    component['resolveEnginesOrAutoSelect'](model);
+    expect(component.selectedVehicle().vehicleId).toBe('192168:7835');
+  });
+
+  test('uses model.id as fallback when baseVehicleId missing', () => {
+    const model = { id: '3398', model: 'Rogue', engines: [{ id: '7835', name: '2.5L' }] };
+    component['resolveEnginesOrAutoSelect'](model);
+    expect(component.selectedVehicle().vehicleId).toBe('3398:7835');
+  });
+
+  test('does not double-wrap already composite engineId', () => {
+    const model = { id: '3398', baseVehicleId: '192168', model: 'Rogue', engines: [{ id: '192168:7835', name: '2.5L' }] };
+    component['resolveEnginesOrAutoSelect'](model);
+    // engineId already contains ':' → pass through as-is
+    expect(component.selectedVehicle().vehicleId).toBe('192168:7835');
+  });
+
+  test('sets vehicleId to routingId when no engines', () => {
+    const model = { id: '3398', baseVehicleId: '192168', model: 'Rogue', engines: [] };
+    component['resolveEnginesOrAutoSelect'](model);
+    expect(component.selectedVehicle().vehicleId).toBe('192168');
+  });
+
+  test('populates engine step when multiple engines exist', () => {
+    const model = {
+      id: '3398', baseVehicleId: '192168', model: 'Rogue',
+      engines: [{ id: '7835', name: '2.5L' }, { id: '7836', name: '3.5L' }]
+    };
+    component['resolveEnginesOrAutoSelect'](model);
+    expect(component.engines().length).toBe(2);
+    expect(component.selectedVehicle()).toBeNull();
+  });
+});
+
 describe('HomeComponent closeMobileWizard', () => {
   let component: any;
 

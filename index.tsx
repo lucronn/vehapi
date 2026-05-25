@@ -1,6 +1,7 @@
 import '@angular/compiler';
 
 import { bootstrapApplication } from '@angular/platform-browser';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { authHeaderInterceptor } from './src/interceptors/auth-header.interceptor';
 import { provideRouter, withHashLocation } from '@angular/router';
@@ -20,6 +21,7 @@ bootstrapApplication(AppComponent, {
   providers: [
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
     provideExperimentalZonelessChangeDetection(),
+    provideAnimationsAsync(),
     provideHttpClient(withFetch(), withInterceptors([authHeaderInterceptor])),
     provideRouter([
       { path: '', component: HomeComponent },

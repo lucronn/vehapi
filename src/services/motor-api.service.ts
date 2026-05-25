@@ -270,7 +270,7 @@ export class MotorApiService {
   }
 
   /**
-   * @param options.catalogSync — bypass proxy Supabase article cache; use when ingesting full catalog into DB
+   * @param options.catalogSync — bypass proxy article cache; use when ingesting full catalog into DB
    *   (`torqueCatalogSync=1`). Required so partial rows in `articles` do not block the full Motor payload.
    */
   searchArticles(
@@ -677,7 +677,7 @@ export class MotorApiService {
   }
 
   /**
-   * L2 vector search (requires Supabase RPC + embeddings; backend enforces unlocks).
+   * L2 vector search (RAG Engine; backend enforces unlocks).
    */
   l2Search(vehicleExternalId: string, query: string, matchCount = 8): Observable<L2SearchResponse> {
     const enc = encodeURIComponent(vehicleExternalId);

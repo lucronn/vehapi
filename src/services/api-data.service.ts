@@ -1,11 +1,11 @@
 /**
- * ApiDataService — replaces direct Supabase PostgREST calls with requests to
+ * ApiDataService — server-proxied Cloud SQL requests for
  * the vehapiproxi /api/data/:table endpoint.
  *
- * Provides a Supabase-compatible chainable query interface so existing service
+ * Provides a chainable query interface so existing service
  * code needs minimal changes:
  *
- *   Before: supabase.client.from('articles').select('*').eq('vehicle_id', vehicleId)
+ *   Before (Supabase era): supabase.client.from('articles').select('*').eq('vehicle_id', vehicleId)
  *   After:  api.from('articles').select('*').eq('vehicle_id', vehicleId)
  *
  * The query is built lazily and executed when awaited or subscribed (thenable).
@@ -16,7 +16,7 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
 
 // ---------------------------------------------------------------------------
-// Query builder — mirrors the Supabase PostgREST chained API shape used in this app
+// Query builder — chainable API shape mirroring previous PostgREST interface
 // ---------------------------------------------------------------------------
 
 interface QueryResult<T = any> {
@@ -164,7 +164,7 @@ export class ApiDataService {
     private baseUrl = environment.apiUrl;
 
     /**
-     * Start a read query. Mirrors supabase.client.from(table).select(...).eq(...)
+     * Start a read query. Mirrors the chainable API: from(table).select(...).eq(...)
      * Usage:
      *   const { data, error } = await this.api.from('articles').select('*').eq('vehicle_id', id)
      */

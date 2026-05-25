@@ -1,8 +1,8 @@
 /**
  * /api/data/:table — lightweight data API for the Angular client.
  *
- * Replaces direct Supabase PostgREST calls from the frontend with server-proxied
- * Cloud SQL queries. Only whitelisted tables are accessible; all reads are scoped
+ * Server-proxied Cloud SQL queries for the Angular client.
+ * Only whitelisted tables are accessible; all reads are scoped
  * to a vehicle_id or path filter; writes require an authenticated request.
  *
  * GET  /api/data/:table?vehicle_id=:id[&select=col1,col2][&limit=N][&count=1]
@@ -10,6 +10,7 @@
  */
 import express from 'express';
 import { dbQuery, isDbConfigured } from '../db.js';
+import { resolveAssociatedVehicleIds } from '../db.service.js';
 import logger from '../logger.js';
 
 const router = express.Router();
@@ -65,12 +66,25 @@ router.get('/:table', async (req, res) => {
     }
 
     try {
+        // Vehicle-keyed rows are stored under composite/URL-encoded ids (e.g. "271368%3A16420"),
+        // while the client passes the raw route id ("271368:16420"). Resolve all associated
+        // id forms so the filter matches the ingested rows.
+        const idCol = (table === 'content_item') ? 'vehicle_external_id' : 'vehicle_id';
+        const associatedIds = (table === 'vehicle_metadata')
+            ? null
+            : await resolveAssociatedVehicleIds(vehicleId);
+
         if (countOnly) {
-            const idCol = table === 'vehicle_metadata' ? 'path' : 'vehicle_id';
-            const idVal = table === 'vehicle_metadata' ? path : vehicleId;
+            if (table === 'vehicle_metadata') {
+                const { rows } = await dbQuery(
+                    `SELECT COUNT(*)::int AS count FROM vehicle_metadata WHERE path = $1`,
+                    [path]
+                );
+                return res.json({ count: rows[0]?.count ?? 0 });
+            }
             const { rows } = await dbQuery(
-                `SELECT COUNT(*)::int AS count FROM "${table}" WHERE "${idCol}" = $1`,
-                [idVal]
+                `SELECT COUNT(*)::int AS count FROM "${table}" WHERE "${idCol}" = ANY($1)`,
+                [associatedIds]
             );
             return res.json({ count: rows[0]?.count ?? 0 });
         }
@@ -82,10 +96,8 @@ router.get('/:table', async (req, res) => {
             sql    = `SELECT ${selectClause} FROM vehicle_metadata WHERE path = $1 LIMIT $2`;
             params = [path, limit];
         } else {
-            // Some tables use vehicle_external_id instead of vehicle_id
-            const idCol = (table === 'content_item') ? 'vehicle_external_id' : 'vehicle_id';
-            sql    = `SELECT ${selectClause} FROM "${table}" WHERE "${idCol}" = $1 LIMIT $2`;
-            params = [vehicleId, limit];
+            sql    = `SELECT ${selectClause} FROM "${table}" WHERE "${idCol}" = ANY($1) LIMIT $2`;
+            params = [associatedIds, limit];
         }
 
         const { rows } = await dbQuery(sql, params);

@@ -216,23 +216,36 @@ export async function resolveAssociatedVehicleIds(vehicleId) {
         // Always include both the raw and URL-encoded forms
         const ids = new Set([vehicleId, encoded]);
 
-        // 1. Search vehicles.external_id (year:Make:Model format)
-        const { rows: vRows } = await dbQuery(
-            `SELECT external_id 
-             FROM vehicles 
-             WHERE external_id = $1 
-                OR external_id = $2
-                OR external_id LIKE '%:' || $1
-                OR lower(external_id) LIKE '%%3a' || $1`,
-            [vehicleId, encoded]
-        );
-        for (const r of vRows) ids.add(r.external_id);
+        const isNumeric = /^\d+$/.test(vehicleId);
+        const isComposite = /^\d+:\d+$/.test(vehicleId);
+
+        // 1. Search vehicles.external_id (year:Make:Model format).
+        //    Only Motor numeric/composite IDs never live in this table, and the
+        //    leading-wildcard LIKEs below force a full sequential scan (~18s on a
+        //    large vehicles table), so for numeric/composite inputs use indexed
+        //    exact-match only and skip the scan entirely.
+        if (isNumeric || isComposite) {
+            const { rows: vRows } = await dbQuery(
+                `SELECT external_id FROM vehicles WHERE external_id = $1 OR external_id = $2`,
+                [vehicleId, encoded]
+            );
+            for (const r of vRows) ids.add(r.external_id);
+        } else {
+            const { rows: vRows } = await dbQuery(
+                `SELECT external_id
+                 FROM vehicles
+                 WHERE external_id = $1
+                    OR external_id = $2
+                    OR external_id LIKE '%:' || $1
+                    OR lower(external_id) LIKE '%%3a' || $1`,
+                [vehicleId, encoded]
+            );
+            for (const r of vRows) ids.add(r.external_id);
+        }
 
         // 2. If vehicleId looks like a Motor numeric ID (pure digits or "digits:digits"),
         //    also search articles.vehicle_id directly (stored as URL-encoded "baseId%3AengineId").
         //    This bridges the gap: articles use Motor composite IDs, vehicles use year:Make:Model.
-        const isNumeric = /^\d+$/.test(vehicleId);
-        const isComposite = /^\d+:\d+$/.test(vehicleId);
         if (isComposite) {
             // encoded form is what's stored in articles.vehicle_id
             ids.add(encoded);
@@ -246,13 +259,15 @@ export async function resolveAssociatedVehicleIds(vehicleId) {
             for (const r of aRows) ids.add(r.vehicle_id);
         } else if (isNumeric) {
             ids.add(encoded);
+            // A bare base id maps to composite article ids (e.g. "271368%3A16420").
+            // Use a literal prefix LIKE so the planner can use idx_articles_vehicle_id_pattern
+            // (text_pattern_ops). A bound parameter ($n) defeats the index because the planner
+            // can't prove it's a prefix vs. a leading-wildcard pattern. vehicleId is validated
+            // as pure digits by the isNumeric check above, so inlining it is injection-safe.
             const { rows: aRows } = await dbQuery(
                 `SELECT DISTINCT vehicle_id
                  FROM articles
-                 WHERE vehicle_id = $1
-                    OR vehicle_id = $2
-                    OR vehicle_id LIKE $3`,
-                [encoded, vehicleId, vehicleId + '%']
+                 WHERE vehicle_id LIKE '${vehicleId}%'`
             );
             for (const r of aRows) ids.add(r.vehicle_id);
         }
@@ -812,10 +827,49 @@ export async function insertMetadata(path, data) {
             [path, JSON.stringify(data)]
         );
         logger.info(`✓ Persisted vehicle metadata for: ${path}`);
+        // Keep the name-resolution projection in sync (non-fatal).
+        upsertMetadataModelsProjection(path, data).catch(err =>
+            logger.warn(`vehicle_metadata_models refresh skipped for ${path}: ${err.message}`));
         return { success: true };
     } catch (err) {
         logger.error(`Error persisting metadata for ${path}:`, err);
         return { success: false, error: err.message };
+    }
+}
+
+/**
+ * Project a model-list metadata blob into vehicle_metadata_models so vehicle-name
+ * resolution can do exact, indexed lookups instead of fuzzy JSON text scans.
+ * Mirrors scripts/backfill-vehicle-metadata-models.mjs.
+ */
+export async function upsertMetadataModelsProjection(path, data) {
+    if (!isDbConfigured()) return;
+    if (!/\/models$/.test(String(path || ''))) return; // only model-list blobs
+    const parts = String(path).split('/');
+    const yi = parts.indexOf('year');
+    const mi = parts.indexOf('make');
+    const year = yi !== -1 && parts[yi + 1] ? Number.parseInt(parts[yi + 1], 10) : null;
+    const make = mi !== -1 && parts[mi + 1] ? decodeURIComponent(parts[mi + 1]) : null;
+    const models = data?.body?.models || data?.body || [];
+    if (!Array.isArray(models)) return;
+    const num = (v) => (v == null || !Number.isFinite(Number(v)) ? null : Number(v));
+    for (const m of models) {
+        const baseId = num(m?.baseVehicleId);
+        if (baseId == null) continue;
+        const engineIds = Array.isArray(m?.engines)
+            ? m.engines.map(e => num(e?.id ?? e?.engineId)).filter(x => x != null)
+            : [];
+        await dbQuery(
+            `INSERT INTO vehicle_metadata_models
+               (base_vehicle_id, year, make, model, model_local_id, engine_ids, updated_at)
+             VALUES ($1,$2,$3,$4,$5,$6,now())
+             ON CONFLICT (base_vehicle_id) DO UPDATE SET
+               year = EXCLUDED.year, make = EXCLUDED.make, model = EXCLUDED.model,
+               model_local_id = EXCLUDED.model_local_id, engine_ids = EXCLUDED.engine_ids,
+               updated_at = now()`,
+            [baseId, Number.isFinite(year) ? year : null, make,
+             m?.model ?? m?.modelName ?? null, num(m?.id), engineIds]
+        );
     }
 }
 

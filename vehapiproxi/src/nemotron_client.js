@@ -92,3 +92,37 @@ export function getGeminiClient() {
     _geminiClient = new GoogleGenAI({ vertexai: true, project: PROJECT_ID, location: LOCATION });
     return _geminiClient;
 }
+
+// ─── OpenRouter client (free Gemini 2.5 Flash — Phase 5 normalization pipeline) ──
+
+const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
+
+export function getOpenRouterApiKey() {
+    return (process.env.OPENROUTER_API_KEY || '').trim();
+}
+
+export function getOpenRouterModel() {
+    return (process.env.OPENROUTER_MODEL || 'google/gemini-2.5-flash').trim();
+}
+
+let _openRouterClient = null;
+
+/**
+ * OpenAI-compat client pointed at OpenRouter.
+ * Returns null when OPENROUTER_API_KEY is unset.
+ * Primary client for the normalization pipeline (free Gemini 2.5 Flash).
+ */
+export function getOpenRouterClient() {
+    if (_openRouterClient) return _openRouterClient;
+    const key = getOpenRouterApiKey();
+    if (!key) return null;
+    _openRouterClient = new OpenAI({
+        apiKey: key,
+        baseURL: OPENROUTER_BASE_URL,
+        defaultHeaders: {
+            'HTTP-Referer': 'https://vehapi-torque.web.app',
+            'X-Title': 'vehapi normalization pipeline',
+        },
+    });
+    return _openRouterClient;
+}

@@ -61,6 +61,10 @@ describe('WindowManagerService', () => {
             addEventListener: (type: string, fn: Function) => { (listeners[type] ??= []).push(fn); },
             removeEventListener: (type: string, fn: Function) => { listeners[type] = (listeners[type] || []).filter(f => f !== fn); },
             dispatchEvent: () => true,
+            history: {
+                pushState: vi.fn(),
+                back: vi.fn(),
+            },
         };
 
         global.window = mockWindow as any;

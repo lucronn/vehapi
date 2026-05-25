@@ -41,6 +41,13 @@ export interface Make {
 export interface Model {
   model: string;
   id: string;
+  /**
+   * Motor globally-unique base vehicle id. The composite routing key MUST be
+   * built from this (`baseVehicleId:engineId`) — `id` is only unique per
+   * year/make and collides across makes (e.g. Rogue id 3398 == Lumina's
+   * baseVehicleId), which mis-resolves names and article lookups.
+   */
+  baseVehicleId?: string | number;
   engines?: Engine[];
   engineCount?: number;  // Populated by Cloud SQL endpoint to drive engine-step auto-skip
 }

@@ -51,7 +51,7 @@ export class AppComponent implements OnInit {
           event.preventDefault();
           return;
         }
-        // Suppress Supabase auth session errors (non-fatal)
+        // Suppress Firebase auth session errors (non-fatal)
         if (reason?.message?.includes('Auth session missing') || reason?.message?.includes('JWT expired')) {
           event.preventDefault();
           return;

@@ -40,7 +40,7 @@ export function registerMotorInformationFluidsIntercept(app, logger) {
 }
 
 /**
- * YMME helpers for clients to resolve `baseVehicleId` and engine list (requires Supabase JWT).
+ * YMME helpers for clients to resolve `baseVehicleId` and engine list (requires Firebase ID token).
  */
 export function registerMotorInformationYmmeRoutes(app, secureAuthMiddleware, logger) {
     app.get(

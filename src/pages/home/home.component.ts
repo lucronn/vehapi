@@ -433,8 +433,9 @@ export class HomeComponent implements OnInit {
       return filtered.map(e => ({
         type: 'Engine',
         value: {
-          // Composite vehicleId: baseVehicleId:engineId — matches articles.vehicle_id format
-          vehicleId: `${this.selectedModel()?.id}:${e.id}`,
+          // Composite vehicleId: baseVehicleId:engineId — matches articles.vehicle_id format.
+          // Must use baseVehicleId (globally unique), NOT model.id (unique only per year/make).
+          vehicleId: String(e.id).includes(':') ? String(e.id) : `${this.modelRoutingId(this.selectedModel())}:${e.id}`,
           displayName: `${this.selectedModel()?.model || 'Vehicle'} - ${e.name || 'Unknown Engine'}`
         },
         display: e.name || 'Unknown Engine'
@@ -998,10 +999,11 @@ export class HomeComponent implements OnInit {
     }
     const onlyEngine = engines[0];
     // Build composite vehicleId: baseVehicleId:engineId — matches articles.vehicle_id DB format.
-    // For models with no engines (e.g. from DB cache), fall back to bare model.id.
+    // Use baseVehicleId (globally unique), NOT model.id (unique only per year/make).
+    const routingId = this.modelRoutingId(model);
     const vehicleId = onlyEngine
-      ? `${model.id}:${onlyEngine.id}`
-      : String(model.id);
+      ? (String(onlyEngine.id).includes(':') ? String(onlyEngine.id) : `${routingId}:${onlyEngine.id}`)
+      : routingId;
     const displayName = onlyEngine
       ? `${model.model} - ${onlyEngine.name}`
       : model.model;
@@ -1011,9 +1013,23 @@ export class HomeComponent implements OnInit {
     this.ensureWizardOpen();
   }
 
+  /**
+   * The id to use as the first segment of a composite route key. Motor's
+   * globally-unique `baseVehicleId` when present; otherwise `model.id` (only
+   * unique per year/make — last resort for sources that don't supply a base id).
+   */
+  private modelRoutingId(model: Model | null | undefined): string {
+    const base = model?.baseVehicleId;
+    if (base != null && String(base).trim() !== '') return String(base);
+    return String(model?.id ?? '');
+  }
+
   private async resolveMotorVehicleOptionsForModel(model: Model): Promise<boolean> {
     const source = this.currentContentSource();
-    if (!source || source.toUpperCase() === 'MOTOR') {
+    const isMotorSource = !source || source.toUpperCase() === 'MOTOR';
+    // For MOTOR source: only call motorvehicles if model has no engines (DB cache may strip them).
+    // Non-MOTOR sources always need motorvehicles to get the composite Motor vehicle ID.
+    if (isMotorSource && (model.engines?.length ?? 0) > 0) {
       return false;
     }
     if (this.motorVehicleMappingInFlight) {
@@ -1022,7 +1038,8 @@ export class HomeComponent implements OnInit {
     this.motorVehicleMappingInFlight = true;
     this.isLoading.set(true);
     try {
-      const res = await firstValueFrom(this.motorApi.getMotorVehicles(source, model.id));
+      const lookupSource = isMotorSource ? 'MOTOR' : source;
+      const res = await firstValueFrom(this.motorApi.getMotorVehicles(lookupSource, model.id));
       const mappings = Array.isArray(res?.body) ? res.body : [];
       const options: Engine[] = mappings.flatMap((mapping: any) =>
         Array.isArray(mapping?.engines)

@@ -23,7 +23,7 @@ export function normalizeMotorResponse(data) {
 }
 
 /**
- * Builds normalized menu from pre-normalized articles (e.g. Supabase).
+ * Builds normalized menu from pre-normalized articles.
  * Uses bucket/parent_bucket directly — no re-normalization.
  */
 export function buildMenuFromNormalizedArticles(articles) {
