@@ -20,14 +20,19 @@ export function getPool() {
 
     if (!connName && !dbUrl) return null;
 
+    // Keep pool small — Cloud SQL db-f1-micro allows ~25 connections total,
+    // shared across server + up to 3 worker processes.
+    const poolMax = parseInt(process.env.DB_POOL_MAX || '3', 10) || 3;
     const config = dbUrl
-        ? { connectionString: dbUrl, max: 5 }
+        ? { connectionString: dbUrl, max: poolMax, connectionTimeoutMillis: 10000, idleTimeoutMillis: 30000 }
         : {
               host: `/cloudsql/${connName}`,
               database: (process.env.DB_NAME || 'postgres').trim(),
               user: (process.env.DB_USER || 'postgres').trim(),
               password: (process.env.DB_PASSWORD || '').trim(),
-              max: 5,
+              max: poolMax,
+              connectionTimeoutMillis: 10000,
+              idleTimeoutMillis: 30000,
           };
 
     _pool = new Pool(config);
