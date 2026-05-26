@@ -251,19 +251,27 @@ class AuthManager {
 
         logger.info(`[CPID] Starting zip-code auth: custId=${custId} zip=${zip}`);
 
-        const cookieJar = new CookieJar();
-        // Entry point that triggers the cpid prompted flow for this library
-        const entryUrl = `https://search.ebscohost.com/login.aspx?authtype=ip,geo,cpid,uid&custid=${custId}&groupid=${groupId}&profile=autorepso&ref=https%3a%2f%2fwww.askri.org%2f`;
+        // Flat cross-domain cookie map — EBSCO's SSO chain passes tokens across domains,
+        // so we send all cookies everywhere (matching what browsers do via SSO redirects).
+        const flatCookies = {};
+        const parseCookies = (setCookieHeaders) => {
+            (setCookieHeaders || []).forEach(sc => {
+                const [pair] = sc.split(';');
+                const eq = pair.indexOf('=');
+                if (eq > 0) flatCookies[pair.slice(0, eq).trim()] = pair.slice(eq + 1).trim();
+            });
+        };
+        const cookieHeader = () => Object.entries(flatCookies).map(([k, v]) => `${k}=${v}`).join('; ');
 
+        const entryUrl = `https://search.ebscohost.com/login.aspx?authtype=ip,geo,cpid,uid&custid=${custId}&groupid=${groupId}&profile=autorepso&ref=https%3a%2f%2fwww.askri.org%2f`;
         let currentUrl = entryUrl;
         let loginEbscoUrl = null;
 
         // Step 1: follow redirects until we reach login.ebsco.com to harvest params
         for (let i = 0; i < 12; i++) {
-            const urlObj = new URL(currentUrl);
-            const cookieHeader = cookieJar.getCookieHeader(urlObj.hostname);
-            const res = await httpsRequest(currentUrl, { headers: cookieHeader ? { Cookie: cookieHeader } : {} }, stickyProxy);
-            res.cookies.forEach(c => cookieJar.setCookie(c, urlObj.hostname));
+            const ch = cookieHeader();
+            const res = await httpsRequest(currentUrl, { headers: ch ? { Cookie: ch } : {} }, stickyProxy);
+            parseCookies(res.cookies);
             logger.info(`[CPID] Step1 redirect ${i}: ${res.statusCode} ${currentUrl.substring(0, 80)}`);
 
             if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
@@ -272,7 +280,7 @@ class AuthManager {
                 currentUrl = next;
                 continue;
             }
-            // Non-redirect — check if we already have what we need
+            if (currentUrl.includes('login.ebsco.com')) loginEbscoUrl = currentUrl;
             break;
         }
 
@@ -308,7 +316,7 @@ class AuthManager {
             values: { prompt: zip, passwordPrompt: '' }
         });
 
-        const loginCookies = cookieJar.getCookieHeader('login.ebsco.com');
+        const ch = cookieHeader();
         const nextStepRes = await httpsRequest(
             'https://login.ebsco.com/api/login/v1/prompted/next-step',
             {
@@ -318,12 +326,13 @@ class AuthManager {
                     'Content-Length': String(Buffer.byteLength(nextStepBody)),
                     'Origin': 'https://login.ebsco.com',
                     'Referer': loginEbscoUrl.substring(0, 500),
-                    ...(loginCookies ? { Cookie: loginCookies } : {})
+                    ...(ch ? { Cookie: ch } : {})
                 },
                 body: nextStepBody
             },
             stickyProxy
         );
+        parseCookies(nextStepRes.cookies);
 
         if (nextStepRes.statusCode !== 200) {
             throw new Error(`[CPID] next-step returned ${nextStepRes.statusCode}: ${nextStepRes.data.substring(0, 200)}`);
@@ -342,12 +351,12 @@ class AuthManager {
         logger.info(`[CPID] next-step OK, continuing to: ${continueUrl.substring(0, 80)}`);
 
         // Step 3: follow redirects from next-step result to Motor connector/m1
+        // Send all cookies everywhere — EBSCO's cross-domain SSO relies on this.
         currentUrl = continueUrl;
         for (let i = 0; i < 12; i++) {
-            const urlObj = new URL(currentUrl);
-            const cookieHeader = cookieJar.getCookieHeader(urlObj.hostname);
-            const res = await httpsRequest(currentUrl, { headers: cookieHeader ? { Cookie: cookieHeader } : {} }, stickyProxy);
-            res.cookies.forEach(c => cookieJar.setCookie(c, urlObj.hostname));
+            const ch = cookieHeader();
+            const res = await httpsRequest(currentUrl, { headers: ch ? { Cookie: ch } : {} }, stickyProxy);
+            parseCookies(res.cookies);
             logger.info(`[CPID] Step3 redirect ${i}: ${res.statusCode} ${currentUrl.substring(0, 80)}`);
 
             if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
@@ -357,22 +366,25 @@ class AuthManager {
 
             if (currentUrl.includes('motor.com')) {
                 logger.info(`[CPID] Reached motor.com at: ${currentUrl}`);
-                // If we landed on /connector, follow one more hop to /m1
                 if (currentUrl.includes('/connector') && res.statusCode !== 200) {
-                    throw new Error(`[CPID] Motor connector returned ${res.statusCode} — subscription may not allow access`);
+                    throw new Error(`[CPID] Motor connector returned ${res.statusCode} — IP may be banned or subscription issue`);
                 }
-                // Make sure we have /m1 cookies
                 if (!currentUrl.includes('/m1')) {
-                    const m1Res = await httpsRequest('https://sites.motor.com/m1', { headers: cookieJar.getCookieHeader('sites.motor.com') ? { Cookie: cookieJar.getCookieHeader('sites.motor.com') } : {} }, stickyProxy);
-                    m1Res.cookies.forEach(c => cookieJar.setCookie(c, 'sites.motor.com'));
+                    const ch2 = cookieHeader();
+                    const m1Res = await httpsRequest('https://sites.motor.com/m1', { headers: ch2 ? { Cookie: ch2 } : {} }, stickyProxy);
+                    parseCookies(m1Res.cookies);
                 }
                 break;
             }
             break;
         }
 
-        const motorCookies = cookieJar.getAllCookies().filter(c => c.domain.includes('motor.com'));
-        if (!motorCookies.length) throw new Error('[CPID] No Motor cookies after auth');
+        const motorCookies = Object.entries(flatCookies)
+            .filter(([k]) => ['AspNetCore.Cookies', 'AuthUserInfo', 'UIUserSettings', 'SessionIdentifier'].includes(k))
+            .map(([name, value]) => ({ name, value, domain: 'sites.motor.com' }));
+
+        // Fall back to any motor-looking cookies if specific names not found
+        if (!motorCookies.length) throw new Error('[CPID] No Motor cookies after auth — ' + Object.keys(flatCookies).join(', '));
         return motorCookies;
     }
 
