@@ -10,24 +10,23 @@ const router = Router();
 router.get('/db-stats', async (_req, res) => {
     try {
         // Use pg_class fast estimates for large tables; exact counts for small ones.
-        const [approx, vehicles, normalized, dtcs, procedures, aiLogs] = await Promise.all([
-            dbQuery(`SELECT
-                (SELECT reltuples::bigint FROM pg_class WHERE relname='articles') AS articles,
-                (SELECT reltuples::bigint FROM pg_class WHERE relname='dtcs') AS dtcs_approx
-            `).then(r => r.rows[0]),
-            dbQuery('SELECT COUNT(*)::int AS n FROM vehicles').then(r => r.rows[0].n),
-            dbQuery('SELECT COUNT(*)::int AS n FROM vehicles WHERE is_normalized = TRUE').then(r => r.rows[0].n),
-            null,
-            dbQuery("SELECT COUNT(*)::int AS n FROM articles WHERE bucket = 'Procedures'").then(r => r.rows[0].n),
-            dbQuery('SELECT COUNT(*)::int AS n FROM ai_processing_logs').then(r => r.rows[0].n).catch(() => null),
-        ]);
+        // Single query — uses one connection, avoids pool contention.
+        // pg_class for large tables (instant estimate); exact COUNT for small ones.
+        const { rows: [r] } = await dbQuery(`
+            SELECT
+                (SELECT reltuples::bigint FROM pg_class WHERE relname = 'articles')        AS articles,
+                (SELECT COUNT(*)::int       FROM vehicles)                                 AS vehicles,
+                (SELECT COUNT(*)::int       FROM vehicles WHERE is_normalized = TRUE)      AS normalized,
+                (SELECT COUNT(*)::int       FROM dtcs)                                     AS dtcs,
+                (SELECT reltuples::bigint   FROM pg_class WHERE relname = 'ai_processing_logs') AS ai_logs
+        `);
         res.json({
-            articles: approx.articles,
-            vehicles,
-            normalized,
-            dtcs: approx.dtcs_approx,
-            procedures,
-            aiLogs,
+            articles: r.articles,
+            vehicles: r.vehicles,
+            normalized: r.normalized,
+            dtcs: r.dtcs,
+            procedures: null,
+            aiLogs: r.ai_logs,
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
