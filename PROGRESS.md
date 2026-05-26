@@ -1,5 +1,9 @@
 # PROGRESS
 
+**Last updated**: 2026-05-26 — **DTC loading bug + CI/CD workflow:**
+
+Root-caused the "DTCs not loading" issue for vehicle `178040:10982`: vehicle has no catalog in DB (one of ~34,547 that failed ingest during IP ban), falls through to live Motor API, which fails in production because the sticky proxy fix is not yet deployed (no CI/CD workflow existed). Two fixes: (1) added `.github/workflows/deploy.yml` that deploys backend to Cloud Run and frontend to Firebase on every push to `main` — requires `GCP_SA_KEY` and `FIREBASE_SERVICE_ACCOUNT` GitHub secrets to be configured; (2) DtcSectionComponent now shows "Failed to Load DTCs" with a Retry button when the network/auth call errors, instead of silently showing "No Fault Codes". Underlying fix is the auth sticky proxy commit already on `main` — will deploy once GitHub secrets are set.
+
 **Last updated**: 2026-05-26 — **Auth sticky proxy fix + stale log cleanup:**
 
 Fixed the root cause of auth chain failures: `authenticate()` in `vehapiproxi/src/auth.js` was calling `httpsRequest()` multiple times across the EBSCO→Motor redirect chain, each time picking a *new* proxy from the pool via `getCurrentAgentWithUrl()`. Since EBSCO/Motor ties the session to the originating IP, switching proxies mid-chain caused Step 2 to fail with ECONNRESET. Fix: added `buildStickyAgent()` to `ProxyPool` which picks one proxy entry and returns a stable `{agent, url}` pair. `authenticate()` now picks one sticky proxy at the start of each attempt and passes it to every `httpsRequest()` call in the chain. On failure the sticky proxy is reported and the outer retry loop picks a fresh one (up to 8 attempts). Also removed stale "Firestore" references in `invalidateSession()` log — Firestore has been decommissioned.

@@ -2,6 +2,14 @@
     @if (isLoading()) {
     <app-loading-skeleton type="grid" [count]="6"></app-loading-skeleton>
     }
+    @else if (loadError()) {
+    <app-empty-state icon="warning" message="Failed to Load DTCs"
+        submessage="Could not retrieve diagnostic codes. Check your connection and try again.">
+    </app-empty-state>
+    <div class="flex justify-center mt-4">
+        <button (click)="retry()" class="btn-secondary px-5 py-2 text-sm">Retry</button>
+    </div>
+    }
     @else if (dtcs().length === 0) {
     <app-empty-state icon="info" message="No Fault Codes"
         submessage="No diagnostic trouble codes are available for this vehicle.">

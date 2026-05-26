@@ -36,6 +36,7 @@ export class DtcSectionComponent implements OnInit {
 
     dtcs = signal<Dtc[]>([]);
     isLoading = signal(false);
+    loadError = signal(false);
     isUnlocking = signal(false);
 
     // Pagination state
@@ -52,6 +53,7 @@ export class DtcSectionComponent implements OnInit {
 
     private loadData() {
         if (this.dtcs().length > 0) return;
+        this.loadError.set(false);
 
         this.vehicleData.loadSectionData(
             'dtcs',
@@ -65,9 +67,15 @@ export class DtcSectionComponent implements OnInit {
             },
             (error) => {
                 this.logger.error('Failed to load DTCs', error);
+                this.loadError.set(true);
                 this.isLoading.set(false);
             }
         );
+    }
+
+    retry() {
+        this.dtcs.set([]);
+        this.loadData();
     }
 
     private updateDisplayedDtcs() {

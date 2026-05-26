@@ -170,6 +170,8 @@ Users pay for content access via Stripe credits. AI rewrites raw Motor HTML into
 | Date | Work |
 |------|------|
 | 2026-05-26 | Project cleanup: removed ~50 deprecated files (Supabase migrations, Vercel CI, Cursor artifacts, Windows scripts, stale plans) |
+| 2026-05-26 | CI/CD: added `.github/workflows/deploy.yml` (Cloud Run + Firebase on every push to main); requires `GCP_SA_KEY` and `FIREBASE_SERVICE_ACCOUNT` secrets |
+| 2026-05-26 | DTC error state: shows "Failed to Load DTCs" + Retry button instead of "No Fault Codes" when network/auth fails |
 | 2026-05-26 | Auth sticky proxy fix: entire EBSCO→Motor chain now uses one proxy per attempt via `buildStickyAgent()`; stale "Firestore" logs removed |
 | 2026-05-26 | Proxy pool wired into `auth.js` with `reportFailure` + `getCurrentAgentWithUrl`; auth retries 8 proxies before failing |
 | 2026-05-26 | `run-stack.mjs` orchestrator: single command starts aggregator → proxy server → worker in sequence; kills stale :3001 process |
