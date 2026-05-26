@@ -97,6 +97,9 @@ function httpsRequest(url, options = {}, stickyAgent = null) {
             if (activeProxyUrl) proxyPool.reportFailure(activeProxyUrl);
             reject(err);
         });
+        if (options.body) {
+            req.write(options.body);
+        }
         req.end();
     });
 }
@@ -231,7 +234,222 @@ class AuthManager {
     }
 
     /**
-     * Simplified authentication flow using direct GET request
+     * CPID (community patron / zip code) auth flow via Rhode Island library network.
+     * Entry: search.ebscohost.com → login.ebsco.com (extract params) → POST next-step with zip
+     * → logon.ebsco.zone → search.ebscohost.com/webauth → sites.motor.com/connector
+     *
+     * Config env vars:
+     *   EBSCO_CPID_CUST_ID   Customer ID (default: ns145344)
+     *   EBSCO_CPID_GROUP_ID  Group ID (default: main)
+     *   EBSCO_CPID_ZIPS      Comma-sep RI zip codes to rotate (default: 02903,02906,02908,02940)
+     */
+    async _authenticateCpid(stickyProxy) {
+        const custId = process.env.EBSCO_CPID_CUST_ID || 'ns145344';
+        const groupId = process.env.EBSCO_CPID_GROUP_ID || 'main';
+        const zips = (process.env.EBSCO_CPID_ZIPS || '02903,02906,02908,02909,02910,02914,02919,02940').split(',').map(z => z.trim());
+        const zip = zips[Math.floor(Math.random() * zips.length)];
+
+        logger.info(`[CPID] Starting zip-code auth: custId=${custId} zip=${zip}`);
+
+        const cookieJar = new CookieJar();
+        // Entry point that triggers the cpid prompted flow for this library
+        const entryUrl = `https://search.ebscohost.com/login.aspx?authtype=uid&custid=${custId}&groupid=${groupId}&profile=autorepso&ref=https%3a%2f%2fwww.askri.org%2f`;
+
+        let currentUrl = entryUrl;
+        let loginEbscoUrl = null;
+
+        // Step 1: follow redirects until we reach login.ebsco.com to harvest params
+        for (let i = 0; i < 12; i++) {
+            const urlObj = new URL(currentUrl);
+            const cookieHeader = cookieJar.getCookieHeader(urlObj.hostname);
+            const res = await httpsRequest(currentUrl, { headers: cookieHeader ? { Cookie: cookieHeader } : {} }, stickyProxy);
+            res.cookies.forEach(c => cookieJar.setCookie(c, urlObj.hostname));
+            logger.info(`[CPID] Step1 redirect ${i}: ${res.statusCode} ${currentUrl.substring(0, 80)}`);
+
+            if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                const next = new URL(res.headers.location, currentUrl).href;
+                if (next.includes('login.ebsco.com')) loginEbscoUrl = next;
+                currentUrl = next;
+                continue;
+            }
+            // Non-redirect — check if we already have what we need
+            break;
+        }
+
+        if (!loginEbscoUrl) throw new Error('[CPID] Did not reach login.ebsco.com in redirect chain');
+
+        const loginParams = new URL(loginEbscoUrl).searchParams;
+        const requestIdentifier = loginParams.get('requestIdentifier');
+        const redirectUri = loginParams.get('redirect_uri');
+        const authRequest = loginParams.get('authRequest') || '';
+
+        if (!requestIdentifier) throw new Error(`[CPID] Missing requestIdentifier in login.ebsco.com URL`);
+        logger.info(`[CPID] Got requestIdentifier=${requestIdentifier.substring(0, 8)}...`);
+
+        // Step 2: POST next-step with zip code
+        const nextStepBody = JSON.stringify({
+            action: 'signin',
+            context: {
+                original: {
+                    authType: 'cpid,uid',
+                    customerId: custId,
+                    groupId,
+                    profId: 'autorepso',
+                    opid: null,
+                    language: '',
+                    requestIdentifier,
+                    redirectUri: redirectUri || '',
+                    showonlyspecifiedtypes: false,
+                    isSimplified: false,
+                    authRequest,
+                    authToken: ''
+                }
+            },
+            values: { prompt: zip, passwordPrompt: '' }
+        });
+
+        const loginCookies = cookieJar.getCookieHeader('login.ebsco.com');
+        const nextStepRes = await httpsRequest(
+            'https://login.ebsco.com/api/login/v1/prompted/next-step',
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Content-Length': String(Buffer.byteLength(nextStepBody)),
+                    'Origin': 'https://login.ebsco.com',
+                    'Referer': loginEbscoUrl.substring(0, 500),
+                    ...(loginCookies ? { Cookie: loginCookies } : {})
+                },
+                body: nextStepBody
+            },
+            stickyProxy
+        );
+
+        if (nextStepRes.statusCode !== 200) {
+            throw new Error(`[CPID] next-step returned ${nextStepRes.statusCode}: ${nextStepRes.data.substring(0, 200)}`);
+        }
+
+        let continueUrl;
+        try {
+            const parsed = JSON.parse(nextStepRes.data);
+            continueUrl = parsed.redirect || parsed.redirectUrl || parsed.url || parsed.location;
+        } catch (e) {
+            throw new Error(`[CPID] next-step response not JSON: ${nextStepRes.data.substring(0, 200)}`);
+        }
+
+        if (!continueUrl) throw new Error(`[CPID] next-step returned no redirect URL: ${nextStepRes.data.substring(0, 200)}`);
+        logger.info(`[CPID] next-step OK, continuing to: ${continueUrl.substring(0, 80)}`);
+
+        // Step 3: follow redirects from next-step result to Motor connector/m1
+        currentUrl = continueUrl;
+        for (let i = 0; i < 12; i++) {
+            const urlObj = new URL(currentUrl);
+            const cookieHeader = cookieJar.getCookieHeader(urlObj.hostname);
+            const res = await httpsRequest(currentUrl, { headers: cookieHeader ? { Cookie: cookieHeader } : {} }, stickyProxy);
+            res.cookies.forEach(c => cookieJar.setCookie(c, urlObj.hostname));
+            logger.info(`[CPID] Step3 redirect ${i}: ${res.statusCode} ${currentUrl.substring(0, 80)}`);
+
+            if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                currentUrl = new URL(res.headers.location, currentUrl).href;
+                continue;
+            }
+
+            if (currentUrl.includes('motor.com')) {
+                logger.info(`[CPID] Reached motor.com at: ${currentUrl}`);
+                // If we landed on /connector, follow one more hop to /m1
+                if (currentUrl.includes('/connector') && res.statusCode !== 200) {
+                    throw new Error(`[CPID] Motor connector returned ${res.statusCode} — subscription may not allow access`);
+                }
+                // Make sure we have /m1 cookies
+                if (!currentUrl.includes('/m1')) {
+                    const m1Res = await httpsRequest('https://sites.motor.com/m1', { headers: cookieJar.getCookieHeader('sites.motor.com') ? { Cookie: cookieJar.getCookieHeader('sites.motor.com') } : {} }, stickyProxy);
+                    m1Res.cookies.forEach(c => cookieJar.setCookie(c, 'sites.motor.com'));
+                }
+                break;
+            }
+            break;
+        }
+
+        const motorCookies = cookieJar.getAllCookies().filter(c => c.domain.includes('motor.com'));
+        if (!motorCookies.length) throw new Error('[CPID] No Motor cookies after auth');
+        return motorCookies;
+    }
+
+    /**
+     * UID auth flow: search.ebscohost.com/login.aspx?authtype=uid with username+password
+     */
+    async _authenticateUid(stickyProxy) {
+        const ebscoUser = (config.ebscoUser || '').trim();
+        const ebscoPassword = (config.ebscoPassword || '').trim();
+        if (!ebscoUser || !ebscoPassword) {
+            throw new Error('UID auth requires EBSCO_USER and EBSCO_PASSWORD env vars');
+        }
+        const profile = config.ebscoProfile || 'autorepso';
+        const groupId = config.ebscoGroupId || 'remote';
+        const ebscoLoginUrl =
+            `https://search.ebscohost.com/login.aspx?authtype=uid&user=${encodeURIComponent(ebscoUser)}` +
+            `&password=${encodeURIComponent(ebscoPassword)}&profile=${profile}&groupid=${groupId}`;
+
+        const cookieJar = new CookieJar();
+        let currentUrl = ebscoLoginUrl;
+
+        for (let i = 0; i < 10; i++) {
+            const urlObj = new URL(currentUrl);
+            const cookieHeader = cookieJar.getCookieHeader(urlObj.hostname);
+            const res = await httpsRequest(currentUrl, { headers: cookieHeader ? { Cookie: cookieHeader } : {} }, stickyProxy);
+            res.cookies.forEach(c => cookieJar.setCookie(c, urlObj.hostname));
+            logger.info(`[UID] Redirect ${i}: ${res.statusCode} ${currentUrl.substring(0, 80)}`);
+
+            if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                currentUrl = new URL(res.headers.location, currentUrl).href;
+                continue;
+            }
+            if (currentUrl.includes('motor.com')) {
+                // Final request to /m1 if needed
+                if (!currentUrl.includes('/m1')) {
+                    const m1 = await httpsRequest('https://sites.motor.com/m1', {}, stickyProxy);
+                    m1.cookies.forEach(c => cookieJar.setCookie(c, 'sites.motor.com'));
+                }
+                break;
+            }
+            break;
+        }
+
+        const motorCookies = cookieJar.getAllCookies().filter(c => c.domain.includes('motor.com'));
+        if (!motorCookies.length) {
+            // Fall back to all cookies
+            const all = cookieJar.getAllCookies();
+            if (!all.length) throw new Error('[UID] No cookies after auth');
+            return all;
+        }
+        return motorCookies;
+    }
+
+    /**
+     * Auth flow dispatcher: tries UID first, then CPID (zip code) if UID fails.
+     * Returns Motor cookies on success, throws on total failure.
+     */
+    async _runAuthAttempt(stickyProxy, attemptNum) {
+        const hasCpid = !!(process.env.EBSCO_CPID_CUST_ID || true); // cpid always available (uses default custId)
+        const hasUid = !!(config.ebscoUser && config.ebscoPassword);
+
+        // Alternate strategies: even attempts → uid, odd → cpid (or skip if not configured)
+        const strategies = [];
+        if (hasUid) strategies.push('uid');
+        if (hasCpid) strategies.push('cpid');
+
+        const strategy = strategies[attemptNum % strategies.length];
+        logger.info(`[Auth] Attempt ${attemptNum + 1}: strategy=${strategy}`);
+
+        if (strategy === 'cpid') {
+            return await this._authenticateCpid(stickyProxy);
+        } else {
+            return await this._authenticateUid(stickyProxy);
+        }
+    }
+
+    /**
+     * Main authenticate() — retries across strategies and proxies.
      */
     async authenticate() {
         // If authentication is already in progress, return the existing promise
@@ -250,127 +468,31 @@ class AuthManager {
 
         // Create a new auth promise
         this.authPromise = (async () => {
-            logger.info('Starting simplified authentication flow...');
+            logger.info('Starting authentication...');
             this._updateProgress('authenticating', 'init', 'Starting authentication...', 0);
 
             try {
-                const ebscoUser = (config.ebscoUser || '').trim();
-                const ebscoPassword = (config.ebscoPassword || '').trim();
-                if (!ebscoUser || !ebscoPassword) {
-                    throw new Error(
-                        'EBSCO authentication requires EBSCO_USER and EBSCO_PASSWORD environment variables. ' +
-                            'Set them in vehapiproxi/.env (see .env.example).'
-                    );
-                }
-                const profile = config.ebscoProfile || 'autorepso';
-                const groupId = config.ebscoGroupId || 'remote';
-                const ebscoLoginUrl =
-                    `https://search.ebscohost.com/login.aspx?authtype=uid&user=${encodeURIComponent(ebscoUser)}` +
-                    `&password=${encodeURIComponent(ebscoPassword)}&profile=${profile}&groupid=${groupId}`;
-
-                logger.info(`Step 1: Making GET request to EBSCO login URL...`);
-                this._updateProgress('authenticating', 'ebsco_login', 'Connecting to EBSCO...', 10);
-
-                const MAX_PROXY_ATTEMPTS = 8;
-                const maxRedirects = 10;
-
-                // Outer loop: retry the entire auth chain with a fresh sticky proxy on failure.
-                // EBSCO/Motor ties the session to the originating IP — all httpsRequest() calls
-                // in one attempt must use the same proxy.
+                const MAX_PROXY_ATTEMPTS = 10;
                 let authSuccess = false;
                 let lastError = null;
 
                 for (let proxyAttempt = 0; proxyAttempt < MAX_PROXY_ATTEMPTS && !authSuccess; proxyAttempt++) {
-                    // Pick ONE proxy entry for the entire chain — EBSCO/Motor ties session to originating IP
                     const stickyProxy = proxyPool.buildStickyAgent(true);
                     if (stickyProxy) {
-                        logger.info(`[Auth] Attempt ${proxyAttempt + 1}/${MAX_PROXY_ATTEMPTS} using proxy: ${stickyProxy.url}`);
+                        logger.info(`[Auth] Attempt ${proxyAttempt + 1}/${MAX_PROXY_ATTEMPTS} proxy: ${stickyProxy.url.substring(0, 40)}`);
                     } else {
                         logger.info(`[Auth] Attempt ${proxyAttempt + 1}/${MAX_PROXY_ATTEMPTS} (no proxy)`);
                     }
 
+                    this._updateProgress('authenticating', 'connecting', `Auth attempt ${proxyAttempt + 1}...`, 10 + proxyAttempt * 8);
+
                     try {
-                        const cookieJar = new CookieJar();
-                        let currentUrl = ebscoLoginUrl;
-                        let redirectCount = 0;
+                        const motorCookies = await this._runAuthAttempt(stickyProxy, proxyAttempt);
 
-                        // Follow redirects manually — all requests use stickyProxy
-                        while (redirectCount < maxRedirects) {
-                            const urlObj = new URL(currentUrl);
-                            const cookieHeader = cookieJar.getCookieHeader(urlObj.hostname);
-
-                            const response = await httpsRequest(
-                                currentUrl,
-                                { headers: cookieHeader ? { 'Cookie': cookieHeader } : {} },
-                                stickyProxy
-                            );
-
-                            // Store cookies from this response
-                            response.cookies.forEach(cookie => {
-                                cookieJar.setCookie(cookie, urlObj.hostname);
-                            });
-
-                            logger.info(`Response status: ${response.statusCode}, URL: ${currentUrl}`);
-                            logger.info(`Cookies received: ${response.cookies.length}`);
-
-                            // Update progress based on redirect count
-                            const progressPercent = Math.min(10 + (redirectCount * 15), 70);
-                            this._updateProgress('authenticating', 'redirecting', `Following redirect ${redirectCount + 1}...`, progressPercent);
-
-                            // Handle redirect
-                            if (response.statusCode >= 300 && response.statusCode < 400) {
-                                const location = response.headers.location;
-                                if (location) {
-                                    currentUrl = new URL(location, currentUrl).href;
-                                    redirectCount++;
-                                    logger.info(`Redirect ${redirectCount} to: ${currentUrl}`);
-                                    continue;
-                                }
-                            }
-
-                            // Check if we've reached motor.com
-                            if (currentUrl.includes('motor.com')) {
-                                logger.info(`✓ Reached motor.com at: ${currentUrl}`);
-                                this._updateProgress('authenticating', 'motor_connect', 'Connecting to Motor.com...', 75);
-
-                                // Make a final request to motor.com/m1 — same sticky proxy
-                                const motorUrl = 'https://sites.motor.com/m1';
-                                const cookieHeaderForMotor = cookieJar.getCookieHeader('sites.motor.com');
-
-                                logger.info('Step 2: Making final request to motor.com/m1...');
-                                this._updateProgress('authenticating', 'motor_auth', 'Authenticating with Motor.com...', 85);
-                                const finalResponse = await httpsRequest(
-                                    motorUrl,
-                                    { headers: cookieHeaderForMotor ? { 'Cookie': cookieHeaderForMotor } : {} },
-                                    stickyProxy
-                                );
-
-                                // Store any additional cookies from motor.com
-                                finalResponse.cookies.forEach(cookie => {
-                                    cookieJar.setCookie(cookie, 'sites.motor.com');
-                                });
-
-                                logger.info(`Final response status: ${finalResponse.statusCode}`);
-                                break;
-                            }
-
-                            // No redirect and not motor.com — done
-                            break;
-                        }
-
-                        // Extract all motor.com cookies
-                        const motorCookies = cookieJar.getAllCookies().filter(c => c.domain.includes('motor.com'));
-                        this.cookies = motorCookies.length > 0 ? motorCookies : cookieJar.getAllCookies();
-                        if (motorCookies.length === 0) {
-                            logger.warn(`No motor.com cookies found, using all cookies: ${this.cookies.length}`);
-                        }
-
+                        this.cookies = motorCookies;
                         this.lastAuthTime = Date.now();
-                        logger.info(`✓ Authentication successful! Got ${this.cookies.length} cookies`);
-                        logger.info(`Cookies: ${this.cookies.map(c => c.name).join(', ')}`);
+                        logger.info(`✓ Authentication successful! Got ${this.cookies.length} cookies: ${this.cookies.map(c => c.name).join(', ')}`);
 
-                        // Pin the outbound proxy used for auth so all subsequent Motor API
-                        // requests go through the same IP (Motor binds sessions to originating IP).
                         if (stickyProxy) proxyPool.pinProxy(stickyProxy.url);
 
                         this._updateProgress('authenticating', 'saving', 'Saving session...', 95);
@@ -384,12 +506,12 @@ class AuthManager {
                         lastError = attemptErr;
                         if (stickyProxy) proxyPool.reportFailure(stickyProxy.url);
                         proxyPool.unpinProxy();
-                        logger.warn(`[Auth] Attempt ${proxyAttempt + 1} failed: ${attemptErr.message} — trying next proxy`);
+                        logger.warn(`[Auth] Attempt ${proxyAttempt + 1} failed: ${attemptErr.message} — trying next proxy/strategy`);
                     }
-                } // end proxy retry loop
+                }
 
                 if (!authSuccess) {
-                    throw lastError || new Error('All proxy attempts exhausted during authentication');
+                    throw lastError || new Error('All auth attempts exhausted');
                 }
 
             } catch (error) {

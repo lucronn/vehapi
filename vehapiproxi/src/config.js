@@ -17,6 +17,10 @@ export const config = {
     ebscoPassword: process.env.EBSCO_PASSWORD || '',
     ebscoProfile: process.env.EBSCO_PROFILE || 'autorepso',
     ebscoGroupId: process.env.EBSCO_GROUP_ID || 'remote',
+    // CPID (zip-code) auth via Rhode Island library network
+    ebscoCpidCustId: process.env.EBSCO_CPID_CUST_ID || 'ns145344',
+    ebscoCpidGroupId: process.env.EBSCO_CPID_GROUP_ID || 'main',
+    ebscoCpidZips: process.env.EBSCO_CPID_ZIPS || '02903,02906,02908,02909,02910,02914,02919,02940',
 
     // API configuration
     motorApiBase: process.env.MOTOR_API_BASE || 'https://sites.motor.com/m1',
