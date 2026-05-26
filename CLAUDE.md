@@ -24,6 +24,7 @@ One paragraph: what changed, what was fixed, current state.
 ```
 
 ### 3. Commit and Push
+Every commit must be pushed immediately. Never leave commits unpushed.
 ```bash
 git add -p   # stage relevant files only
 git commit -m "concise description"

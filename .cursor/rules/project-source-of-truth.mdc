@@ -37,5 +37,5 @@ What changed and current state.
 - No `NgModule` in Angular
 - Run `npx tsc --noEmit` after TS changes
 - Run `node --check <file>` after backend JS changes
-- Commit and push to GitHub after completing a task
-- Push after every doc update — `PROJECT.md`, `PROGRESS.md`, `CLAUDE.md`, `AGENTS.md`, or `documentation/` changes must be committed and pushed immediately
+- Every commit must be pushed immediately — never leave commits unpushed
+- Doc updates ship with the commit — `PROJECT.md` and `PROGRESS.md` must be updated and included in the same push as the code change

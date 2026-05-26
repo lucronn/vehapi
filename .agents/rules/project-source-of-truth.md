@@ -57,5 +57,5 @@ One paragraph describing what changed, what was fixed, and current state.
 - **Never create `NgModule`** in Angular code.
 - **Always run `npx tsc --noEmit`** after TypeScript changes before declaring done.
 - **Always run `node --check <file>`** after backend JS changes before declaring done.
-- **Always commit and push** to GitHub after completing a task.
-- **Push after every doc update** — any change to `PROJECT.md`, `PROGRESS.md`, `CLAUDE.md`, `AGENTS.md`, or `documentation/` must be committed and pushed immediately, not batched with unrelated work.
+- **Every commit must be pushed immediately** — never leave commits unpushed, regardless of whether the change is code or docs.
+- **Doc updates ship with the commit** — `PROJECT.md` and `PROGRESS.md` must be updated and included in the same push as the code change that prompted them.
