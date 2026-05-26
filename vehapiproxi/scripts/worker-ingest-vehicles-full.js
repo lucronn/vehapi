@@ -171,6 +171,7 @@ async function appendManifest(dir, entry) {
 }
 
 let requestCount = 0;
+let _rotationInProgress = false;
 
 function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -298,6 +299,13 @@ function coalesceMotorRecovery(baseUrl) {
 async function checkSessionCycle(baseUrl, delayMs) {
     const cap = motorSessionBudget();
     if (!cap || requestCount < cap) return;
+    if (_rotationInProgress) {
+        // Another concurrent task is already rotating — wait for it to finish
+        await new Promise((r) => setTimeout(r, 15000));
+        return;
+    }
+    _rotationInProgress = true;
+    requestCount = 0;
     process.stderr.write(
         `[ingest-worker] Motor session rotation after ${cap} proxy requests...\n`
     );
@@ -307,7 +315,7 @@ async function checkSessionCycle(baseUrl, delayMs) {
     } catch (e) {
         process.stderr.write(`[ingest-worker] /auth/reset failed: ${e?.message}\n`);
     }
-    requestCount = 0;
+    _rotationInProgress = false;
 }
 
 /**
@@ -657,6 +665,11 @@ async function ingestOneVehicle(opts) {
 
     const runRef = async (scopeKey, relPath, fileName, fn) => {
         if (resume && tracker.scopes[scopeKey]?.state === 'complete') {
+            log(`[resume] skip ${scopeKey}\n`);
+            return;
+        }
+        // Don't retry reference scopes for catalog-failed vehicles — same subscription block applies.
+        if (resume && catalogState === 'failed') {
             log(`[resume] skip ${scopeKey}\n`);
             return;
         }
