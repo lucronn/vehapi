@@ -38,7 +38,6 @@ import { registerIngestEndpoint } from './routes/ingest.js';
 import { registerCreditsEndpoints } from './routes/credits-endpoints.js';
 import { registerAiEndpoints } from './routes/ai-endpoints.js';
 import { registerDebugEndpoints } from './routes/debug.js';
-import adminRouter from './routes/admin.js';
 import tutorialRouter from './routes/tutorial.js';
 import dataApiRouter from './routes/data-api.js';
 import dbEndpointsRouter from './routes/db-endpoints.js';
@@ -243,7 +242,6 @@ if (swaggerDocument) {
 registerHealthEndpoint(app, authManager);
 registerAuthEndpoints(app, authManager, logger);
 registerDebugEndpoints(app, { config, authManager, logger, logBuffer });
-app.use('/admin', adminRouter);
 
 // Async Authentication Middleware (Upstream Proxy)
 const authMiddleware = async (req, res, next) => {
