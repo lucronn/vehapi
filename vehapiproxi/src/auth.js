@@ -253,7 +253,7 @@ class AuthManager {
 
         const cookieJar = new CookieJar();
         // Entry point that triggers the cpid prompted flow for this library
-        const entryUrl = `https://search.ebscohost.com/login.aspx?authtype=uid&custid=${custId}&groupid=${groupId}&profile=autorepso&ref=https%3a%2f%2fwww.askri.org%2f`;
+        const entryUrl = `https://search.ebscohost.com/login.aspx?authtype=ip,geo,cpid,uid&custid=${custId}&groupid=${groupId}&profile=autorepso&ref=https%3a%2f%2fwww.askri.org%2f`;
 
         let currentUrl = entryUrl;
         let loginEbscoUrl = null;
@@ -332,7 +332,8 @@ class AuthManager {
         let continueUrl;
         try {
             const parsed = JSON.parse(nextStepRes.data);
-            continueUrl = parsed.redirect || parsed.redirectUrl || parsed.url || parsed.location;
+            continueUrl = parsed.redirect || parsed.redirectUrl || parsed.url || parsed.location
+                || parsed.context?.redirectUri;
         } catch (e) {
             throw new Error(`[CPID] next-step response not JSON: ${nextStepRes.data.substring(0, 200)}`);
         }
