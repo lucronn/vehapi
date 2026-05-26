@@ -2,6 +2,7 @@ import https from 'https';
 import { URL } from 'url';
 import { config } from './config.js';
 import logger from './logger.js';
+import { proxyPool } from './proxy-pool.js';
 import { dbQuery, isDbConfigured } from './db.js';
 
 const SESSION_DOC_ID = 'motor_proxy_v3'; // Bump version to invalidate old sessions
@@ -45,7 +46,8 @@ class CookieJar {
 }
 
 // Helper to make HTTP request and handle redirects with cookie tracking
-function httpsRequest(url, options = {}) {
+// Pass stickyAgent to reuse the same proxy across a multi-hop auth chain.
+function httpsRequest(url, options = {}, stickyAgent = null) {
     return new Promise((resolve, reject) => {
         const urlObj = new URL(url);
         const requestOptions = {
@@ -57,6 +59,16 @@ function httpsRequest(url, options = {}) {
                 ...options.headers
             }
         };
+
+        let activeProxyUrl = null;
+        if (stickyAgent) {
+            requestOptions.agent = stickyAgent.agent;
+            activeProxyUrl = stickyAgent.url;
+        } else {
+            const picked = proxyPool.getCurrentAgentWithUrl(true);
+            if (picked.agent) requestOptions.agent = picked.agent;
+            activeProxyUrl = picked.url;
+        }
 
         const req = https.request(requestOptions, (res) => {
             const cookies = [];
@@ -79,7 +91,10 @@ function httpsRequest(url, options = {}) {
             });
         });
 
-        req.on('error', reject);
+        req.on('error', (err) => {
+            if (activeProxyUrl) proxyPool.reportFailure(activeProxyUrl);
+            reject(err);
+        });
         req.end();
     });
 }
@@ -203,7 +218,7 @@ class AuthManager {
     }
 
     /**
-     * Invalidate session (clears in-memory and deletes from Firestore)
+     * Invalidate session (clears in-memory and deletes from DB)
      */
     async invalidateSession() {
         this.lastAuthTime = 0;
@@ -249,96 +264,125 @@ class AuthManager {
                 const ebscoLoginUrl =
                     `https://search.ebscohost.com/login.aspx?authtype=uid&user=${encodeURIComponent(ebscoUser)}` +
                     `&password=${encodeURIComponent(ebscoPassword)}&profile=${profile}&groupid=${groupId}`;
-                const cookieJar = new CookieJar();
-                let currentUrl = ebscoLoginUrl;
-                let redirectCount = 0;
-                const maxRedirects = 10;
 
                 logger.info(`Step 1: Making GET request to EBSCO login URL...`);
                 this._updateProgress('authenticating', 'ebsco_login', 'Connecting to EBSCO...', 10);
 
-                // Follow redirects manually to capture cookies
-                while (redirectCount < maxRedirects) {
-                    const urlObj = new URL(currentUrl);
-                    const cookieHeader = cookieJar.getCookieHeader(urlObj.hostname);
+                const MAX_PROXY_ATTEMPTS = 8;
+                const maxRedirects = 10;
 
-                    const response = await httpsRequest(currentUrl, {
-                        headers: cookieHeader ? { 'Cookie': cookieHeader } : {}
-                    });
+                // Outer loop: retry the entire auth chain with a fresh sticky proxy on failure.
+                // EBSCO/Motor ties the session to the originating IP — all httpsRequest() calls
+                // in one attempt must use the same proxy.
+                let authSuccess = false;
+                let lastError = null;
 
-                    // Store cookies from this response
-                    response.cookies.forEach(cookie => {
-                        cookieJar.setCookie(cookie, urlObj.hostname);
-                    });
+                for (let proxyAttempt = 0; proxyAttempt < MAX_PROXY_ATTEMPTS && !authSuccess; proxyAttempt++) {
+                    // Pick ONE proxy entry for the entire chain — EBSCO/Motor ties session to originating IP
+                    const stickyProxy = proxyPool.buildStickyAgent(true);
+                    if (stickyProxy) {
+                        logger.info(`[Auth] Attempt ${proxyAttempt + 1}/${MAX_PROXY_ATTEMPTS} using proxy: ${stickyProxy.url}`);
+                    } else {
+                        logger.info(`[Auth] Attempt ${proxyAttempt + 1}/${MAX_PROXY_ATTEMPTS} (no proxy)`);
+                    }
 
-                    logger.info(`Response status: ${response.statusCode}, URL: ${currentUrl}`);
-                    logger.info(`Cookies received: ${response.cookies.length}`);
+                    try {
+                        const cookieJar = new CookieJar();
+                        let currentUrl = ebscoLoginUrl;
+                        let redirectCount = 0;
 
-                    // Update progress based on redirect count
-                    const progressPercent = Math.min(10 + (redirectCount * 15), 70);
-                    this._updateProgress('authenticating', 'redirecting', `Following redirect ${redirectCount + 1}...`, progressPercent);
+                        // Follow redirects manually — all requests use stickyProxy
+                        while (redirectCount < maxRedirects) {
+                            const urlObj = new URL(currentUrl);
+                            const cookieHeader = cookieJar.getCookieHeader(urlObj.hostname);
 
-                    // Handle redirect
-                    if (response.statusCode >= 300 && response.statusCode < 400) {
-                        const location = response.headers.location;
-                        if (location) {
-                            currentUrl = new URL(location, currentUrl).href;
-                            redirectCount++;
-                            logger.info(`Redirect ${redirectCount} to: ${currentUrl}`);
-                            continue;
+                            const response = await httpsRequest(
+                                currentUrl,
+                                { headers: cookieHeader ? { 'Cookie': cookieHeader } : {} },
+                                stickyProxy
+                            );
+
+                            // Store cookies from this response
+                            response.cookies.forEach(cookie => {
+                                cookieJar.setCookie(cookie, urlObj.hostname);
+                            });
+
+                            logger.info(`Response status: ${response.statusCode}, URL: ${currentUrl}`);
+                            logger.info(`Cookies received: ${response.cookies.length}`);
+
+                            // Update progress based on redirect count
+                            const progressPercent = Math.min(10 + (redirectCount * 15), 70);
+                            this._updateProgress('authenticating', 'redirecting', `Following redirect ${redirectCount + 1}...`, progressPercent);
+
+                            // Handle redirect
+                            if (response.statusCode >= 300 && response.statusCode < 400) {
+                                const location = response.headers.location;
+                                if (location) {
+                                    currentUrl = new URL(location, currentUrl).href;
+                                    redirectCount++;
+                                    logger.info(`Redirect ${redirectCount} to: ${currentUrl}`);
+                                    continue;
+                                }
+                            }
+
+                            // Check if we've reached motor.com
+                            if (currentUrl.includes('motor.com')) {
+                                logger.info(`✓ Reached motor.com at: ${currentUrl}`);
+                                this._updateProgress('authenticating', 'motor_connect', 'Connecting to Motor.com...', 75);
+
+                                // Make a final request to motor.com/m1 — same sticky proxy
+                                const motorUrl = 'https://sites.motor.com/m1';
+                                const cookieHeaderForMotor = cookieJar.getCookieHeader('sites.motor.com');
+
+                                logger.info('Step 2: Making final request to motor.com/m1...');
+                                this._updateProgress('authenticating', 'motor_auth', 'Authenticating with Motor.com...', 85);
+                                const finalResponse = await httpsRequest(
+                                    motorUrl,
+                                    { headers: cookieHeaderForMotor ? { 'Cookie': cookieHeaderForMotor } : {} },
+                                    stickyProxy
+                                );
+
+                                // Store any additional cookies from motor.com
+                                finalResponse.cookies.forEach(cookie => {
+                                    cookieJar.setCookie(cookie, 'sites.motor.com');
+                                });
+
+                                logger.info(`Final response status: ${finalResponse.statusCode}`);
+                                break;
+                            }
+
+                            // No redirect and not motor.com — done
+                            break;
                         }
+
+                        // Extract all motor.com cookies
+                        const motorCookies = cookieJar.getAllCookies().filter(c => c.domain.includes('motor.com'));
+                        this.cookies = motorCookies.length > 0 ? motorCookies : cookieJar.getAllCookies();
+                        if (motorCookies.length === 0) {
+                            logger.warn(`No motor.com cookies found, using all cookies: ${this.cookies.length}`);
+                        }
+
+                        this.lastAuthTime = Date.now();
+                        logger.info(`✓ Authentication successful! Got ${this.cookies.length} cookies`);
+                        logger.info(`Cookies: ${this.cookies.map(c => c.name).join(', ')}`);
+
+                        this._updateProgress('authenticating', 'saving', 'Saving session...', 95);
+                        await this.saveSession();
+
+                        this._updateProgress('success', 'complete', 'Authentication successful!', 100);
+                        this.authProgress.completedAt = Date.now();
+                        authSuccess = true;
+
+                    } catch (attemptErr) {
+                        lastError = attemptErr;
+                        if (stickyProxy) proxyPool.reportFailure(stickyProxy.url);
+                        logger.warn(`[Auth] Attempt ${proxyAttempt + 1} failed: ${attemptErr.message} — trying next proxy`);
                     }
+                } // end proxy retry loop
 
-                    // Check if we've reached motor.com
-                    if (currentUrl.includes('motor.com')) {
-                        logger.info(`✓ Reached motor.com at: ${currentUrl}`);
-                        this._updateProgress('authenticating', 'motor_connect', 'Connecting to Motor.com...', 75);
-
-                        // Make a final request to motor.com/m1 to ensure we have the right cookies
-                        const motorUrl = 'https://sites.motor.com/m1';
-                        const cookieHeaderForMotor = cookieJar.getCookieHeader('sites.motor.com');
-
-                        logger.info('Step 2: Making final request to motor.com/m1...');
-                        this._updateProgress('authenticating', 'motor_auth', 'Authenticating with Motor.com...', 85);
-                        const finalResponse = await httpsRequest(motorUrl, {
-                            headers: cookieHeaderForMotor ? { 'Cookie': cookieHeaderForMotor } : {}
-                        });
-
-                        // Store any additional cookies from motor.com
-                        finalResponse.cookies.forEach(cookie => {
-                            cookieJar.setCookie(cookie, 'sites.motor.com');
-                        });
-
-                        logger.info(`Final response status: ${finalResponse.statusCode}`);
-                        break;
-                    }
-
-                    // If we get here and no redirect, we're done
-                    break;
+                if (!authSuccess) {
+                    throw lastError || new Error('All proxy attempts exhausted during authentication');
                 }
-
-                // Extract all motor.com cookies
-                this.cookies = cookieJar.getAllCookies().filter(cookie =>
-                    cookie.domain.includes('motor.com')
-                );
-
-                // If we didn't get motor.com cookies, use all cookies we collected
-                if (this.cookies.length === 0) {
-                    const allCookies = cookieJar.getAllCookies();
-                    logger.warn(`No motor.com cookies found, using all cookies: ${allCookies.length}`);
-                    this.cookies = allCookies;
-                }
-
-                this.lastAuthTime = Date.now();
-
-                logger.info(`✓ Authentication successful! Got ${this.cookies.length} cookies`);
-                logger.info(`Cookies: ${this.cookies.map(c => c.name).join(', ')}`);
-
-                this._updateProgress('authenticating', 'saving', 'Saving session...', 95);
-                await this.saveSession();
-
-                this._updateProgress('success', 'complete', 'Authentication successful!', 100);
-                this.authProgress.completedAt = Date.now();
 
             } catch (error) {
                 logger.error('Authentication failed:', error);

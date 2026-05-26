@@ -1,0 +1,41 @@
+---
+description: Every agent must read PROJECT.md first and keep it current after any meaningful change.
+alwaysApply: true
+---
+
+# PROJECT.md — Mandatory Source of Truth
+
+`PROJECT.md` at the repo root is the single authoritative document for this project.
+**Read it before making any code change.**
+
+## Before Writing Code
+
+1. Read `PROJECT.md` — especially Section 4 (Architecture Rules), Section 6 (TODO), Section 7 (Bugs).
+2. Never violate the Data Source Contract (Section 4.1) or Frontend/Backend Rules (4.2/4.3).
+
+## After Completing Any Meaningful Work — Update PROJECT.md
+
+| Section | What to update |
+|---------|---------------|
+| §5 Current Status | Flip ⚠️→✅ for completed items; add 🔄 for in-progress |
+| §6 Active TODO | Remove completed items; add newly discovered items with priority |
+| §7 Known Bugs | Add new bugs (status + file:line); remove fixed bugs |
+| §8 Completed | Prepend `\| YYYY-MM-DD \| description \|` |
+| §2/§10/§12/§13 | Update if infra, flows, file ownership, or env vars changed |
+
+## Also Prepend a New Entry to PROGRESS.md
+
+```
+**Last updated**: YYYY-MM-DD — **Title:**
+What changed and current state.
+```
+
+## Hard Rules (Non-Negotiable)
+
+- No Supabase / Vercel / Netlify references in new code or docs
+- No Motor API calls from `src/` — backend proxy only
+- No `NgModule` in Angular
+- Run `npx tsc --noEmit` after TS changes
+- Run `node --check <file>` after backend JS changes
+- Commit and push to GitHub after completing a task
+- Push after every doc update — `PROJECT.md`, `PROGRESS.md`, `CLAUDE.md`, `AGENTS.md`, or `documentation/` changes must be committed and pushed immediately

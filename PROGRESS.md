@@ -1,6 +1,32 @@
 # PROGRESS
 
-**Last updated**: 2026-05-21 — **Purged Vercel and Supabase, and resolved TypeScript compilation errors:**
+**Last updated**: 2026-05-26 — **Auth sticky proxy fix + stale log cleanup:**
+
+Fixed the root cause of auth chain failures: `authenticate()` in `vehapiproxi/src/auth.js` was calling `httpsRequest()` multiple times across the EBSCO→Motor redirect chain, each time picking a *new* proxy from the pool via `getCurrentAgentWithUrl()`. Since EBSCO/Motor ties the session to the originating IP, switching proxies mid-chain caused Step 2 to fail with ECONNRESET. Fix: added `buildStickyAgent()` to `ProxyPool` which picks one proxy entry and returns a stable `{agent, url}` pair. `authenticate()` now picks one sticky proxy at the start of each attempt and passes it to every `httpsRequest()` call in the chain. On failure the sticky proxy is reported and the outer retry loop picks a fresh one (up to 8 attempts). Also removed stale "Firestore" references in `invalidateSession()` log — Firestore has been decommissioned.
+
+**Last updated**: 2026-05-26 — **Ingestion recovery + rotating proxy pool + single-command stack:**
+
+Full ingest recovery plan for 34,547 vehicles that failed catalog fetch during IP ban period. All 36,723 tracker files exist in `data/raw/MOTOR/`; only 2,175 have `catalog: complete`.
+
+**Proxy pool (`vehapiproxi/src/proxy-pool.js`):** Rotating outbound proxy pool wired into `function.js` (Motor proxy middleware) and `auth.js` (EBSCO auth requests). Round-robin rotation, failure tracking, auto-disable after 3 failures, 10-min cooldown re-enable. Reports failure from `auth.js` on socket error so dead proxies rotate out.
+
+**Proxy aggregator (`vehapiproxi/scripts/proxy-aggregator.mjs`):** Fetches from 17 GitHub free proxy sources (TheSpeedX, proxifly, clarketm, officialputuid, vakhov, VPSLabCloud, ClearProxy). Serves up to 1,500 proxies (socks5 → socks4 → http priority) at `http://127.0.0.1:3848/proxies`. Optional TCP liveness probe (`--probe`) filters dead proxies. Sources refresh every 10 min; probe re-runs every 30 min.
+
+**Stack orchestrator (`vehapiproxi/scripts/run-stack.mjs`):** `npm run stack` starts aggregator → proxy server → ingest worker in sequence, each waiting for the previous to be ready. Kills any existing process on port 3001 before starting. Auth retries up to 8 proxies before failing.
+
+**Three worker fixes:** (1) write-chain serializer for concurrent article tracker writes; (2) `skipped_by_policy` now retriable with `--retry-failed`; (3) reference scopes run independently via `safeRunRef` so one failure doesn't abort all 11.
+
+**Three frontend fixes:** (1) `article-viewer.component.ts` — `resolveModuleTypeFromDbThenMaybeMotor` guarded to prevent duplicate `loadData()` calls; (2) `vehicle-data.service.ts` — DTC fallback replaced nested subscribe with `switchMap`; (3) `motor-api.service.ts` — `articleCache` now has 5-min TTL to prevent stale post-ingest data.
+
+**Run the full stack:**
+```bash
+cd vehapiproxi
+npm run stack              # aggregator (probe) + proxy server + ingest worker
+npm run stack:meta         # normalization pass (--metadata-only)
+npm run stack:no-probe     # skip TCP probe, faster startup
+```
+
+**Prior update**: 2026-05-21 — **Purged Vercel and Supabase, and resolved TypeScript compilation errors:**
 Decommissioned and purged all legacy Vercel config files (`vercel.json`, `vehapiproxi/vercel.json`), serverless shims (`api/index.js`, `vehapiproxi/api/index.js`), Supabase migration scripts and schemas (`supabase_schema.sql`). Refactored frontend and backend references, replacing direct PostgREST Supabase client queries with proxy `ApiDataService` requests. Resolved Angular production compiler errors by casting PostgREST array responses to `any` before mapping them to specific TypeScript schema interfaces. 
  
 **Prior update:** **Cloud SQL B-tree query range optimization, self-healing normalization, and dynamic name resolution complete:** 
