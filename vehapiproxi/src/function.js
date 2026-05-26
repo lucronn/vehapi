@@ -33,6 +33,7 @@ import { enqueueNormalization } from './services/normalization.service.js';
 import admin from 'firebase-admin';
 import { registerHealthEndpoint } from './routes/health.js';
 import { registerAuthEndpoints } from './routes/auth.js';
+import adminRouter from './routes/admin.js';
 import { registerChekChartYmmeRoutes } from './routes/chek-chart-ymme.js';
 import { registerIngestEndpoint } from './routes/ingest.js';
 import { registerCreditsEndpoints } from './routes/credits-endpoints.js';
@@ -241,6 +242,7 @@ if (swaggerDocument) {
 }
 registerHealthEndpoint(app, authManager);
 registerAuthEndpoints(app, authManager, logger);
+app.use('/admin', adminRouter);
 registerDebugEndpoints(app, { config, authManager, logger, logBuffer });
 
 // Async Authentication Middleware (Upstream Proxy)
