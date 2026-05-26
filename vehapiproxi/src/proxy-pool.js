@@ -95,6 +95,8 @@ export class ProxyPool {
         this._rotatingAgent = null;
         this._maxFailures = Number.parseInt(process.env.OUTBOUND_PROXY_MAX_FAILURES || '3', 10) || 3;
         this._rotateOnFailure = String(process.env.OUTBOUND_PROXY_ROTATE_ON_FAILURE ?? 'true').toLowerCase() !== 'false';
+        /** URL of the proxy pinned for the current session, or null if unpinned. */
+        this._pinnedUrl = null;
     }
 
     /** Load proxies from OUTBOUND_PROXY_LIST env var. */
@@ -110,11 +112,17 @@ export class ProxyPool {
         if (!urls.length) return;
         // Keep failure counts for URLs that persist
         const existing = new Map(this.entries.map(e => [e.url, e]));
-        this.entries = urls.map(u => {
+        const newEntries = urls.map(u => {
             const prev = existing.get(u);
             if (prev) return prev;
             return new ProxyEntry(u);
         });
+        // If we have a pinned proxy that isn't in the new list, keep it so _pick() can still return it
+        if (this._pinnedUrl && !urls.includes(this._pinnedUrl)) {
+            const prev = existing.get(this._pinnedUrl);
+            if (prev && !prev.disabled) newEntries.push(prev);
+        }
+        this.entries = newEntries;
         this._cursor = 0;
         this._rotatingAgent = null; // force rebuild
         logger.info(`[ProxyPool] Loaded ${this.entries.length} proxies from ${source}`);
@@ -128,13 +136,42 @@ export class ProxyPool {
         return this.entries.length;
     }
 
-    /** Pick the next non-disabled proxy in round-robin fashion. */
+    /** Pick the next non-disabled proxy in round-robin fashion (or return the pinned one). */
     _pick() {
+        if (this._pinnedUrl) {
+            const pinned = this.entries.find(e => e.url === this._pinnedUrl && !e.disabled);
+            if (pinned) {
+                logger.debug(`[ProxyPool] Using pinned proxy: ${this._maskUrl(this._pinnedUrl)}`);
+                return pinned;
+            }
+            // Pinned proxy was disabled or not found — fall through to round-robin
+            const inEntries = this.entries.find(e => e.url === this._pinnedUrl);
+            logger.warn(`[ProxyPool] Pinned proxy ${this._maskUrl(this._pinnedUrl)} ${inEntries ? `disabled (failures=${inEntries.failures})` : 'not in entries'}; unpinning`);
+            this._pinnedUrl = null;
+        }
         const enabled = this.entries.filter(e => !e.disabled);
         if (!enabled.length) return null;
         const entry = enabled[this._cursor % enabled.length];
         this._cursor = (this._cursor + 1) % enabled.length;
         return entry;
+    }
+
+    /**
+     * Pin a specific proxy URL for all subsequent requests (session-IP binding).
+     * Call after successful auth so all Motor API requests use the same IP as auth.
+     */
+    pinProxy(url) {
+        if (!url) return;
+        this._pinnedUrl = url;
+        logger.info(`[ProxyPool] Pinned outbound proxy to: ${this._maskUrl(url)}`);
+    }
+
+    /** Unpin the session proxy (call before re-auth to allow fresh proxy selection). */
+    unpinProxy() {
+        if (this._pinnedUrl) {
+            logger.info(`[ProxyPool] Unpinned proxy: ${this._maskUrl(this._pinnedUrl)}`);
+            this._pinnedUrl = null;
+        }
     }
 
     /** Get an Agent for a single outbound request (non-rotating, picks current). */
@@ -282,6 +319,7 @@ export class ProxyPool {
             total: this.entries.length,
             enabled: this.entries.filter(e => !e.disabled).length,
             cursor: this._cursor,
+            pinnedUrl: this._pinnedUrl ? this._maskUrl(this._pinnedUrl) : null,
             proxies: this.entries.map(e => ({
                 url: this._maskUrl(e.url),
                 failures: e.failures,

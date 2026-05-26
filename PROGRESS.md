@@ -1,5 +1,9 @@
 # PROGRESS
 
+**Last updated**: 2026-05-26 — **Proxy session-IP pinning + Motor 403 root cause:**
+
+Added `pinProxy()/unpinProxy()` to `ProxyPool` so that after a successful EBSCO→Motor auth chain, all subsequent Motor API requests are routed through the same outbound proxy IP (Motor binds sessions to originating IP). `auth.js` pins after extracting Motor cookies and unpins on invalidation or auth failure. Added `rejectUnauthorized: false` in `httpsRequest()` when a sticky socks5 agent is active (free public proxies present expired self-signed certs). `_loadUrls()` now preserves the pinned proxy entry across periodic refresh cycles so it isn't silently dropped. Root-caused the 34,547 failed catalog ingests: Motor's `articles/v2?torqueCatalogSync=1` returns 403 "Content not available with current subscription" for ALL vehicles — confirmed across multiple IPs, sessions, and proxies. This is a Motor subscription limitation. DB-cached article reads (no `torqueCatalogSync`) and all YMME endpoints work normally. The ingest recovery stack cannot proceed until the Motor subscription is checked/renewed.
+
 **Last updated**: 2026-05-26 — **CI/CD fully operational; auth fix live in production:**
 
 GitHub Actions `deploy.yml` now deploys both jobs successfully on every push to `main`. Required granting `github-actions-deploy` SA `roles/artifactregistry.admin` + `roles/cloudbuild.builds.editor`, and `firebase-adminsdk` SA `roles/run.viewer`. Auth sticky proxy fix is now live in Cloud Run — DTCs and all Motor API calls should work for non-ingested vehicles.

@@ -115,8 +115,8 @@ Users pay for content access via Stripe credits. AI rewrites raw Motor HTML into
 - ✅ Worker (`worker-ingest-vehicles-full.js`) — catalog + reference data + optional corpus
 - ✅ Single-command stack (`npm run stack`) — aggregator + proxy server + worker
 - ✅ Ingest dashboard (`npm run ingest:dashboard`) — `http://localhost:3847`
-- ⚠️ **34,547 / 36,723 vehicles have failed catalogs** — all HTTP 403 from IP ban period
-- 🔄 **Recovery in progress** — run `npm run stack` to retry with rotating proxies
+- 🔴 **34,547 / 36,723 vehicles have failed catalogs** — Motor `articles/v2?torqueCatalogSync=1` returns 403 "Content not available with current subscription" for ALL vehicles; this is a Motor subscription limitation, not an IP/session issue
+- ❌ **Stack retry will not recover failed vehicles** — `npm run stack` re-hits the same blocked endpoint; YMME and DB-cached article reads work fine
 
 ### Normalization
 - ✅ `content_item` upsert + enrichment pipeline
@@ -139,8 +139,8 @@ Users pay for content access via Stripe credits. AI rewrites raw Motor HTML into
 
 | Priority | Item | Owner |
 |----------|------|-------|
-| 🔴 CRITICAL | Recover 34,547 failed catalog ingests via `npm run stack` | Operator |
-| 🔴 CRITICAL | After catalog recovery: run normalization pass (`npm run stack:meta`) | Operator |
+| 🔴 CRITICAL | **Investigate Motor subscription** — `articles/v2?torqueCatalogSync=1` returns 403 for all vehicles; check if subscription needs renewal/upgrade or use alternative endpoint | Operator |
+| 🟠 HIGH | After catalog recovery: run normalization pass (`npm run stack:meta`) | Operator |
 | 🟠 HIGH | Wire `--retry-failed` + `--resume` as default in `run-stack.mjs` worker flags | Agent |
 | 🟠 HIGH | SQL/API refactor Phase 2 — see `docs/plans/2026-05-23-sql-api-refactor.md` | Agent |
 | 🟡 MEDIUM | `documentation/DATA_SOURCE_AND_NORMALIZATION.md` still references Supabase — update to Cloud SQL | Agent |
@@ -170,6 +170,8 @@ Users pay for content access via Stripe credits. AI rewrites raw Motor HTML into
 | Date | Work |
 |------|------|
 | 2026-05-26 | Project cleanup: removed ~50 deprecated files (Supabase migrations, Vercel CI, Cursor artifacts, Windows scripts, stale plans) |
+| 2026-05-26 | Proxy session-IP pinning: `pinProxy()/unpinProxy()` added to ProxyPool; `auth.js` pins after successful auth so all Motor API requests use the same IP; `rejectUnauthorized: false` for socks5 TLS; pinned proxy preserved across refresh cycles |
+| 2026-05-26 | Motor 403 root-caused: `articles/v2?torqueCatalogSync=1` blocked at subscription level for all vehicles; DB-cached reads (no torqueCatalogSync) and YMME endpoints work normally |
 | 2026-05-26 | CI/CD: added `.github/workflows/deploy.yml` (Cloud Run + Firebase on every push to main); requires `GCP_SA_KEY` and `FIREBASE_SERVICE_ACCOUNT` secrets |
 | 2026-05-26 | DTC error state: shows "Failed to Load DTCs" + Retry button instead of "No Fault Codes" when network/auth fails |
 | 2026-05-26 | Auth sticky proxy fix: entire EBSCO→Motor chain now uses one proxy per attempt via `buildStickyAgent()`; stale "Firestore" logs removed |

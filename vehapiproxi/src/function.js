@@ -8,6 +8,7 @@ import { randomUUID } from 'crypto';
 import { fileURLToPath } from 'url';
 import { config, validateConfig } from './config.js';
 import { authManager } from './auth.js';
+import { proxyPool, initProxyPool } from './proxy-pool.js';
 import logger, { logBuffer, logRequest, logResponse } from './logger.js';
 import swaggerUi from 'swagger-ui-express';
 import { createRequire } from 'module';
@@ -37,6 +38,7 @@ import { registerIngestEndpoint } from './routes/ingest.js';
 import { registerCreditsEndpoints } from './routes/credits-endpoints.js';
 import { registerAiEndpoints } from './routes/ai-endpoints.js';
 import { registerDebugEndpoints } from './routes/debug.js';
+import adminRouter from './routes/admin.js';
 import tutorialRouter from './routes/tutorial.js';
 import dataApiRouter from './routes/data-api.js';
 import dbEndpointsRouter from './routes/db-endpoints.js';
@@ -146,6 +148,7 @@ const swaggerDocument = require('./swagger.json');
 
 // Validate configuration (non-blocking)
 validateConfig();
+initProxyPool();
 
 // Firebase Admin — uses Application Default Credentials on Cloud Run; no explicit init needed.
 if (!admin.apps.length) {
@@ -240,6 +243,7 @@ if (swaggerDocument) {
 registerHealthEndpoint(app, authManager);
 registerAuthEndpoints(app, authManager, logger);
 registerDebugEndpoints(app, { config, authManager, logger, logBuffer });
+app.use('/admin', adminRouter);
 
 // Async Authentication Middleware (Upstream Proxy)
 const authMiddleware = async (req, res, next) => {
@@ -919,10 +923,13 @@ app.use('/', (req, res, next) => {
 });
 
 // Mount at root '/' to handle ALL requests (api, graphic, assets, v1, etc.)
+const motorProxyAgent = proxyPool.getRotatingAgent();
+
 app.use('/', authMiddleware, createProxyMiddleware({
     target: config.motorApiBase, // https://sites.motor.com/m1
     changeOrigin: true,
     selfHandleResponse: true, // Allow us to intercept and modify responses
+    agent: motorProxyAgent,
     pathRewrite: function (path, req) {
         // Explicit rewrites for Chek-Chart legacy paths to /api
         if (path.includes('/Information/Chek-Chart/Years') && path.includes('/Makes') && path.includes('/Models')) {
@@ -1005,14 +1012,45 @@ app.use('/', authMiddleware, createProxyMiddleware({
             res.setHeader('cache-control', 'public, max-age=86400');
         }
 
-        // Handle 401/403 by sending custom response that triggers client polling
+        // Report IP-related failures to proxy pool so it can rotate.
+        if (proxyRes.statusCode === 429 || proxyRes.statusCode === 403) {
+            if (proxyPool.active) {
+                proxyPool.rotate();
+                logger.warn(`[ProxyPool] Motor returned ${proxyRes.statusCode} — rotated outbound proxy`);
+            }
+        }
+
+        // Handle 401/403 responses from Motor:
+        // - 403 = Forbidden (subscription doesn't allow this resource) — pass through, never reset session.
+        // - 401 = Unauthorized (session expired) — reset and re-auth, EXCEPT for graphic/asset paths
+        //   where Motor always returns 401 regardless of session validity.
         if (proxyRes.statusCode === 401 || proxyRes.statusCode === 403) {
-            logger.warn(`Received ${proxyRes.statusCode} from Motor.com. Session expired. Invalidating session and starting authentication...`);
+            const isGraphicOrAsset = req.path.includes('/graphic/') || req.path.includes('/assets/');
+            const isForbidden = proxyRes.statusCode === 403;
+
+            if (isGraphicOrAsset) {
+                logger.warn(`Received ${proxyRes.statusCode} from Motor.com for ${req.path} (graphic/asset — not resetting session)`);
+                res.statusCode = proxyRes.statusCode;
+                res.setHeader('Content-Type', 'image/png');
+                logger.info(`← ${proxyRes.statusCode} ${req.path} (graphic unavailable)`);
+                return Buffer.alloc(0);
+            }
+
+            if (isForbidden) {
+                logger.warn(`Received 403 from Motor.com for ${req.path} (subscription/forbidden — not resetting session)`);
+                res.statusCode = 403;
+                res.setHeader('Content-Type', 'application/json');
+                logger.info(`← 403 ${req.path} (subscription forbidden)`);
+                return JSON.stringify({ error: 'Forbidden', status: 403, message: 'Content not available with current subscription' });
+            }
+
+            logger.warn(`Received 401 from Motor.com for ${req.path}. Session expired — invalidating and re-authenticating...`);
 
             // Invalidate session and start authentication
             authManager.lastAuthTime = 0;
             authManager.cookies = [];
             authManager.resetProgress();
+            proxyPool.unpinProxy();
 
             // Start authentication in background
             authManager.authenticate().catch(err => {

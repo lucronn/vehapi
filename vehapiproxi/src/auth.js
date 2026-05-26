@@ -64,6 +64,8 @@ function httpsRequest(url, options = {}, stickyAgent = null) {
         if (stickyAgent) {
             requestOptions.agent = stickyAgent.agent;
             activeProxyUrl = stickyAgent.url;
+            // Public socks5 proxies may present expired/self-signed certs during tunneling
+            requestOptions.rejectUnauthorized = false;
         } else {
             const picked = proxyPool.getCurrentAgentWithUrl(true);
             if (picked.agent) requestOptions.agent = picked.agent;
@@ -223,8 +225,9 @@ class AuthManager {
     async invalidateSession() {
         this.lastAuthTime = 0;
         this.cookies = [];
+        proxyPool.unpinProxy();
         await this.deleteSession();
-        logger.info('✓ Session invalidated and deleted');
+        logger.info('✓ Session invalidated and deleted (proxy unpinned)');
     }
 
     /**
@@ -366,6 +369,10 @@ class AuthManager {
                         logger.info(`✓ Authentication successful! Got ${this.cookies.length} cookies`);
                         logger.info(`Cookies: ${this.cookies.map(c => c.name).join(', ')}`);
 
+                        // Pin the outbound proxy used for auth so all subsequent Motor API
+                        // requests go through the same IP (Motor binds sessions to originating IP).
+                        if (stickyProxy) proxyPool.pinProxy(stickyProxy.url);
+
                         this._updateProgress('authenticating', 'saving', 'Saving session...', 95);
                         await this.saveSession();
 
@@ -376,6 +383,7 @@ class AuthManager {
                     } catch (attemptErr) {
                         lastError = attemptErr;
                         if (stickyProxy) proxyPool.reportFailure(stickyProxy.url);
+                        proxyPool.unpinProxy();
                         logger.warn(`[Auth] Attempt ${proxyAttempt + 1} failed: ${attemptErr.message} — trying next proxy`);
                     }
                 } // end proxy retry loop
