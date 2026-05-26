@@ -418,6 +418,11 @@ async function main() {
             send(r.status || 502, r.body, 'application/json; charset=utf-8');
             return;
         }
+        if (url.pathname === '/api/proxy-pool/reset-failures' && req.method === 'POST') {
+            const r = await proxyPost('/proxy-pool/reset-failures', {});
+            send(r.status || 502, r.body, 'application/json; charset=utf-8');
+            return;
+        }
 
         res.writeHead(404).end();
     });

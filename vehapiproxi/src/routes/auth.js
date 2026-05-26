@@ -1,3 +1,5 @@
+import { proxyPool } from '../proxy-pool.js';
+
 /**
  * Auth progress endpoints.
  */
@@ -27,6 +29,25 @@ export function registerAuthEndpoints(app, authManager, logger) {
                 error: error.message
             });
         }
+    });
+
+    app.get('/proxy-pool/status', (req, res) => {
+        res.json(proxyPool.getStatus());
+    });
+
+    app.post('/proxy-pool/rotate', (req, res) => {
+        proxyPool.rotate();
+        res.json({ ok: true, status: proxyPool.getStatus() });
+    });
+
+    app.post('/proxy-pool/refresh', async (req, res) => {
+        await proxyPool.refresh().catch(() => {});
+        res.json({ ok: true, status: proxyPool.getStatus() });
+    });
+
+    app.post('/proxy-pool/reset-failures', (req, res) => {
+        const count = proxyPool.resetFailures();
+        res.json({ ok: true, reset: count, status: proxyPool.getStatus() });
     });
 
     app.post('/auth/reset', async (req, res) => {

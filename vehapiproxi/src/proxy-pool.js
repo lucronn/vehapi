@@ -255,6 +255,16 @@ export class ProxyPool {
     }
 
     /** Advance the cursor to skip the current proxy. */
+    /** Re-enable all disabled proxies and reset failure counters. */
+    resetFailures() {
+        let count = 0;
+        for (const e of this.entries) {
+            if (e.disabled) { e.disabled = false; e.failures = 0; count++; }
+        }
+        logger.info(`[ProxyPool] resetFailures: re-enabled ${count} proxies`);
+        return count;
+    }
+
     rotate() {
         const enabledCount = this.entries.filter(e => !e.disabled).length;
         if (enabledCount > 0) {

@@ -529,16 +529,9 @@ async function ingestOneVehicle(opts) {
     tracker.routing.proxy_path_source = pathSource;
     tracker.routing.proxy_path_vehicle_id = pathVehicleId;
 
-    if (retryFailed && tracker.scopes) {
-        for (const k of Object.keys(tracker.scopes)) {
-            const sc = tracker.scopes[k];
-            if (sc && sc.state === 'failed') {
-                sc.state = 'pending';
-                sc.last_error = null;
-                sc.verify_ok = false;
-            }
-        }
-    }
+    // retryFailed resets article-level failures only. Scope failures (catalog, reference_*)
+    // are typically subscription 403s that won't heal by retrying; leave them unchanged.
+    // (Articles with skipped_by_policy are handled by the article filter logic below.)
 
     const mvExtra =
         motorVehicleQuery && String(motorVehicleQuery).trim().length > 0
@@ -551,7 +544,12 @@ async function ingestOneVehicle(opts) {
     const withMvQs = mvExtra ? `?${mvExtra}` : '';
 
     // --- Catalog
-    let catalogSkipped = resume && tracker.scopes.catalog?.state === 'complete' && !forceCatalog;
+    const catalogState = tracker.scopes.catalog?.state;
+    // With --resume, skip failed catalogs — subscription 403s won't heal by retrying.
+    // retryFailed only applies to article-level failures, not catalog-level.
+    let catalogSkipped = resume && !forceCatalog && (
+        catalogState === 'complete' || catalogState === 'failed'
+    );
     if (!catalogSkipped) {
         tracker.scopes.catalog.state = 'fetched';
         await atomicWriteJson(trackerPath = path.join(absDir, 'ingest_tracker.json'), tracker);
@@ -643,7 +641,7 @@ async function ingestOneVehicle(opts) {
 
         await atomicWriteJson(path.join(absDir, 'ingest_tracker.json'), tracker);
     } else if (resume) {
-        log(`[resume] skipping catalog (${engineId})\n`);
+        log(`[resume] skipping catalog (${engineId}) [${catalogState}]\n`);
     }
 
     try {
@@ -708,51 +706,54 @@ async function ingestOneVehicle(opts) {
         await atomicWriteJson(path.join(absDir, 'ingest_tracker.json'), tracker);
     };
 
-    try {
-        const colonIdx = engineId.indexOf(':');
-        const fluidsQs =
-            colonIdx > 0
-                ? `?baseVehicleId=${encodeURIComponent(engineId.slice(0, colonIdx))}&engineId=${encodeURIComponent(engineId.slice(colonIdx + 1))}`
-                : withMvQs;
-        const fluidsPath = `/api/source/${qp}/vehicle/${qv}/fluids${fluidsQs}`;
-        await runRef('reference_fluids', fluidsPath, 'fluids.json', (b) =>
-            upsertFluidsFromMotorBody(engineId, b, { dryRun: false })
+    // Run each reference scope independently so one failure doesn't abort the rest.
+    // Errors are collected; if any failed and !relaxedCompletion, we return after all scopes run.
+    const refErrors = [];
+    const safeRunRef = async (...args) => {
+        try { await runRef(...args); } catch (e) { refErrors.push(/** @type {Error} */ (e).message); }
+    };
+
+    const colonIdx = engineId.indexOf(':');
+    const fluidsQs =
+        colonIdx > 0
+            ? `?baseVehicleId=${encodeURIComponent(engineId.slice(0, colonIdx))}&engineId=${encodeURIComponent(engineId.slice(colonIdx + 1))}`
+            : withMvQs;
+    const fluidsPath = `/api/source/${qp}/vehicle/${qv}/fluids${fluidsQs}`;
+    await safeRunRef('reference_fluids', fluidsPath, 'fluids.json', (b) =>
+        upsertFluidsFromMotorBody(engineId, b, { dryRun: false })
+    );
+
+    const partsPath = `/api/source/${qp}/vehicle/${qv}/parts${withMvQs}`;
+    await safeRunRef('reference_parts', partsPath, 'parts.json', (b) =>
+        upsertPartsFromMotorBody(engineId, b, { dryRun: false })
+    );
+
+    for (const mi of MaintIntervalsMi) {
+        const sk = `reference_maintenance_interval_${mi}`;
+        const qMs = mvExtra
+            ? `intervalType=Miles&interval=${mi}&searchTerm=&${mvExtra}`
+            : `intervalType=Miles&interval=${mi}&searchTerm=`;
+        const q =
+            `/api/source/${qp}/vehicle/${qv}/maintenanceSchedules/intervals` + `?${qMs}`;
+        await safeRunRef(sk, q, `maintenance_interval_${mi}.json`, (b) =>
+            upsertMaintenanceIntervalFromMotorBody(engineId, mi, b, { dryRun: false })
         );
+    }
 
-        const partsPath = `/api/source/${qp}/vehicle/${qv}/parts${withMvQs}`;
-        await runRef('reference_parts', partsPath, 'parts.json', (b) =>
-            upsertPartsFromMotorBody(engineId, b, { dryRun: false })
+    for (const code of MaintFreqCodes) {
+        const sk = `reference_maintenance_frequency_${code}`;
+        const qFreq = mvExtra
+            ? `frequencyTypeCode=${code}&severity=All&searchTerm=&${mvExtra}`
+            : `frequencyTypeCode=${code}&severity=All&searchTerm=`;
+        const q =
+            `/api/source/${qp}/vehicle/${qv}/maintenanceSchedules/frequency` + `?${qFreq}`;
+        await safeRunRef(sk, q, `maintenance_frequency_${code}.json`, (b) =>
+            upsertMaintenanceFrequencyFromMotorBody(engineId, code, b, { dryRun: false })
         );
+    }
 
-        for (const mi of MaintIntervalsMi) {
-            const sk = `reference_maintenance_interval_${mi}`;
-            const qMs = mvExtra
-                ? `intervalType=Miles&interval=${mi}&searchTerm=&${mvExtra}`
-                : `intervalType=Miles&interval=${mi}&searchTerm=`;
-            const q =
-                `/api/source/${qp}/vehicle/${qv}/maintenanceSchedules/intervals` + `?${qMs}`;
-            await runRef(sk, q, `maintenance_interval_${mi}.json`, (b) =>
-                upsertMaintenanceIntervalFromMotorBody(engineId, mi, b, { dryRun: false })
-            );
-        }
-
-        for (const code of MaintFreqCodes) {
-            const sk = `reference_maintenance_frequency_${code}`;
-            const qFreq = mvExtra
-                ? `frequencyTypeCode=${code}&severity=All&searchTerm=&${mvExtra}`
-                : `frequencyTypeCode=${code}&severity=All&searchTerm=`;
-            const q =
-                `/api/source/${qp}/vehicle/${qv}/maintenanceSchedules/frequency` + `?${qFreq}`;
-            await runRef(sk, q, `maintenance_frequency_${code}.json`, (b) =>
-                upsertMaintenanceFrequencyFromMotorBody(engineId, code, b, {
-                    dryRun: false
-                })
-            );
-        }
-    } catch (e) {
-        if (!relaxedCompletion) {
-            return { ok: false, error: /** @type {Error} */ (e).message };
-        }
+    if (refErrors.length && !relaxedCompletion) {
+        return { ok: false, error: refErrors.join('; ') };
     }
 
     // --- Corpus
@@ -760,6 +761,12 @@ async function ingestOneVehicle(opts) {
         tracker = JSON.parse(await fs.readFile(path.join(absDir, 'ingest_tracker.json'), 'utf8'));
     } catch {
         return { ok: false, error: `missing ingest_tracker (${engineId}) — run catalog first` };
+    }
+
+    // Skip corpus pass for vehicles where catalog access was denied — articles won't be fetchable either.
+    if (resume && tracker.scopes?.catalog?.state === 'failed') {
+        summarizeTracker(tracker, quiet, 'surface');
+        return { ok: true };
     }
 
     if (!withArticles) {
@@ -796,13 +803,23 @@ async function ingestOneVehicle(opts) {
 
     const articleLimit = pLimit(Math.max(1, articleConcurrency));
 
+    // Serialize tracker writes: concurrent article tasks share the same tracker object.
+    // Without serialization, concurrent atomicWriteJson calls can race — the rename of
+    // an older snapshot can overwrite a newer one. Chain writes through a single promise.
+    const trackerFilePath = path.join(absDir, 'ingest_tracker.json');
+    let _writeChain = Promise.resolve();
+    const writeTracker = () => {
+        _writeChain = _writeChain.then(() => atomicWriteJson(trackerFilePath, tracker));
+        return _writeChain;
+    };
+
     /** @type {string[]} */
     const ids = forceArticleId
         ? [forceArticleId]
         : Object.keys(tracker.articles || {}).filter((id) => {
               const row = tracker.articles[id];
               const st = row?.status || 'pending';
-              if (retryFailed && (st === 'failed' || st === 'stuck_normalize')) return true;
+              if (retryFailed && (st === 'failed' || st === 'stuck_normalize' || st === 'skipped_by_policy')) return true;
               if (resume && (st === 'normalized' || st === 'skipped_by_policy')) {
                   return false;
               }
@@ -828,7 +845,7 @@ async function ingestOneVehicle(opts) {
                     status: 'rate_limited',
                     last_error: 'HTTP 429'
                 };
-                await atomicWriteJson(path.join(absDir, 'ingest_tracker.json'), tracker);
+                await writeTracker();
                 await new Promise((r) => setTimeout(r, delayMs * 5));
                 return;
             }
@@ -839,7 +856,7 @@ async function ingestOneVehicle(opts) {
                     status: 'failed',
                     last_error: `fetch ${fr.status}`
                 };
-                await atomicWriteJson(path.join(absDir, 'ingest_tracker.json'), tracker);
+                await writeTracker();
                 return;
             }
 
@@ -850,12 +867,12 @@ async function ingestOneVehicle(opts) {
                 raw_path: `article_${sanitizeVehicleDir(articleId)}.json`,
                 content_sha256: crypto.createHash('sha256').update(fr.buf).digest('hex')
             };
-            await atomicWriteJson(path.join(absDir, 'ingest_tracker.json'), tracker);
+            await writeTracker();
 
             if (dryRun) return;
 
             tracker.articles[articleId].status = 'verifying';
-            await atomicWriteJson(path.join(absDir, 'ingest_tracker.json'), tracker);
+            await writeTracker();
 
             const taskId = `cli-${crypto.randomBytes(6).toString('hex')}`;
             try {
@@ -869,7 +886,7 @@ async function ingestOneVehicle(opts) {
                     status: 'failed',
                     last_error: /** @type {Error} */ (e).message || String(e)
                 };
-                await atomicWriteJson(path.join(absDir, 'ingest_tracker.json'), tracker);
+                await writeTracker();
                 return;
             }
 
@@ -898,7 +915,7 @@ async function ingestOneVehicle(opts) {
                 };
             }
 
-            await atomicWriteJson(path.join(absDir, 'ingest_tracker.json'), tracker);
+            await writeTracker();
             await new Promise((r) => setTimeout(r, delayMs));
         })
     );
