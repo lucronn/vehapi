@@ -38,8 +38,12 @@ const getVal  = (f, def) => {
 const probe       = !hasFlag('no-probe');
 const noWorker    = hasFlag('no-worker');
 const metaOnly    = hasFlag('metadata-only');
-const concurrency = getVal('concurrency', '3');
-const numWorkers  = Math.max(1, parseInt(getVal('workers', '1'), 10) || 1);
+const concurrency    = getVal('concurrency', '3');
+const numWorkers     = Math.max(1, parseInt(getVal('workers', '1'), 10) || 1);
+const delayMs        = getVal('delay-ms', '0');
+const sessionBudget  = getVal('session-budget', '');
+const loopGapMs      = getVal('loop-gap-ms', '5000');
+const vehiclesCsv    = getVal('csv', '');
 const aggPort     = getVal('agg-port', '3848');
 
 // ---------------------------------------------------------------------------
@@ -152,10 +156,13 @@ async function main() {
             const workerArgs = [
                 'scripts/worker-ingest-vehicles-full.js',
                 '--resume',
-                '--retry-failed',
                 '--continuous',
                 `--concurrency=${concurrency}`,
+                `--loop-gap-ms=${loopGapMs}`,
             ];
+            if (delayMs && delayMs !== '0') workerArgs.push(`--delay-ms=${delayMs}`);
+            if (sessionBudget) workerArgs.push(`--session-budget=${sessionBudget}`);
+            if (vehiclesCsv) workerArgs.push(`--csv=${vehiclesCsv}`);
             if (metaOnly) workerArgs.push('--metadata-only');
             const label = numWorkers > 1 ? `worker-${i + 1}` : 'worker';
             const color = workerColors[i % workerColors.length];
