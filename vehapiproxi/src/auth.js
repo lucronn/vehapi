@@ -72,6 +72,7 @@ function httpsRequest(url, options = {}, stickyAgent = null) {
             activeProxyUrl = picked.url;
         }
 
+        const timeoutMs = options.timeout || 15000;
         const req = https.request(requestOptions, (res) => {
             const cookies = [];
             const setCookieHeaders = res.headers['set-cookie'] || [];
@@ -93,6 +94,9 @@ function httpsRequest(url, options = {}, stickyAgent = null) {
             });
         });
 
+        req.setTimeout(timeoutMs, () => {
+            req.destroy(new Error(`httpsRequest timeout after ${timeoutMs}ms: ${url.slice(0, 80)}`));
+        });
         req.on('error', (err) => {
             if (activeProxyUrl) proxyPool.reportFailure(activeProxyUrl);
             reject(err);
@@ -466,13 +470,22 @@ class AuthManager {
      */
     async authenticate() {
         // If authentication is already in progress, return the existing promise
+        // but guard against a stuck promise (dead proxy with no timeout) by imposing
+        // a hard ceiling — if it's been running longer than 3 minutes, reset and retry.
         if (this.authPromise) {
-            logger.info('Authentication already in progress, waiting for result...');
-            try {
-                await this.authPromise;
-                return;
-            } catch (err) {
-                throw err;
+            const elapsedMs = this.authProgress.startedAt ? Date.now() - this.authProgress.startedAt : 0;
+            if (elapsedMs > 180_000) {
+                logger.warn(`[Auth] authPromise stuck for ${Math.round(elapsedMs / 1000)}s — resetting`);
+                this.authPromise = null;
+                this.resetProgress();
+            } else {
+                logger.info('Authentication already in progress, waiting for result...');
+                try {
+                    await this.authPromise;
+                    return;
+                } catch (err) {
+                    throw err;
+                }
             }
         }
 
