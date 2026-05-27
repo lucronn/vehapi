@@ -144,6 +144,33 @@ export async function ingestArticlesCatalogFromMotorJson({
         };
     }
 
+    // Extract DTC articles (bucket = "Diagnostic Trouble Codes") and upsert into dtcs table
+    const dtcArticles = details.filter(
+        (a) => a && typeof a.bucket === 'string' && a.bucket.toLowerCase().includes('diagnostic trouble')
+    );
+    if (dtcArticles.length > 0) {
+        const dtcMap = new Map();
+        for (const a of dtcArticles) {
+            const code = String(a.code ?? a.title ?? '').trim();
+            if (!code || dtcMap.has(code)) continue;
+            dtcMap.set(code, {
+                vehicle_id: vehicleIdStr,
+                code,
+                description: a.description ? String(a.description).trim() : null,
+                external_id: String(a.id ?? '').trim() || null
+            });
+        }
+        const dtcRows = [...dtcMap.values()];
+        if (dtcRows.length > 0) {
+            const dtcResult = await insertParsedData('dtcs', dtcRows);
+            if (!dtcResult.success) {
+                logger.warn(`dtcs upsert partial failure: ${dtcResult.error?.message || dtcResult.error}`);
+            } else {
+                logger.info(`[catalog] upserted ${dtcRows.length} DTC rows for vehicle ${vehicleIdStr}`);
+            }
+        }
+    }
+
     const relaxed =
         skipCatalogVerification ||
         String(process.env.RELAXED_COMPLETION || '').toLowerCase() === 'true' ||
