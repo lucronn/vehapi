@@ -113,6 +113,7 @@ class AuthManager {
         this.cookies = [];
         this.lastAuthTime = null;
         this.authPromise = null;
+        this._authPromiseStartedAt = 0;
         // Progress tracking for UI polling
         this.authProgress = {
             status: 'idle', // 'idle' | 'authenticating' | 'success' | 'error'
@@ -473,10 +474,11 @@ class AuthManager {
         // but guard against a stuck promise (dead proxy with no timeout) by imposing
         // a hard ceiling — if it's been running longer than 3 minutes, reset and retry.
         if (this.authPromise) {
-            const elapsedMs = this.authProgress.startedAt ? Date.now() - this.authProgress.startedAt : 0;
+            const elapsedMs = this._authPromiseStartedAt ? Date.now() - this._authPromiseStartedAt : 0;
             if (elapsedMs > 180_000) {
                 logger.warn(`[Auth] authPromise stuck for ${Math.round(elapsedMs / 1000)}s — resetting`);
                 this.authPromise = null;
+                this._authPromiseStartedAt = 0;
                 this.resetProgress();
             } else {
                 logger.info('Authentication already in progress, waiting for result...');
@@ -493,6 +495,7 @@ class AuthManager {
         this.resetProgress();
 
         // Create a new auth promise
+        this._authPromiseStartedAt = Date.now();
         this.authPromise = (async () => {
             logger.info('Starting authentication...');
             this._updateProgress('authenticating', 'init', 'Starting authentication...', 0);
@@ -553,6 +556,7 @@ class AuthManager {
             await this.authPromise;
         } finally {
             this.authPromise = null;
+            this._authPromiseStartedAt = 0;
         }
     }
 
