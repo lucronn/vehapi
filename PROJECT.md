@@ -113,10 +113,11 @@ Users pay for content access via Stripe credits. AI rewrites raw Motor HTML into
 
 ### Ingest Pipeline
 - ✅ Worker (`worker-ingest-vehicles-full.js`) — catalog + reference data + optional corpus
-- ✅ Single-command stack (`npm run stack`) — aggregator + proxy server + worker
-- ✅ Ingest dashboard (`npm run ingest:dashboard`) — `http://localhost:3847`
-- 🔴 **34,547 / 36,723 vehicles have failed catalogs** — Motor `articles/v2?torqueCatalogSync=1` returns 403 "Content not available with current subscription" for ALL vehicles; this is a Motor subscription limitation, not an IP/session issue
-- ❌ **Stack retry will not recover failed vehicles** — `npm run stack` re-hits the same blocked endpoint; YMME and DB-cached article reads work fine
+- ✅ Multi-backend stack (`npm run stack`) — aggregator + N proxy backends + M workers (round-robin)
+- ✅ Ingest dashboard (`npm run ingest:dashboard`) — `http://localhost:3847` (progress bar, ETA, backends panel)
+- ✅ `--auto-reset-failed` — auto-resets failed→pending trackers each pass; no manual recovery needed
+- ✅ Stealth mode — `--delay-ms`, `--session-budget`, `--loop-gap-ms` flags for IP-safe pacing
+- 🔄 **Catalog ingest running** — 878 / 36,723 complete (2.4%), 35,844 pending, 4 backends × 8 workers active
 
 ### Normalization
 - ✅ `content_item` upsert + enrichment pipeline
@@ -139,17 +140,14 @@ Users pay for content access via Stripe credits. AI rewrites raw Motor HTML into
 
 | Priority | Item | Owner |
 |----------|------|-------|
-| 🔴 CRITICAL | **Investigate Motor subscription** — `articles/v2?torqueCatalogSync=1` returns 403 for all vehicles; check if subscription needs renewal/upgrade or use alternative endpoint | Operator |
-| 🟠 HIGH | After catalog recovery: run normalization pass (`npm run stack:meta`) | Operator |
-| 🟠 HIGH | Wire `--retry-failed` + `--resume` as default in `run-stack.mjs` worker flags | Agent |
+| 🔴 ACTIVE | **Catalog ingest running** — 878/36,723 complete; 4 backends × 8 workers; monitor at http://localhost:3847 | Operator |
+| 🟠 HIGH | After catalog completes: run normalization pass (`npm run stack:meta`) | Operator |
 | 🟠 HIGH | SQL/API refactor Phase 2 — see `docs/plans/2026-05-23-sql-api-refactor.md` | Agent |
 | 🟡 MEDIUM | `documentation/DATA_SOURCE_AND_NORMALIZATION.md` still references Supabase — update to Cloud SQL | Agent |
 | 🟡 MEDIUM | `AGENTS.md` still references Supabase and Firestore in places — audit and update | Agent |
 | 🟡 MEDIUM | Seed `vehicle_metadata` for years/makes after catalog recovery (`npm run seed:ymme`) | Operator |
-| 🟡 MEDIUM | GitHub Actions workflows deleted — add Cloud Run deploy workflow | Agent |
 | 🟢 LOW | L2 RAG corpus setup (Vertex AI) — `VERTEX_RAG_CORPUS` env var | Operator |
 | 🟢 LOW | Document AI Layout Parser processor setup — `DOCUMENT_AI_PROCESSOR` env var | Operator |
-| 🟢 LOW | Rotate any secrets that may have been exposed in old Supabase/Vercel configs | Operator |
 
 ---
 
@@ -160,7 +158,7 @@ Users pay for content access via Stripe credits. AI rewrites raw Motor HTML into
 | 🟡 Monitor | Auth fails if all 8 proxy attempts exhausted on cold start (no live proxies yet) | `vehapiproxi/src/auth.js` |
 | 🟡 Active | `articleCache` in `MotorApiService` TTL is 5 min — stale for very recently ingested vehicles | `src/services/motor-api.service.ts` |
 | 🟡 Active | Probe mode (`--probe`) takes several minutes on first aggregator start — startup delay for `npm run stack` | `scripts/proxy-aggregator.mjs` |
-| 🟡 Active | `run-stack.mjs` worker starts without `--retry-failed` by default unless specified | `scripts/run-stack.mjs` |
+| 🟡 Monitor | Rate calculation in dashboard `/api/catalog-stats` needs a few snapshot intervals before showing rate/hr | `scripts/ingest-progress-dashboard.mjs` |
 | 🟢 Monitor | Free proxy quality is inconsistent — dead proxies rotate out but initial auth may still fail on cold start | `src/proxy-pool.js` |
 
 ---
@@ -169,6 +167,7 @@ Users pay for content access via Stripe credits. AI rewrites raw Motor HTML into
 
 | Date | Work |
 |------|------|
+| 2026-05-28 | Multi-backend ingest stack: `--backends=N` spawns N independent proxy backends; `--auto-reset-failed` worker flag; dashboard rewritten with progress bar, ETA, backends panel, rate/hr; priority CSV; stealth pacing flags |
 | 2026-05-26 | Project cleanup: removed ~50 deprecated files (Supabase migrations, Vercel CI, Cursor artifacts, Windows scripts, stale plans) |
 | 2026-05-26 | Proxy session-IP pinning: `pinProxy()/unpinProxy()` added to ProxyPool; `auth.js` pins after successful auth so all Motor API requests use the same IP; `rejectUnauthorized: false` for socks5 TLS; pinned proxy preserved across refresh cycles |
 | 2026-05-26 | Motor 403 root-caused: `articles/v2?torqueCatalogSync=1` blocked at subscription level for all vehicles; DB-cached reads (no torqueCatalogSync) and YMME endpoints work normally |
