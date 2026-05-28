@@ -1005,6 +1005,7 @@ async function main() {
     const relaxedCompletion = argvFlag('relaxed-completion', false);
     const retryFailed = argvFlag('retry-failed', false);
     const resume = argvFlag('resume', false);
+    const autoResetFailed = argvFlag('auto-reset-failed', false);
     const dryRun = argvFlag('dry-run', false);
     const delayMs =
         Number(argvVal('delay-ms') || argvVal('delay') || process.env.INGEST_DELAY_MS || '50') || 50;
@@ -1082,6 +1083,24 @@ async function main() {
                 ? `pass ${passIdx}: vehicles(distinct engine_id): ${vehicles.length}\n`
                 : `vehicles(distinct engine_id): ${vehicles.length}\n`
         );
+
+        // Auto-reset failed catalog states so they get retried this pass
+        if (autoResetFailed) {
+            let resetCount = 0;
+            for (const row of vehicles) {
+                const safeDir = sanitizeVehicleDir(row.engine_id);
+                const tp = path.join(outRoot, 'MOTOR', safeDir, 'ingest_tracker.json');
+                try {
+                    const t = JSON.parse(await fs.readFile(tp, 'utf8'));
+                    if (t?.scopes?.catalog?.state === 'failed') {
+                        t.scopes.catalog.state = 'pending';
+                        await atomicWriteJson(tp, t);
+                        resetCount++;
+                    }
+                } catch { /* tracker not yet created */ }
+            }
+            if (resetCount > 0) say(`[auto-reset] reset ${resetCount} failed catalogs → pending\n`);
+        }
 
         let okAny = false;
 

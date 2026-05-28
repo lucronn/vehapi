@@ -20,8 +20,26 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 /** Same default raw root as worker-ingest-vehicles-full.js: <repo>/data/raw */
 const DEFAULT_RAW = path.resolve(__dirname, '..', '..', 'data', 'raw');
 
-/** Express backend URL */
+/** Express backend URL (primary) */
 const BACKEND_BASE = process.env.BACKEND_BASE || 'http://localhost:3001';
+
+/** Scan for active backends on ports 3001-3008 */
+async function getActiveBackends() {
+    const results = [];
+    for (let port = 3001; port <= 3008; port++) {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 1500);
+        try {
+            const res = await fetch(`http://localhost:${port}/auth/status`, { signal: ctrl.signal });
+            clearTimeout(t);
+            if (res.ok) {
+                const d = await res.json().catch(() => ({}));
+                results.push({ port, sessionValid: d.sessionValid ?? false, status: d.status ?? 'unknown' });
+            }
+        } catch { clearTimeout(t); }
+    }
+    return results;
+}
 
 /** Worker script path */
 const WORKER_SCRIPT = path.resolve(__dirname, 'worker-ingest-vehicles-full.js');
@@ -176,6 +194,9 @@ function buildSummaryPayload(rawRoot, scan) {
 
 /** @type {Map<number, { pid: number, flags: string[], startedAt: string, proc: import('node:child_process').ChildProcess, logLines: string[] }>} */
 const workers = new Map();
+
+/** Rolling snapshots for rate calculation: [{ts, complete}] */
+const catalogSnapshots = [];
 
 function spawnWorker(flags) {
     const args = [WORKER_SCRIPT, ...flags];
@@ -383,6 +404,12 @@ async function main() {
         }
 
         // ── Proxy to backend ─────────────────────────────────────────────────
+        if (url.pathname === '/api/backends' && req.method === 'GET') {
+            const backends = await getActiveBackends();
+            send(200, backends);
+            return;
+        }
+
         if (url.pathname === '/api/proxy/status' && req.method === 'GET') {
             const r = await proxyGet('/auth/status');
             send(r.status || 502, r.body, 'application/json; charset=utf-8');
@@ -421,6 +448,70 @@ async function main() {
         if (url.pathname === '/api/proxy-pool/reset-failures' && req.method === 'POST') {
             const r = await proxyPost('/proxy-pool/reset-failures', {});
             send(r.status || 502, r.body, 'application/json; charset=utf-8');
+            return;
+        }
+
+        // ── Catalog stats (fast — reads only catalog scope state) ────────────
+        if (url.pathname === '/api/catalog-stats' && req.method === 'GET') {
+            try {
+                const motorRoot = path.join(rawRoot, 'MOTOR');
+                let complete = 0, failed = 0, pending = 0, total = 0;
+                let dirs = [];
+                try { dirs = await fs.readdir(motorRoot, { withFileTypes: true }); } catch {}
+                for (const ent of dirs) {
+                    if (!ent.isDirectory()) continue;
+                    const tp = path.join(motorRoot, ent.name, 'ingest_tracker.json');
+                    try {
+                        const t = JSON.parse(await fs.readFile(tp, 'utf8'));
+                        const s = t?.scopes?.catalog?.state ?? 'pending';
+                        total++;
+                        if (s === 'complete') complete++;
+                        else if (s === 'failed') failed++;
+                        else pending++;
+                    } catch {}
+                }
+                // Record snapshot for rate calculation
+                const now = Date.now();
+                catalogSnapshots.push({ ts: now, complete });
+                if (catalogSnapshots.length > 60) catalogSnapshots.shift();
+                // Rate: completions in last 60 min
+                const oldest = catalogSnapshots[0];
+                const ratePerHour = catalogSnapshots.length > 1
+                    ? Math.round((complete - oldest.complete) / ((now - oldest.ts) / 3600000))
+                    : 0;
+                const csvTotal = 36723;
+                const etaHours = ratePerHour > 0 ? (csvTotal - complete) / ratePerHour : null;
+                send(200, { complete, failed, pending, total, csvTotal, ratePerHour, etaHours });
+            } catch (e) {
+                send(500, { error: e.message || String(e) });
+            }
+            return;
+        }
+
+        // ── Reset all failed catalog states → pending ────────────────────────
+        if (url.pathname === '/api/reset-failed-catalogs' && req.method === 'POST') {
+            try {
+                const motorRoot = path.join(rawRoot, 'MOTOR');
+                let reset = 0;
+                let dirs = [];
+                try { dirs = await fs.readdir(motorRoot, { withFileTypes: true }); } catch {}
+                for (const ent of dirs) {
+                    if (!ent.isDirectory()) continue;
+                    const tp = path.join(motorRoot, ent.name, 'ingest_tracker.json');
+                    try {
+                        const raw = await fs.readFile(tp, 'utf8');
+                        const t = JSON.parse(raw);
+                        if (t?.scopes?.catalog?.state === 'failed') {
+                            t.scopes.catalog.state = 'pending';
+                            await fs.writeFile(tp, JSON.stringify(t));
+                            reset++;
+                        }
+                    } catch {}
+                }
+                send(200, { ok: true, reset });
+            } catch (e) {
+                send(500, { error: e.message || String(e) });
+            }
             return;
         }
 

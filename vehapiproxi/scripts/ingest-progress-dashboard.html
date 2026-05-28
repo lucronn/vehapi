@@ -3,265 +3,560 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Motor ingest progress</title>
+  <title>Motor ingest dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { font-family: system-ui, sans-serif; }
-    @media (prefers-color-scheme: light) { .card { border-color: #e2e8f0; } }
+    .spin { animation: spin 1s linear infinite; transform-origin: center; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100 antialiased pb-24">
+
   <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-10 px-4 py-3">
-    <div class="mx-auto flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-lg font-semibold text-emerald-400">Motor bulk ingest · progress</h1>
-        <p class="mt-1 text-xs text-slate-500">
-          Reads <code class="rounded bg-slate-800 px-1 py-0.5 text-emerald-200/90">data/raw/MOTOR/&lt;sanitized-engine&gt;/ingest_tracker.json</code> per vehicle.
-          Served only from this machine (<code class="text-slate-400">127.0.0.1</code>).
-        </p>
-      </div>
+    <div class="mx-auto flex max-w-7xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <h1 class="text-base font-semibold text-emerald-400">Motor bulk ingest · dashboard</h1>
       <div class="flex flex-wrap items-center gap-3 text-sm">
         <label class="flex cursor-pointer items-center gap-2 text-slate-400">
           <input id="live" type="checkbox" checked class="accent-emerald-500" />
           Auto-refresh
         </label>
-        <span id="pulse" class="hidden h-2 w-2 animate-pulse rounded-full bg-emerald-500"></span>
+        <span id="pulse" class="hidden h-2 w-2 rounded-full bg-emerald-500 spin"></span>
         <span id="stamp" class="text-xs text-slate-500 tabular-nums">—</span>
       </div>
     </div>
   </header>
 
-  <main class="mx-auto max-w-7xl px-4 py-6">
-    <section class="card mb-6 grid gap-3 rounded-xl border border-slate-800 bg-slate-900/50 p-4 sm:grid-cols-5">
-      <div>
-        <p class="text-xs uppercase tracking-wide text-slate-500">Vehicles tracked</p>
-        <p id="tot-vehicles" class="mt-1 text-2xl font-semibold tabular-nums text-white">—</p>
+  <main class="mx-auto max-w-7xl px-4 py-6 space-y-5">
+
+    <!-- ── Progress bar + ETA ─────────────────────────────────────────────── -->
+    <section class="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div class="flex items-center gap-3">
+          <h2 class="text-sm font-semibold text-slate-200">Catalog progress</h2>
+          <span id="pct-badge" class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset bg-emerald-500/15 text-emerald-300 ring-emerald-500/30">0%</span>
+        </div>
+        <div class="flex items-center gap-4 text-xs text-slate-400 tabular-nums">
+          <span id="rate-label">—</span>
+          <span id="eta-label" class="text-slate-500">—</span>
+          <button id="btn-reset-failed" class="rounded-lg px-3 py-1.5 text-xs bg-amber-900/40 text-amber-300 hover:bg-amber-800/50 font-medium">Reset failed →pending</button>
+        </div>
       </div>
-      <div>
-        <p class="text-xs uppercase tracking-wide text-slate-500">Scopes complete</p>
-        <p id="tot-scopes-done" class="mt-1 text-2xl font-semibold tabular-nums text-emerald-400">—</p>
+      <div class="h-3 w-full rounded-full bg-slate-800 overflow-hidden">
+        <div id="progress-bar" class="h-full bg-emerald-500 transition-all duration-500 rounded-full" style="width:0%"></div>
       </div>
-      <div>
-        <p class="text-xs uppercase tracking-wide text-slate-500">Scopes failed</p>
-        <p id="tot-scopes-fail" class="mt-1 text-2xl font-semibold tabular-nums text-rose-400">—</p>
+      <div class="mt-2 grid grid-cols-4 gap-2 text-xs">
+        <div class="rounded-lg bg-slate-800/60 px-3 py-2 text-center">
+          <p class="text-slate-500">Complete</p>
+          <p id="cs-complete" class="font-mono font-semibold text-emerald-400 tabular-nums">—</p>
+        </div>
+        <div class="rounded-lg bg-slate-800/60 px-3 py-2 text-center">
+          <p class="text-slate-500">Pending</p>
+          <p id="cs-pending" class="font-mono font-semibold text-slate-200 tabular-nums">—</p>
+        </div>
+        <div class="rounded-lg bg-slate-800/60 px-3 py-2 text-center">
+          <p class="text-slate-500">Failed</p>
+          <p id="cs-failed" class="font-mono font-semibold text-rose-400 tabular-nums">—</p>
+        </div>
+        <div class="rounded-lg bg-slate-800/60 px-3 py-2 text-center">
+          <p class="text-slate-500">Total CSV</p>
+          <p id="cs-total" class="font-mono font-semibold text-slate-300 tabular-nums">36,723</p>
+        </div>
       </div>
-      <div>
-        <p class="text-xs uppercase tracking-wide text-slate-500">Articles normalized</p>
-        <p id="tot-art-norm" class="mt-1 text-2xl font-semibold tabular-nums text-sky-400">—</p>
+      <p id="reset-failed-msg" class="mt-2 hidden text-xs text-amber-400"></p>
+    </section>
+
+    <!-- ── Backends status ────────────────────────────────────────────────── -->
+    <section class="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+      <div class="mb-3 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-slate-200">Active backends</h2>
+        <button id="btn-backends-refresh" class="rounded-lg px-2 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-white">Refresh</button>
       </div>
-      <div>
-        <p class="text-xs uppercase tracking-wide text-slate-500">Articles (tracked)</p>
-        <p id="tot-art-all" class="mt-1 text-2xl font-semibold tabular-nums text-slate-200">—</p>
+      <div id="backends-body" class="flex flex-wrap gap-2 text-xs text-slate-400">Loading…</div>
+    </section>
+
+    <!-- ── DB stats + Proxy status ────────────────────────────────────────── -->
+    <div class="grid gap-4 sm:grid-cols-2">
+      <section class="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+        <div class="mb-3 flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-slate-200">Cloud SQL</h2>
+          <button id="btn-dbstats-refresh" class="rounded-lg px-2 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-white">Refresh</button>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-sm">
+          <div class="rounded-lg bg-slate-800/60 px-3 py-2"><p class="text-xs text-slate-500">Articles</p><p id="db-articles" class="font-mono font-semibold text-white tabular-nums">—</p></div>
+          <div class="rounded-lg bg-slate-800/60 px-3 py-2"><p class="text-xs text-slate-500">Vehicles</p><p id="db-vehicles" class="font-mono font-semibold text-white tabular-nums">—</p></div>
+          <div class="rounded-lg bg-slate-800/60 px-3 py-2"><p class="text-xs text-slate-500">Normalized</p><p id="db-normalized" class="font-mono font-semibold text-emerald-400 tabular-nums">—</p></div>
+          <div class="rounded-lg bg-slate-800/60 px-3 py-2"><p class="text-xs text-slate-500">DTCs</p><p id="db-dtcs" class="font-mono font-semibold text-sky-400 tabular-nums">—</p></div>
+          <div class="rounded-lg bg-slate-800/60 px-3 py-2"><p class="text-xs text-slate-500">Procedures</p><p id="db-procedures" class="font-mono font-semibold text-violet-400 tabular-nums">—</p></div>
+          <div class="rounded-lg bg-slate-800/60 px-3 py-2"><p class="text-xs text-slate-500">AI logs</p><p id="db-ailogs" class="font-mono font-semibold text-amber-400 tabular-nums">—</p></div>
+        </div>
+        <p id="db-stats-err" class="mt-2 hidden text-xs text-rose-400"></p>
+      </section>
+
+      <section class="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+        <div class="mb-3 flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-slate-200">Session (primary :3001)</h2>
+          <div class="flex gap-2">
+            <button id="btn-proxy-refresh" class="rounded-lg px-2 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-white">Refresh</button>
+            <button id="btn-proxy-start" class="rounded-lg px-2 py-1 text-xs text-emerald-700 hover:bg-emerald-900/40 hover:text-emerald-300">Start auth</button>
+            <button id="btn-proxy-reset" class="rounded-lg px-2 py-1 text-xs text-rose-700 hover:bg-rose-900/40 hover:text-rose-300">Reset</button>
+          </div>
+        </div>
+        <div id="proxy-status-body" class="space-y-2 text-sm text-slate-400">Loading…</div>
+        <p id="proxy-err" class="mt-2 hidden text-xs text-rose-400"></p>
+      </section>
+    </div>
+
+    <!-- ── Proxy pool ──────────────────────────────────────────────────────── -->
+    <section class="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+      <div class="mb-3 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-slate-200">Outbound proxy pool</h2>
+        <div class="flex gap-2">
+          <button id="btn-pool-refresh" class="rounded-lg px-2 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-white">Refresh</button>
+          <button id="btn-pool-rotate" class="rounded-lg px-2 py-1 text-xs text-amber-700 hover:bg-amber-900/40 hover:text-amber-300">Rotate</button>
+          <button id="btn-pool-fetch" class="rounded-lg px-2 py-1 text-xs text-sky-700 hover:bg-sky-900/40 hover:text-sky-300">Fetch list</button>
+          <button id="btn-pool-reset-failures" class="rounded-lg px-2 py-1 text-xs text-violet-700 hover:bg-violet-900/40 hover:text-violet-300">Re-enable all</button>
+        </div>
+      </div>
+      <div id="proxy-pool-body" class="text-xs text-slate-400">Loading…</div>
+    </section>
+
+    <!-- ── Workers ─────────────────────────────────────────────────────────── -->
+    <section class="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+      <div class="mb-3 flex flex-wrap items-center gap-3">
+        <h2 class="text-sm font-semibold text-slate-200">Workers</h2>
+        <div class="flex flex-1 flex-wrap items-center gap-2">
+          <input id="worker-flags" type="text"
+            value="--continuous --resume --metadata-only --auto-reset-failed"
+            class="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 font-mono text-xs text-slate-200 outline-none focus:border-emerald-600"
+          />
+          <button id="btn-spawn" class="shrink-0 rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600">Spawn</button>
+        </div>
+        <button id="btn-workers-refresh" class="rounded-lg px-2 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-white">Refresh</button>
+      </div>
+      <div id="workers-list" class="space-y-2">
+        <p class="text-xs text-slate-500">No workers spawned from this dashboard.</p>
       </div>
     </section>
 
-    <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <input
-        id="filter"
-        type="search"
-        placeholder="Filter by vehicle id or folder…"
-        class="w-full max-w-xl rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm outline-none placeholder:text-slate-600 focus:border-emerald-600"
-      />
-      <p id="raw-path" class="truncate text-xs text-slate-500" title="">—</p>
+    <!-- ── Vehicle tracker table ───────────────────────────────────────────── -->
+    <div>
+      <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex gap-2 items-center">
+          <input id="filter" type="search" placeholder="Filter by vehicle id or folder…"
+            class="w-full max-w-sm rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-emerald-600"
+          />
+          <select id="filter-state" class="rounded-lg border border-slate-700 bg-slate-900 px-2 py-2 text-xs text-slate-300 outline-none focus:border-emerald-600">
+            <option value="">All states</option>
+            <option value="complete">Complete</option>
+            <option value="failed">Failed</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
+        <p id="raw-path" class="truncate text-xs text-slate-500" title="">—</p>
+      </div>
+      <div class="overflow-x-auto rounded-xl border border-slate-800">
+        <table class="min-w-full text-left text-sm">
+          <thead class="sticky top-[52px] z-[1] border-b border-slate-800 bg-slate-900/95 text-xs uppercase tracking-wide text-slate-500">
+            <tr>
+              <th class="whitespace-nowrap px-4 py-3 font-medium">Vehicle</th>
+              <th class="whitespace-nowrap px-4 py-3 font-medium">Updated</th>
+              <th class="whitespace-nowrap px-4 py-3 font-medium">Catalog</th>
+              <th class="whitespace-nowrap px-4 py-3 font-medium">Scopes</th>
+              <th class="whitespace-nowrap px-4 py-3 font-medium">Articles</th>
+              <th class="px-4 py-3 font-medium">Status</th>
+            </tr>
+          </thead>
+          <tbody id="rows" class="divide-y divide-slate-800"></tbody>
+        </table>
+      </div>
+      <div id="pagination" class="mt-3 hidden flex items-center justify-between text-xs text-slate-400">
+        <span id="page-info"></span>
+        <div class="flex gap-2">
+          <button id="btn-prev" class="rounded-lg px-3 py-1.5 hover:bg-slate-800 disabled:opacity-30" disabled>← Prev</button>
+          <button id="btn-next" class="rounded-lg px-3 py-1.5 hover:bg-slate-800 disabled:opacity-30" disabled>Next →</button>
+        </div>
+      </div>
+      <p id="empty" class="mt-16 hidden text-center text-slate-500">No trackers found.</p>
     </div>
-
-    <div class="overflow-x-auto rounded-xl border border-slate-800">
-      <table class="min-w-full text-left text-sm">
-        <thead class="sticky top-[52px] z-[1] border-b border-slate-800 bg-slate-900/95 text-xs uppercase tracking-wide text-slate-500">
-          <tr>
-            <th class="whitespace-nowrap px-4 py-3 font-medium">Vehicle</th>
-            <th class="whitespace-nowrap px-4 py-3 font-medium">Folder</th>
-            <th class="whitespace-nowrap px-4 py-3 font-medium">Updated</th>
-            <th class="whitespace-nowrap px-4 py-3 font-medium">Catalog</th>
-            <th class="whitespace-nowrap px-4 py-3 font-medium">Scopes</th>
-            <th class="whitespace-nowrap px-4 py-3 font-medium">Corpus</th>
-            <th class="px-4 py-3 font-medium">Status</th>
-          </tr>
-        </thead>
-        <tbody id="rows" class="divide-y divide-slate-800"></tbody>
-      </table>
-    </div>
-
-    <p id="empty" class="mt-16 hidden text-center text-slate-500">No trackers found. Run <code class="rounded bg-slate-800 px-2 py-0.5">npm run worker:ingest-full</code> first.</p>
   </main>
 
   <!-- Detail drawer -->
-  <div id="drawer-mask" class="fixed inset-0 z-40 hidden bg-black/60 backdrop-blur-sm" aria-hidden="true"></div>
-  <aside
-    id="drawer"
-    class="fixed inset-y-0 right-0 z-50 hidden w-full max-w-lg translate-x-full border-l border-slate-800 bg-slate-950 shadow-2xl transition-transform duration-200 [&.open]:translate-x-0"
-  >
+  <div id="drawer-mask" class="fixed inset-0 z-40 hidden bg-black/60 backdrop-blur-sm"></div>
+  <aside id="drawer"
+    class="fixed inset-y-0 right-0 z-50 hidden w-full max-w-lg translate-x-full border-l border-slate-800 bg-slate-950 shadow-2xl transition-transform duration-200 [&.open]:translate-x-0">
     <div class="flex items-center justify-between border-b border-slate-800 px-4 py-3">
       <h2 id="drawer-title" class="truncate text-sm font-semibold text-white">Vehicle</h2>
-      <button id="drawer-close" type="button" class="rounded-lg px-3 py-1 text-slate-400 hover:bg-slate-800 hover:text-white">Close</button>
+      <button id="drawer-close" class="rounded-lg px-3 py-1 text-slate-400 hover:bg-slate-800 hover:text-white">Close</button>
     </div>
     <pre id="drawer-pre" class="h-[calc(100%-52px)] overflow-auto p-4 text-xs leading-relaxed text-slate-300"></pre>
   </aside>
 
   <script>
-    const REFRESH_MS = 6000;
+    const REFRESH_MS = 8000;
+    const CSV_TOTAL = 36723;
 
-    const elRows = document.getElementById('rows');
-    const elEmpty = document.getElementById('empty');
-    const elStamp = document.getElementById('stamp');
-    const elRaw = document.getElementById('raw-path');
-    const elPulse = document.getElementById('pulse');
-    const chkLive = document.getElementById('live');
-    const inpFilter = document.getElementById('filter');
-    const drawer = document.getElementById('drawer');
-    const drawerMask = document.getElementById('drawer-mask');
-    const drawerPre = document.getElementById('drawer-pre');
-    const drawerTitle = document.getElementById('drawer-title');
-    const drawerClose = document.getElementById('drawer-close');
-
-    /** @type {any[] | null} */
+    const $ = id => document.getElementById(id);
+    const PAGE_SIZE = 50;
     let lastVehicles = null;
+    let filteredVehicles = [];
+    let currentPage = 0;
 
-    function badge(text, variant) {
-      const v = variant === 'ok' ? 'bg-emerald-500/15 text-emerald-300 ring-emerald-500/30'
-        : variant === 'warn' ? 'bg-amber-500/15 text-amber-200 ring-amber-500/30'
-        : variant === 'bad' ? 'bg-rose-500/15 text-rose-300 ring-rose-500/30'
-        : 'bg-slate-500/15 text-slate-300 ring-slate-500/25';
-      return `<span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${v}">${text}</span>`;
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    function esc(s) {
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function fmt(n) { return n != null ? Number(n).toLocaleString() : '—'; }
+    function fmtRel(iso) {
+      if (!iso) return '—';
+      const ms = Date.now() - new Date(iso).getTime();
+      if (ms < 60000) return `${Math.round(ms/1000)}s ago`;
+      if (ms < 3600000) return `${Math.round(ms/60000)}m ago`;
+      return `${Math.round(ms/3600000)}h ago`;
+    }
+    function fmtTime(iso) {
+      if (!iso) return '—';
+      try { return new Date(iso).toLocaleString(); } catch { return String(iso); }
     }
 
+    function badge(text, variant) {
+      const v = variant === 'ok'   ? 'bg-emerald-500/15 text-emerald-300 ring-emerald-500/30'
+              : variant === 'warn' ? 'bg-amber-500/15 text-amber-200 ring-amber-500/30'
+              : variant === 'bad'  ? 'bg-rose-500/15 text-rose-300 ring-rose-500/30'
+              :                      'bg-slate-500/15 text-slate-300 ring-slate-500/25';
+      return `<span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${v}">${esc(String(text))}</span>`;
+    }
+
+    // ── Catalog stats + progress ──────────────────────────────────────────────
+    async function loadCatalogStats() {
+      try {
+        const res = await fetch('/api/catalog-stats?_=' + Date.now(), { cache: 'no-store' });
+        const d = await res.json();
+        const pct = d.csvTotal ? ((d.complete / d.csvTotal) * 100).toFixed(1) : 0;
+        $('progress-bar').style.width = pct + '%';
+        $('pct-badge').textContent = pct + '%';
+        $('cs-complete').textContent = fmt(d.complete);
+        $('cs-pending').textContent = fmt(d.pending);
+        $('cs-failed').textContent = fmt(d.failed);
+        $('cs-total').textContent = fmt(d.csvTotal);
+        $('rate-label').textContent = d.ratePerHour > 0 ? `${fmt(d.ratePerHour)}/hr` : '— /hr';
+        if (d.etaHours != null) {
+          const h = Math.floor(d.etaHours);
+          const m = Math.round((d.etaHours - h) * 60);
+          $('eta-label').textContent = `ETA ~${h}h ${m}m`;
+        } else {
+          $('eta-label').textContent = 'ETA unknown';
+        }
+      } catch (e) {
+        $('eta-label').textContent = 'Stats error';
+      }
+    }
+
+    $('btn-reset-failed').addEventListener('click', async () => {
+      $('btn-reset-failed').disabled = true;
+      $('btn-reset-failed').textContent = 'Resetting…';
+      try {
+        const res = await fetch('/api/reset-failed-catalogs', { method: 'POST' });
+        const d = await res.json();
+        const msg = $('reset-failed-msg');
+        msg.textContent = `Reset ${d.reset} failed → pending`;
+        msg.classList.remove('hidden');
+        setTimeout(() => msg.classList.add('hidden'), 4000);
+        await loadCatalogStats();
+      } finally {
+        $('btn-reset-failed').disabled = false;
+        $('btn-reset-failed').textContent = 'Reset failed →pending';
+      }
+    });
+
+    // ── Backends ──────────────────────────────────────────────────────────────
+    async function loadBackends() {
+      try {
+        const res = await fetch('/api/backends?_=' + Date.now(), { cache: 'no-store' });
+        const backends = await res.json();
+        const el = $('backends-body');
+        if (!backends.length) {
+          el.innerHTML = '<span class="text-rose-400">No backends found on ports 3001–3008</span>';
+          return;
+        }
+        el.innerHTML = backends.map(b => `
+          <div class="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2">
+            <span class="font-mono text-slate-300">:${b.port}</span>
+            ${badge(b.sessionValid ? 'session valid' : 'no session', b.sessionValid ? 'ok' : 'bad')}
+            <span class="text-slate-500 text-[11px]">${esc(b.status)}</span>
+          </div>
+        `).join('');
+      } catch (e) {
+        $('backends-body').innerHTML = `<span class="text-rose-400">Error: ${esc(e.message)}</span>`;
+      }
+    }
+    $('btn-backends-refresh').addEventListener('click', loadBackends);
+
+    // ── DB stats ──────────────────────────────────────────────────────────────
+    async function loadDbStats() {
+      const err = $('db-stats-err');
+      err.classList.add('hidden');
+      try {
+        const res = await fetch('/api/db-stats?_=' + Date.now(), { cache: 'no-store' });
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.error || res.status);
+        $('db-articles').textContent = fmt(d.articles);
+        $('db-vehicles').textContent = fmt(d.vehicles);
+        $('db-normalized').textContent = fmt(d.normalized);
+        $('db-dtcs').textContent = fmt(d.dtcs);
+        $('db-procedures').textContent = fmt(d.procedures);
+        $('db-ailogs').textContent = d.aiLogs != null ? fmt(d.aiLogs) : 'N/A';
+      } catch (e) {
+        err.textContent = 'Backend unreachable: ' + e.message;
+        err.classList.remove('hidden');
+      }
+    }
+    $('btn-dbstats-refresh').addEventListener('click', loadDbStats);
+
+    // ── Proxy session ──────────────────────────────────────────────────────────
+    async function loadProxyStatus() {
+      const el = $('proxy-status-body');
+      $('proxy-err').classList.add('hidden');
+      try {
+        const res = await fetch('/api/proxy/status?_=' + Date.now(), { cache: 'no-store' });
+        const d = await res.json();
+        const valid = d.sessionValid ?? false;
+        const rows = [];
+        rows.push(`<div class="flex items-center gap-2">${badge(valid ? 'session valid' : 'no session', valid ? 'ok' : 'bad')}</div>`);
+        if (d.lastAuth && d.lastAuth > 0) rows.push(`<p class="text-xs text-slate-500">Last auth: ${fmtRel(new Date(d.lastAuth))}</p>`);
+        if (d.step) rows.push(`<p class="text-xs text-slate-400">Step: ${esc(d.step)} ${d.progress ? `(${d.progress}%)` : ''}</p>`);
+        if (d.error) rows.push(`<p class="text-xs text-rose-400">${esc(String(d.error))}</p>`);
+        el.innerHTML = rows.join('');
+      } catch {
+        el.innerHTML = '<span class="text-rose-400 text-xs">Backend unreachable</span>';
+      }
+    }
+    $('btn-proxy-start').addEventListener('click', async () => {
+      $('btn-proxy-start').disabled = true;
+      await fetch('/api/proxy/start', { method: 'POST' }).catch(() => {});
+      await loadProxyStatus();
+      $('btn-proxy-start').disabled = false;
+    });
+    $('btn-proxy-reset').addEventListener('click', async () => {
+      $('btn-proxy-reset').disabled = true;
+      await fetch('/api/proxy/reset', { method: 'POST' }).catch(() => {});
+      await loadProxyStatus();
+      $('btn-proxy-reset').disabled = false;
+    });
+    $('btn-proxy-refresh').addEventListener('click', loadProxyStatus);
+
+    // ── Proxy pool ─────────────────────────────────────────────────────────────
+    async function loadProxyPool() {
+      const el = $('proxy-pool-body');
+      try {
+        const res = await fetch('/api/proxy-pool/status?_=' + Date.now(), { cache: 'no-store' });
+        const d = await res.json();
+        if (!d.total) { el.innerHTML = '<p class="text-slate-500">No proxies configured.</p>'; return; }
+        const pinned = d.pinnedUrl ? `<span class="ml-3 font-mono text-emerald-300 truncate max-w-xs">pinned: ${esc(d.pinnedUrl)}</span>` : '';
+        el.innerHTML = `<div class="flex flex-wrap items-center gap-3 text-xs mb-2">
+          ${badge(`${d.enabled}/${d.total} enabled`, d.enabled > 0 ? 'ok' : 'bad')}
+          ${d.disabled ? badge(`${d.total - d.enabled} disabled`, 'warn') : ''}
+          ${pinned}
+        </div>`;
+      } catch (e) {
+        el.innerHTML = `<span class="text-rose-400">Error: ${esc(e.message)}</span>`;
+      }
+    }
+    $('btn-pool-refresh').addEventListener('click', loadProxyPool);
+    $('btn-pool-rotate').addEventListener('click', async () => {
+      await fetch('/api/proxy-pool/rotate', { method: 'POST' }).catch(() => {});
+      loadProxyPool();
+    });
+    $('btn-pool-fetch').addEventListener('click', async () => {
+      const btn = $('btn-pool-fetch');
+      btn.disabled = true; btn.textContent = 'Fetching…';
+      await fetch('/api/proxy-pool/refresh', { method: 'POST' }).catch(() => {});
+      await loadProxyPool();
+      btn.disabled = false; btn.textContent = 'Fetch list';
+    });
+    $('btn-pool-reset-failures').addEventListener('click', async () => {
+      await fetch('/api/proxy-pool/reset-failures', { method: 'POST' }).catch(() => {});
+      loadProxyPool();
+    });
+
+    // ── Workers ────────────────────────────────────────────────────────────────
+    async function loadWorkers() {
+      try {
+        const res = await fetch('/api/workers?_=' + Date.now(), { cache: 'no-store' });
+        const workers = await res.json();
+        const el = $('workers-list');
+        if (!workers.length) {
+          el.innerHTML = '<p class="text-xs text-slate-500">No workers spawned from this dashboard.</p>';
+          return;
+        }
+        el.innerHTML = workers.map(w => `
+          <div class="flex flex-wrap items-start gap-3 rounded-lg border border-slate-800 bg-slate-900 px-4 py-3">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-mono text-xs text-slate-300">PID ${w.pid}</span>
+                ${badge(w.alive ? 'running' : `exited ${w.exitCode ?? '?'}`, w.alive ? 'ok' : w.exitCode === 0 ? 'warn' : 'bad')}
+                <span class="text-xs text-slate-500">started ${fmtRel(w.startedAt)}</span>
+              </div>
+              <p class="mt-1 font-mono text-[11px] text-slate-500 truncate">${esc((w.flags || []).join(' '))}</p>
+              ${w.lastLines?.length ? `<details class="mt-1"><summary class="cursor-pointer text-[11px] text-slate-500 hover:text-slate-300">Last ${w.lastLines.length} lines</summary><pre class="mt-1 max-h-40 overflow-auto rounded bg-slate-950 p-2 text-[10px] text-slate-400">${esc(w.lastLines.join('\n'))}</pre></details>` : ''}
+            </div>
+            ${w.alive ? `<button onclick="stopWorker(${w.pid})" class="shrink-0 rounded px-2 py-1 text-xs text-rose-500 hover:bg-rose-950 hover:text-rose-300">Stop</button>` : ''}
+          </div>
+        `).join('');
+      } catch (e) {
+        $('workers-list').innerHTML = `<p class="text-xs text-rose-400">Failed: ${esc(e.message)}</p>`;
+      }
+    }
+    window.stopWorker = async (pid) => {
+      if (!confirm(`Stop worker PID ${pid}?`)) return;
+      await fetch(`/api/workers/${pid}`, { method: 'DELETE' });
+      loadWorkers();
+    };
+    $('btn-spawn').addEventListener('click', async () => {
+      const btn = $('btn-spawn');
+      const flags = $('worker-flags').value.trim().split(/\s+/).filter(Boolean);
+      btn.disabled = true; btn.textContent = 'Spawning…';
+      try {
+        const res = await fetch('/api/workers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ flags })
+        });
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.error || res.status);
+        await loadWorkers();
+      } catch (e) { alert('Spawn failed: ' + e.message); }
+      finally { btn.disabled = false; btn.textContent = 'Spawn'; }
+    });
+    $('btn-workers-refresh').addEventListener('click', loadWorkers);
+
+    // ── Vehicle table ──────────────────────────────────────────────────────────
     function scopePct(r) {
       const t = r.scopesRollup?.total ?? 0;
       const c = r.scopesRollup?.complete ?? 0;
-      if (!t) return '—';
-      return `${Math.round((100 * c) / t)}%`;
+      return t ? `${c}/${t} (${Math.round(100*c/t)}%)` : '—';
     }
-
-    function corpusLabel(r) {
-      const counts = r.articleCounts || {};
-      const n = counts.normalized ?? 0;
-      const tot = Object.values(counts).reduce((a, b) => a + (typeof b === 'number' ? b : 0), 0);
-      if (!tot) return '—';
-      return `${n} / ${tot}`;
-    }
-
-    function rowBadges(r) {
+    function rowStatus(r) {
       const sr = r.scopesRollup;
-      const cf = sr?.catalog || '—';
-      if (sr?.failed > 0) return badge(`${sr.failed} scope fail`, 'bad');
-      if ((sr?.inProgress || 0) + (sr?.pending || 0) > 0) return badge('In progress', 'warn');
-      if (sr?.total && sr.complete === sr.total && cf === 'complete') return badge('Surface OK', 'ok');
+      if (sr?.failed > 0) return badge(`${sr.failed} failed`, 'bad');
+      if ((sr?.inProgress||0) + (sr?.pending||0) > 0) return badge('In progress', 'warn');
+      if (sr?.catalog === 'complete') return badge('Done', 'ok');
       return badge('Mixed', 'warn');
     }
 
-    function fmtTime(iso) {
-      if (!iso) return '—';
-      try {
-        const d = new Date(iso);
-        return d.toLocaleString();
-      } catch {
-        return String(iso);
+    function renderPage() {
+      $('rows').innerHTML = '';
+      const start = currentPage * PAGE_SIZE;
+      const slice = filteredVehicles.slice(start, start + PAGE_SIZE);
+      for (const r of slice) {
+        const tr = document.createElement('tr');
+        tr.className = 'cursor-pointer hover:bg-slate-800/80';
+        const catState = r.scopesRollup?.catalog ?? '—';
+        tr.innerHTML = `
+          <td class="whitespace-nowrap px-4 py-2.5 font-mono text-xs text-emerald-200/90">${esc(r.vehicle_id || r.safeDir)}</td>
+          <td class="whitespace-nowrap px-4 py-2.5 tabular-nums text-xs text-slate-400">${esc(fmtRel(r.updated_at))}</td>
+          <td class="whitespace-nowrap px-4 py-2.5">${badge(catState, catState==='complete'?'ok':catState==='failed'?'bad':'warn')}</td>
+          <td class="whitespace-nowrap px-4 py-2.5 font-mono text-xs text-slate-300">${esc(scopePct(r))}</td>
+          <td class="whitespace-nowrap px-4 py-2.5 font-mono text-xs text-slate-300">${esc(String(r.articleTotalFromSummary ?? '—'))}</td>
+          <td class="px-4 py-2.5">${rowStatus(r)}</td>
+        `;
+        tr.addEventListener('click', () => openDrawer(r.safeDir));
+        $('rows').appendChild(tr);
       }
+      const total = filteredVehicles.length;
+      const pages = Math.ceil(total / PAGE_SIZE);
+      $('pagination').classList.toggle('hidden', total === 0);
+      $('page-info').textContent = total ? `${start+1}–${Math.min(start+PAGE_SIZE, total)} of ${total}` : '';
+      $('btn-prev').disabled = currentPage === 0;
+      $('btn-next').disabled = currentPage >= pages - 1;
+      $('empty').classList.toggle('hidden', total !== 0 || (lastVehicles||[]).length === 0);
+    }
+
+    function applyFilter(vehicles) {
+      const q = ($('filter').value || '').trim().toLowerCase();
+      const s = $('filter-state').value;
+      return vehicles.filter(r => {
+        if (q && !`${r.vehicle_id} ${r.safeDir}`.toLowerCase().includes(q)) return false;
+        if (s && r.scopesRollup?.catalog !== s) return false;
+        return true;
+      });
     }
 
     function renderTable(vehicles) {
       lastVehicles = vehicles;
-      const q = (inpFilter.value || '').trim().toLowerCase();
-      elRows.innerHTML = '';
-      let shown = 0;
-      for (const r of vehicles) {
-        const hay = `${r.vehicle_id} ${r.safeDir} ${r.content_source}`.toLowerCase();
-        if (q && !hay.includes(q)) continue;
-        shown++;
-        const tr = document.createElement('tr');
-        tr.className = 'cursor-pointer hover:bg-slate-800/80';
-        tr.innerHTML = `
-          <td class="whitespace-nowrap px-4 py-2.5 font-mono text-emerald-200/90">${escapeHtml(r.vehicle_id || '')}</td>
-          <td class="whitespace-nowrap px-4 py-2.5 font-mono text-xs text-slate-500">${escapeHtml(r.safeDir)}</td>
-          <td class="whitespace-nowrap px-4 py-2.5 tabular-nums text-slate-400">${escapeHtml(fmtTime(r.updated_at))}</td>
-          <td class="whitespace-nowrap px-4 py-2.5">${badge(r.scopesRollup?.catalog ?? '—', r.scopesRollup?.catalog === 'complete' ? 'ok' : r.scopesRollup?.catalog === 'failed' ? 'bad' : 'warn')}</td>
-          <td class="whitespace-nowrap px-4 py-2.5 font-mono tabular-nums text-slate-300">
-            ${r.scopesRollup?.complete ?? 0}/${r.scopesRollup?.total ?? 0} (${scopePct(r)})
-          </td>
-          <td class="whitespace-nowrap px-4 py-2.5 font-mono tabular-nums text-slate-300">${escapeHtml(corpusLabel(r))}</td>
-          <td class="px-4 py-2.5">${rowBadges(r)}</td>
-        `;
-        tr.addEventListener('click', () => openDrawer(r.safeDir));
-        elRows.appendChild(tr);
-      }
-      elEmpty.classList.toggle('hidden', shown !== 0 || vehicles.length === 0);
+      filteredVehicles = applyFilter(vehicles);
+      currentPage = 0;
+      renderPage();
     }
 
-    function escapeHtml(s) {
-      return String(s || '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    }
+    $('btn-prev').addEventListener('click', () => { currentPage--; renderPage(); });
+    $('btn-next').addEventListener('click', () => { currentPage++; renderPage(); });
+    $('filter').addEventListener('input', () => { if (lastVehicles) renderTable(lastVehicles); });
+    $('filter-state').addEventListener('change', () => { if (lastVehicles) renderTable(lastVehicles); });
 
-    function setTotals(d) {
-      document.getElementById('tot-vehicles').textContent = String(d.summary?.vehicleCount ?? 0);
-      document.getElementById('tot-scopes-done').textContent = String(d.summary?.scopeCompleteSum ?? 0);
-      document.getElementById('tot-scopes-fail').textContent = String(d.summary?.scopeFailedSum ?? 0);
-      document.getElementById('tot-art-norm').textContent = String(d.summary?.articleNormalizedSum ?? 0);
-      document.getElementById('tot-art-all').textContent = String(d.summary?.articleTrackedSum ?? 0);
-    }
-
+    // ── Main summary load ─────────────────────────────────────────────────────
     async function load() {
-      elPulse.classList.remove('hidden');
+      $('pulse').classList.remove('hidden');
       try {
-        const res = await fetch(`/api/summary?_=${Date.now()}`, { cache: 'no-store' });
+        const res = await fetch('/api/summary?_=' + Date.now(), { cache: 'no-store' });
         if (!res.ok) throw new Error(String(res.status));
         const data = await res.json();
-        elRaw.textContent = data.rawRoot || '';
-        elRaw.title = data.rawRoot || '';
-        elStamp.textContent = data.generatedAt ? `Updated ${fmtTime(data.generatedAt)}` : '';
-        setTotals(data);
+        $('raw-path').textContent = data.rawRoot || '';
+        $('stamp').textContent = data.generatedAt ? `Updated ${fmtTime(data.generatedAt)}` : '';
         renderTable(data.vehicles || []);
       } catch (e) {
-        console.error(e);
-        elStamp.textContent = 'Load failed · is the server running?';
+        $('stamp').textContent = 'Load failed · is the server running?';
       }
-      elPulse.classList.add('hidden');
+      $('pulse').classList.add('hidden');
     }
 
+    // ── Drawer ─────────────────────────────────────────────────────────────────
     async function openDrawer(safeDir) {
-      drawerPre.textContent = 'Loading…';
-      drawerTitle.textContent = safeDir;
-      drawerMask.classList.remove('hidden');
-      drawer.classList.remove('hidden');
-      requestAnimationFrame(() => drawer.classList.add('open'));
+      $('drawer-pre').textContent = 'Loading…';
+      $('drawer-title').textContent = safeDir;
+      $('drawer-mask').classList.remove('hidden');
+      $('drawer').classList.remove('hidden');
+      requestAnimationFrame(() => $('drawer').classList.add('open'));
       try {
-        const res = await fetch(`/api/trackers/${encodeURIComponent(safeDir)}`);
+        const res = await fetch('/api/trackers/' + encodeURIComponent(safeDir));
         const txt = await res.text();
-        if (!res.ok) {
-          drawerPre.textContent = txt || res.statusText;
-          return;
-        }
-        drawerPre.textContent = JSON.stringify(JSON.parse(txt), null, 2);
-      } catch (e) {
-        drawerPre.textContent = String(/** @type {Error} */ (e).message || e);
-      }
+        if (!res.ok) { $('drawer-pre').textContent = txt || res.statusText; return; }
+        $('drawer-pre').textContent = JSON.stringify(JSON.parse(txt), null, 2);
+      } catch (e) { $('drawer-pre').textContent = String(e.message || e); }
     }
-
     function closeDrawer() {
-      drawer.classList.remove('open');
-      drawerMask.classList.add('hidden');
-      setTimeout(() => drawer.classList.add('hidden'), 200);
+      $('drawer').classList.remove('open');
+      $('drawer-mask').classList.add('hidden');
+      setTimeout(() => $('drawer').classList.add('hidden'), 200);
     }
+    $('drawer-close').addEventListener('click', closeDrawer);
+    $('drawer-mask').addEventListener('click', closeDrawer);
 
-    drawerClose.addEventListener('click', closeDrawer);
-    drawerMask.addEventListener('click', closeDrawer);
-    inpFilter.addEventListener('input', () => {
-      if (lastVehicles) renderTable(lastVehicles);
-    });
-
-    let iv = /** @type {ReturnType<typeof setInterval> | null} */ (null);
+    // ── Timer ──────────────────────────────────────────────────────────────────
+    let iv = null;
     function armTimer() {
       if (iv) clearInterval(iv);
       iv = null;
-      if (chkLive.checked) iv = setInterval(load, REFRESH_MS);
+      if ($('live').checked) iv = setInterval(() => {
+        load();
+        loadCatalogStats();
+        loadDbStats();
+        loadProxyStatus();
+        loadWorkers();
+        loadProxyPool();
+        loadBackends();
+      }, REFRESH_MS);
     }
+    $('live').addEventListener('change', armTimer);
 
-    chkLive.addEventListener('change', armTimer);
-
-    load().then(() => {});
+    // ── Init ───────────────────────────────────────────────────────────────────
+    load();
+    loadCatalogStats();
+    loadDbStats();
+    loadProxyStatus();
+    loadWorkers();
+    loadProxyPool();
+    loadBackends();
     armTimer();
   </script>
 </body>
