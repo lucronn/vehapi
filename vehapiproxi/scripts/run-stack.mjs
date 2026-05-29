@@ -44,6 +44,7 @@ const getVal  = (f, def) => {
 const probe       = !hasFlag('no-probe');
 const noWorker    = hasFlag('no-worker');
 const metaOnly    = hasFlag('metadata-only');
+const catalogOnly = hasFlag('catalog-only');
 const concurrency      = getVal('concurrency', '1');
 const numWorkers       = Math.max(1, parseInt(getVal('workers', '1'), 10) || 1);
 const numBackends      = Math.max(1, parseInt(getVal('backends', '1'), 10) || 1);
@@ -191,6 +192,7 @@ async function main() {
             if (vehiclesCsv) workerArgs.push(`--csv=${vehiclesCsv}`);
             if (autoResetFailed) workerArgs.push('--auto-reset-failed');
             if (metaOnly) workerArgs.push('--metadata-only');
+            if (catalogOnly) workerArgs.push('--catalog-only');
             if (numWorkers > 1) workerArgs.push(`--shard=${i}/${numWorkers}`);
             const label = numWorkers > 1 ? `worker-${i + 1}` : 'worker';
             const color = workerColors[i % workerColors.length];

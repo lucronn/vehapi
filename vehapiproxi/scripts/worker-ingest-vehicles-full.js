@@ -496,7 +496,8 @@ async function ingestOneVehicle(opts) {
         motorVehicleQuery,
         delayMs,
         forceCatalog,
-        forceArticleId
+        forceArticleId,
+        catalogOnly = false
     } = opts;
 
     const safeDir = sanitizeVehicleDir(engineId);
@@ -655,6 +656,11 @@ async function ingestOneVehicle(opts) {
         await atomicWriteJson(path.join(absDir, 'ingest_tracker.json'), tracker);
     } else if (resume) {
         log(`[resume] skipping catalog (${engineId}) [${catalogState}]\n`);
+    }
+
+    // --catalog-only: skip reference data + corpus entirely
+    if (catalogOnly) {
+        return { ok: true };
     }
 
     try {
@@ -1002,6 +1008,7 @@ async function main() {
         String(process.env.WORKER_INGEST_SURFACE_ONLY || '').trim() === '1';
     const metadataOnly =
         envSurface || argvFlag('metadata-only', false) || argvFlag('surface-only', false);
+    const catalogOnly = argvFlag('catalog-only', false);
     let withArticles = argvFlag('with-articles', false);
     if (metadataOnly && withArticles) {
         say('[worker-ingest-full] ignoring --with-articles (--metadata-only / --surface-only active)\n');
@@ -1147,7 +1154,8 @@ async function main() {
                     delayMs,
                     forceCatalog,
                     forceArticleId,
-                    quiet
+                    quiet,
+                    catalogOnly
                 });
                 if (res?.ok) okAny = true;
                 okAnyEver = okAnyEver || !!res?.ok;
