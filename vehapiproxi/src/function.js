@@ -924,6 +924,9 @@ app.use('/', (req, res, next) => {
 
 // Mount at root '/' to handle ALL requests (api, graphic, assets, v1, etc.)
 const motorProxyAgent = proxyPool.getRotatingAgent();
+// Reset session only after this many consecutive 403s (guards against subscription-level 403s triggering spurious resets)
+let consecutive403Count = 0;
+const CONSECUTIVE_403_RESET_THRESHOLD = 5;
 
 app.use('/', authMiddleware, createProxyMiddleware({
     target: config.motorApiBase, // https://sites.motor.com/m1
@@ -1020,13 +1023,16 @@ app.use('/', authMiddleware, createProxyMiddleware({
             }
         }
 
-        // Handle 401/403 responses from Motor:
-        // - 403 = Forbidden (subscription doesn't allow this resource) — pass through, never reset session.
-        // - 401 = Unauthorized (session expired) — reset and re-auth, EXCEPT for graphic/asset paths
-        //   where Motor always returns 401 regardless of session validity.
+        // Handle 401/403 responses from Motor.
+        // 403: count consecutive hits. Only reset session after threshold — distinguishes IP bans
+        //      (persistent 403 across many vehicles) from one-off subscription/content restrictions.
+        // 401: always reset and re-auth (session genuinely expired).
+        if (proxyRes.statusCode === 200 || proxyRes.statusCode < 400) {
+            consecutive403Count = 0; // reset counter on any success
+        }
+
         if (proxyRes.statusCode === 401 || proxyRes.statusCode === 403) {
             const isGraphicOrAsset = req.path.includes('/graphic/') || req.path.includes('/assets/');
-            const isForbidden = proxyRes.statusCode === 403;
 
             if (isGraphicOrAsset) {
                 logger.warn(`Received ${proxyRes.statusCode} from Motor.com for ${req.path} (graphic/asset — not resetting session)`);
@@ -1036,9 +1042,20 @@ app.use('/', authMiddleware, createProxyMiddleware({
                 return Buffer.alloc(0);
             }
 
-            // 403 = IP ban (Motor binds sessions to originating IP; switching proxy invalidates cookie).
-            // Reset session so next request re-auths on the new proxy IP.
-            logger.warn(`Received ${proxyRes.statusCode} from Motor.com for ${req.path} — IP ban or session mismatch, resetting session...`);
+            if (proxyRes.statusCode === 403) {
+                consecutive403Count++;
+                if (consecutive403Count < CONSECUTIVE_403_RESET_THRESHOLD) {
+                    logger.warn(`Received 403 from Motor.com for ${req.path} (count=${consecutive403Count}/${CONSECUTIVE_403_RESET_THRESHOLD} — passing through)`);
+                    res.statusCode = 403;
+                    res.setHeader('Content-Type', 'application/json');
+                    logger.info(`← 403 ${req.path} (IP ban suspected, not yet at threshold)`);
+                    return JSON.stringify({ error: 'Forbidden', status: 403, message: 'Content not available' });
+                }
+                consecutive403Count = 0;
+                logger.warn(`Received 403 from Motor.com for ${req.path} — ${CONSECUTIVE_403_RESET_THRESHOLD} consecutive 403s, resetting session (IP ban)...`);
+            } else {
+                logger.warn(`Received 401 from Motor.com for ${req.path} — session expired, resetting...`);
+            }
 
             // Invalidate session and start authentication
             authManager.lastAuthTime = 0;
