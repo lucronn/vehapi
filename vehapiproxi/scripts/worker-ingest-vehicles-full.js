@@ -578,6 +578,7 @@ async function ingestOneVehicle(opts) {
         if (!r.buf || !(r.ok || r.status === 429)) {
             tracker.scopes.catalog.state = 'failed';
             tracker.scopes.catalog.last_error = `HTTP ${r.status} ${relArticles}`;
+            tracker.scopes.catalog.fail_count = (tracker.scopes.catalog.fail_count || 0) + 1;
             await atomicWriteJson(trackerPath, tracker);
             return { ok: false, error: tracker.scopes.catalog.last_error };
         }
@@ -599,6 +600,7 @@ async function ingestOneVehicle(opts) {
         if (!ingestRes.success) {
             tracker.scopes.catalog.state = 'failed';
             tracker.scopes.catalog.last_error = ingestRes.error || 'catalog ingest';
+            tracker.scopes.catalog.fail_count = (tracker.scopes.catalog.fail_count || 0) + 1;
             await atomicWriteJson(trackerPath, tracker);
             return { ok: false, error: ingestRes.error };
         }
@@ -606,6 +608,7 @@ async function ingestOneVehicle(opts) {
         tracker.scopes.catalog.state = 'complete';
         tracker.scopes.catalog.verify_ok = !relaxedCompletion;
         tracker.scopes.catalog.last_error = null;
+        tracker.scopes.catalog.fail_count = 0;
         tracker.summary.catalog_complete = true;
 
         // Seed article map (strict status machine)
@@ -1093,22 +1096,30 @@ async function main() {
                 : `vehicles(distinct engine_id): ${vehicles.length}\n`
         );
 
-        // Auto-reset failed catalog states so they get retried this pass
+        // Auto-reset failed catalog states so they get retried this pass.
+        // Skip vehicles with fail_count >= 3 — these are subscription-restricted and won't recover.
         if (autoResetFailed) {
             let resetCount = 0;
+            let skippedCount = 0;
             for (const row of vehicles) {
                 const safeDir = sanitizeVehicleDir(row.engine_id);
                 const tp = path.join(outRoot, 'MOTOR', safeDir, 'ingest_tracker.json');
                 try {
                     const t = JSON.parse(await fs.readFile(tp, 'utf8'));
                     if (t?.scopes?.catalog?.state === 'failed') {
-                        t.scopes.catalog.state = 'pending';
-                        await atomicWriteJson(tp, t);
-                        resetCount++;
+                        const failCount = t.scopes.catalog.fail_count || 0;
+                        if (failCount < 3) {
+                            t.scopes.catalog.state = 'pending';
+                            await atomicWriteJson(tp, t);
+                            resetCount++;
+                        } else {
+                            skippedCount++;
+                        }
                     }
                 } catch { /* tracker not yet created */ }
             }
             if (resetCount > 0) say(`[auto-reset] reset ${resetCount} failed catalogs → pending\n`);
+            if (skippedCount > 0) say(`[auto-reset] skipped ${skippedCount} permanently-failed catalogs (fail_count >= 3)\n`);
         }
 
         let okAny = false;
