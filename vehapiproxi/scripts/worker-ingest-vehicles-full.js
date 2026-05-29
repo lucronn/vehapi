@@ -573,6 +573,8 @@ async function ingestOneVehicle(opts) {
             headers: { ...headers, Accept: 'application/json' }
         });
 
+        if (delayMs > 0) await sleep(delayMs);
+
         if (!r.buf || !(r.ok || r.status === 429)) {
             tracker.scopes.catalog.state = 'failed';
             tracker.scopes.catalog.last_error = `HTTP ${r.status} ${relArticles}`;

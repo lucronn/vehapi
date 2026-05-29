@@ -1036,15 +1036,9 @@ app.use('/', authMiddleware, createProxyMiddleware({
                 return Buffer.alloc(0);
             }
 
-            if (isForbidden) {
-                logger.warn(`Received 403 from Motor.com for ${req.path} (subscription/forbidden — not resetting session)`);
-                res.statusCode = 403;
-                res.setHeader('Content-Type', 'application/json');
-                logger.info(`← 403 ${req.path} (subscription forbidden)`);
-                return JSON.stringify({ error: 'Forbidden', status: 403, message: 'Content not available with current subscription' });
-            }
-
-            logger.warn(`Received 401 from Motor.com for ${req.path}. Session expired — invalidating and re-authenticating...`);
+            // 403 = IP ban (Motor binds sessions to originating IP; switching proxy invalidates cookie).
+            // Reset session so next request re-auths on the new proxy IP.
+            logger.warn(`Received ${proxyRes.statusCode} from Motor.com for ${req.path} — IP ban or session mismatch, resetting session...`);
 
             // Invalidate session and start authentication
             authManager.lastAuthTime = 0;
