@@ -930,7 +930,8 @@ app.use('/', (req, res, next) => {
 const motorProxyAgent = proxyPool.getRotatingAgent();
 // Reset session only after this many consecutive 403s (guards against subscription-level 403s triggering spurious resets)
 let consecutive403Count = 0;
-const CONSECUTIVE_403_RESET_THRESHOLD = 20;
+const CONSECUTIVE_403_RESET_THRESHOLD = 50; // raised: subscription 403s cluster; only rotate on true IP ban
+let recentSuccessCount = 0; // 200s seen since last 403 streak started; IP ban = 0 successes + many 403s
 let vpnRotating = false;
 const VPN_LOCK_FILE = '/tmp/vehapi-vpn-rotating.lock';
 const VPN_COOLDOWN_MS = 5 * 60 * 1000; // 5 min between rotations
@@ -1079,7 +1080,8 @@ app.use('/', authMiddleware, createProxyMiddleware({
         //      (persistent 403 across many vehicles) from one-off subscription/content restrictions.
         // 401: always reset and re-auth (session genuinely expired).
         if (proxyRes.statusCode === 200 || proxyRes.statusCode < 400) {
-            consecutive403Count = 0; // reset counter on any success
+            consecutive403Count = 0;
+            recentSuccessCount++;
         }
 
         if (proxyRes.statusCode === 401 || proxyRes.statusCode === 403) {
@@ -1095,15 +1097,25 @@ app.use('/', authMiddleware, createProxyMiddleware({
 
             if (proxyRes.statusCode === 403) {
                 consecutive403Count++;
+                recentSuccessCount = 0;
                 if (consecutive403Count < CONSECUTIVE_403_RESET_THRESHOLD) {
                     logger.warn(`Received 403 from Motor.com for ${req.path} (count=${consecutive403Count}/${CONSECUTIVE_403_RESET_THRESHOLD} — passing through)`);
                     res.statusCode = 403;
                     res.setHeader('Content-Type', 'application/json');
-                    logger.info(`← 403 ${req.path} (IP ban suspected, not yet at threshold)`);
+                    logger.info(`← 403 ${req.path} (subscription-restricted or IP ban, not yet at threshold)`);
                     return JSON.stringify({ error: 'Forbidden', status: 403, message: 'Content not available' });
                 }
-                // Threshold hit — rotate VPN server to get a new IP, then re-auth
-                logger.warn(`Received 403 from Motor.com for ${req.path} — ${CONSECUTIVE_403_RESET_THRESHOLD} consecutive 403s, rotating VPN...`);
+                // Threshold hit — but only rotate VPN if we've had NO successes mixed in.
+                // Interleaved 200s mean subscription restrictions, not a real IP ban.
+                if (recentSuccessCount > 0) {
+                    logger.warn(`Received 403 from Motor.com for ${req.path} — ${consecutive403Count} 403s but ${recentSuccessCount} recent successes — subscription block, skipping VPN rotation`);
+                    consecutive403Count = 0;
+                    res.statusCode = 403;
+                    res.setHeader('Content-Type', 'application/json');
+                    return JSON.stringify({ error: 'Forbidden', status: 403, message: 'Content not available' });
+                }
+                // True IP ban: threshold hit with zero recent successes — rotate VPN
+                logger.warn(`Received 403 from Motor.com for ${req.path} — ${CONSECUTIVE_403_RESET_THRESHOLD} consecutive 403s with no successes, rotating VPN...`);
                 rotateVpnAndReauth();
             } else {
                 logger.warn(`Received 401 from Motor.com for ${req.path} — session expired, resetting...`);
