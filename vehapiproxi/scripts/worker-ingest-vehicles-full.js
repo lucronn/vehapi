@@ -985,6 +985,10 @@ async function main() {
 
     const limitN = argvVal('limit');
     const offsetN = argvVal('offset');
+    const shardRaw = argvVal('shard', '');   // e.g. "0/8" → take every 8th vehicle starting at index 0
+    const [shardIdx, shardCount] = shardRaw.includes('/')
+        ? shardRaw.split('/').map(Number)
+        : [0, 1];
     const quiet = argvFlag('quiet', false);
     const say = (msg) => {
         if (!quiet) process.stderr.write(msg);
@@ -1079,6 +1083,9 @@ async function main() {
         const off = Number(offsetN) || 0;
         const lim = limitN ? Number(limitN) : vehicles.length;
         vehicles = vehicles.slice(off, off + lim);
+        if (shardCount > 1) {
+            vehicles = vehicles.filter((_, i) => i % shardCount === shardIdx);
+        }
 
         say(
             continuous

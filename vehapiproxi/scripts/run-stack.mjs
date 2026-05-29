@@ -182,6 +182,7 @@ async function main() {
             if (vehiclesCsv) workerArgs.push(`--csv=${vehiclesCsv}`);
             if (autoResetFailed) workerArgs.push('--auto-reset-failed');
             if (metaOnly) workerArgs.push('--metadata-only');
+            if (numWorkers > 1) workerArgs.push(`--shard=${i}/${numWorkers}`);
             const label = numWorkers > 1 ? `worker-${i + 1}` : 'worker';
             const color = workerColors[i % workerColors.length];
             await launch(label, 'node', workerArgs, { color });
