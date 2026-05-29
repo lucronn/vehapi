@@ -562,8 +562,8 @@ async function ingestOneVehicle(opts) {
         tracker.scopes.catalog.state = 'fetched';
         await atomicWriteJson(trackerPath = path.join(absDir, 'ingest_tracker.json'), tracker);
 
-        const relArticles = `/api/source/${qp}/vehicle/${qv}/articles/v2?torqueCatalogSync=1${
-            mvExtra ? `&${mvExtra}` : ''
+        const relArticles = `/api/source/${qp}/vehicle/${qv}/articles/v2${
+            mvExtra ? `?${mvExtra}` : ''
         }`;
         const r = await fetchSave({
             baseUrl,

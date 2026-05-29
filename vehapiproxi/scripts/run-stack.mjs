@@ -52,6 +52,7 @@ const sessionBudget    = getVal('session-budget', '');
 const loopGapMs        = getVal('loop-gap-ms', '5000');
 const vehiclesCsv      = getVal('csv', '');
 const autoResetFailed  = hasFlag('auto-reset-failed');
+const noProxy          = hasFlag('no-proxy');   // bypass proxy pool; use system default route (VPN)
 const aggPort          = getVal('agg-port', '3848');
 const BASE_PORT        = 3001;
 
@@ -132,15 +133,19 @@ async function main() {
     console.error('[stack] ━━━ vehapi full ingest stack ━━━');
     console.error(`[stack] probe=${probe} backends=${numBackends} workers=${noWorker ? 0 : numWorkers} metadata-only=${metaOnly} concurrency=${concurrency}`);
 
-    // 1. Proxy aggregator
-    const aggArgs = [`scripts/proxy-aggregator.mjs`, `--port=${aggPort}`];
-    if (probe) aggArgs.push('--probe');
+    // 1. Proxy aggregator (skipped in --no-proxy mode)
+    if (!noProxy) {
+        const aggArgs = [`scripts/proxy-aggregator.mjs`, `--port=${aggPort}`];
+        if (probe) aggArgs.push('--probe');
 
-    await launch('agg', 'node', aggArgs, {
-        waitForLine: 'Listening on',
-        color: '\x1b[36m',   // cyan
-    });
-    console.error('[stack] ✓ Proxy aggregator ready');
+        await launch('agg', 'node', aggArgs, {
+            waitForLine: 'Listening on',
+            color: '\x1b[36m',   // cyan
+        });
+        console.error('[stack] ✓ Proxy aggregator ready');
+    } else {
+        console.error('[stack] --no-proxy: skipping aggregator; backends will use system default route (VPN)');
+    }
 
     // 2. Kill anything on ports 3001..3001+numBackends-1, then start backend(s)
     for (let bi = 0; bi < numBackends; bi++) {
@@ -156,6 +161,10 @@ async function main() {
 
         const backendLabel = numBackends > 1 ? `proxy-${bi + 1}` : 'proxy';
         const backendEnv = { ...process.env, PORT: String(port), PROXY_PORT: String(port) };
+        if (noProxy) {
+            backendEnv.OUTBOUND_PROXY_REFRESH_URL = '';
+            backendEnv.OUTBOUND_PROXY_LIST = '';
+        }
         await launch(backendLabel, 'node', ['src/index.js'], {
             waitForLine: 'Proxy server listening',
             color: '\x1b[33m',
