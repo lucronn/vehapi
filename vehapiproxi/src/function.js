@@ -29,6 +29,7 @@ import {
     getVehicleIsNormalized
 } from './db.service.js';
 import { resolveVehicleName } from './domain/vehicle-identity.js';
+import { startWriteQueue } from './write-queue.js';
 import { isCatalogEligible, buildCatalogResponseBody, getReferenceData } from './services/catalog.service.js';
 import { enqueueNormalization } from './services/normalization.service.js';
 import admin from 'firebase-admin';
@@ -150,6 +151,7 @@ const swaggerDocument = require('./swagger.json');
 // Validate configuration (non-blocking)
 validateConfig();
 initProxyPool();
+startWriteQueue();
 
 // Firebase Admin — uses Application Default Credentials on Cloud Run; no explicit init needed.
 if (!admin.apps.length) {
@@ -927,7 +929,7 @@ app.use('/', (req, res, next) => {
 const motorProxyAgent = proxyPool.getRotatingAgent();
 // Reset session only after this many consecutive 403s (guards against subscription-level 403s triggering spurious resets)
 let consecutive403Count = 0;
-const CONSECUTIVE_403_RESET_THRESHOLD = 5;
+const CONSECUTIVE_403_RESET_THRESHOLD = 20;
 let vpnRotating = false;
 const VPN_LOCK_FILE = '/tmp/vehapi-vpn-rotating.lock';
 const VPN_COOLDOWN_MS = 5 * 60 * 1000; // 5 min between rotations

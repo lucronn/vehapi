@@ -4,12 +4,12 @@
  */
 import crypto from 'node:crypto';
 import {
-    insertParsedData,
     ensureVehicleExists,
     markVehicleNormalized,
     insertEvidenceIngest
 } from '../db.service.js';
 import { dbQuery, isDbConfigured } from '../db.js';
+import { enqueueRows } from '../write-queue.js';
 import {
     buildArticlesTableRowFromMotorCatalogArticle,
     buildContentItemFromCatalogArticle
@@ -124,74 +124,35 @@ export async function ingestArticlesCatalogFromMotorJson({
     const articles = details.map((a) =>
         buildArticlesTableRowFromMotorCatalogArticle(a, vehicleIdStr, contentSource)
     );
-    const result = await insertParsedData('articles', articles);
-    if (!result.success) {
-        return {
-            success: false,
-            error: result.error?.message || result.error || 'Articles insert failed'
-        };
-    }
-
     const ciRows = details.map((a) =>
         buildContentItemFromCatalogArticle(a, vehicleIdStr, contentSource)
     );
-    const ciResult = await insertParsedData('content_item', ciRows);
-    if (!ciResult.success) {
-        logger.error(`content_item upsert failed: ${ciResult.error?.message || ciResult.error}`);
-        return {
-            success: false,
-            error: ciResult.error?.message || ciResult.error || 'content_item insert failed'
-        };
+
+    // Enqueue bulk writes — returns immediately, flushed async by write-queue
+    enqueueRows('articles', articles);
+    enqueueRows('content_item', ciRows);
+
+    // Extract DTC articles and enqueue
+    const dtcMap = new Map();
+    for (const a of details) {
+        if (!a || typeof a.bucket !== 'string') continue;
+        if (!a.bucket.toLowerCase().includes('diagnostic trouble')) continue;
+        const code = String(a.code ?? a.title ?? '').trim();
+        if (!code || dtcMap.has(code)) continue;
+        dtcMap.set(code, {
+            vehicle_id: vehicleIdStr,
+            code,
+            description: a.description ? String(a.description).trim() : null,
+            external_id: String(a.id ?? '').trim() || null
+        });
     }
+    if (dtcMap.size > 0) enqueueRows('dtcs', [...dtcMap.values()]);
 
-    // Extract DTC articles (bucket = "Diagnostic Trouble Codes") and upsert into dtcs table
-    const dtcArticles = details.filter(
-        (a) => a && typeof a.bucket === 'string' && a.bucket.toLowerCase().includes('diagnostic trouble')
-    );
-    if (dtcArticles.length > 0) {
-        const dtcMap = new Map();
-        for (const a of dtcArticles) {
-            const code = String(a.code ?? a.title ?? '').trim();
-            if (!code || dtcMap.has(code)) continue;
-            dtcMap.set(code, {
-                vehicle_id: vehicleIdStr,
-                code,
-                description: a.description ? String(a.description).trim() : null,
-                external_id: String(a.id ?? '').trim() || null
-            });
-        }
-        const dtcRows = [...dtcMap.values()];
-        if (dtcRows.length > 0) {
-            const dtcResult = await insertParsedData('dtcs', dtcRows);
-            if (!dtcResult.success) {
-                logger.warn(`dtcs upsert partial failure: ${dtcResult.error?.message || dtcResult.error}`);
-            } else {
-                logger.info(`[catalog] upserted ${dtcRows.length} DTC rows for vehicle ${vehicleIdStr}`);
-            }
-        }
-    }
-
-    const relaxed =
-        skipCatalogVerification ||
-        String(process.env.RELAXED_COMPLETION || '').toLowerCase() === 'true' ||
-        process.env.RELAXED_COMPLETION === '1';
-
-    if (!relaxed && uniqueIds.length > 0) {
-        if (!isDbConfigured()) {
-            return { success: false, error: 'DB not configured for catalog verification' };
-        }
-        try {
-            const chk = await verifyCatalogCountsPostUpsert(vehicleIdStr, contentSource, uniqueIds);
-            if (!chk.ok) {
-                return { success: false, error: chk.error || 'catalog verification failed' };
-            }
-        } catch (ve) {
-            return { success: false, error: String(ve?.message || ve) };
-        }
-    }
-
+    // markVehicleNormalized is lightweight — fire-and-forget
     if (articles.length > 0) {
-        await markVehicleNormalized(vehicleIdStr);
+        markVehicleNormalized(vehicleIdStr).catch((e) =>
+            logger.warn(`[catalog] markVehicleNormalized failed for ${vehicleIdStr}: ${e.message}`)
+        );
     }
 
     return {
