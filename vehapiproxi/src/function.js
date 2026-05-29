@@ -612,7 +612,8 @@ const articlesCacheMiddleware = async (req, res, next) => {
         const skipSbCache =
             req.query.torqueCatalogSync === '1' ||
             req.query.torqueCatalogSync === 'true' ||
-            String(req.headers['x-torque-catalog-sync'] || '').trim() === '1';
+            String(req.headers['x-torque-catalog-sync'] || '').trim() === '1' ||
+            String(req.headers['x-vehapi-verify'] || '').trim() === '1';
         if (skipSbCache) {
             return next();
         }
