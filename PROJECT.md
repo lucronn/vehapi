@@ -115,9 +115,10 @@ Users pay for content access via Stripe credits. AI rewrites raw Motor HTML into
 - ✅ Worker (`worker-ingest-vehicles-full.js`) — catalog + reference data + optional corpus
 - ✅ Multi-backend stack (`npm run stack`) — aggregator + N proxy backends + M workers (round-robin)
 - ✅ Ingest dashboard (`npm run ingest:dashboard`) — `http://localhost:3847` (progress bar, ETA, backends panel)
-- ✅ `--auto-reset-failed` — auto-resets failed→pending trackers each pass; no manual recovery needed
-- ✅ Stealth mode — `--delay-ms`, `--session-budget`, `--loop-gap-ms` flags for IP-safe pacing
-- 🔄 **Catalog ingest running** — 878 / 36,723 complete (2.4%), 35,844 pending, 4 backends × 8 workers active
+- ✅ `--auto-reset-failed` — auto-resets failed→pending trackers each pass
+- ✅ `--no-proxy` mode — bypasses free proxy pool; uses system default route (ProtonVPN)
+- ✅ **Root cause fixed (2026-05-29)** — `?torqueCatalogSync=1` was subscription-blocked; dropped param, `/articles/v2` returns full data
+- 🔄 **Catalog ingest running** — ~979 / 36,723 complete, ~400/hr, ETA ~3 days via ProtonVPN
 
 ### Normalization
 - ✅ `content_item` upsert + enrichment pipeline
@@ -140,7 +141,7 @@ Users pay for content access via Stripe credits. AI rewrites raw Motor HTML into
 
 | Priority | Item | Owner |
 |----------|------|-------|
-| 🔴 ACTIVE | **Catalog ingest running** — 878/36,723 complete; 4 backends × 8 workers; monitor at http://localhost:3847 | Operator |
+| 🔴 ACTIVE | **Catalog ingest running** — ~979/36,723 complete (~400/hr, ETA ~3 days); monitor at http://localhost:3847 | Operator |
 | 🟠 HIGH | After catalog completes: run normalization pass (`npm run stack:meta`) | Operator |
 | 🟠 HIGH | SQL/API refactor Phase 2 — see `docs/plans/2026-05-23-sql-api-refactor.md` | Agent |
 | 🟡 MEDIUM | `documentation/DATA_SOURCE_AND_NORMALIZATION.md` still references Supabase — update to Cloud SQL | Agent |
@@ -167,6 +168,7 @@ Users pay for content access via Stripe credits. AI rewrites raw Motor HTML into
 
 | Date | Work |
 |------|------|
+| 2026-05-29 | Root cause fix: `?torqueCatalogSync=1` was subscription-blocked on all vehicles; dropped param, plain `/articles/v2` works. Added `--no-proxy` flag for direct VPN routing. Worker sharding prevents vehicle collisions across workers. |
 | 2026-05-28 | Multi-backend ingest stack: `--backends=N` spawns N independent proxy backends; `--auto-reset-failed` worker flag; dashboard rewritten with progress bar, ETA, backends panel, rate/hr; priority CSV; stealth pacing flags |
 | 2026-05-26 | Project cleanup: removed ~50 deprecated files (Supabase migrations, Vercel CI, Cursor artifacts, Windows scripts, stale plans) |
 | 2026-05-26 | Proxy session-IP pinning: `pinProxy()/unpinProxy()` added to ProxyPool; `auth.js` pins after successful auth so all Motor API requests use the same IP; `rejectUnauthorized: false` for socks5 TLS; pinned proxy preserved across refresh cycles |
