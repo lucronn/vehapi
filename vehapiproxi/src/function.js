@@ -1,6 +1,7 @@
 import './runtime_polyfills.js';
 import express from 'express';
 import cors from 'cors';
+import { execFile } from 'child_process';
 import { createProxyMiddleware, responseInterceptor } from 'http-proxy-middleware';
 import fs from 'fs';
 import path from 'path';
@@ -927,6 +928,53 @@ const motorProxyAgent = proxyPool.getRotatingAgent();
 // Reset session only after this many consecutive 403s (guards against subscription-level 403s triggering spurious resets)
 let consecutive403Count = 0;
 const CONSECUTIVE_403_RESET_THRESHOLD = 5;
+let vpnRotating = false;
+const VPN_LOCK_FILE = '/tmp/vehapi-vpn-rotating.lock';
+const VPN_COOLDOWN_MS = 5 * 60 * 1000; // 5 min between rotations
+
+const VPN_ROTATE_SCRIPT = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    '../scripts/rotate-vpn.sh'
+);
+
+function rotateVpnAndReauth() {
+    if (vpnRotating) return; // already in progress in this process
+
+    // Cross-process lock via file (prevents two backends rotating simultaneously)
+    try {
+        const lockStat = fs.statSync(VPN_LOCK_FILE);
+        if (Date.now() - lockStat.mtimeMs < VPN_COOLDOWN_MS) {
+            logger.info('[VPN] Rotation already in progress or cooldown active — skipping');
+            // Still reset session so this backend re-auths on whatever IP emerges
+            authManager.lastAuthTime = 0;
+            authManager.cookies = [];
+            authManager.resetProgress();
+            proxyPool.unpinProxy();
+            authManager.authenticate().catch(e => logger.error('[VPN] Re-auth failed:', e));
+            return;
+        }
+    } catch { /* lock file doesn't exist — proceed */ }
+
+    vpnRotating = true;
+    consecutive403Count = 0;
+    fs.writeFileSync(VPN_LOCK_FILE, String(process.pid));
+    logger.warn('[VPN] Triggering automatic VPN server rotation...');
+
+    execFile('bash', [VPN_ROTATE_SCRIPT], { timeout: 90_000 }, (err, stdout) => {
+        vpnRotating = false;
+        try { fs.unlinkSync(VPN_LOCK_FILE); } catch { /* ignore */ }
+        if (err) {
+            logger.error(`[VPN] Rotation failed: ${err.message}`);
+        } else {
+            logger.info(`[VPN] Rotation complete: ${(stdout || '').trim().split('\n').pop()}`);
+        }
+        authManager.lastAuthTime = 0;
+        authManager.cookies = [];
+        authManager.resetProgress();
+        proxyPool.unpinProxy();
+        authManager.authenticate().catch(e => logger.error('[VPN] Post-rotate auth failed:', e));
+    });
+}
 
 app.use('/', authMiddleware, createProxyMiddleware({
     target: config.motorApiBase, // https://sites.motor.com/m1
@@ -1051,22 +1099,24 @@ app.use('/', authMiddleware, createProxyMiddleware({
                     logger.info(`← 403 ${req.path} (IP ban suspected, not yet at threshold)`);
                     return JSON.stringify({ error: 'Forbidden', status: 403, message: 'Content not available' });
                 }
-                consecutive403Count = 0;
-                logger.warn(`Received 403 from Motor.com for ${req.path} — ${CONSECUTIVE_403_RESET_THRESHOLD} consecutive 403s, resetting session (IP ban)...`);
+                // Threshold hit — rotate VPN server to get a new IP, then re-auth
+                logger.warn(`Received 403 from Motor.com for ${req.path} — ${CONSECUTIVE_403_RESET_THRESHOLD} consecutive 403s, rotating VPN...`);
+                rotateVpnAndReauth();
             } else {
                 logger.warn(`Received 401 from Motor.com for ${req.path} — session expired, resetting...`);
+                // Invalidate session and start authentication
+                authManager.lastAuthTime = 0;
+                authManager.cookies = [];
+                authManager.resetProgress();
+                proxyPool.unpinProxy();
             }
 
-            // Invalidate session and start authentication
-            authManager.lastAuthTime = 0;
-            authManager.cookies = [];
-            authManager.resetProgress();
-            proxyPool.unpinProxy();
-
-            // Start authentication in background
-            authManager.authenticate().catch(err => {
-                logger.error('Background authentication failed:', err);
-            });
+            // Start authentication in background (401 path only; 403 path handled by rotateVpnAndReauth)
+            if (proxyRes.statusCode === 401) {
+                authManager.authenticate().catch(err => {
+                    logger.error('Background authentication failed:', err);
+                });
+            }
 
             // Send custom response telling client to poll auth status
             const responseBody = JSON.stringify({
