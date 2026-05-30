@@ -58,6 +58,21 @@ const aggPort          = getVal('agg-port', '3848');
 const BASE_PORT        = 3001;
 
 // ---------------------------------------------------------------------------
+// Home IP guard — never run Motor requests on the home IP
+// ---------------------------------------------------------------------------
+const HOME_IP = '99.34.18.196';
+try {
+    const currentIp = execSync('curl -s --max-time 5 https://api.ipify.org', { timeout: 6000 }).toString().trim();
+    if (currentIp === HOME_IP) {
+        console.error(`[stack] FATAL: current IP is home IP (${currentIp}) — VPN not connected. Refusing to start.`);
+        process.exit(1);
+    }
+    console.error(`[stack] IP check OK: ${currentIp}`);
+} catch (e) {
+    console.error(`[stack] WARNING: could not verify IP (${e.message}) — proceeding with caution`);
+}
+
+// ---------------------------------------------------------------------------
 // Process registry
 // ---------------------------------------------------------------------------
 const procs = [];
