@@ -961,6 +961,7 @@ function rotateVpnAndReauth() {
 
     vpnRotating = true;
     consecutive403Count = 0;
+    recentSuccessCount = 0; // reset window after actual rotation
     fs.writeFileSync(VPN_LOCK_FILE, String(process.pid));
     logger.warn('[VPN] Triggering automatic VPN server rotation...');
 
@@ -1097,7 +1098,6 @@ app.use('/', authMiddleware, createProxyMiddleware({
 
             if (proxyRes.statusCode === 403) {
                 consecutive403Count++;
-                recentSuccessCount = 0;
                 if (consecutive403Count < CONSECUTIVE_403_RESET_THRESHOLD) {
                     logger.warn(`Received 403 from Motor.com for ${req.path} (count=${consecutive403Count}/${CONSECUTIVE_403_RESET_THRESHOLD} — passing through)`);
                     res.statusCode = 403;
