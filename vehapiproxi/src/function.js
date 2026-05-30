@@ -1114,12 +1114,9 @@ app.use('/', authMiddleware, createProxyMiddleware({
                     res.setHeader('Content-Type', 'application/json');
                     return JSON.stringify({ error: 'Forbidden', status: 403, message: 'Content not available' });
                 }
-                // 50 consecutive 403s, zero successes — could be IP ban or dense subscription block.
-                // Don't rotate VPN; just reset the counter and pass through. Workers will accumulate
-                // fail_count and stop retrying after 3 strikes. VPN rotation only makes sense for
-                // true IP bans, which can be triggered manually if needed.
-                logger.warn(`Received 403 from Motor.com for ${req.path} — ${CONSECUTIVE_403_RESET_THRESHOLD} consecutive 403s, resetting counter (subscription block assumed)`);
-                consecutive403Count = 0;
+                // True IP ban: 50 consecutive 403s with zero successes — rotate VPN
+                logger.warn(`Received 403 from Motor.com for ${req.path} — ${CONSECUTIVE_403_RESET_THRESHOLD} consecutive 403s with no successes, rotating VPN...`);
+                rotateVpnAndReauth();
             } else {
                 logger.warn(`Received 401 from Motor.com for ${req.path} — session expired, resetting...`);
                 // Invalidate session and start authentication
